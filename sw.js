@@ -1,8 +1,9 @@
-/* Service worker de Graine de Parole — met l'appli en cache pour un fonctionnement
-   hors-ligne. Stratégie : « cache d'abord », avec repli réseau. On incrémente CACHE
-   à chaque version pour forcer la mise à jour des fichiers. */
+/* Service worker de Graine de Parole.
+   Stratégie « réseau d'abord » : en ligne, on sert toujours la dernière version
+   (pratique pendant qu'on fait évoluer l'appli) ; hors-ligne, on retombe sur le
+   cache. On pré-cache la coquille pour un premier lancement hors-ligne possible. */
 
-const CACHE = 'graine-v1';
+const CACHE = 'graine-v2';
 const ASSETS = [
   '.', 'index.html', 'app.css', 'app.js',
   'data/verses.json', 'icon.svg', 'manifest.webmanifest'
@@ -22,10 +23,10 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
+    fetch(e.request).then(res => {
       const copy = res.clone();
       caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
       return res;
-    }).catch(() => caches.match('index.html')))
+    }).catch(() => caches.match(e.request).then(hit => hit || caches.match('index.html')))
   );
 });
