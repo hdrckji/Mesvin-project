@@ -18,10 +18,15 @@
 	rewrite @api /api/index.php
 	header @api Cache-Control "no-store"
 
-	# La page d'accueil est TOUJOURS notre index.html : sans cette réécriture,
-	# php_server donne priorité à un éventuel index.php (l'image FrankenPHP en
-	# livre un de démonstration) et l'accueil peut être détourné.
+	# Les pages d'entrée sont TOUJOURS nos index.html : sans ces réécritures,
+	# php_server préfère un index.php (l'image FrankenPHP en livre un de
+	# démonstration, et son try_files retombe sur celui de la racine pour les
+	# dossiers qui n'en ont pas) et nos pages peuvent être détournées.
 	rewrite / /index.html
+	@lire path /lire /lire/
+	rewrite @lire /lire/index.html
+	@defi path /defi /defi/
+	rewrite @defi /defi/index.html
 
 	# Le service worker ne doit jamais être mis en cache,
 	# sinon les mises à jour de l'appli ne parviennent pas aux utilisateurs.
