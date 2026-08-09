@@ -8,6 +8,8 @@ COPY Caddyfile /etc/caddy/Caddyfile
 # Fichiers de l'application (on ne copie pas les fichiers d'infrastructure dans /srv).
 COPY index.html app.css app.js sw.js manifest.webmanifest icon.svg /srv/
 COPY data/ /srv/data/
+COPY lire/ /srv/lire/
+COPY defi/ /srv/defi/
 
 # Port par défaut en local ; Railway injecte $PORT, lu par le Caddyfile.
 ENV PORT=8080
