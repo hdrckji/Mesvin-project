@@ -29,7 +29,10 @@ function mail_mode(): string {
 /** Adresse d'expéditeur (MAIL_FROM, avec un repli explicite). */
 function mail_from(): string {
     $from = (string) getenv('MAIL_FROM');
-    return $from !== '' ? $from : 'no-reply@grainedeparole.app';
+    // Le repli n'est PAS une adresse validée chez un fournisseur : en
+    // production, MAIL_FROM doit être définie ET validée côté Brevo/SMTP,
+    // sinon l'envoi sera refusé. /api/health affiche l'adresse utilisée.
+    return $from !== '' ? $from : 'no-reply@bible-horizon.app';
 }
 
 /**
