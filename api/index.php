@@ -37,12 +37,22 @@ $path = rtrim($path, '/');
 
 /* ---- GET /api/health : état de la base et du courrier ---------------------- */
 if ($path === '/api/health' && $method === 'GET') {
+    $mysqlUrl = getenv('MYSQL_URL');
+    $attempted = ($mysqlUrl !== false && $mysqlUrl !== '') ? 'mysql' : 'sqlite';
     try {
         $pdo = db();
         $pdo->query('SELECT 1');
     } catch (Throwable $e) {
         error_log('API health : base injoignable — ' . $e->getMessage());
-        json_error('Base de données injoignable.', 500);
+        // Diagnostic sans secret : pilote tenté + nature de l'erreur (les
+        // messages PDO ne contiennent pas le mot de passe ; coupé à 160
+        // caractères par prudence). Réservé à cette route de contrôle.
+        json_out([
+            'ok'    => false,
+            'error' => 'Base de données injoignable.',
+            'db'    => $attempted,
+            'hint'  => mb_substr($e->getMessage(), 0, 160),
+        ], 500);
     }
     json_out(['ok' => true, 'db' => db_driver($pdo), 'mail' => mail_mode()]);
 }
