@@ -145,6 +145,7 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.01em; margin: 0; }
 .verse-item .stage { font-size: 1.35rem; width: 28px; text-align: center; }
 .verse-item .vi-ref { font-weight: 650; }
 .verse-item .vi-text { color: var(--ink-soft); font-size: .9rem;
+  display: inline-block; max-width: 100%; vertical-align: bottom;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .verse-item .vi-main { min-width: 0; flex: 1; }
 .badge-due { margin-left: auto; font-size: .72rem; font-weight: 700;
@@ -298,3 +299,33 @@ label.lbl { display: block; font-weight: 600; margin: 14px 2px 6px; font-size: .
   text-underline-offset: 3px; }
 .hint-reveal { font-family: var(--serif); font-size: 1.02rem; color: var(--ink-soft);
   background: var(--surface-2); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
+
+/* ---------- Collections (objectifs facultatifs) ---------- */
+.gauge { display: inline-block; flex: 1; height: 6px; border-radius: 999px;
+  background: var(--surface-2); overflow: hidden; }
+.gauge i { display: block; height: 100%; width: 0; border-radius: 999px;
+  background: var(--grow); transition: width .3s ease; }
+.coll-meter { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.coll-count { font-size: .76rem; font-weight: 600; color: var(--ink-soft); white-space: nowrap; }
+
+/* item de collection (réutilise .verse-item) */
+.coll-item { align-items: flex-start; }
+.coll-item .stage { margin-top: 2px; }
+.coll-item.complete { background: var(--grow-soft); border-color: var(--grow); cursor: default; }
+.mini-badge { font-size: .68rem; font-weight: 700; color: var(--grow); background: var(--grow-soft);
+  padding: 2px 7px; border-radius: 999px; margin-left: 6px; vertical-align: 2px; white-space: nowrap; }
+.mini-badge.gold { color: var(--accent-ink); background: var(--surface-2); }
+.coll-item.complete .mini-badge.gold { background: var(--surface); }
+
+/* ---------- Explorer : navigation vers les modules (Lire, Défi) ---------- */
+a.verse-item { text-decoration: none; }
+.verse-item .chev { margin-left: auto; color: var(--ink-soft); font-size: 1.5rem; padding-left: 8px; }
+.explore-item .vi-text { white-space: normal; }
+.explore-mini { margin-top: 16px; font-size: .92rem; }
+.explore-mini a { color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
+
+/* carte « objectif » sur l'accueil */
+.card.objective { padding: 16px 18px; }
+.card.objective .obj-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.card.objective .obj-head b { font-family: var(--serif); font-size: 1.05rem; }
+.objective-link .vi-text { white-space: normal; }

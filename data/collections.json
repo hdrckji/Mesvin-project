@@ -1,0 +1,75 @@
+{
+  "note": "Collections thématiques du module Collections. Les collections par livre sont déduites automatiquement du champ ref des versets (voir app.js). Chaque id de verset doit exister dans data/verses.json.",
+  "collections": [
+    {
+      "id": "pardon",
+      "name": "Pardon",
+      "emoji": "🕊️",
+      "desc": "Recevoir le pardon de Dieu, et le donner à son tour.",
+      "verses": ["1jean-1-9", "eph-4-32", "ps-103-12", "col-3-13", "esaie-1-18"]
+    },
+    {
+      "id": "amour",
+      "name": "Amour",
+      "emoji": "💛",
+      "desc": "L'amour de Dieu pour nous, et l'amour les uns pour les autres.",
+      "verses": ["1cor-13-4", "jean-13-34", "1jean-4-19", "rom-5-8", "1cor-16-14"]
+    },
+    {
+      "id": "confiance",
+      "name": "Confiance",
+      "emoji": "🌾",
+      "desc": "S'appuyer sur Dieu dans les décisions et le quotidien.",
+      "verses": ["ps-23-1", "prov-16-3", "ps-37-4", "matt-6-33", "rom-8-28"]
+    },
+    {
+      "id": "force",
+      "name": "Force",
+      "emoji": "⛰️",
+      "desc": "Le courage et la force que Dieu donne pour avancer.",
+      "verses": ["phil-4-13", "2tim-1-7", "josue-1-9", "esaie-40-31", "ps-28-7"]
+    },
+    {
+      "id": "reconfort",
+      "name": "Réconfort",
+      "emoji": "🤲",
+      "desc": "Des paroles pour les jours de fatigue et de peine.",
+      "verses": ["matt-11-28", "esaie-41-10", "ps-46-2", "ps-34-19", "ps-55-23"]
+    },
+    {
+      "id": "esperance",
+      "name": "Espérance",
+      "emoji": "🌅",
+      "desc": "Regarder l'avenir avec l'assurance que Dieu tient ses promesses.",
+      "verses": ["jer-29-11", "lam-3-22", "rom-15-13", "rom-8-38"]
+    },
+    {
+      "id": "salut",
+      "name": "Salut",
+      "emoji": "✝️",
+      "desc": "Le cœur de l'Évangile : la grâce de Dieu en Jésus-Christ.",
+      "verses": ["jean-3-16", "jean-14-6", "eph-2-8", "rom-6-23", "rom-10-9", "apoc-3-20"]
+    },
+    {
+      "id": "sagesse",
+      "name": "Sagesse",
+      "emoji": "🦉",
+      "desc": "Discerner le bon chemin et marcher avec droiture.",
+      "verses": ["prov-3-5", "prov-3-6", "prov-22-6", "rom-12-2", "jacq-1-5"]
+    },
+    {
+      "id": "priere-paix",
+      "name": "Prière & paix",
+      "emoji": "🕯️",
+      "desc": "Déposer ses soucis devant Dieu et recevoir sa paix.",
+      "verses": ["phil-4-6", "phil-4-7", "1thess-5-17", "matt-7-7", "jer-33-3", "jean-14-27"]
+    },
+    {
+      "id": "foi",
+      "name": "Foi",
+      "emoji": "🌱",
+      "desc": "Croire, s'attacher à Christ et vivre par la foi.",
+      "verses": ["heb-11-1", "heb-11-6", "rom-10-17", "gal-2-20"]
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+/* Module « Lire » — styles propres au chemin de lecture.
+   Tout le socle (palette, cartes, boutons, clair/sombre) vient de ../app.css. */
+
+/* ---------- Choix du plan ---------- */
+.plan-card { cursor: pointer; text-align: left; width: 100%; font: inherit; color: inherit; }
+.plan-card .plan-name { font-family: var(--serif); font-size: 1.25rem; font-weight: 650; }
+.plan-card .plan-meta { color: var(--ink-soft); font-size: .9rem; margin-top: 2px; }
+.plan-card .plan-why { margin-top: 10px; font-size: .95rem; color: var(--ink-soft); }
+.plan-card .plan-why b { color: var(--grow); }
+
+/* ---------- Jauge de progression ---------- */
+.gauge { height: 10px; border-radius: 999px; background: var(--surface-2);
+  border: 1px solid var(--line); overflow: hidden; }
+.gauge > i { display: block; height: 100%; background: var(--grow);
+  border-radius: 999px; transition: width .4s ease; }
+.gauge-label { display: flex; justify-content: space-between; align-items: baseline;
+  margin: 12px 2px 8px; font-size: .9rem; color: var(--ink-soft); }
+.gauge-label b { color: var(--ink); font-size: 1rem; }
+
+/* ---------- Le chemin (un jalon par chapitre) ---------- */
+.path { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+.path .mile {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: .68rem; font-weight: 700;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft);
+  cursor: pointer; padding: 0; font-family: var(--sans);
+  transition: transform .06s ease;
+}
+.path .mile:active { transform: scale(.92); }
+.path .mile.read { background: var(--grow); border-color: var(--grow); color: #fff; }
+.path .mile.next { border: 2px solid var(--accent); color: var(--accent-ink); background: var(--surface); }
+
+/* ---------- Lecture du chapitre ---------- */
+.chapter-head { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-bottom: 14px; }
+.chapter-head h2 { font-family: var(--serif); font-size: 1.3rem; flex: 1; text-align: center; }
+.chapter-nav { background: var(--surface); border: 1px solid var(--line); color: var(--ink);
+  font: inherit; font-size: 1.1rem; width: 40px; height: 40px; border-radius: 50%;
+  cursor: pointer; flex-shrink: 0; }
+.chapter-nav:disabled { opacity: .3; cursor: default; }
+
+.scripture { font-family: var(--serif); font-size: 1.18rem; line-height: 1.85; color: var(--ink); }
+.scripture .vnum {
+  font-family: var(--sans); font-size: .68rem; font-weight: 700;
+  color: var(--accent-ink); vertical-align: super; margin-right: 3px; margin-left: 2px;
+  user-select: none;
+}
+.scripture .vnum:first-child { margin-left: 0; }
+.already-read { text-align: center; color: var(--grow); font-weight: 650; margin: 14px 0 4px; }
+
+/* ---------- Confirmations & célébrations ---------- */
+.celebrate { text-align: center; padding: 26px 10px; }
+.celebrate .seal { font-size: 3rem; }
+.celebrate h2 { font-family: var(--serif); margin: 12px 0 6px; }
+.celebrate .verse { margin-top: 20px; }
+
+/* fin de livre : petite pluie d'étincelles sobres */
+.sparks { position: relative; height: 0; }
+.sparks span { position: absolute; top: 0; font-size: 1.1rem; opacity: 0;
+  animation: spark 1.6s ease-out forwards; }
+@keyframes spark {
+  0%   { opacity: 0; transform: translateY(0) scale(.6); }
+  25%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-46px) scale(1.15); }
+}
+
+/* ---------- Divers ---------- */
+.soft-note { background: var(--surface-2); border-radius: 12px; padding: 12px 14px;
+  font-size: .92rem; color: var(--ink-soft); margin-top: 14px; }
+.soft-note b { color: var(--ink); }
+.finish-zone { margin-top: 22px; }
+.linklike { background: none; border: 0; font: inherit; font-size: .9rem;
+  color: var(--ink-soft); cursor: pointer; padding: 8px 4px; text-decoration: underline;
+  text-underline-offset: 3px; display: block; margin: 10px auto 0; }

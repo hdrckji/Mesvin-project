@@ -15,10 +15,10 @@ l'existant.
 
 | Module | Ce que c'est | État |
 |---|---|---|
-| **Mémoriser** | Mémoriser des versets par répétition espacée. L'appli propose le verset, accompagne l'apprentissage, valide **objectivement** la mémorisation, puis entretient. | ✅ v0.2 |
-| **Collections** | Regrouper les versets par **thème** (pardon, amour, confiance…) ou par source. Option qui se débloque après les premiers versets. On complète des collections. | ⏳ prochain |
-| **Lire** | Plan de lecture **« chemin, pas calendrier »** : on avance à son rythme, jamais de « retard », jamais de culpabilité. Nourrit la mémorisation. | 🗺️ conçu |
-| **Défi / Veillée** | Connaissance biblique (ex-« Ichthus »), **factuelle** (qui/quoi/où), en **solo** ou **en groupe** (mode veillée projeté + téléphones). | 🗺️ conçu |
+| **Mémoriser** | Mémoriser des versets par répétition espacée. L'appli propose le verset, accompagne l'apprentissage, valide **objectivement** la mémorisation, puis entretient. | ✅ v0.3 |
+| **Collections** | Regrouper les versets par **thème** (pardon, amour, confiance…) ou par livre. Objectif facultatif : on choisit une collection, on la complète. | ✅ |
+| **Lire** | Plan de lecture **« chemin, pas calendrier »** : on avance à son rythme, jamais de « retard », jamais de culpabilité. Marc et Jean intégrés. | ✅ v1 |
+| **Défi / Veillée** | Connaissance biblique (ex-« Ichthus »), **factuelle** (qui/quoi/où). Défi du jour + défi libre en **solo** ✅ ; mode **veillée** en groupe à venir. | ✅ v1 (solo) |
 
 *(« Jouer » est volontairement évité : on dit **Défi** en solo, **Veillée** en groupe — respect du texte.)*
 
@@ -85,12 +85,12 @@ défi (« complète le verset », « d'où vient-il ? »).
 
 ## 6. Feuille de route (ordre indicatif)
 
-1. ✅ Mémorisation (v0.2)
-2. Validation **objective** de la mémorisation (tests auto-corrigés, plusieurs retours)
-3. **Collections** thématiques (option, amenée en douceur)
+1. ✅ Mémorisation (v0.3)
+2. ✅ Validation **objective** de la mémorisation (tests auto-corrigés, plusieurs retours)
+3. ✅ **Collections** thématiques (option, amenée en douceur)
 4. Rappel quotidien (notification PWA)
-5. **Plan de lecture** « chemin »
-6. **Défi / Veillée** (connaissance biblique)
+5. ✅ **Plan de lecture** « chemin » (Marc, Jean)
+6. ✅ **Défi** (connaissance biblique, solo) — la **Veillée** en groupe reste à venir
 7. Comptes optionnels + **groupes d'église** (bascule serveur)
 
 ---

@@ -29,7 +29,17 @@ const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').repla
 function shuffle(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; }
 
 /* ---------- Stockage ---------- */
-function loadStore() { try { const r = localStorage.getItem(STORE_KEY); if (r) return JSON.parse(r); } catch (e) {} return { cards: {}, streak: { count: 0, lastDay: null } }; }
+function loadStore() {
+  let s = null;
+  try { const r = localStorage.getItem(STORE_KEY); if (r) s = JSON.parse(r); } catch (e) {}
+  if (!s || typeof s !== 'object') s = {};
+  // Champs additifs uniquement : un store v3 existant reste valide tel quel.
+  if (!s.cards) s.cards = {};
+  if (!s.streak) s.streak = { count: 0, lastDay: null };
+  if (!('activeCollection' in s)) s.activeCollection = null;           // objectif choisi (id de collection) ou null = parcours général
+  if (!Array.isArray(s.completedCollections)) s.completedCollections = []; // collections déjà célébrées
+  return s;
+}
 function saveStore() { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
 let store = loadStore();
 
@@ -39,7 +49,69 @@ async function loadLibrary() {
   try { const d = await (await fetch('data/verses.json', { cache: 'no-cache' })).json(); LIBRARY = d.verses || []; LIB_VERSION = d.version || LIB_VERSION; }
   catch (e) { LIBRARY = []; }
 }
-const nextToLearn = () => LIBRARY.find(v => !store.cards[v.id]) || null;
+
+/* ---------- Collections (objectifs facultatifs) ---------- */
+let THEME_COLLECTIONS = [];
+const BOOK_COLLECTION_MIN = 3; // un livre devient une collection à partir de 3 versets
+async function loadCollections() {
+  try { const d = await (await fetch('data/collections.json', { cache: 'no-cache' })).json(); THEME_COLLECTIONS = d.collections || []; }
+  catch (e) { THEME_COLLECTIONS = []; }
+}
+// Les collections « par livre » se déduisent du champ ref, dans l'ordre du parcours.
+function bookCollections() {
+  const byBook = new Map();
+  for (const v of LIBRARY) {
+    const b = bookOf(v.ref);
+    if (!byBook.has(b)) byBook.set(b, []);
+    byBook.get(b).push(v.id);
+  }
+  const out = [];
+  for (const [book, ids] of byBook) {
+    if (ids.length >= BOOK_COLLECTION_MIN) out.push({ id: 'livre:' + book, name: book, emoji: '📖', desc: '', verses: ids });
+  }
+  return out;
+}
+const allCollections = () => THEME_COLLECTIONS.concat(bookCollections());
+const collectionById = id => (id ? allCollections().find(c => c.id === id) || null : null);
+const activeColl = () => collectionById(store.activeCollection);
+function collProgress(c) {
+  const m = c.verses.filter(id => store.cards[id] && isMastered(store.cards[id])).length;
+  return { m, total: c.verses.length };
+}
+const isCollComplete = c => { const p = collProgress(c); return p.total > 0 && p.m >= p.total; };
+// Marque comme « complètes » (sans célébration) les collections déjà achevées
+// au chargement — la célébration est réservée au moment où l'on complète.
+function syncCompletedCollections() {
+  let changed = false;
+  for (const c of allCollections()) {
+    if (isCollComplete(c) && !store.completedCollections.includes(c.id)) { store.completedCollections.push(c.id); changed = true; }
+  }
+  if (changed) saveStore();
+}
+// Après une mémorisation : quelles collections viennent d'être complétées ?
+function checkCollectionCompletions() {
+  const newly = [];
+  for (const c of allCollections()) {
+    if (isCollComplete(c) && !store.completedCollections.includes(c.id)) {
+      store.completedCollections.push(c.id);
+      newly.push(c);
+      if (store.activeCollection === c.id) store.activeCollection = null; // retour au parcours général
+    }
+  }
+  if (newly.length) saveStore();
+  return newly;
+}
+
+// Prochain verset à apprendre : celui de l'objectif actif s'il y en a un,
+// sinon le parcours général (ordre du tableau verses.json), comme avant.
+function nextToLearn() {
+  const c = activeColl();
+  if (c) {
+    const vid = c.verses.find(id => !store.cards[id]);
+    return vid ? LIBRARY.find(v => v.id === vid) || null : null;
+  }
+  return LIBRARY.find(v => !store.cards[v.id]) || null;
+}
 
 /* ---------- Contexte factuel du livre ---------- */
 const BOOKS = {
@@ -60,7 +132,10 @@ const BOOKS = {
   'Galates': "Lettre de Paul aux églises de Galatie sur la liberté et la vie par l'Esprit.",
   'Michée': "Livre du prophète Michée, appel à la justice et à l'humilité devant Dieu.",
   'Hébreux': "Lettre exhortant à persévérer dans la foi en Christ, supérieur à tout.",
-  'Lamentations': "Poèmes de deuil sur Jérusalem, où perce malgré tout la fidélité de Dieu."
+  'Lamentations': "Poèmes de deuil sur Jérusalem, où perce malgré tout la fidélité de Dieu.",
+  'Colossiens': "Lettre de Paul à l'église de Colosses, sur la primauté de Christ et la vie nouvelle.",
+  '1 Thessaloniciens': "Première lettre de Paul à l'église de Thessalonique, encouragements et espérance du retour de Christ.",
+  'Jacques': "Lettre de Jacques, très concrète : une foi qui se voit dans les actes de chaque jour."
 };
 const bookOf = ref => { const m = ref.match(/^(\d?\s?[A-Za-zÀ-ÿ]+)/); return m ? m[1].trim() : ref; };
 
@@ -143,7 +218,7 @@ let session = null; // { queue, idx, phase:'read'|'exercise'|'result', ex, resul
 const go = (name, param) => { route = { name, param: param || null }; render(); window.scrollTo(0, 0); };
 
 function render() {
-  const v = { home: viewHome, session: viewSession, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout }[route.name] || viewHome;
+  const v = { home: viewHome, session: viewSession, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections }[route.name] || viewHome;
   el.innerHTML = v() + tabbar();
   wire();
 }
@@ -167,6 +242,28 @@ function viewHome() {
     <h1 class="hero-name"><span class="seed">Graine</span> de Parole</h1>
     <p class="hero-tag">Cache la Parole dans ton cœur, un peu chaque jour.</p></div>`;
 
+  const obj = activeColl();
+  // Navigation vers les autres modules (Lire, Défi) — sobre, sous le cœur de l'appli.
+  const explore = `<div class="section-title">Explorer</div>
+    <a class="verse-item explore-item fade" href="lire/">
+      <span class="stage">📖</span><span class="vi-main"><span class="vi-ref">Lire</span><br>
+      <span class="vi-text">Avance dans l'Évangile à ton rythme.</span></span><span class="chev">›</span></a>
+    <a class="verse-item explore-item fade" href="defi/">
+      <span class="stage">🕯️</span><span class="vi-main"><span class="vi-ref">Défi</span><br>
+      <span class="vi-text">Teste ta connaissance de la Bible.</span></span><span class="chev">›</span></a>`;
+  // Carte « objectif » (ou invitation discrète), construite ici pour servir
+  // aussi bien l'accueil vierge que l'accueil normal.
+  let objectiveCard = '';
+  if (obj) {
+    const { m, total: ct } = collProgress(obj);
+    const pct = ct ? Math.round(m / ct * 100) : 0;
+    objectiveCard = `<div class="card objective fade"><div class="obj-head">
+        <b>🎯 Objectif : ${esc(obj.name)}</b>
+        <button class="linkbtn" data-collections="1">Changer</button></div>
+      <div class="coll-meter"><span class="gauge"><i style="width:${pct}%"></i></span>
+        <span class="coll-count">${m}/${ct} mémorisé${m > 1 ? 's' : ''}</span></div></div>`;
+  }
+
   if (total === 0) {
     return topbar() + hero + `
       <div class="steps fade">
@@ -174,10 +271,12 @@ function viewHome() {
         <div class="step"><span class="si">✍️</span><div><b>Tu le reconstitues sur l'écran</b> — l'appli vérifie que c'est juste.</div></div>
         <div class="step"><span class="si">🌱</span><div><b>Réussi plusieurs fois</b>, il rejoint ton jardin — et revient avant que tu l'oublies.</div></div>
       </div>
+      ${objectiveCard}
       <button class="btn btn-primary" data-learn="1">Apprendre mon premier verset</button>
+      ${obj ? '' : `<button class="linkbtn center" data-collections="1" style="display:block;margin:12px auto 0">🎯 Choisir un objectif (facultatif)</button>`}
+      <p class="explore-mini muted center">Ou explore : <a href="lire/">📖 Lire</a> · <a href="defi/">🕯️ Défi</a></p>
       <p class="muted center" style="margin-top:14px;font-size:.85rem">Gratuit · rien ne quitte ton téléphone</p>`;
   }
-
   let actions = '';
   if (due.length > 0) {
     actions += `<div class="card action fade"><div class="action-txt"><b>Ta session du jour</b>
@@ -186,12 +285,19 @@ function viewHome() {
   }
   if (nextToLearn()) {
     actions += `<div class="card action fade"><div class="action-txt"><b>Apprendre un nouveau verset</b>
-      <span class="muted">L'appli t'en propose un.</span></div>
+      <span class="muted">${obj ? `Prochain verset de « ${esc(obj.name)} ».` : `L'appli t'en propose un.`}</span></div>
       <button class="btn btn-grow" data-learn="1">Apprendre</button></div>`;
+  } else if (obj) {
+    actions += `<p class="muted center fade" style="margin:6px 4px 10px">Tous les versets de « ${esc(obj.name)} » sont en route — continue tes sessions 🌱</p>`;
   } else if (due.length === 0) {
     actions += `<div class="card fade"><p class="center" style="margin:0">🎉 Tu as mémorisé tous les versets proposés !</p></div>`;
   }
   if (due.length === 0) actions += `<p class="muted center" style="margin:6px 4px 0">Rien à travailler aujourd'hui 🌱</p>`;
+
+  // Objectif (collection choisie) — ou invitation discrète à en choisir un.
+  const objective = objectiveCard || `<button class="verse-item objective-link fade" data-collections="1">
+      <span class="stage">🎯</span><span class="vi-main"><span class="vi-ref">Choisir un objectif</span><br>
+      <span class="vi-text">Facultatif — une collection de versets par thème ou par livre.</span></span><span class="chev">›</span></button>`;
 
   let progress = '';
   if (learnN > 0) progress += `<button class="verse-item fade" data-review="1">
@@ -201,7 +307,45 @@ function viewHome() {
       <span class="stage">🌳</span><span class="vi-main"><span class="vi-ref">Mon jardin</span><br>
       <span class="vi-text">${gardenN} verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}</span></span><span class="chev">›</span></button>`;
 
-  return topbar() + hero + actions + progress;
+  return topbar() + hero + actions + objective + progress + explore;
+}
+
+/* ---------- Collections : choisir un objectif ---------- */
+function viewCollections() {
+  const renderItem = c => {
+    const { m, total } = collProgress(c);
+    const complete = total > 0 && m >= total;
+    const active = store.activeCollection === c.id;
+    const pct = total ? Math.round(m / total * 100) : 0;
+    return `<button class="verse-item coll-item${complete ? ' complete' : ''}" data-selectcoll="${esc(c.id)}">
+      <span class="stage">${complete ? '🏅' : c.emoji || '📖'}</span>
+      <span class="vi-main">
+        <span class="vi-ref">${esc(c.name)}</span>
+        ${active ? '<span class="mini-badge">objectif actif</span>' : ''}
+        ${complete ? '<span class="mini-badge gold">complète ✨</span>' : ''}<br>
+        ${c.desc ? `<span class="vi-text">${esc(c.desc)}</span>` : ''}
+        <span class="coll-meter"><span class="gauge"><i style="width:${pct}%"></i></span>
+          <span class="coll-count">${m}/${total} mémorisé${m > 1 ? 's' : ''}</span></span>
+      </span></button>`;
+  };
+  const themes = THEME_COLLECTIONS.map(renderItem).join('');
+  const books = bookCollections().map(renderItem).join('');
+  const clear = store.activeCollection
+    ? `<button class="btn btn-ghost btn-block" data-clearcoll="1" style="margin-top:18px">Revenir au parcours général</button>`
+    : '';
+  return `<div class="fade"><button class="back-link" data-tab="home">‹ Accueil</button>
+    <h2 style="font-family:var(--serif);margin-bottom:2px">Collections</h2>
+    <p class="muted" style="margin:0 2px 16px">Choisis un objectif : le bouton « Apprendre » te servira alors les versets de cette collection. C'est facultatif — sans objectif, le parcours général continue.</p>
+    <div class="section-title">Par thème</div>${themes || '<p class="muted">Aucune collection disponible.</p>'}
+    <div class="section-title">Par livre</div>${books}
+    ${clear}</div>`;
+}
+function selectCollection(id) {
+  const c = collectionById(id);
+  if (!c || isCollComplete(c)) return; // une collection complète ne redevient pas un objectif
+  store.activeCollection = store.activeCollection === id ? null : id; // re-toucher = désélectionner
+  saveStore();
+  go('home');
 }
 
 /* ---------- Session (apprentissage + entretien, tout vérifié par l'appli) ---------- */
@@ -214,13 +358,13 @@ function enterCard() {
 function startReview() {
   const due = dueCards().sort((a, b) => a.due - b.due);
   if (!due.length) { go('home'); return; }
-  session = { queue: due, idx: 0, done: [], mastered: [] };
+  session = { queue: due, idx: 0, done: [], mastered: [], celebrated: [] };
   enterCard(); go('session');
 }
 function startLearnNew() {
   const v = nextToLearn(); if (!v) { go('home'); return; }
   const card = introduce(v);
-  session = { queue: [card], idx: 0, done: [], mastered: [] };
+  session = { queue: [card], idx: 0, done: [], mastered: [], celebrated: [] };
   enterCard(); go('session');
 }
 
@@ -301,7 +445,25 @@ function viewSessionDone() {
   const s = store.streak.count;
   const done = session ? session.done.length : 0;
   const mastered = session ? session.mastered.length : 0;
+  const celebrated = session ? session.celebrated : [];
   session = null;
+
+  // Célébration sobre : une collection vient d'être complétée.
+  if (celebrated.length > 0) {
+    const c = celebrated[0];
+    const n = c.verses.length;
+    const others = celebrated.slice(1).map(x => `« ${esc(x.name)} »`).join(' et ');
+    return `<div class="done-screen fade">
+      <div class="seal">✨</div>
+      <h2 style="font-family:var(--serif);margin:10px 0">Collection ${esc(c.name)} complète ✨</h2>
+      <p class="muted">${n} verset${n > 1 ? 's' : ''} caché${n > 1 ? 's' : ''} dans ton cœur.</p>
+      ${others ? `<p class="muted">Et par la même occasion : ${others} 🏅</p>` : ''}
+      <p class="muted" style="margin-top:14px">Si tu le souhaites, tu peux choisir une autre collection — ou simplement continuer le parcours général.</p>
+      <button class="btn btn-primary" data-collections="1" style="margin-top:16px">Choisir une autre collection</button>
+      <button class="btn btn-ghost btn-block" data-tab="home" style="margin-top:10px">Revenir à l'accueil</button>
+    </div>`;
+  }
+
   return `<div class="done-screen fade">
     <div class="seal">${mastered > 0 ? '🌱' : '🌿'}</div>
     <h2 style="font-family:var(--serif);margin:10px 0">C'est fait pour aujourd'hui</h2>
@@ -312,15 +474,42 @@ function viewSessionDone() {
 }
 
 /* ---------- Jardin (versets mémorisés) ---------- */
+let gardenView = 'list'; // 'list' | 'coll' — préférence d'affichage, non persistée
+function gardenItem(c) {
+  const st = stageOf(c), badge = c.due <= todayNum() ? '<span class="badge-due">à revoir</span>' : '';
+  return `<button class="verse-item" data-verse="${esc(c.id)}"><span class="stage" title="${st.label}">${st.icon}</span>
+    <span class="vi-main"><span class="vi-ref">${esc(c.ref)}</span><br><span class="vi-text">${esc(c.text)}</span></span>${badge}</button>`;
+}
 function viewGarden() {
   const cards = masteredCards().sort((a, b) => a.due - b.due);
-  const list = cards.length ? cards.map(c => {
-    const st = stageOf(c), badge = c.due <= todayNum() ? '<span class="badge-due">à revoir</span>' : '';
-    return `<button class="verse-item" data-verse="${esc(c.id)}"><span class="stage" title="${st.label}">${st.icon}</span>
-      <span class="vi-main"><span class="vi-ref">${esc(c.ref)}</span><br><span class="vi-text">${esc(c.text)}</span></span>${badge}</button>`;
-  }).join('') : `<div class="card center"><p style="margin:0">Ton jardin est encore vide 🌱<br>
+  const completed = allCollections().filter(isCollComplete);
+
+  let toggle = '';
+  if (cards.length > 0 && completed.length > 0) {
+    toggle = `<div class="pill-row" style="margin-bottom:12px">
+      <button class="pill ${gardenView === 'list' ? 'on' : ''}" data-gview="list">Liste</button>
+      <button class="pill ${gardenView === 'coll' ? 'on' : ''}" data-gview="coll">Par collection</button></div>`;
+  }
+
+  let list;
+  if (!cards.length) {
+    list = `<div class="card center"><p style="margin:0">Ton jardin est encore vide 🌱<br>
       <span class="muted">Mémorise un verset et il apparaîtra ici.</span></p>
       <button class="btn btn-grow btn-block" data-learn="1" style="margin-top:14px">Apprendre un verset</button></div>`;
+  } else if (gardenView === 'coll' && completed.length > 0) {
+    // Groupé par collection complétée ; chaque verset n'apparaît qu'une fois.
+    const seen = new Set();
+    list = completed.map(col => {
+      const own = cards.filter(c => col.verses.includes(c.id) && !seen.has(c.id));
+      own.forEach(c => seen.add(c.id));
+      if (!own.length) return '';
+      return `<div class="section-title">🏅 ${esc(col.name)}</div>` + own.map(gardenItem).join('');
+    }).join('');
+    const rest = cards.filter(c => !seen.has(c.id));
+    if (rest.length) list += `<div class="section-title">Autres versets</div>` + rest.map(gardenItem).join('');
+  } else {
+    list = cards.map(gardenItem).join('');
+  }
   const learn = learningCards();
   const learnList = learn.length ? `<div class="section-title">En apprentissage</div>` + learn.map(c =>
     `<div class="verse-item"><span class="stage">🌰</span><span class="vi-main"><span class="vi-ref">${esc(c.ref)}</span><br>
@@ -328,7 +517,7 @@ function viewGarden() {
 
   return topbar() + `<h2 style="font-family:var(--serif);margin-bottom:2px">Mon jardin</h2>
     <p class="muted" style="margin:0 2px 16px">Les versets que tu as mémorisés. Chacun grandit à mesure qu'il s'enracine.</p>
-    ${list}${learnList}`;
+    ${toggle}${list}${learnList}`;
 }
 function viewVerse(id) {
   const c = store.cards[id]; if (!c) { go('garden'); return ''; }
@@ -378,6 +567,12 @@ function wire() {
 
   el.querySelectorAll('[data-verse]').forEach(b => b.addEventListener('click', () => go('verse', b.dataset.verse)));
   if (q('[data-remove]')) q('[data-remove]').addEventListener('click', () => removeVerse(q('[data-remove]').dataset.remove));
+
+  // Collections (objectifs)
+  el.querySelectorAll('[data-collections]').forEach(b => b.addEventListener('click', () => go('collections')));
+  el.querySelectorAll('[data-selectcoll]').forEach(b => b.addEventListener('click', () => selectCollection(b.dataset.selectcoll)));
+  el.querySelectorAll('[data-clearcoll]').forEach(b => b.addEventListener('click', () => { store.activeCollection = null; saveStore(); go('home'); }));
+  el.querySelectorAll('[data-gview]').forEach(b => b.addEventListener('click', () => { gardenView = b.dataset.gview; render(); }));
 }
 function fillNext(pid) {
   const ex = session.ex; const k = ex.filled.findIndex(x => x === null);
@@ -392,7 +587,10 @@ function checkExercise() {
     // Un essai aidé (verset revu pendant l'exercice) ne compte pas comme validation.
     if (!ex.hinted) card.validations = Math.min(MASTERY, card.validations + 1);
     schedule(card, ex.hinted ? 'ok' : (ex.errors === 0 ? 'clean' : 'ok'));
-    if (!wasMastered && isMastered(card)) session.mastered.push(card.id); // vient d'être planté 🌱
+    if (!wasMastered && isMastered(card)) {
+      session.mastered.push(card.id); // vient d'être planté 🌱
+      session.celebrated.push(...checkCollectionCompletions()); // une collection vient-elle d'être complétée ?
+    }
     if (!session.done.includes(card.id)) session.done.push(card.id);
     saveStore();
     session.result = 'success'; session.phase = 'result'; render();
@@ -424,5 +622,7 @@ function removeVerse(id) {
    ========================================================================== */
 (async function init() {
   el.innerHTML = '<p class="muted center" style="padding:40px">Chargement…</p>';
-  await loadLibrary(); render();
+  await Promise.all([loadLibrary(), loadCollections()]);
+  syncCompletedCollections();
+  render();
 })();
