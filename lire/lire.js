@@ -30,15 +30,85 @@ const MAX_PLANS = 3;
    avant même que le texte soit téléchargé.
    ========================================================================== */
 const BOOKS = {
-  /* ---- Ancien Testament ---- */
+  /* ---- Ancien Testament (ordre canonique) ---- */
   genese: { id: 'genese', testament: 'AT', nom: 'Genèse', nb: 50, mots: 34612,
     contexte: "Premier livre de la Bible : la création, les débuts de l'humanité, puis l'histoire d'Abraham, d'Isaac, de Jacob et de Joseph." },
   exode: { id: 'exode', testament: 'AT', nom: 'Exode', nb: 40, mots: 28494,
     contexte: "La sortie d'Égypte : Moïse, la traversée de la mer, le don de la loi au Sinaï et la marche au désert." },
+  levitique: { id: 'levitique', testament: 'AT', nom: 'Lévitique', nb: 27, mots: 21199,
+    contexte: "Les lois du culte et de la vie avec Dieu : sacrifices, fêtes, pureté — « Vous serez saints, car je suis saint »." },
+  nombres: { id: 'nombres', testament: 'AT', nom: 'Nombres', nb: 36, mots: 28452,
+    contexte: "Le dénombrement du peuple, puis quarante ans de marche au désert, entre murmures et fidélité de Dieu." },
+  deuteronome: { id: 'deuteronome', testament: 'AT', nom: 'Deutéronome', nb: 34, mots: 26019,
+    contexte: "Les derniers discours de Moïse avant l'entrée en terre promise : se souvenir, aimer Dieu, choisir la vie." },
+  josue: { id: 'josue', testament: 'AT', nom: 'Josué', nb: 24, mots: 16502,
+    contexte: "L'entrée en terre promise : le Jourdain traversé, Jéricho, puis le pays partagé entre les tribus." },
+  juges: { id: 'juges', testament: 'AT', nom: 'Juges', nb: 21, mots: 16943,
+    contexte: "Après Josué, un cycle qui se répète : le peuple s'égare, crie à Dieu, et Dieu suscite des libérateurs — Débora, Gédéon, Samson." },
+  ruth: { id: 'ruth', testament: 'AT', nom: 'Ruth', nb: 4, mots: 2289,
+    contexte: "Une histoire courte et lumineuse de fidélité : Ruth la Moabite, Noémi et Boaz — l'arrière-grand-mère du roi David." },
+  '1samuel': { id: '1samuel', testament: 'AT', nom: '1 Samuel', nb: 31, mots: 22499,
+    contexte: "Samuel, dernier des juges, puis les débuts de la royauté : Saül, et David le berger choisi par Dieu." },
+  '2samuel': { id: '2samuel', testament: 'AT', nom: '2 Samuel', nb: 24, mots: 18520,
+    contexte: "Le règne de David : ses victoires, sa chute, son repentir — un roi selon le cœur de Dieu, et pourtant fragile." },
+  '1rois': { id: '1rois', testament: 'AT', nom: '1 Rois', nb: 22, mots: 22322,
+    contexte: "Salomon et le temple, puis le royaume divisé ; le prophète Élie face aux prophètes de Baal." },
+  '2rois': { id: '2rois', testament: 'AT', nom: '2 Rois', nb: 25, mots: 20932,
+    contexte: "La suite des rois d'Israël et de Juda, le prophète Élisée, et la chute des deux royaumes jusqu'à l'exil." },
+  '1chroniques': { id: '1chroniques', testament: 'AT', nom: '1 Chroniques', nb: 29, mots: 17868,
+    contexte: "L'histoire d'Israël relue depuis David : les générations, l'arche à Jérusalem, la préparation du temple." },
+  '2chroniques': { id: '2chroniques', testament: 'AT', nom: '2 Chroniques', nb: 36, mots: 23805,
+    contexte: "De Salomon à l'exil : le temple, les rois de Juda, les réveils et les chutes du royaume." },
+  esdras: { id: 'esdras', testament: 'AT', nom: 'Esdras', nb: 10, mots: 6535,
+    contexte: "Le retour d'exil : la reconstruction du temple à Jérusalem, et le peuple qui retrouve la loi de Dieu." },
+  nehemie: { id: 'nehemie', testament: 'AT', nom: 'Néhémie', nb: 13, mots: 9465,
+    contexte: "Néhémie, échanson du roi de Perse, revient relever les murailles de Jérusalem — la prière et le travail, main dans la main." },
+  esther: { id: 'esther', testament: 'AT', nom: 'Esther', nb: 10, mots: 5305,
+    contexte: "À la cour de Perse, une jeune reine juive risque sa vie pour sauver son peuple. Dieu n'y est jamais nommé — et pourtant partout présent." },
+  job: { id: 'job', testament: 'AT', nom: 'Job', nb: 42, mots: 16743,
+    contexte: "Un homme juste traverse la souffrance et questionne Dieu. Un livre honnête sur la douleur, et sur la confiance." },
   psaumes: { id: 'psaumes', testament: 'AT', nom: 'Psaumes', nb: 150, mots: 40168, chapLabel: 'Psaume',
     contexte: "Un recueil de 150 prières et chants — louange, confiance, détresse, reconnaissance — attribués en grande partie à David." },
   proverbes: { id: 'proverbes', testament: 'AT', nom: 'Proverbes', nb: 31, mots: 14792,
     contexte: "Des paroles de sagesse pour la vie de tous les jours, rassemblées autour de Salomon." },
+  ecclesiaste: { id: 'ecclesiaste', testament: 'AT', nom: 'Ecclésiaste', nb: 12, mots: 5550,
+    contexte: "« Vanité des vanités » : une méditation sans fard sur le temps qui passe, et sur ce qui compte vraiment sous le soleil." },
+  cantique: { id: 'cantique', testament: 'AT', nom: 'Cantique des cantiques', nb: 8, mots: 2600,
+    contexte: "Un chant d'amour poétique et ardent, attribué à Salomon — la beauté de l'amour célébrée sans détour." },
+  esaie: { id: 'esaie', testament: 'AT', nom: 'Ésaïe', nb: 66, mots: 33450,
+    contexte: "Le grand prophète de Jérusalem : jugement et consolation, et l'annonce du serviteur qui portera nos souffrances." },
+  jeremie: { id: 'jeremie', testament: 'AT', nom: 'Jérémie', nb: 52, mots: 38317,
+    contexte: "Le prophète des larmes : quarante ans à appeler Jérusalem à revenir à Dieu, et la promesse d'une alliance nouvelle." },
+  lamentations: { id: 'lamentations', testament: 'AT', nom: 'Lamentations', nb: 5, mots: 3231,
+    contexte: "Cinq poèmes de deuil sur Jérusalem détruite — et au milieu des larmes : les compassions de Dieu se renouvellent chaque matin." },
+  ezechiel: { id: 'ezechiel', testament: 'AT', nom: 'Ézéchiel', nb: 48, mots: 34890,
+    contexte: "Prophète en exil à Babylone : des visions saisissantes, et la promesse d'un cœur nouveau et d'un esprit nouveau." },
+  daniel: { id: 'daniel', testament: 'AT', nom: 'Daniel', nb: 12, mots: 10882,
+    contexte: "Daniel et ses compagnons, fidèles à Dieu à la cour de Babylone : la fournaise, la fosse aux lions, et des visions d'avenir." },
+  osee: { id: 'osee', testament: 'AT', nom: 'Osée', nb: 14, mots: 4651,
+    contexte: "Un amour blessé mais tenace : à travers l'histoire d'Osée, Dieu redit son attachement à son peuple infidèle." },
+  joel: { id: 'joel', testament: 'AT', nom: 'Joël', nb: 3, mots: 1782,
+    contexte: "Après une invasion de sauterelles, un appel à revenir à Dieu de tout son cœur — et la promesse de l'Esprit répandu sur tous." },
+  amos: { id: 'amos', testament: 'AT', nom: 'Amos', nb: 9, mots: 3747,
+    contexte: "Un berger devenu prophète, envoyé rappeler que Dieu attend la justice et la droiture, pas seulement des sacrifices." },
+  abdias: { id: 'abdias', testament: 'AT', nom: 'Abdias', nb: 1, mots: 564,
+    contexte: "Le plus court livre de l'Ancien Testament : une parole contre l'orgueil d'Édom, et l'annonce que le règne appartient à l'Éternel." },
+  jonas: { id: 'jonas', testament: 'AT', nom: 'Jonas', nb: 4, mots: 1196,
+    contexte: "Le prophète qui fuit à l'opposé de sa mission, le grand poisson, et Ninive qui se repent : la miséricorde de Dieu dépasse les frontières." },
+  michee: { id: 'michee', testament: 'AT', nom: 'Michée', nb: 7, mots: 2758,
+    contexte: "Le Messie promis à Bethléhem, et cette réponse simple : pratiquer la justice, aimer la miséricorde, marcher humblement avec Dieu." },
+  nahum: { id: 'nahum', testament: 'AT', nom: 'Nahum', nb: 3, mots: 1090,
+    contexte: "L'annonce de la chute de Ninive : Dieu est lent à la colère, mais il ne laisse pas l'oppression durer toujours." },
+  habacuc: { id: 'habacuc', testament: 'AT', nom: 'Habacuc', nb: 3, mots: 1411,
+    contexte: "Un prophète qui ose questionner Dieu face au mal — et qui apprend que le juste vivra par sa foi." },
+  sophonie: { id: 'sophonie', testament: 'AT', nom: 'Sophonie', nb: 3, mots: 1445,
+    contexte: "Le jour de l'Éternel approche : un appel à chercher l'humilité, et la promesse d'un Dieu qui se réjouit sur son peuple." },
+  aggee: { id: 'aggee', testament: 'AT', nom: 'Aggée', nb: 2, mots: 994,
+    contexte: "Deux chapitres pour réveiller les bâtisseurs : reprendre la construction du temple, et remettre Dieu au centre." },
+  zacharie: { id: 'zacharie', testament: 'AT', nom: 'Zacharie', nb: 14, mots: 5506,
+    contexte: "Des visions nocturnes pour encourager le retour d'exil, et l'annonce d'un roi humble, monté sur un ânon." },
+  malachie: { id: 'malachie', testament: 'AT', nom: 'Malachie', nb: 4, mots: 1644,
+    contexte: "La dernière parole de l'Ancien Testament : un dialogue vif entre Dieu et son peuple, et la promesse du soleil de la justice." },
   /* ---- Nouveau Testament ---- */
   matthieu: { id: 'matthieu', testament: 'NT', nom: 'Matthieu', nb: 28, mots: 22151, evangile: true,
     contexte: "Évangile attribué à Matthieu, le collecteur d'impôts devenu apôtre. Il présente Jésus comme le Messie annoncé par les Écritures." },
@@ -75,12 +145,35 @@ const BOOKS = {
   tite: { id: 'tite', testament: 'NT', nom: 'Tite', nb: 3, mots: 952,
     contexte: "Paul écrit à Tite, resté en Crète, pour organiser les églises et encourager une vie qui honore l'Évangile." },
   philemon: { id: 'philemon', testament: 'NT', nom: 'Philémon', nb: 1, mots: 446,
-    contexte: "Un mot personnel de Paul : il plaide pour Onésime, esclave en fuite devenu frère dans la foi." }
+    contexte: "Un mot personnel de Paul : il plaide pour Onésime, esclave en fuite devenu frère dans la foi." },
+  hebreux: { id: 'hebreux', testament: 'NT', nom: 'Hébreux', nb: 13, mots: 6930,
+    contexte: "Une grande méditation : Jésus, au-dessus des anges et des sacrifices anciens, souverain sacrificateur pour toujours — et la belle galerie des héros de la foi." },
+  jacques: { id: 'jacques', testament: 'NT', nom: 'Jacques', nb: 5, mots: 2365,
+    contexte: "Une foi qui se voit : la maîtrise de la langue, le soin des pauvres, la prière — des paroles concrètes et directes." },
+  '1pierre': { id: '1pierre', testament: 'NT', nom: '1 Pierre', nb: 5, mots: 2457,
+    contexte: "Pierre écrit à des chrétiens éprouvés : tenir bon dans l'épreuve, portés par une espérance vivante." },
+  '2pierre': { id: '2pierre', testament: 'NT', nom: '2 Pierre', nb: 3, mots: 1570,
+    contexte: "Se souvenir, grandir dans la connaissance du Seigneur, et attendre de nouveaux cieux et une nouvelle terre." },
+  '1jean': { id: '1jean', testament: 'NT', nom: '1 Jean', nb: 5, mots: 2533,
+    contexte: "« Dieu est amour » : Jean écrit pour que ses lecteurs sachent qu'ils ont la vie éternelle, et s'aiment les uns les autres." },
+  '2jean': { id: '2jean', testament: 'NT', nom: '2 Jean', nb: 1, mots: 316,
+    contexte: "Quelques lignes seulement : marcher dans la vérité et dans l'amour." },
+  '3jean': { id: '3jean', testament: 'NT', nom: '3 Jean', nb: 1, mots: 308,
+    contexte: "Un mot personnel à Gaïus : l'hospitalité envers ceux qui servent la vérité." },
+  jude: { id: 'jude', testament: 'NT', nom: 'Jude', nb: 1, mots: 612,
+    contexte: "Une courte lettre pour appeler à tenir ferme dans la foi transmise une fois pour toutes." },
+  apocalypse: { id: 'apocalypse', testament: 'NT', nom: 'Apocalypse', nb: 22, mots: 11519,
+    contexte: "La révélation reçue par Jean : des lettres aux sept Églises, un grand combat, et la promesse finale — un ciel nouveau, une terre nouvelle, toute larme essuyée." }
 };
 
 const LETTRES_PAUL = ['romains', '1corinthiens', '2corinthiens', 'galates',
   'ephesiens', 'philippiens', 'colossiens', '1thessaloniciens', '2thessaloniciens',
   '1timothee', '2timothee', 'tite', 'philemon'];
+
+/* Ordre canonique (celui de BOOKS, déclaré dans l'ordre) */
+const ORDRE_AT = Object.keys(BOOKS).filter(id => BOOKS[id].testament === 'AT'); // 39
+const ORDRE_NT = Object.keys(BOOKS).filter(id => BOOKS[id].testament === 'NT'); // 27
+const ORDRE_BIBLE = ORDRE_AT.concat(ORDRE_NT);                                  // 66
 
 /* Nom « long » d'un livre, pour nommer un chemin d'un seul livre. */
 function titreLivre(id) {
@@ -89,6 +182,11 @@ function titreLivre(id) {
   if (id === 'actes') return 'Les Actes des apôtres';
   if (id === 'psaumes') return 'Les Psaumes';
   if (id === 'proverbes') return 'Les Proverbes';
+  if (id === 'nombres') return 'Les Nombres';
+  if (id === 'juges') return 'Les Juges';
+  if (id === 'lamentations') return 'Les Lamentations';
+  if (id === 'cantique') return 'Le Cantique des cantiques';
+  if (id === 'apocalypse') return "L'Apocalypse";
   return b.nom;
 }
 
@@ -113,6 +211,8 @@ const OBJECTIFS = [
     pourquoi: "La lettre aux Romains, où Paul déploie l'Évangile pas à pas." },
   { id: 'lettres-paul', zone: 'NT', nom: 'Toutes les lettres de Paul', seq: LETTRES_PAUL,
     pourquoi: "Les treize lettres, de Romains à Philémon, dans l'ordre." },
+  { id: 'tout-nt', zone: 'NT', nom: 'Tout le Nouveau Testament', seq: ORDRE_NT,
+    pourquoi: "Les 27 livres, de Matthieu à l'Apocalypse — le Nouveau Testament en entier, un chapitre à la fois." },
   /* ---- Ancien Testament ---- */
   { id: 'origines', zone: 'AT', nom: 'Les origines', seq: ['genese'],
     pourquoi: "La Genèse : la création, Abraham, Jacob, Joseph — là où tout commence." },
@@ -123,7 +223,12 @@ const OBJECTIFS = [
   { id: 'psaume-par-jour', zone: 'AT', nom: 'Un psaume par jour', seq: ['psaumes'],
     pourquoi: "150 prières à recevoir une par une, à ton rythme — un psaume à la fois." },
   { id: 'sagesse', zone: 'AT', nom: 'La sagesse au quotidien', seq: ['proverbes'],
-    pourquoi: "Les Proverbes : des paroles courtes et concrètes pour la vie de tous les jours." }
+    pourquoi: "Les Proverbes : des paroles courtes et concrètes pour la vie de tous les jours." },
+  { id: 'tout-at', zone: 'AT', nom: "Tout l'Ancien Testament", seq: ORDRE_AT,
+    pourquoi: "Les 39 livres, de la Genèse à Malachie — tout l'Ancien Testament, un chapitre à la fois." },
+  /* ---- La Bible entière (proposée quelle que soit la zone) ---- */
+  { id: 'bible-entiere', zone: '*', star: true, nom: '📖 Toute la Bible', seq: ORDRE_BIBLE,
+    pourquoi: "Les 66 livres, de la Genèse à l'Apocalypse. <b>Un beau voyage de long cours</b> — chaque chapitre lu est un pas gagné, et le chemin t'attend toujours." }
 ];
 
 /* ---------- Aides ---------- */
@@ -252,6 +357,22 @@ function estimation(plan) {
   const mots = restantMots(plan);
   if (mots === 0) return '';
   const jours = Math.max(1, Math.ceil(mots / WORDS_PER_MIN / plan.minutes));
+  /* Horizon lointain (plus d'un an) : on le dit avec honnêteté et douceur,
+     sans date — un long voyage n'a pas besoin d'échéance. */
+  if (jours > 365) {
+    const ans = jours / 365;
+    const horizon = ans < 1.35 ? "un peu plus d'un an"
+      : ans < 1.8 ? 'environ un an et demi'
+      : ans < 2.6 ? 'environ deux ans'
+      : ans < 3.5 ? 'environ trois ans'
+      : 'quelques belles années';
+    return `À raison de ${plan.minutes} min par jour, c'est un beau voyage de long cours — ${horizon} de marche tranquille. Aucun jour ne compte contre toi : chaque chapitre lu est un pas gagné.`;
+  }
+  /* Quelques mois : un ordre de grandeur suffit. */
+  if (jours > 90) {
+    const mois = Math.max(4, Math.round(jours / 30.4));
+    return `À raison de ${plan.minutes} min par jour, tu peux arriver au bout dans environ ${mois} mois. Et si la vie en décide autrement, le chemin t'attend — simplement.`;
+  }
   const d = new Date(); d.setDate(d.getDate() + jours);
   const quand = jours <= 1 ? "dès aujourd'hui"
     : 'vers le ' + d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
@@ -266,6 +387,7 @@ let readingLivre = null;   // livre ouvert en lecture
 let currentBook = null;    // ses données une fois chargées
 let loadError = false;
 let expandedLivre = null;  // livre dont on montre le chemin de jalons
+let showAllBooks = false;  // gros chemins : liste des livres dépliée ?
 let draft = null;          // réponses du configurateur en cours
 
 function go(name, param) { route = { name, param: param === undefined ? null : param }; render(); window.scrollTo(0, 0); }
@@ -365,15 +487,19 @@ function goalsFor(draft) {
       pourquoi: esc(b.contexte)
     }];
   }
-  return OBJECTIFS.filter(o => o.zone === draft.zone);
+  /* « Toute la Bible » (zone '*') est proposée quel que soit le choix AT/NT,
+     mise en avant en tête de liste. */
+  return OBJECTIFS.filter(o => o.zone === '*')
+    .concat(OBJECTIFS.filter(o => o.zone === draft.zone));
 }
 function viewCfgGoal() {
   const goals = goalsFor(draft);
   const cards = goals.map(o => {
     const nbCh = o.seq.reduce((s, id) => s + BOOKS[id].nb, 0);
     const livres = o.seq.length === 1 ? titreLivre(o.seq[0])
-      : o.seq.map(id => BOOKS[id].nom).join(' · ');
-    return `<button class="card plan-card fade" data-goal="${o.id}">
+      : o.seq.length <= 6 ? o.seq.map(id => BOOKS[id].nom).join(' · ')
+      : o.seq.length + ' livres';
+    return `<button class="card plan-card${o.star ? ' star' : ''} fade" data-goal="${o.id}">
         <div class="plan-name">${esc(o.nom)}</div>
         <div class="plan-meta">${esc(livres)} — ${nbCh} chapitre${nbCh > 1 ? 's' : ''}</div>
         <div class="plan-why">${o.pourquoi}</div>
@@ -395,6 +521,7 @@ function createPlan(goalId) {
   saveStore();
   draft = null;
   expandedLivre = null;
+  showAllBooks = false;
   go('home');
 }
 
@@ -442,7 +569,10 @@ function viewHome() {
   const open = expandedLivre && plan.seq.includes(expandedLivre) ? expandedLivre
     : (next ? next.livre : plan.seq[plan.seq.length - 1]);
 
-  const bookRows = plan.seq.map(id => {
+  /* Le chemin de jalons ne se dessine QUE pour le livre ouvert (jamais les
+     1189 chapitres d'un coup) ; sur un gros chemin, la liste des livres est
+     repliée : livre courant seul, les autres sur demande. */
+  const rowFor = id => {
     const B = BOOKS[id], n = readCount(id), fini = n === B.nb;
     const isOpen = id === open;
     const path = isOpen ? `<div class="path">` + bookState(id).read.map((r, i) => {
@@ -458,7 +588,23 @@ function viewHome() {
       <div class="gauge mini"><i style="width:${Math.round(n / B.nb * 100)}%"></i></div>
       ${path}
     </div>`;
-  }).join('');
+  };
+
+  const big = plan.seq.length > 8;
+  let bookRows;
+  if (!big) {
+    bookRows = plan.seq.map(rowFor).join('');
+  } else {
+    const pos = plan.seq.indexOf(open) + 1;
+    const finis = plan.seq.filter(id => readCount(id) === BOOKS[id].nb).length;
+    const ligne = `<div class="big-plan-line">Livre ${pos} sur ${plan.seq.length}` +
+      (finis > 0 ? ` · <span style="color:var(--grow);font-weight:650">${finis} terminé${finis > 1 ? 's' : ''} ✓</span>` : '') + `</div>`;
+    const rows = showAllBooks ? plan.seq.map(rowFor).join('') : rowFor(open);
+    const toggle = `<button class="linklike" data-toggle-books="1">${showAllBooks
+      ? 'Replier la liste des livres'
+      : `Voir les ${plan.seq.length} livres du chemin`}</button>`;
+    bookRows = ligne + rows + toggle;
+  }
 
   const gauge = `<div class="card fade">
     <div class="gauge-label"><span><b>${lu}</b> / ${nb} chapitres lus</span>
@@ -580,14 +726,14 @@ function viewBookDone(livre) {
 function viewPlanDone() {
   const plan = activePlan();
   const { nb } = planTotals(plan);
-  const livres = plan.seq.map(id => BOOKS[id].nom).join(', ');
+  const livres = plan.seq.length <= 6 ? plan.seq.map(id => BOOKS[id].nom).join(', ') : '';
   const sparks = [6, 22, 38, 54, 70, 86].map((x, i) =>
     `<span style="left:${x}%;animation-delay:${i * 0.15}s">✨</span>`).join('');
   return header() + `<div class="celebrate card fade">
       <div class="sparks">${sparks}</div>
       <div class="seal">🌾</div>
       <h2>Objectif accompli : ${esc(plan.nom)}</h2>
-      <p class="muted">${plan.seq.length > 1 ? `${plan.seq.length} livres (${esc(livres)}), soit ` : ''}${nb} chapitre${nb > 1 ? 's' : ''}, du premier au dernier, à ton rythme. La graine a poussé.</p>
+      <p class="muted">${plan.seq.length > 1 ? `${plan.seq.length} livres${livres ? ` (${esc(livres)})` : ''}, soit ` : ''}${nb} chapitre${nb > 1 ? 's' : ''}, du premier au dernier, à ton rythme. La graine a poussé.</p>
       <div class="verse small">« La semence, c'est la parole de Dieu. »</div>
       <div class="ref">Luc 8.11</div>
     </div>
@@ -629,6 +775,7 @@ function switchPlan(id) {
   if (!store.plans.some(p => p.id === id)) return;
   store.active = id; saveStore();
   expandedLivre = null;
+  showAllBooks = false;
   go('home');
 }
 function removePlan(id) {
@@ -668,6 +815,7 @@ function wire() {
     finishChapter(livre, +ci);
   });
   on('[data-expand]', e => { expandedLivre = e.currentTarget.dataset.expand; render(); });
+  on('[data-toggle-books]', () => { showAllBooks = !showAllBooks; render(); });
   on('[data-switch]', e => switchPlan(e.currentTarget.dataset.switch));
   on('[data-remove]', e => removePlan(e.currentTarget.dataset.remove));
   on('[data-back-home]', () => go('home'));

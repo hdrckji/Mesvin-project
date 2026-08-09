@@ -8,6 +8,10 @@
 .plan-card .plan-why { margin-top: 10px; font-size: .95rem; color: var(--ink-soft); }
 .plan-card .plan-why b { color: var(--grow); }
 
+/* Objectif mis en avant (« Toute la Bible ») : un liseré doré, sobre. */
+.plan-card.star { border: 2px solid var(--accent); }
+.plan-card.star .plan-name { color: var(--accent-ink); }
+
 /* ---------- Configurateur (3 questions, une par écran) ---------- */
 .cfg-step { display: flex; gap: 7px; justify-content: center; margin: 14px 0 4px; }
 .cfg-dot { width: 8px; height: 8px; border-radius: 50%;
@@ -42,6 +46,10 @@
 .book-head-count.grow { color: var(--grow); font-weight: 650; }
 .gauge.mini { height: 6px; }
 .book-row .path { margin-top: 12px; }
+
+/* Gros chemins (NT entier, AT entier, Bible entière) : liste repliée. */
+.big-plan-line { font-size: .88rem; color: var(--ink-soft); margin: 2px 2px 8px; }
+.book-rows .linklike { margin-top: 2px; }
 
 /* ---------- Bascule entre chemins ---------- */
 .plan-switch { display: flex; flex-wrap: wrap; gap: 8px; }
