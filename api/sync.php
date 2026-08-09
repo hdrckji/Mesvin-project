@@ -16,13 +16,13 @@ const SYNC_MAX_BLOB_BYTES = 512 * 1024;
 function handle_sync_get(PDO $pdo): never {
     $user = require_user($pdo);
 
-    $st = $pdo->prepare('SELECT module, blob, updated_at FROM sync_blobs WHERE user_id = ?');
+    $st = $pdo->prepare('SELECT module, payload, updated_at FROM sync_blobs WHERE user_id = ?');
     $st->execute([$user['id']]);
 
     $out = ['memo' => null, 'lire' => null, 'defi' => null, 'updatedAt' => null];
     $latest = null;
     foreach ($st->fetchAll() as $row) {
-        $out[$row['module']] = json_decode($row['blob'], true);
+        $out[$row['module']] = json_decode($row['payload'], true);
         if ($latest === null || $row['updated_at'] > $latest) {
             $latest = $row['updated_at'];
         }
@@ -55,7 +55,7 @@ function handle_sync_put(PDO $pdo): never {
         }
         // REPLACE INTO fonctionne à l'identique en MySQL et en SQLite.
         $st = $pdo->prepare(
-            'REPLACE INTO sync_blobs (user_id, module, blob, updated_at) VALUES (?, ?, ?, ?)'
+            'REPLACE INTO sync_blobs (user_id, module, payload, updated_at) VALUES (?, ?, ?, ?)'
         );
         $st->execute([$user['id'], $module, $blob, $now]);
         $updated++;

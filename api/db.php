@@ -96,7 +96,7 @@ function db_migrate(PDO $pdo): void {
             "CREATE TABLE IF NOT EXISTS sync_blobs (
                 user_id INT UNSIGNED NOT NULL,
                 module ENUM('memo','lire','defi') NOT NULL,
-                blob MEDIUMTEXT NOT NULL,
+                payload MEDIUMTEXT NOT NULL,
                 updated_at DATETIME NOT NULL,
                 PRIMARY KEY (user_id, module)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
@@ -154,7 +154,7 @@ function db_migrate(PDO $pdo): void {
             "CREATE TABLE IF NOT EXISTS sync_blobs (
                 user_id INTEGER NOT NULL,
                 module TEXT NOT NULL CHECK (module IN ('memo','lire','defi')),
-                blob TEXT NOT NULL,
+                payload TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
                 PRIMARY KEY (user_id, module)
             )",
