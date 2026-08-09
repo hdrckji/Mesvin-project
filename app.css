@@ -329,3 +329,40 @@ a.verse-item { text-decoration: none; }
 .card.objective .obj-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .card.objective .obj-head b { font-family: var(--serif); font-size: 1.05rem; }
 .objective-link .vi-text { white-space: normal; }
+
+/* ============================================================================
+   Refonte : accueil hub (3 modules à égalité) + apprentissage par série
+   ========================================================================== */
+
+/* hero de marque, version compacte (l'accueil est devenu un hub) */
+.card.hero.compact { padding: 18px 20px 20px; }
+.card.hero.compact .hero-emblem img { width: 46px; height: 46px; }
+.card.hero.compact .hero-name { font-size: 1.4rem; margin: 8px 0 4px; }
+.card.hero.compact .hero-tag { font-size: .95rem; }
+
+/* grandes cartes de modules — même gabarit pour Mémoriser, Lire, Défi */
+.hub-card {
+  display: flex; align-items: center; gap: 16px; width: 100%;
+  padding: 20px 18px; cursor: pointer;
+  font: inherit; color: inherit; text-align: left; text-decoration: none;
+}
+.hub-card .hub-ic {
+  font-size: 1.9rem; width: 54px; height: 54px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2); border-radius: 16px;
+}
+.hub-card .hub-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.hub-card .hub-title { font-family: var(--serif); font-size: 1.25rem; font-weight: 650; }
+.hub-card .hub-sub { color: var(--ink-soft); font-size: .92rem; }
+.hub-card .chev { color: var(--ink-soft); font-size: 1.5rem; padding-left: 4px; }
+
+/* page d'étude (série de versets avant le quiz d'introduction) */
+.study-note {
+  font-size: .95rem; color: var(--accent-ink);
+  background: var(--surface); border: 1px dashed var(--accent);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;
+}
+.study-verse { padding: 20px; }
+.study-verse .verse { font-size: 1.18rem; }
+.study-verse .ref { margin-top: 10px; }
+.study-verse .context-box { margin-top: 12px; }

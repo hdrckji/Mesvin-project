@@ -214,11 +214,12 @@ function exCorrect(ex) {
    Navigation & session
    ========================================================================== */
 let route = { name: 'home', param: null };
-let session = null; // { queue, idx, phase:'read'|'exercise'|'result', ex, result, done:[], mastered:[] }
+let session = null; // { queue, idx, intro?, phase:'exercise'|'result', ex, result, done:[], mastered:[] }
+let studyList = []; // versets présentés sur la page d'étude en cours (avant le quiz d'introduction)
 const go = (name, param) => { route = { name, param: param || null }; render(); window.scrollTo(0, 0); };
 
 function render() {
-  const v = { home: viewHome, session: viewSession, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections }[route.name] || viewHome;
+  const v = { home: viewHome, memo: viewMemo, study: viewStudy, session: viewSession, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections }[route.name] || viewHome;
   el.innerHTML = v() + tabbar();
   wire();
 }
@@ -230,29 +231,60 @@ function topbar() {
 }
 function tabbar() {
   if (route.name === 'session') return '';
-  const tab = (n, ic, l) => `<button data-tab="${n}" class="${route.name === n ? 'active' : ''}"><span class="ic">${ic}</span>${l}</button>`;
+  // L'écran « Mémoriser » (et ses sous-écrans) reste rattaché à l'onglet Accueil.
+  const cur = ['memo', 'study', 'collections'].includes(route.name) ? 'home' : route.name;
+  const tab = (n, ic, l) => `<button data-tab="${n}" class="${cur === n ? 'active' : ''}"><span class="ic">${ic}</span>${l}</button>`;
   return `<nav class="tabbar">${tab('home', '🏠', 'Accueil')}${tab('garden', '🌳', 'Mon jardin')}${tab('about', '☖', 'À propos')}</nav>`;
 }
 
-/* ---------- Accueil ---------- */
+/* ---------- Accueil : hub des trois modules ---------- */
 function viewHome() {
-  const due = dueCards(), gardenN = masteredCards().length, learnN = learningCards().length, total = Object.keys(store.cards).length;
+  const due = dueCards(), total = Object.keys(store.cards).length;
 
-  const hero = `<div class="card hero fade"><div class="hero-emblem"><img src="icon.svg" alt="" /></div>
+  const hero = `<div class="card hero compact fade"><div class="hero-emblem"><img src="icon.svg" alt="" /></div>
     <h1 class="hero-name"><span class="seed">Graine</span> de Parole</h1>
     <p class="hero-tag">Cache la Parole dans ton cœur, un peu chaque jour.</p></div>`;
 
+  // Sous-titre dynamique du module Mémoriser.
+  let memoSub;
+  if (due.length > 0) memoSub = `${due.length} verset${due.length > 1 ? 's' : ''} à travailler aujourd'hui`;
+  else if (nextToLearn()) memoSub = `Apprendre un nouveau verset`;
+  else memoSub = `Rien d'urgent aujourd'hui`;
+
+  const hub = `
+    <button class="card hub-card fade" data-tab="memo">
+      <span class="hub-ic">🧠</span>
+      <span class="hub-txt"><span class="hub-title">Mémoriser</span>
+        <span class="hub-sub">${memoSub}</span></span>
+      <span class="chev">›</span></button>
+    <a class="card hub-card fade" href="lire/">
+      <span class="hub-ic">📖</span>
+      <span class="hub-txt"><span class="hub-title">Lire</span>
+        <span class="hub-sub">Avance dans l'Évangile à ton rythme</span></span>
+      <span class="chev">›</span></a>
+    <a class="card hub-card fade" href="defi/">
+      <span class="hub-ic">🕯️</span>
+      <span class="hub-txt"><span class="hub-title">Défi</span>
+        <span class="hub-sub">Teste ta connaissance de la Bible</span></span>
+      <span class="chev">›</span></a>`;
+
+  const foot = total === 0
+    ? `<p class="muted center" style="margin-top:18px;font-size:.85rem">Gratuit · rien ne quitte ton téléphone</p>`
+    : '';
+  return topbar() + hero + hub + foot;
+}
+
+/* ---------- Mémoriser : session du jour, apprendre, objectif, jardin ---------- */
+function viewMemo() {
+  const due = dueCards(), gardenN = masteredCards().length, learnN = learningCards().length, total = Object.keys(store.cards).length;
   const obj = activeColl();
-  // Navigation vers les autres modules (Lire, Défi) — sobre, sous le cœur de l'appli.
-  const explore = `<div class="section-title">Explorer</div>
-    <a class="verse-item explore-item fade" href="lire/">
-      <span class="stage">📖</span><span class="vi-main"><span class="vi-ref">Lire</span><br>
-      <span class="vi-text">Avance dans l'Évangile à ton rythme.</span></span><span class="chev">›</span></a>
-    <a class="verse-item explore-item fade" href="defi/">
-      <span class="stage">🕯️</span><span class="vi-main"><span class="vi-ref">Défi</span><br>
-      <span class="vi-text">Teste ta connaissance de la Bible.</span></span><span class="chev">›</span></a>`;
+
+  const head = `<button class="back-link" data-tab="home">‹ Accueil</button>
+    <h2 style="font-family:var(--serif);margin-bottom:2px">🧠 Mémoriser</h2>
+    <p class="muted" style="margin:0 2px 16px">Des versets appris pour de bon, vérifiés par l'appli, un peu chaque jour.</p>`;
+
   // Carte « objectif » (ou invitation discrète), construite ici pour servir
-  // aussi bien l'accueil vierge que l'accueil normal.
+  // aussi bien l'écran vierge que l'écran normal.
   let objectiveCard = '';
   if (obj) {
     const { m, total: ct } = collProgress(obj);
@@ -265,17 +297,15 @@ function viewHome() {
   }
 
   if (total === 0) {
-    return topbar() + hero + `
+    return topbar() + head + `
       <div class="steps fade">
-        <div class="step"><span class="si">📖</span><div><b>L'appli te propose un verset.</b><br><span class="muted">Tu n'as pas à choisir.</span></div></div>
-        <div class="step"><span class="si">✍️</span><div><b>Tu le reconstitues sur l'écran</b> — l'appli vérifie que c'est juste.</div></div>
-        <div class="step"><span class="si">🌱</span><div><b>Réussi plusieurs fois</b>, il rejoint ton jardin — et revient avant que tu l'oublies.</div></div>
+        <div class="step"><span class="si">📖</span><div><b>L'appli te propose quelques versets à étudier.</b><br><span class="muted">Tu n'as pas à choisir.</span></div></div>
+        <div class="step"><span class="si">✍️</span><div><b>Tu les reconstitues sur l'écran, de mémoire</b> — l'appli vérifie que c'est juste.</div></div>
+        <div class="step"><span class="si">🌱</span><div><b>Réussi plusieurs fois</b>, chaque verset rejoint ton jardin — et revient avant que tu l'oublies.</div></div>
       </div>
       ${objectiveCard}
-      <button class="btn btn-primary" data-learn="1">Apprendre mon premier verset</button>
-      ${obj ? '' : `<button class="linkbtn center" data-collections="1" style="display:block;margin:12px auto 0">🎯 Choisir un objectif (facultatif)</button>`}
-      <p class="explore-mini muted center">Ou explore : <a href="lire/">📖 Lire</a> · <a href="defi/">🕯️ Défi</a></p>
-      <p class="muted center" style="margin-top:14px;font-size:.85rem">Gratuit · rien ne quitte ton téléphone</p>`;
+      <button class="btn btn-primary" data-learn="1">Apprendre mes premiers versets</button>
+      ${obj ? '' : `<button class="linkbtn center" data-collections="1" style="display:block;margin:12px auto 0">🎯 Choisir un objectif (facultatif)</button>`}`;
   }
   let actions = '';
   if (due.length > 0) {
@@ -284,8 +314,8 @@ function viewHome() {
       <button class="btn btn-primary" data-review="1">Commencer</button></div>`;
   }
   if (nextToLearn()) {
-    actions += `<div class="card action fade"><div class="action-txt"><b>Apprendre un nouveau verset</b>
-      <span class="muted">${obj ? `Prochain verset de « ${esc(obj.name)} ».` : `L'appli t'en propose un.`}</span></div>
+    actions += `<div class="card action fade"><div class="action-txt"><b>Apprendre de nouveaux versets</b>
+      <span class="muted">${obj ? `Les versets de « ${esc(obj.name)} » qui restent à découvrir.` : `L'appli t'en propose quelques-uns.`}</span></div>
       <button class="btn btn-grow" data-learn="1">Apprendre</button></div>`;
   } else if (obj) {
     actions += `<p class="muted center fade" style="margin:6px 4px 10px">Tous les versets de « ${esc(obj.name)} » sont en route — continue tes sessions 🌱</p>`;
@@ -307,7 +337,7 @@ function viewHome() {
       <span class="stage">🌳</span><span class="vi-main"><span class="vi-ref">Mon jardin</span><br>
       <span class="vi-text">${gardenN} verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}</span></span><span class="chev">›</span></button>`;
 
-  return topbar() + hero + actions + objective + progress + explore;
+  return topbar() + head + actions + objective + progress;
 }
 
 /* ---------- Collections : choisir un objectif ---------- */
@@ -333,7 +363,7 @@ function viewCollections() {
   const clear = store.activeCollection
     ? `<button class="btn btn-ghost btn-block" data-clearcoll="1" style="margin-top:18px">Revenir au parcours général</button>`
     : '';
-  return `<div class="fade"><button class="back-link" data-tab="home">‹ Accueil</button>
+  return `<div class="fade"><button class="back-link" data-tab="memo">‹ Mémoriser</button>
     <h2 style="font-family:var(--serif);margin-bottom:2px">Collections</h2>
     <p class="muted" style="margin:0 2px 16px">Choisis un objectif : le bouton « Apprendre » te servira alors les versets de cette collection. C'est facultatif — sans objectif, le parcours général continue.</p>
     <div class="section-title">Par thème</div>${themes || '<p class="muted">Aucune collection disponible.</p>'}
@@ -345,44 +375,89 @@ function selectCollection(id) {
   if (!c || isCollComplete(c)) return; // une collection complète ne redevient pas un objectif
   store.activeCollection = store.activeCollection === id ? null : id; // re-toucher = désélectionner
   saveStore();
-  go('home');
+  go('memo');
 }
 
-/* ---------- Session (apprentissage + entretien, tout vérifié par l'appli) ---------- */
+/* ---------- Apprentissage par série : page d'étude puis quiz d'introduction ---------- */
+// Versets à introduire : ceux de la collection active pas encore travaillés
+// (tous — une collection se découvre d'un bloc), sinon les 3 prochains du
+// parcours général.
+function versesToIntroduce() {
+  const c = activeColl();
+  if (c) return c.verses.filter(id => !store.cards[id]).map(id => LIBRARY.find(v => v.id === id)).filter(Boolean);
+  return LIBRARY.filter(v => !store.cards[v.id]).slice(0, 3);
+}
+function startLearnNew() {
+  studyList = versesToIntroduce();
+  if (!studyList.length) { go('memo'); return; }
+  go('study');
+}
+// « Je suis prêt » : le quiz porte sur les versets de la page d'étude, dans un
+// ordre mélangé (différent de l'ordre de présentation). IMPORTANT : les cards
+// ne sont PAS créées ici — un verset n'entre dans la répétition espacée qu'au
+// moment de son premier exercice effectivement tenté (voir liveCard).
+function startIntroQuiz() {
+  if (!studyList.length) { go('memo'); return; }
+  session = { intro: true, queue: shuffle(studyList), idx: 0, done: [], mastered: [], celebrated: [] };
+  enterCard(); go('session');
+}
+
+/* ---------- Page d'étude ---------- */
+function viewStudy() {
+  if (!studyList.length) { go('memo'); return ''; }
+  const obj = activeColl();
+  const n = studyList.length;
+  const items = studyList.map(v => `<div class="card study-verse fade">
+      <div class="verse">« ${esc(v.text)} »</div>
+      <div class="ref">${esc(v.ref)} <span class="version">· ${esc(LIB_VERSION)}</span></div>
+      ${v.contexte ? `<div class="context-box">${esc(v.contexte)}</div>` : ''}
+    </div>`).join('');
+  return `<div class="fade"><button class="back-link" data-tab="memo">‹ Mémoriser</button>
+    <h2 style="font-family:var(--serif);margin-bottom:2px">Page d'étude</h2>
+    <p class="muted" style="margin:0 2px 14px">${obj ? `Les versets de « ${esc(obj.name)} » — ${n} verset${n > 1 ? 's' : ''}.` : `Tes ${n} prochains versets du parcours.`}</p>
+    <div class="study-note fade">Prends le temps de lire et de t'imprégner de ces versets. Quand tu te sens prêt, l'épreuve commence.</div>
+    ${items}
+    <button class="btn btn-primary" data-ready="1" style="margin-top:6px">Je suis prêt</button></div>`;
+}
+
+/* ---------- Session (introduction + entretien, tout vérifié par l'appli) ---------- */
 function enterCard() {
-  const card = session.queue[session.idx];
-  session.phase = card.attempts === 0 ? 'read' : 'exercise';
-  session.ex = buildExercise(card);
+  // Plus d'étape de lecture : l'introduction passe par la page d'étude, les
+  // révisions se font de mémoire — l'exercice commence directement.
+  const item = session.queue[session.idx];
+  const known = store.cards[item.id];
+  session.phase = 'exercise';
+  session.ex = buildExercise({ text: item.text, validations: known ? known.validations : 0 });
   session.result = null;
+}
+// La card sur laquelle on enregistre le résultat. En quiz d'introduction, elle
+// n'est créée qu'ici, au premier essai réel — quitter avant ne laisse rien.
+function liveCard() {
+  const item = session.queue[session.idx];
+  if (session.intro) return store.cards[item.id] || introduce(item);
+  return item;
 }
 function startReview() {
   const due = dueCards().sort((a, b) => a.due - b.due);
-  if (!due.length) { go('home'); return; }
+  if (!due.length) { go('memo'); return; }
   session = { queue: due, idx: 0, done: [], mastered: [], celebrated: [] };
-  enterCard(); go('session');
-}
-function startLearnNew() {
-  const v = nextToLearn(); if (!v) { go('home'); return; }
-  const card = introduce(v);
-  session = { queue: [card], idx: 0, done: [], mastered: [], celebrated: [] };
   enterCard(); go('session');
 }
 
 function viewSession() {
   if (!session) { go('home'); return ''; }
   if (session.idx >= session.queue.length) return viewSessionDone();
-  const card = session.queue[session.idx];
+  // En quiz d'introduction, la card peut ne pas exister encore (aucun essai) :
+  // on affiche alors le verset de la bibliothèque avec une progression à 0.
+  const item = session.queue[session.idx];
+  const card = (session.intro ? store.cards[item.id] : item) || item;
+  const validations = card.validations || 0;
   const ex = session.ex;
   const dots = session.queue.map((_, i) => `<span class="${i < session.idx ? 'done' : i === session.idx ? 'current' : ''}"></span>`).join('');
-  const badge = isMastered(card) ? 'Entretien' : `Apprentissage · ${card.validations}/${MASTERY}`;
+  const badge = validations >= MASTERY ? 'Entretien' : `Apprentissage · ${validations}/${MASTERY}`;
 
   let body = '';
-  if (session.phase === 'read') {
-    body = `<div class="verse">« ${esc(card.text)} »</div>
-      <div class="ref">${esc(card.ref)} <span class="version">· ${esc(LIB_VERSION)}</span></div>
-      <p class="muted center" style="margin:18px 0 6px">Lis-le attentivement : tu vas le reconstituer toi-même juste après.</p>
-      <button class="btn btn-grow btn-block" data-sread="1">Je suis prêt</button>`;
-  } else if (session.phase === 'result') {
+  if (session.phase === 'result') {
     const ok = session.result === 'success';
     body = `<div class="exresult ${ok ? 'ok' : 'ko'} fade">
         <div class="exres-icon">${ok ? '✅' : '💐'}</div>
@@ -406,7 +481,7 @@ function viewSession() {
   }
 
   return `<div class="fade">
-    <button class="back-link" data-tab="home">✕ Quitter</button>
+    <button class="back-link" data-tab="memo">✕ Quitter</button>
     <div class="progress-dots">${dots}</div>
     <div class="exercise-label">${badge} · verset ${session.idx + 1} / ${session.queue.length}</div>
     <div class="card">${body}</div>
@@ -522,6 +597,9 @@ function viewGarden() {
 function viewVerse(id) {
   const c = store.cards[id]; if (!c) { go('garden'); return ''; }
   const st = stageOf(c), book = bookOf(c.ref), ctx = BOOKS[book], days = c.due - todayNum();
+  // Contexte propre au verset (champ "contexte" de verses.json, s'il existe).
+  const lib = LIBRARY.find(v => v.id === id);
+  const vctx = lib && lib.contexte ? `<div class="context-box">${esc(lib.contexte)}</div>` : '';
   const when = days <= 0 ? 'À revoir aujourd\'hui' : days === 1 ? 'Prochaine révision : demain' : `Prochaine révision : dans ${days} jours`;
   return `<div class="fade"><button class="back-link" data-tab="garden">‹ Mon jardin</button>
     <div class="card hero"><div class="verse">« ${esc(c.text)} »</div>
@@ -529,6 +607,7 @@ function viewVerse(id) {
     <div class="card"><div style="display:flex;align-items:center;gap:12px">
         <span style="font-size:1.8rem">${st.icon}</span>
         <div><b>${st.label}</b><br><span class="muted" style="font-size:.9rem">${when}</span></div></div>
+      ${vctx}
       ${ctx ? `<div class="context-box"><b>Contexte — ${esc(book)}.</b> ${esc(ctx)}</div>` : ''}</div>
     <button class="btn btn-ghost btn-block" data-remove="${esc(id)}" style="color:var(--danger);border-color:var(--danger)">Retirer de mon jardin</button></div>`;
 }
@@ -555,7 +634,7 @@ function wire() {
   el.querySelectorAll('[data-learn]').forEach(b => b.addEventListener('click', startLearnNew));
   el.querySelectorAll('[data-review]').forEach(b => b.addEventListener('click', startReview));
 
-  if (q('[data-sread]')) q('[data-sread]').addEventListener('click', () => { session.phase = 'exercise'; render(); });
+  if (q('[data-ready]')) q('[data-ready]').addEventListener('click', startIntroQuiz);
   if (q('[data-snext]')) q('[data-snext]').addEventListener('click', nextInSession);
   if (q('[data-check]')) q('[data-check]').addEventListener('click', checkExercise);
   if (q('[data-hint]')) q('[data-hint]').addEventListener('click', () => { session.ex.hinted = true; session.ex.showHint = true; render(); });
@@ -571,7 +650,7 @@ function wire() {
   // Collections (objectifs)
   el.querySelectorAll('[data-collections]').forEach(b => b.addEventListener('click', () => go('collections')));
   el.querySelectorAll('[data-selectcoll]').forEach(b => b.addEventListener('click', () => selectCollection(b.dataset.selectcoll)));
-  el.querySelectorAll('[data-clearcoll]').forEach(b => b.addEventListener('click', () => { store.activeCollection = null; saveStore(); go('home'); }));
+  el.querySelectorAll('[data-clearcoll]').forEach(b => b.addEventListener('click', () => { store.activeCollection = null; saveStore(); go('memo'); }));
   el.querySelectorAll('[data-gview]').forEach(b => b.addEventListener('click', () => { gardenView = b.dataset.gview; render(); }));
 }
 function fillNext(pid) {
@@ -579,9 +658,10 @@ function fillNext(pid) {
   if (k >= 0) { ex.filled[k] = pid; ex.wrong = false; render(); }
 }
 function checkExercise() {
-  const ex = session.ex, card = session.queue[session.idx];
+  const ex = session.ex;
   if (!exComplete(ex)) return;
   if (exCorrect(ex)) {
+    const card = liveCard(); // en introduction, la card naît au premier résultat enregistré
     card.attempts++;
     const wasMastered = isMastered(card);
     // Un essai aidé (verset revu pendant l'exercice) ne compte pas comme validation.
@@ -599,7 +679,7 @@ function checkExercise() {
   }
 }
 function giveUp() {
-  const ex = session.ex, card = session.queue[session.idx];
+  const card = liveCard(); // en introduction, la card naît au premier résultat enregistré
   card.attempts++;
   card.validations = Math.max(0, card.validations - 1);
   schedule(card, 'fail');
