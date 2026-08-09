@@ -267,3 +267,34 @@ label.lbl { display: block; font-weight: 600; margin: 14px 2px 6px; font-size: .
 .addbox summary { cursor: pointer; font-weight: 600; color: var(--accent-ink);
   padding: 10px 4px; list-style: none; }
 .addbox summary::-webkit-details-marker { display: none; }
+
+/* ---------- Exercices interactifs (vérifiés par l'appli) ---------- */
+.ex-instr { text-align: center; font-weight: 650; margin-bottom: 14px; }
+.answer-line .ph { color: var(--ink-soft); font-size: .9rem; padding: 6px; }
+.chip.wrong { border-color: var(--danger); color: var(--danger); background: transparent; }
+
+/* mots à trous interactifs */
+.fillverse { line-height: 2.15; }
+.slot { font: inherit; font-family: var(--serif); font-size: inherit; display: inline-block;
+  border: 0; border-bottom: 2px solid var(--accent); border-radius: 6px 6px 0 0;
+  padding: 0 6px; margin: 0 1px; background: var(--surface-2); cursor: pointer;
+  color: var(--ink); min-width: 2em; }
+.slot.empty { color: var(--ink-soft); letter-spacing: .1em; }
+.slot.filled { background: var(--grow-soft); border-bottom-color: var(--grow); }
+.slot.wrong { background: transparent; border-bottom-color: var(--danger); color: var(--danger); }
+
+/* résultat d'exercice */
+.exresult { text-align: center; padding: 10px 0 4px; }
+.exresult .exres-icon { font-size: 2.4rem; }
+.exresult .exres-title { font-family: var(--serif); font-size: 1.2rem; font-weight: 650; margin-top: 6px; }
+.exresult.ok .exres-title { color: var(--grow); }
+.exresult.ko .exres-title { color: var(--accent-ink); }
+.ex-wrong { text-align: center; color: var(--danger); font-size: .92rem; margin: 10px 0 0; }
+
+/* aides discrètes sous l'exercice */
+.ex-tools { display: flex; justify-content: space-between; margin-top: 12px; }
+.linkbtn { background: none; border: 0; font: inherit; font-size: .88rem;
+  color: var(--ink-soft); cursor: pointer; padding: 6px 4px; text-decoration: underline;
+  text-underline-offset: 3px; }
+.hint-reveal { font-family: var(--serif); font-size: 1.02rem; color: var(--ink-soft);
+  background: var(--surface-2); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
