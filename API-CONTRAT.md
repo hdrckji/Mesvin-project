@@ -1,4 +1,4 @@
-# Contrat d'API — Graine de Parole (phase 1 : comptes + duels)
+# Contrat d'API — Bible Horizon (phase 1 : comptes + duels)
 
 > Ce document est la **référence commune** entre le backend PHP (`api/`) et le
 > frontend. Toute évolution passe par ici d'abord.

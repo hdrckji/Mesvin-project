@@ -1,7 +1,7 @@
 {
-  "name": "Graine de Parole — mémorise la Parole",
-  "short_name": "Graine",
-  "description": "Mémorise des versets bibliques et garde-les vivants, un peu chaque jour.",
+  "name": "Bible Horizon — la Parole, un peu chaque jour",
+  "short_name": "Horizon",
+  "description": "Mémorise des versets, lis la Bible à ton rythme et relève des défis bibliques — seul ou avec tes amis.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

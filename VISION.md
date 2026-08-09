@@ -1,4 +1,4 @@
-# Vision & architecture — Graine de Parole
+# Vision & architecture — Bible Horizon
 
 > Un **compagnon de la Parole** pour la communauté chrétienne francophone :
 > plusieurs modules qui partagent **un même socle**, un même ton (sobre,

@@ -1,6 +1,6 @@
 <?php
 /* ============================================================================
-   Graine de Parole — point d'entrée UNIQUE de l'API.
+   Bible Horizon — point d'entrée UNIQUE de l'API.
 
    Le Caddyfile réécrit /api/* vers ce fichier ; les autres fichiers .php ne
    sont jamais exécutés directement (ils vérifient la constante GRAINE_API).

@@ -1,5 +1,5 @@
 /* ============================================================================
-   Graine de Parole — module « Lire »
+   Bible Horizon — module « Lire »
    Un plan de lecture qui est un CHEMIN, PAS UN CALENDRIER.
 
    Principe (non négociable) :

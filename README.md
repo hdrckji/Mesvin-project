@@ -1,4 +1,4 @@
-# 🌱 Graine de Parole
+# 🌱 Bible Horizon
 
 > « La semence, c'est la parole de Dieu. » — Luc 8.11
 

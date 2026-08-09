@@ -42,11 +42,11 @@ function mail_send_code(string $email, string $code): bool {
     if ($mode === 'dev') {
         return true;
     }
-    $subject = 'Ton code de connexion — Graine de Parole';
+    $subject = 'Ton code de connexion — Bible Horizon';
     $text = "Bonjour,\n\n"
         . "Ton code de connexion : $code\n\n"
         . "Il est valable 10 minutes. Si tu n'as rien demandé, ignore simplement ce message.\n\n"
-        . "Graine de Parole";
+        . "Bible Horizon";
     return $mode === 'brevo'
         ? mail_send_brevo($email, $subject, $text)
         : mail_send_smtp($email, $subject, $text);
@@ -58,7 +58,7 @@ function mail_send_code(string $email, string $code): bool {
 
 function mail_send_brevo(string $to, string $subject, string $text): bool {
     $payload = json_encode([
-        'sender'      => ['name' => 'Graine de Parole', 'email' => mail_from()],
+        'sender'      => ['name' => 'Bible Horizon', 'email' => mail_from()],
         'to'          => [['email' => $to]],
         'subject'     => $subject,
         'textContent' => $text,
@@ -158,7 +158,7 @@ function mail_send_smtp(string $to, string $subject, string $text): bool {
     $send('DATA');
     if (!$expect([354])) return $fail('DATA');
 
-    $headers = "From: Graine de Parole <$from>\r\n"
+    $headers = "From: Bible Horizon <$from>\r\n"
         . "To: <$to>\r\n"
         . 'Subject: =?UTF-8?B?' . base64_encode($subject) . "?=\r\n"
         . 'Date: ' . gmdate('r') . "\r\n"

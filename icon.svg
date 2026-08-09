@@ -1,13 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Graine de Parole">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Bible Horizon">
   <rect width="512" height="512" rx="112" fill="#1b2a4a"/>
-  <!-- terre / colline -->
-  <path d="M96 372c40-26 96-26 160-26s120 0 160 26v20H96z" fill="#243a5e"/>
-  <!-- tige -->
-  <path d="M256 372c0-70 0-120 0-150" stroke="#6fb07c" stroke-width="18" stroke-linecap="round" fill="none"/>
-  <!-- feuille gauche -->
-  <path d="M256 268c-16-52-70-70-104-64 6 44 44 84 104 76z" fill="#4b8055"/>
-  <!-- feuille droite -->
-  <path d="M256 246c14-46 62-62 92-56-4 40-38 74-92 66z" fill="#6fb07c"/>
-  <!-- graine / lumière -->
-  <circle cx="256" cy="196" r="20" fill="#d9b45f"/>
+  <!-- soleil levant -->
+  <circle cx="256" cy="252" r="58" fill="#d9b45f"/>
+  <!-- rayons -->
+  <g stroke="#d9b45f" stroke-width="14" stroke-linecap="round">
+    <path d="M256 150v-34"/>
+    <path d="M172 186l-24-24"/>
+    <path d="M340 186l24-24"/>
+    <path d="M148 252h-34"/>
+    <path d="M364 252h34"/>
+  </g>
+  <!-- ligne d'horizon -->
+  <path d="M96 300h320" stroke="#243a5e" stroke-width="0"/>
+  <!-- Bible ouverte : deux pages qui forment l'horizon -->
+  <path d="M256 316c-42-26-104-30-152-18v96c48-12 110-8 152 18z" fill="#f7f3ea"/>
+  <path d="M256 316c42-26 104-30 152-18v96c-48-12-110-8-152 18z" fill="#efe6d2"/>
+  <!-- tranche centrale -->
+  <path d="M252 314h8v100h-8z" fill="#b98a2e"/>
+  <!-- petite pousse (clin d'œil au jardin) -->
+  <path d="M256 306c-6-18-24-26-38-24 2 16 16 30 38 28z" fill="#4b8055"/>
 </svg>

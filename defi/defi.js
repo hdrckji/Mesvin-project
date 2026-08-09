@@ -1,5 +1,5 @@
 /* ============================================================================
-   Graine de Parole — module « Défi » : connaissance des récits bibliques.
+   Bible Horizon — module « Défi » : connaissance des récits bibliques.
 
    Principes :
    - Questions strictement factuelles (qui, quoi, où, quand) ; jamais

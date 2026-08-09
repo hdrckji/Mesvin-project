@@ -1,5 +1,5 @@
 /* ============================================================================
-   Graine de Parole — client API partagé (comptes, synchro, amis, duels).
+   Bible Horizon — client API partagé (comptes, synchro, amis, duels).
    Suit strictement API-CONTRAT.md. Chargé par l'appli principale et par le
    module Défi via <script src=".../api-client.js"> AVANT leur propre script.
 

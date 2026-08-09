@@ -1,4 +1,4 @@
-# API Graine de Parole — installation & exploitation (Railway)
+# API Bible Horizon — installation & exploitation (Railway)
 
 Backend PHP classique (pas de framework, pas de Composer) qui ajoute à la PWA :
 comptes par code e-mail, synchronisation, amis par code, duels asynchrones.

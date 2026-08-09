@@ -1,9 +1,9 @@
-/* Service worker de Graine de Parole.
+/* Service worker de Bible Horizon.
    Stratégie « réseau d'abord » : en ligne, on sert toujours la dernière version
    (pratique pendant qu'on fait évoluer l'appli) ; hors-ligne, on retombe sur le
    cache. On pré-cache la coquille pour un premier lancement hors-ligne possible. */
 
-const CACHE = 'graine-v8';
+const CACHE = 'graine-v9';
 const ASSETS = [
   '.', 'index.html', 'app.css', 'app.js', 'api-client.js',
   'data/verses.json', 'data/collections.json', 'icon.svg', 'manifest.webmanifest',

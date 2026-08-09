@@ -1,5 +1,5 @@
 /* ============================================================================
-   Graine de Parole — mémorisation de versets, VÉRIFIÉE PAR L'APPLI.
+   Bible Horizon — mémorisation de versets, VÉRIFIÉE PAR L'APPLI.
 
    Principe (important) :
    - La vérification se fait SUR L'APPLI, pas dans la tête de l'utilisateur.
@@ -286,7 +286,7 @@ function topbar() {
   const s = store.streak.count;
   const flame = s > 0 ? `<span class="streak">🔥 ${s} jour${s > 1 ? 's' : ''}</span>` : '';
   return `<div class="topbar"><div class="brand"><img class="logo" src="icon.svg" alt="" />
-    <span class="app-title"><span class="seed">Graine</span> de Parole</span></div>${flame}</div>`;
+    <span class="app-title">Bible <span class="seed">Horizon</span></span></div>${flame}</div>`;
 }
 function tabbar() {
   if (route.name === 'session') return '';
@@ -303,7 +303,7 @@ function viewHome() {
   const due = dueCards(), total = Object.keys(store.cards).length;
 
   const hero = `<div class="card hero compact fade"><div class="hero-emblem"><img src="icon.svg" alt="" /></div>
-    <h1 class="hero-name"><span class="seed">Graine</span> de Parole</h1>
+    <h1 class="hero-name">Bible <span class="seed">Horizon</span></h1>
     <p class="hero-tag">Cache la Parole dans ton cœur, un peu chaque jour.</p></div>`;
 
   // Sous-titre dynamique du module Mémoriser.
@@ -735,7 +735,7 @@ function viewVerse(id) {
 }
 function viewAbout() {
   return topbar() + `<h2 style="font-family:var(--serif)">À propos</h2>
-    <div class="card"><p><b>Graine de Parole</b> t'aide à cacher la Parole dans ton cœur, un peu chaque jour.</p>
+    <div class="card"><p><b>Bible Horizon</b> t'aide à cacher la Parole dans ton cœur, un peu chaque jour.</p>
       <p class="muted">Tu reconstitues chaque verset sur l'écran ; l'appli vérifie. Réussi plusieurs fois sur plusieurs jours, il rejoint ton jardin, puis revient juste avant que tu l'oublies.</p></div>
     <div class="section-title">Nos principes</div>
     <div class="card">
