@@ -8,6 +8,45 @@
 .plan-card .plan-why { margin-top: 10px; font-size: .95rem; color: var(--ink-soft); }
 .plan-card .plan-why b { color: var(--grow); }
 
+/* ---------- Configurateur (3 questions, une par écran) ---------- */
+.cfg-step { display: flex; gap: 7px; justify-content: center; margin: 14px 0 4px; }
+.cfg-dot { width: 8px; height: 8px; border-radius: 50%;
+  background: var(--surface-2); border: 1px solid var(--line); }
+.cfg-dot.on { background: var(--accent); border-color: var(--accent); }
+.cfg-dot.done { background: var(--grow); border-color: var(--grow); }
+.cfg-q { font-family: var(--serif); font-size: 1.35rem; text-align: center;
+  margin: 6px 8px 16px; }
+
+.book-group-label { font-size: .78rem; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-soft); margin: 2px 2px 10px; }
+.book-list { display: flex; flex-direction: column; gap: 6px; }
+.book-pick { display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px;
+  padding: 11px 14px; font: inherit; color: inherit; cursor: pointer; text-align: left;
+  width: 100%; }
+.book-pick:active { transform: scale(.985); }
+.book-pick-name { font-family: var(--serif); font-weight: 650; font-size: 1.02rem; }
+.book-pick-meta { color: var(--ink-soft); font-size: .82rem; white-space: nowrap; }
+
+/* ---------- Séquence de livres du chemin ---------- */
+.book-rows { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+.book-rows.single .book-head { pointer-events: none; }
+.book-row { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
+  background: var(--surface); }
+.book-row.open { background: var(--surface-2); }
+.book-head { display: flex; justify-content: space-between; align-items: baseline;
+  width: 100%; background: none; border: 0; font: inherit; color: inherit;
+  cursor: pointer; padding: 0 0 8px; text-align: left; }
+.book-head-name { font-family: var(--serif); font-weight: 650; }
+.book-head-count { color: var(--ink-soft); font-size: .85rem; }
+.book-head-count.grow { color: var(--grow); font-weight: 650; }
+.gauge.mini { height: 6px; }
+.book-row .path { margin-top: 12px; }
+
+/* ---------- Bascule entre chemins ---------- */
+.plan-switch { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill.add { border-style: dashed; color: var(--ink-soft); }
+
 /* ---------- Jauge de progression ---------- */
 .gauge { height: 10px; border-radius: 999px; background: var(--surface-2);
   border: 1px solid var(--line); overflow: hidden; }

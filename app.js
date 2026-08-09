@@ -38,6 +38,12 @@ function loadStore() {
   if (!s.streak) s.streak = { count: 0, lastDay: null };
   if (!('activeCollection' in s)) s.activeCollection = null;           // objectif choisi (id de collection) ou null = parcours général
   if (!Array.isArray(s.completedCollections)) s.completedCollections = []; // collections déjà célébrées
+  // Espace « Moi » — champs additifs (un store existant reste valide) :
+  // plus longue série (initialisée à la série en cours, sans inventer de passé)
+  if (typeof s.bestStreak !== 'number') s.bestStreak = typeof s.streak.count === 'number' ? s.streak.count : 0;
+  // jours d'activité : compteur démarré à la première ouverture (aucun historique inventé)
+  if (typeof s.activeDays !== 'number') s.activeDays = 0;
+  if (!('activeDayLast' in s)) s.activeDayLast = null; // dernier jour compté
   return s;
 }
 function saveStore() { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
@@ -181,7 +187,54 @@ const dueCards = () => { const t = todayNum(); return Object.values(store.cards)
 function updateStreak() {
   const t = todayNum(), s = store.streak;
   if (s.lastDay === t) return; if (s.lastDay === t - 1) s.count++; else s.count = 1;
-  s.lastDay = t; saveStore();
+  s.lastDay = t;
+  if (s.count > (store.bestStreak || 0)) store.bestStreak = s.count; // record de série
+  saveStore();
+}
+// Un jour est « actif » dès qu'on ouvre l'appli — compté une seule fois par jour.
+function markActiveDay() {
+  const t = todayNum();
+  if (store.activeDayLast === t) return;
+  store.activeDayLast = t;
+  store.activeDays = (store.activeDays || 0) + 1;
+  saveStore();
+}
+
+/* ---------- Lecture DÉFENSIVE des stores des autres modules ----------
+   Les modules Lire et Défi possèdent leurs propres clés localStorage et leur
+   forme peut évoluer : on lit sans jamais casser (try/catch + valeurs sûres). */
+function lireStats() {
+  const out = { chapters: 0, books: 0 };
+  try {
+    const raw = localStorage.getItem('graine.lire.v1');
+    if (!raw) return out;
+    const s = JSON.parse(raw);
+    const plans = s && typeof s === 'object' && s.plans && typeof s.plans === 'object' ? s.plans : {};
+    for (const p of Object.values(plans)) {
+      if (!p || !Array.isArray(p.read)) continue;
+      const n = p.read.filter(Boolean).length;
+      out.chapters += n;
+      if (p.read.length > 0 && n === p.read.length) out.books++;
+    }
+  } catch (e) {}
+  return out;
+}
+function defiStats() {
+  const out = { defis: 0, bestSerie: 0, bestScore: null, bestScoreLabel: 'Meilleur score' };
+  try {
+    const raw = localStorage.getItem('graine.defi.v1');
+    if (!raw) return out;
+    const s = JSON.parse(raw);
+    if (!s || typeof s !== 'object') return out;
+    if (typeof s.defis === 'number') out.defis = s.defis;
+    if (typeof s.meilleureSerie === 'number') out.bestSerie = s.meilleureSerie;
+    if (typeof s.meilleurScore === 'number') out.bestScore = String(s.meilleurScore);
+    else if (s.jour && typeof s.jour.score === 'number' && typeof s.jour.total === 'number') {
+      out.bestScore = s.jour.score + '/' + s.jour.total; // à défaut de record : dernier défi du jour
+      out.bestScoreLabel = 'Dernier défi du jour';
+    }
+  } catch (e) {}
+  return out;
 }
 
 /* ============================================================================
@@ -219,7 +272,7 @@ let studyList = []; // versets présentés sur la page d'étude en cours (avant 
 const go = (name, param) => { route = { name, param: param || null }; render(); window.scrollTo(0, 0); };
 
 function render() {
-  const v = { home: viewHome, memo: viewMemo, study: viewStudy, session: viewSession, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections }[route.name] || viewHome;
+  const v = { home: viewHome, memo: viewMemo, study: viewStudy, session: viewSession, moi: viewMoi, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections }[route.name] || viewHome;
   el.innerHTML = v() + tabbar();
   wire();
 }
@@ -231,10 +284,12 @@ function topbar() {
 }
 function tabbar() {
   if (route.name === 'session') return '';
-  // L'écran « Mémoriser » (et ses sous-écrans) reste rattaché à l'onglet Accueil.
-  const cur = ['memo', 'study', 'collections'].includes(route.name) ? 'home' : route.name;
+  // L'écran « Mémoriser » (et ses sous-écrans) reste rattaché à l'onglet Accueil ;
+  // le jardin et ses versets restent rattachés à l'onglet Moi.
+  const cur = ['memo', 'study', 'collections'].includes(route.name) ? 'home'
+    : ['garden', 'verse'].includes(route.name) ? 'moi' : route.name;
   const tab = (n, ic, l) => `<button data-tab="${n}" class="${cur === n ? 'active' : ''}"><span class="ic">${ic}</span>${l}</button>`;
-  return `<nav class="tabbar">${tab('home', '🏠', 'Accueil')}${tab('garden', '🌳', 'Mon jardin')}${tab('about', '☖', 'À propos')}</nav>`;
+  return `<nav class="tabbar">${tab('home', '🏠', 'Accueil')}${tab('moi', '🌱', 'Moi')}${tab('about', '☖', 'À propos')}</nav>`;
 }
 
 /* ---------- Accueil : hub des trois modules ---------- */
@@ -548,6 +603,64 @@ function viewSessionDone() {
   </div>`;
 }
 
+/* ---------- Moi : espace personnel (stats locales, jardin, amis à venir) ---------- */
+function viewMoi() {
+  const gardenN = masteredCards().length, learnN = learningCards().length;
+  const completedN = store.completedCollections.length;
+  const streakN = store.streak.count || 0, bestN = store.bestStreak || 0, daysN = store.activeDays || 0;
+  const lire = lireStats(), defi = defiStats();
+  const tile = (n, l) => `<div class="stat-tile"><div class="st-n">${n}</div><div class="st-l">${l}</div></div>`;
+
+  const head = `<div class="card me-head fade"><div class="me-emoji">🌱</div>
+    <h2>Bienvenue chez toi</h2>
+    <p class="muted">Ton chemin avec la Parole, en un coup d'œil. Tout reste sur ton appareil — pas de compte, pas de photo.</p></div>`;
+
+  const memo = `<div class="section-title">🧠 Mémorisation</div>
+    <div class="stat-grid fade">
+      ${tile(gardenN, `verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}`)}
+      ${tile(learnN, 'en apprentissage')}
+      ${tile(streakN + ' 🔥', 'série actuelle (jours)')}
+      ${tile(bestN, 'plus longue série')}
+      <div class="stat-tile wide"><div class="st-n">${completedN}</div>
+        <div class="st-l">collection${completedN > 1 ? 's' : ''} complétée${completedN > 1 ? 's' : ''}</div></div>
+    </div>`;
+
+  const assiduite = `<div class="section-title">📆 Assiduité</div>
+    <div class="stat-grid fade">
+      <div class="stat-tile wide"><div class="st-n">${daysN}</div>
+        <div class="st-l">jour${daysN > 1 ? 's' : ''} d'activité en tout</div></div>
+    </div>`;
+
+  const garden = `<button class="card hub-card fade" data-tab="garden" style="margin-top:14px">
+      <span class="hub-ic">🌳</span>
+      <span class="hub-txt"><span class="hub-title">Mon jardin</span>
+        <span class="hub-sub">${gardenN} verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}</span></span>
+      <span class="chev">›</span></button>`;
+
+  const lireSec = `<div class="section-title">📖 Lecture</div>
+    <div class="stat-grid fade">
+      ${tile(lire.chapters, `chapitre${lire.chapters > 1 ? 's' : ''} lu${lire.chapters > 1 ? 's' : ''}`)}
+      ${tile(lire.books, `livre${lire.books > 1 ? 's' : ''} terminé${lire.books > 1 ? 's' : ''}`)}
+    </div>
+    ${lire.chapters === 0 ? `<p class="muted me-note">Pas encore commencé — le module Lire t'attend, à ton rythme.</p>` : ''}`;
+
+  const defiSec = `<div class="section-title">🕯️ Défi</div>
+    <div class="stat-grid fade">
+      ${tile(defi.defis, `défi${defi.defis > 1 ? 's' : ''} relevé${defi.defis > 1 ? 's' : ''}`)}
+      ${tile(defi.bestScore === null ? '—' : defi.bestScore, defi.bestScoreLabel.toLowerCase())}
+      ${tile(defi.bestSerie, 'meilleure série de bonnes réponses')}
+    </div>
+    ${defi.defis === 0 ? `<p class="muted me-note">Pas encore commencé — relève ton premier défi quand tu veux.</p>` : ''}`;
+
+  const friends = `<div class="section-title">🤝 Amis</div>
+    <div class="card friends-card fade">
+      <p><b>Bientôt : retrouve tes amis, partagez vos défis et encouragez-vous.</b></p>
+      <p class="muted">La liste d'amis et le partage arriveront avec les comptes optionnels. Rien ne sera jamais obligatoire.</p>
+    </div>`;
+
+  return topbar() + head + memo + garden + assiduite + lireSec + defiSec + friends;
+}
+
 /* ---------- Jardin (versets mémorisés) ---------- */
 let gardenView = 'list'; // 'list' | 'coll' — préférence d'affichage, non persistée
 function gardenItem(c) {
@@ -590,7 +703,8 @@ function viewGarden() {
     `<div class="verse-item"><span class="stage">🌰</span><span class="vi-main"><span class="vi-ref">${esc(c.ref)}</span><br>
       <span class="vi-text">${c.validations}/${MASTERY} réussites · ${esc(c.text)}</span></span></div>`).join('') : '';
 
-  return topbar() + `<h2 style="font-family:var(--serif);margin-bottom:2px">Mon jardin</h2>
+  return topbar() + `<button class="back-link" data-tab="moi">‹ Moi</button>
+    <h2 style="font-family:var(--serif);margin-bottom:2px">Mon jardin</h2>
     <p class="muted" style="margin:0 2px 16px">Les versets que tu as mémorisés. Chacun grandit à mesure qu'il s'enracine.</p>
     ${toggle}${list}${learnList}`;
 }
@@ -702,6 +816,7 @@ function removeVerse(id) {
    ========================================================================== */
 (async function init() {
   el.innerHTML = '<p class="muted center" style="padding:40px">Chargement…</p>';
+  markActiveDay(); // ouvrir l'appli compte comme un jour d'activité (une fois par jour)
   await Promise.all([loadLibrary(), loadCollections()]);
   syncCompletedCollections();
   render();

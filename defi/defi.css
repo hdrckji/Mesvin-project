@@ -83,3 +83,73 @@
 .defi-filters .lbl:first-child { margin-top: 0; }
 .defi-actions { margin-top: 18px; }
 .defi-actions .btn + .btn { margin-top: 10px; }
+
+/* ============================================================================
+   À plusieurs (sur un même appareil)
+   ========================================================================== */
+
+/* accueil du module : compteur d'épreuves relevées ensemble */
+.grp-count { color: var(--grow); font-weight: 650; white-space: nowrap; }
+
+/* préparation : choix compétitif / coopératif */
+.mode-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mode-card {
+  font: inherit; text-align: left; cursor: pointer;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 14px;
+  padding: 12px 14px;
+  transition: border-color .15s ease, background .15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.mode-card b { display: block; font-family: var(--serif); font-size: 1.05rem; margin-bottom: 2px; }
+.mode-card .d { font-size: .82rem; color: var(--ink-soft); line-height: 1.4; }
+.mode-card.on { border-color: var(--grow); background: var(--grow-soft); }
+.mode-card.on b { color: var(--grow); }
+@media (max-width: 420px) { .mode-choice { grid-template-columns: 1fr; } }
+
+/* préparation : prénoms des participants */
+.noms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.prepa-note { font-size: .88rem; color: var(--ink-soft); margin: 14px 2px 0; }
+
+/* écran relais : on se passe l'appareil */
+.relais-screen { padding: 34px 20px 30px; }
+.relais-kicker {
+  font-size: .8rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+.relais-nom {
+  font-family: var(--serif); font-size: 1.9rem; font-weight: 700;
+  line-height: 1.25; margin: 8px 0 4px; color: var(--accent-ink);
+}
+
+/* bandeau de tour (compétitif) / d'équipe (coopératif) */
+.tour-banner {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  background: var(--surface); border: 1px solid var(--accent);
+  border-radius: 12px; padding: 10px 14px; margin-bottom: 14px;
+}
+.tour-banner .who { font-family: var(--serif); font-weight: 700; color: var(--accent-ink); }
+.tour-banner .side { font-size: .8rem; font-weight: 600; color: var(--ink-soft); white-space: nowrap; }
+.tour-banner.coop { border-color: var(--grow); }
+.tour-banner.coop .who { color: var(--grow); }
+
+/* classement sobre */
+.rang-row {
+  display: flex; align-items: baseline; gap: 12px;
+  padding: 10px 2px; border-top: 1px solid var(--line);
+}
+.rang-row:first-child { border-top: 0; padding-top: 2px; }
+.rang-row .rang { font-weight: 700; color: var(--ink-soft); min-width: 3.4em; white-space: nowrap; }
+.rang-row .rang i { font-style: normal; font-size: .72rem; font-weight: 600; }
+.rang-row .rnom { font-family: var(--serif); font-size: 1.1rem; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rang-row .rscore { font-family: var(--serif); font-weight: 700; }
+.rang-row.top .rang, .rang-row.top .rscore { color: var(--grow); }
+
+/* références à revoir, par participant (repliées) */
+.revoir summary {
+  cursor: pointer; font-weight: 650; color: var(--accent-ink);
+  list-style: none; padding: 2px 0;
+}
+.revoir summary::-webkit-details-marker { display: none; }
+.revoir summary::before { content: '› '; color: var(--ink-soft); }
+.revoir[open] summary::before { content: '⌄ '; }
