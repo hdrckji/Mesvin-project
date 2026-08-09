@@ -9,6 +9,10 @@ RUN install-php-extensions pdo_mysql pdo_sqlite
 
 COPY Caddyfile /etc/frankenphp/Caddyfile
 
+# L'image de base livre une page de démonstration dans /app/public (index.php) :
+# on vide le dossier, sinon elle prend le pas sur notre index.html.
+RUN rm -rf /app/public && mkdir -p /app/public
+
 # Fichiers statiques de l'application (inchangés par rapport à la version Caddy).
 WORKDIR /app/public
 COPY index.html app.css app.js api-client.js sw.js manifest.webmanifest icon.svg ./
