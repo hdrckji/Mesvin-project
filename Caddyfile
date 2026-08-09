@@ -1,15 +1,22 @@
-# Sert « Graine de Parole » en statique.
+# Sert « Graine de Parole » : fichiers statiques + API PHP (FrankenPHP).
 # Railway fournit le port au runtime via $PORT ; en local, repli sur 8080.
 
 {
+	frankenphp
 	admin off
 	auto_https off
 }
 
 :{$PORT:8080} {
-	root * /srv
+	root * /app/public
 	encode gzip zstd
-	file_server
+
+	# Toute l'API passe par un point d'entrée unique : api/index.php.
+	# (aucun autre fichier .php n'est jamais servi ni exécuté directement ;
+	# cela protège aussi api/data/ et la base SQLite de secours)
+	@api path /api /api/*
+	rewrite @api /api/index.php
+	header @api Cache-Control "no-store"
 
 	# Le service worker ne doit jamais être mis en cache,
 	# sinon les mises à jour de l'appli ne parviennent pas aux utilisateurs.
@@ -23,4 +30,7 @@
 	# Cache raisonnable pour les fichiers statiques (revalidés à chaque version).
 	@assets path *.css *.js *.svg *.json
 	header @assets Cache-Control "public, max-age=3600"
+
+	# Sert les fichiers statiques et exécute les .php (ici : api/index.php seul).
+	php_server
 }

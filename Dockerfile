@@ -1,18 +1,30 @@
-# « Graine de Parole » — application web statique servie par Caddy.
+# « Graine de Parole » — PWA statique + API PHP, servies par FrankenPHP
+# (c'est Caddy avec PHP intégré : même stack que les autres projets Railway).
 # Railway détecte ce Dockerfile, construit l'image et fournit $PORT au runtime.
 
-FROM caddy:2-alpine
+FROM dunglas/frankenphp:1-php8.3
 
-COPY Caddyfile /etc/caddy/Caddyfile
+# Extensions PDO : MySQL pour Railway, SQLite pour le repli local/dev.
+RUN install-php-extensions pdo_mysql pdo_sqlite
 
-# Fichiers de l'application (on ne copie pas les fichiers d'infrastructure dans /srv).
-COPY index.html app.css app.js sw.js manifest.webmanifest icon.svg /srv/
-COPY data/ /srv/data/
-COPY lire/ /srv/lire/
-COPY defi/ /srv/defi/
+COPY Caddyfile /etc/frankenphp/Caddyfile
+
+# Fichiers statiques de l'application (inchangés par rapport à la version Caddy).
+WORKDIR /app/public
+COPY index.html app.css app.js api-client.js sw.js manifest.webmanifest icon.svg ./
+COPY data/ ./data/
+COPY lire/ ./lire/
+COPY defi/ ./defi/
+
+# Backend PHP. Toutes les requêtes /api/* passent par api/index.php
+# (réécriture dans le Caddyfile) : les autres .php ne sont jamais servis.
+COPY api/ ./api/
+# Le repli SQLite doit pouvoir écrire dans api/data (utile sans MySQL ;
+# sur Railway, MYSQL_URL est définie et ce dossier ne sert pas).
+RUN mkdir -p api/data && chmod 777 api/data
 
 # Port par défaut en local ; Railway injecte $PORT, lu par le Caddyfile.
 ENV PORT=8080
 EXPOSE 8080
 
-CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+CMD ["frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile"]

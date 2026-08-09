@@ -80,6 +80,8 @@ function loadStore() {
   };
   // Épreuves à plusieurs : prénoms retenus + petit compteur (séparé des stats solo).
   if (!s.groupe) s.groupe = { prenoms: [], relevees: 0 };
+  // Duels à distance : compteur local distinct — ne touche jamais aux stats solo.
+  if (!s.duelsAmis) s.duelsAmis = { relevees: 0 };
   return s;
 }
 function saveStore() { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {} }
@@ -372,6 +374,222 @@ function classement() {
 function rangLabel(r) { return r === 1 ? '1ᵉʳ' : `${r}ᵉ`; }
 
 /* ============================================================================
+   Défier un ami — duels à distance, asynchrones (via le serveur).
+
+   Principes :
+   - Les questions viennent du serveur (mêmes questions pour les deux), SANS la
+     bonne réponse : aucun verdict pendant l'épreuve — la review arrive du
+     serveur après l'envoi, avec les références bibliques.
+   - Les réponses en cours restent en brouillon local : on peut être interrompu
+     et reprendre. Rien n'est envoyé avant la confirmation.
+   - Hors-ligne ou sans compte : messages doux ; le reste du module fonctionne.
+   ========================================================================== */
+
+const DUEL_DRAFT_KEY = 'graine.defi.duel.brouillons.v1'; // { [id]: { answers, index, ts } }
+const DUEL_Q_KEY = 'graine.defi.duel.questions.v1';      // { [id]: { questions, opponent } }
+
+function lireJSON(key) {
+  try { const r = localStorage.getItem(key); if (r) return JSON.parse(r); } catch (e) {}
+  return {};
+}
+function ecrireJSON(key, obj) { try { localStorage.setItem(key, JSON.stringify(obj)); } catch (e) {} }
+
+function brouillonDe(id) { return lireJSON(DUEL_DRAFT_KEY)[id] || null; }
+function garderBrouillon(id, d) { const m2 = lireJSON(DUEL_DRAFT_KEY); m2[id] = { ...d, ts: Date.now() }; ecrireJSON(DUEL_DRAFT_KEY, m2); }
+function effacerBrouillon(id) { const m2 = lireJSON(DUEL_DRAFT_KEY); delete m2[id]; ecrireJSON(DUEL_DRAFT_KEY, m2); }
+
+/* Les questions servies par le serveur (texte + ordre des options) sont gardées
+   localement pour pouvoir afficher la review plus tard — la review du serveur
+   ne renvoie que les index. */
+function questionsGardees(id) { return lireJSON(DUEL_Q_KEY)[id] || null; }
+function garderQuestions(id, questions, opponent) {
+  const m2 = lireJSON(DUEL_Q_KEY); m2[id] = { questions, opponent }; ecrireJSON(DUEL_Q_KEY, m2);
+}
+function purgerQuestions(idsVivants) {
+  const m2 = lireJSON(DUEL_Q_KEY);
+  let touche = false;
+  for (const id of Object.keys(m2)) if (!idsVivants.has(String(id))) { delete m2[id]; touche = true; }
+  if (touche) ecrireJSON(DUEL_Q_KEY, m2);
+}
+
+function apiPret() { return typeof window !== 'undefined' && !!window.GraineAPI; }
+function connecte() { return apiPret() && GraineAPI.isLoggedIn(); }
+
+let duelsConnus = null; // dernière liste reçue (pour le badge de l'accueil)
+
+function statutDuel(d) {
+  if (d.status === 'waiting_me') return { txt: 'À toi de relever l’épreuve', cls: 'moi' };
+  if (d.status === 'waiting_them') return { txt: `En attente de ${d.opponent.pseudo}`, cls: 'eux' };
+  return { txt: 'Terminé', cls: 'fini' };
+}
+
+/* Formulation bienveillante du résultat final, quelle que soit l'issue. */
+function phraseDuelFinal(mien, leur, pseudo) {
+  if (mien > leur) return `Toi ${mien} — ${pseudo} ${leur} · Bien relevé ! Et de quoi en reparler ensemble.`;
+  if (mien === leur) return `Égalité ${mien} partout · Deux lecteurs d'une même Parole, fraternellement.`;
+  return `${pseudo} ${leur} — Toi ${mien} · De belles découvertes à relire !`;
+}
+
+/* Message doux quand le serveur est injoignable — jamais d'erreur brute. */
+function messageDoux(e) {
+  if (e && e.offline) return 'Pas de connexion pour l’instant. Les duels t’attendront ici — le reste du module fonctionne sans réseau.';
+  return (e && e.message) || 'Un petit souci est survenu. Réessaie dans un instant.';
+}
+
+/* ---------- Chargement de l'écran des duels ---------- */
+async function ouvrirDuels() {
+  if (!connecte()) { vue = { ecran: 'duelCompte' }; render(); return; }
+  vue = { ecran: 'duels', chargement: true, amis: null, duels: null, erreur: null };
+  render();
+  await chargerDuels();
+}
+
+async function chargerDuels() {
+  try {
+    const [amis, duels] = await Promise.all([GraineAPI.friends(), GraineAPI.duels()]);
+    duelsConnus = duels;
+    purgerQuestions(new Set(duels.map(d => String(d.id))));
+    if (vue.ecran !== 'duels') return;
+    vue = { ecran: 'duels', chargement: false, amis, duels, erreur: null };
+  } catch (e) {
+    if (vue.ecran !== 'duels') return;
+    vue = { ecran: 'duels', chargement: false, amis: null, duels: null, erreur: messageDoux(e) };
+  }
+  render();
+}
+
+/* ---------- Créer un duel puis relever sa part tout de suite ---------- */
+async function nouveauDuel(code) {
+  vue = { ecran: 'duels', chargement: true, amis: null, duels: null, erreur: null };
+  render();
+  try {
+    const duel = await GraineAPI.createDuel(code);
+    demarrerDuelDistant(duel, null);
+  } catch (e) {
+    vue = { ecran: 'duels', chargement: false, amis: null, duels: null, erreur: messageDoux(e) };
+    render();
+  }
+}
+
+/* ---------- Ouvrir un duel existant (relever ma part, ou voir le résultat) ---------- */
+async function ouvrirDuel(d) {
+  if (d.status === 'waiting_me') {
+    // Brouillon local + questions gardées : reprise immédiate, même flux sinon.
+    const brouillon = brouillonDe(d.id);
+    const garde = questionsGardees(d.id);
+    if (brouillon && garde) {
+      demarrerDuelDistant({ id: d.id, opponent: garde.opponent || d.opponent, questions: garde.questions }, brouillon);
+      return;
+    }
+    vue = { ecran: 'duels', chargement: true, amis: null, duels: null, erreur: null };
+    render();
+    try {
+      const detail = await GraineAPI.duel(d.id);
+      demarrerDuelDistant({ id: d.id, opponent: detail.opponent || d.opponent, questions: detail.questions }, brouillon);
+    } catch (e) {
+      vue = { ecran: 'duels', chargement: false, amis: null, duels: null, erreur: messageDoux(e) };
+      render();
+    }
+    return;
+  }
+  // Déjà relevé : review (mémoire locale + serveur).
+  vue = { ecran: 'duels', chargement: true, amis: null, duels: null, erreur: null };
+  render();
+  try {
+    const detail = await GraineAPI.duel(d.id);
+    vue = { ecran: 'duelReview', duel: { ...d, ...detail } };
+  } catch (e) {
+    vue = { ecran: 'duels', chargement: false, amis: null, duels: null, erreur: messageDoux(e) };
+  }
+  render();
+}
+
+function demarrerDuelDistant(duel, brouillon) {
+  garderQuestions(duel.id, duel.questions, duel.opponent);
+  const n = duel.questions.length;
+  let answers = duel.questions.map(() => -1);
+  let index = 0;
+  if (brouillon && Array.isArray(brouillon.answers)) {
+    answers = duel.questions.map((_, i) => (typeof brouillon.answers[i] === 'number' ? brouillon.answers[i] : -1));
+    index = Math.min(Math.max(brouillon.index || 0, 0), n - 1);
+  }
+  vue = { ecran: 'duelQuestion', duel, index, answers, recap: false };
+  render();
+}
+
+function repondreDuel(pos) {
+  if (vue.avance) return; // évite un double appui pendant la courte transition
+  vue.avance = true;
+  vue.answers[vue.index] = pos;
+  garderBrouillon(vue.duel.id, { answers: vue.answers, index: vue.index });
+  // Enchaînement fluide : on marque le choix, puis on avance (pas de verdict —
+  // la bonne réponse n'est pas connue ici, c'est voulu).
+  const btn = el.querySelector(`#options .defi-option[data-pos="${pos}"]`);
+  if (btn) btn.classList.add('pick');
+  setTimeout(() => {
+    if (vue.ecran !== 'duelQuestion') return;
+    vue.avance = false;
+    if (vue.index + 1 < vue.duel.questions.length) {
+      vue.index++;
+      garderBrouillon(vue.duel.id, { answers: vue.answers, index: vue.index });
+    } else {
+      vue.recap = true;
+    }
+    render();
+  }, 180);
+}
+
+async function envoyerDuel() {
+  const { duel, answers } = vue;
+  const btn = document.getElementById('btn-envoyer');
+  if (btn) { btn.disabled = true; btn.textContent = 'Envoi…'; }
+  try {
+    const resultat = await GraineAPI.duelResult(duel.id, answers);
+    effacerBrouillon(duel.id);
+    store.duelsAmis.relevees++;
+    saveStore();
+    vue = { ecran: 'duelReview', duel: { opponent: duel.opponent, ...resultat, id: duel.id } };
+    render();
+  } catch (e) {
+    // Le brouillon reste : rien n'est perdu, on réessaiera.
+    if (e && e.status === 409) {
+      // Déjà relevé (autre appareil ?) : on va chercher le résultat.
+      effacerBrouillon(duel.id);
+      try {
+        const detail = await GraineAPI.duel(duel.id);
+        vue = { ecran: 'duelReview', duel: { opponent: duel.opponent, ...detail, id: duel.id } };
+        render();
+        return;
+      } catch (e2) { /* on retombe sur le message doux */ }
+    }
+    vue.envoiErreur = 'Tes réponses sont gardées sur cet appareil. ' + messageDoux(e);
+    render();
+  }
+}
+
+async function revanche(opponent) {
+  const b = document.getElementById('btn-revanche');
+  if (b) { b.disabled = true; b.textContent = 'Un instant…'; }
+  try {
+    // Le contrat ne renvoie que le pseudo de l'adversaire : on retrouve son
+    // code ami dans la liste d'amis.
+    let code = opponent.friendCode;
+    if (!code) {
+      const amis = await GraineAPI.friends();
+      const ami = amis.find(a => a.pseudo === opponent.pseudo);
+      if (!ami) throw new Error(`${opponent.pseudo} n'est plus dans tes amis — retrouvez-vous dans l'écran Moi.`);
+      code = ami.friendCode;
+    }
+    const duel = await GraineAPI.createDuel(code);
+    demarrerDuelDistant(duel, null);
+  } catch (e) {
+    if (b) { b.disabled = false; b.textContent = 'Revanche'; }
+    const note = document.getElementById('duel-note');
+    if (note) note.textContent = messageDoux(e);
+  }
+}
+
+/* ============================================================================
    Rendu
    ========================================================================== */
 function render() {
@@ -383,6 +601,10 @@ function render() {
   if (vue.ecran === 'objectif') return renderObjectif();
   if (vue.ecran === 'mquestion') return renderQuestionMulti();
   if (vue.ecran === 'mfin') return m.mode === 'compet' ? renderFinCompet() : renderFinCoop();
+  if (vue.ecran === 'duelCompte') return renderDuelCompte();
+  if (vue.ecran === 'duels') return renderDuels();
+  if (vue.ecran === 'duelQuestion') return vue.recap ? renderDuelEnvoi() : renderDuelQuestion();
+  if (vue.ecran === 'duelReview') return renderDuelReview();
   renderAccueil();
 }
 
@@ -412,8 +634,17 @@ function renderAccueil() {
     <button class="card hub-card" id="btn-plusieurs">
       <span class="hub-ic">🕯️</span>
       <span class="hub-txt">
-        <span class="hub-title">À plusieurs</span>
+        <span class="hub-title">À plusieurs, ici</span>
         <span class="hub-sub">Sur un même appareil, en famille ou en groupe : compétitif ou coopératif.${g.relevees > 0 ? ` <b class="grp-count">${g.relevees} épreuve${g.relevees > 1 ? 's' : ''} relevée${g.relevees > 1 ? 's' : ''} ensemble</b>` : ''}</span>
+      </span>
+      <span class="chev">›</span>
+    </button>
+
+    <button class="card hub-card" id="btn-ami">
+      <span class="hub-ic">⚔️</span>
+      <span class="hub-txt">
+        <span class="hub-title">Défier un ami</span>
+        <span class="hub-sub">À distance : mêmes questions pour vous deux, chacun quand il veut.<span id="duel-attente"></span></span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -422,6 +653,24 @@ function renderAccueil() {
   document.getElementById('btn-retour-accueil').onclick = () => { location.href = '../index.html'; };
   document.getElementById('btn-seul').onclick = () => { vue = { ecran: 'solo' }; render(); };
   document.getElementById('btn-plusieurs').onclick = () => { vue = { ecran: 'prepa' }; render(); };
+  document.getElementById('btn-ami').onclick = ouvrirDuels;
+
+  // Badge discret si au moins un duel m'attend (silencieux hors-ligne).
+  majBadgeDuels();
+}
+
+function majBadgeDuels() {
+  const poser = (liste) => {
+    const n = (liste || []).filter(d => d.status === 'waiting_me').length;
+    const span = document.getElementById('duel-attente');
+    if (span) span.innerHTML = n ? ` <b class="duel-badge">${n} duel${n > 1 ? 's' : ''} t'attend${n > 1 ? 'ent' : ''}</b>` : '';
+  };
+  if (duelsConnus) poser(duelsConnus);
+  if (!connecte()) return;
+  GraineAPI.duels().then(liste => {
+    duelsConnus = liste;
+    if (vue.ecran === 'accueil') poser(liste);
+  }).catch(() => { /* hors-ligne : on n'affiche simplement rien */ });
 }
 
 /* ---------- Seul : défi du jour, défi libre, chemin ---------- */
@@ -844,6 +1093,306 @@ function renderFinCoop() {
 
   document.getElementById('btn-encore').onclick = () => { m = null; vue = { ecran: 'prepa' }; render(); };
   document.getElementById('btn-retour').onclick = () => { m = null; vue = { ecran: 'accueil' }; render(); };
+}
+
+/* ============================================================================
+   Défier un ami — écrans
+   ========================================================================== */
+
+/* ---------- Sans compte : explication sobre ---------- */
+function renderDuelCompte() {
+  el.innerHTML = `
+  <div class="fade">
+    <button class="back-link" id="btn-retour-defi">‹ Défi</button>
+    <div class="topbar">
+      <div class="brand">
+        <h1 class="app-title">Défier un ami <span class="seed">•</span> <span class="muted">à distance</span></h1>
+      </div>
+    </div>
+
+    <div class="card hero duel-compte">
+      <div class="seal">⚔️</div>
+      <h2 style="font-family:var(--serif)">Un duel, chacun chez soi</h2>
+      <p class="defi-lead">Les mêmes dix questions pour vous deux, chacun les relève quand il veut, et on compare à la fin — références bibliques à l'appui.</p>
+      <p class="defi-lead" style="margin-top:10px">Pour défier un ami, il faut un compte : crée-le dans l'écran <b>Moi</b> de l'accueil — gratuit, e-mail + pseudo seulement.</p>
+      <div class="defi-actions">
+        <a class="btn btn-primary" href="../index.html" style="display:block;text-align:center;text-decoration:none">Aller à l'accueil</a>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'accueil' }; render(); };
+}
+
+/* ---------- Écran des duels (connecté) ---------- */
+function renderDuels() {
+  const entete = `
+    <button class="back-link" id="btn-retour-defi">‹ Défi</button>
+    <div class="topbar">
+      <div class="brand">
+        <h1 class="app-title">Défier un ami <span class="seed">•</span> <span class="muted">à distance</span></h1>
+      </div>
+    </div>`;
+
+  if (vue.chargement) {
+    el.innerHTML = `<div class="fade">${entete}<div class="card"><p class="defi-lead duel-charge">Un instant…</p></div></div>`;
+    document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'accueil' }; render(); };
+    return;
+  }
+
+  if (vue.erreur) {
+    el.innerHTML = `
+    <div class="fade">${entete}
+      <div class="card">
+        <p class="defi-lead">${esc(vue.erreur)}</p>
+        <div class="defi-actions">
+          <button class="btn btn-grow btn-block" id="btn-reessayer">Réessayer</button>
+          <button class="btn btn-ghost btn-block" id="btn-retour">Retour</button>
+        </div>
+      </div>
+    </div>`;
+    document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'accueil' }; render(); };
+    document.getElementById('btn-reessayer').onclick = ouvrirDuels;
+    document.getElementById('btn-retour').onclick = () => { vue = { ecran: 'accueil' }; render(); };
+    return;
+  }
+
+  const amis = vue.amis || [];
+  const duels = vue.duels || [];
+  const enCours = duels.filter(d => d.status !== 'finished');
+  const finis = duels.filter(d => d.status === 'finished');
+
+  const ligneDuel = (d) => {
+    const s = statutDuel(d);
+    const brouillon = d.status === 'waiting_me' && brouillonDe(d.id);
+    const scores = d.status === 'finished'
+      ? `${d.myScore ?? '–'} / ${d.theirScore ?? '–'}`
+      : (d.myScore != null ? `Toi : ${d.myScore}` : '');
+    return `
+      <button class="duel-row" data-id="${d.id}">
+        <span class="duel-qui">${esc(d.opponent.pseudo)}</span>
+        <span class="duel-etat ${s.cls}">${esc(brouillon ? 'Reprendre l’épreuve commencée' : s.txt)}</span>
+        ${scores ? `<span class="duel-scores">${esc(String(scores))}</span>` : ''}
+      </button>`;
+  };
+
+  el.innerHTML = `
+  <div class="fade">${entete}
+
+    <div class="section-title duel-titre-ligne">Nouveau duel
+      <button class="duel-actualiser" id="btn-actualiser" title="Actualiser">↻ Actualiser</button>
+    </div>
+    <div class="card">
+      ${amis.length ? `
+        <p class="defi-lead" style="margin-bottom:6px">Choisis l'ami à défier — vous recevrez les mêmes dix questions.</p>
+        ${amis.map(a => `
+          <button class="duel-row ami" data-code="${esc(a.friendCode)}">
+            <span class="duel-qui">${esc(a.pseudo)}</span>
+            <span class="duel-etat moi">Défier</span>
+          </button>`).join('')}
+      ` : `
+        <p class="defi-lead">Pas encore d'amis par ici. Ajoute-les dans l'écran <b>Moi</b> de l'accueil, avec leur code ami — et le premier duel peut commencer.</p>
+        <div class="defi-actions">
+          <a class="btn btn-ghost btn-block" href="../index.html" style="display:block;text-align:center;text-decoration:none">Aller à l'écran Moi</a>
+        </div>
+      `}
+    </div>
+
+    ${enCours.length ? `
+    <div class="section-title">Duels en cours</div>
+    <div class="card">${enCours.map(ligneDuel).join('')}</div>` : ''}
+
+    ${finis.length ? `
+    <div class="section-title">Duels terminés</div>
+    <div class="card">${finis.map(ligneDuel).join('')}</div>` : ''}
+
+    ${store.duelsAmis.relevees > 0 ? `<p class="duel-compteur">${store.duelsAmis.relevees} épreuve${store.duelsAmis.relevees > 1 ? 's' : ''} de duel relevée${store.duelsAmis.relevees > 1 ? 's' : ''} depuis cet appareil.</p>` : ''}
+  </div>`;
+
+  document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'accueil' }; render(); };
+  document.getElementById('btn-actualiser').onclick = ouvrirDuels;
+  document.querySelectorAll('.duel-row.ami').forEach(b => {
+    b.onclick = () => nouveauDuel(b.dataset.code);
+  });
+  document.querySelectorAll('.duel-row[data-id]').forEach(b => {
+    b.onclick = () => {
+      const d = duels.find(x => String(x.id) === b.dataset.id);
+      if (d) ouvrirDuel(d);
+    };
+  });
+}
+
+/* ---------- Relever ma part : question sans verdict (anti-triche) ---------- */
+function renderDuelQuestion() {
+  const { duel, index, answers } = vue;
+  const q = duel.questions[index];
+  const total = duel.questions.length;
+  const num = index + 1;
+  const repondues = answers.filter(a => a >= 0).length;
+  // La catégorie (« Qui a dit ? », etc.) donne le contexte : le serveur ne
+  // l'envoie pas, on la retrouve dans la banque locale par l'id.
+  const info = BANQUE.find(x => x.id === q.id);
+
+  el.innerHTML = `
+  <div class="fade">
+    <button class="back-link" id="btn-quitter">‹ Mettre en pause</button>
+    <div class="tour-banner"><span class="who">Duel avec ${esc(duel.opponent.pseudo)}</span><span class="side">${info ? esc(info.categorie) : 'réponses à la fin'}</span></div>
+    <div class="defi-meta">
+      <span>Question ${num}/${total}</span>
+      <span>${repondues}/${total} répondue${repondues > 1 ? 's' : ''}</span>
+    </div>
+    <div class="defi-progress"><i style="width:${Math.round((repondues / total) * 100)}%"></i></div>
+
+    <div class="card">
+      <p class="defi-question">${esc(q.question)}</p>
+      <div id="options">
+        ${q.options.map((opt, pos) => `
+          <button class="defi-option ${answers[index] === pos ? 'pick' : ''}" data-pos="${pos}">${esc(opt)}</button>`).join('')}
+      </div>
+      <div class="duel-nav">
+        <button class="btn btn-ghost" id="btn-prec" ${index === 0 ? 'disabled' : ''}>‹ Précédente</button>
+        ${answers[index] >= 0 ? `<button class="btn btn-ghost" id="btn-suiv">${num === total ? 'Vers l’envoi ›' : 'Suivante ›'}</button>` : ''}
+      </div>
+    </div>
+    <p class="duel-note-basse">Le verdict et les références viendront après l'envoi — comme pour ${esc(duel.opponent.pseudo)}.</p>
+  </div>`;
+
+  document.getElementById('btn-quitter').onclick = () => {
+    garderBrouillon(duel.id, { answers, index });
+    ouvrirDuels();
+  };
+  document.querySelectorAll('#options .defi-option').forEach(b => {
+    b.onclick = () => repondreDuel(Number(b.dataset.pos));
+  });
+  document.getElementById('btn-prec').onclick = () => {
+    if (vue.index > 0) { vue.index--; garderBrouillon(duel.id, { answers, index: vue.index }); render(); }
+  };
+  const suiv = document.getElementById('btn-suiv');
+  if (suiv) suiv.onclick = () => {
+    if (vue.index + 1 < total) { vue.index++; garderBrouillon(duel.id, { answers, index: vue.index }); }
+    else vue.recap = true;
+    render();
+  };
+}
+
+/* ---------- Avant l'envoi : relire, revenir, puis confirmer ---------- */
+function renderDuelEnvoi() {
+  const { duel, answers } = vue;
+  const total = duel.questions.length;
+  const sansReponse = answers.filter(a => a < 0).length;
+
+  el.innerHTML = `
+  <div class="fade">
+    <button class="back-link" id="btn-quitter">‹ Mettre en pause</button>
+    <div class="tour-banner"><span class="who">Duel avec ${esc(duel.opponent.pseudo)}</span><span class="side">dernier regard</span></div>
+
+    <div class="card">
+      <h2 style="font-family:var(--serif)">Tes réponses sont prêtes</h2>
+      <p class="defi-lead">Un dernier regard ? Touche une question pour y revenir. Rien n'est envoyé avant ta confirmation.</p>
+      <div class="duel-recap">
+        ${duel.questions.map((q, i) => `
+          <button class="duel-recap-ligne" data-i="${i}">
+            <span class="num">${i + 1}.</span>
+            <span class="txt">${esc(q.question)}</span>
+            <span class="rep ${answers[i] < 0 ? 'vide' : ''}">${answers[i] >= 0 ? esc(q.options[answers[i]]) : 'Sans réponse'}</span>
+          </button>`).join('')}
+      </div>
+      ${sansReponse ? `<p class="duel-note-basse" style="margin:10px 2px 0">${sansReponse} question${sansReponse > 1 ? 's' : ''} sans réponse — elle${sansReponse > 1 ? 's' : ''} comptera${sansReponse > 1 ? 'ont' : ''} comme manquée${sansReponse > 1 ? 's' : ''}.</p>` : ''}
+      ${vue.envoiErreur ? `<p class="duel-envoi-erreur">${esc(vue.envoiErreur)}</p>` : ''}
+      <div class="defi-actions">
+        <button class="btn btn-primary" id="btn-envoyer">Envoyer mes réponses</button>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('btn-quitter').onclick = () => {
+    garderBrouillon(duel.id, { answers, index: total - 1 });
+    ouvrirDuels();
+  };
+  document.querySelectorAll('.duel-recap-ligne').forEach(b => {
+    b.onclick = () => { vue.recap = false; vue.index = Number(b.dataset.i); vue.envoiErreur = null; render(); };
+  });
+  document.getElementById('btn-envoyer').onclick = envoyerDuel;
+}
+
+/* ---------- Review du serveur : mon score, les références, le statut ---------- */
+function renderDuelReview() {
+  const d = vue.duel;
+  const garde = questionsGardees(d.id) || {};
+  const questions = garde.questions || null;
+  const pseudo = (d.opponent && d.opponent.pseudo) || (garde.opponent && garde.opponent.pseudo) || 'ton ami';
+  const review = d.review || [];
+  const total = review.length || (questions ? questions.length : NB_QUESTIONS);
+  const fini = d.status === 'finished' || (d.theirScore != null && d.myScore != null);
+
+  // Retrouve le texte d'une question de la review : d'abord la version servie
+  // par le serveur (gardée localement — bons index d'options), sinon la banque.
+  const texteDe = (r, i) => {
+    let q = questions && (questions[i] && questions[i].id === r.id ? questions[i] : questions.find(x => x.id === r.id));
+    if (q) return { question: q.question, mienne: r.mine >= 0 ? q.options[r.mine] : null, bonne: q.options[r.bonne] };
+    const b = BANQUE.find(x => x.id === r.id);
+    return { question: b ? b.question : 'Question ' + (i + 1), mienne: null, bonne: b ? b.options[b.bonne] : null };
+  };
+
+  el.innerHTML = `
+  <div class="fade">
+    <button class="back-link" id="btn-retour-duels">‹ Mes duels</button>
+
+    <div class="card hero done-screen">
+      <div class="seal">${fini ? '🌾' : '⚔️'}</div>
+      ${fini ? `
+        <h2 style="font-family:var(--serif)">Duel terminé</h2>
+        <div class="duel-vs"><span class="camp">Toi<br><b>${d.myScore}</b></span><span class="tiret">—</span><span class="camp">${esc(pseudo)}<br><b>${d.theirScore}</b></span></div>
+        <p class="defi-word">${esc(phraseDuelFinal(d.myScore, d.theirScore, pseudo))}</p>
+      ` : `
+        <div class="defi-score">${d.myScore}<span class="of">/${total}</span></div>
+        <p class="defi-word">Ta part est relevée. En attente de ${esc(pseudo)} — tu verras son score quand il aura relevé la sienne.</p>
+      `}
+      <p id="duel-note" class="duel-note-basse" style="margin-top:8px"></p>
+    </div>
+
+    ${review.length ? `
+    <div class="section-title">Pour retourner au texte</div>
+    <div class="card">
+      ${review.map((r, i) => {
+        const t = texteDe(r, i);
+        const ok = r.mine === r.bonne;
+        return `
+        <div class="defi-missed ${ok ? 'ok' : ''}">
+          <div class="q">${esc(t.question)}</div>
+          ${ok
+            ? `<div class="a">✓ Ta réponse : ${esc(t.bonne ?? '')}</div>`
+            : `${t.mienne != null ? `<div class="m">Ta réponse : ${esc(t.mienne)}</div>` : (r.mine < 0 ? `<div class="m">Sans réponse</div>` : '')}
+               <div class="a">Réponse : ${esc(t.bonne ?? '')}</div>`}
+          <div class="r">→ ${esc(r.reference)}</div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
+    <div class="defi-actions">
+      ${fini ? `<button class="btn btn-grow btn-block" id="btn-revanche">Revanche</button>` : `<button class="btn btn-grow btn-block" id="btn-actualiser">Actualiser</button>`}
+      <button class="btn btn-ghost btn-block" id="btn-retour">Retour aux duels</button>
+    </div>
+  </div>`;
+
+  document.getElementById('btn-retour-duels').onclick = ouvrirDuels;
+  document.getElementById('btn-retour').onclick = ouvrirDuels;
+  const ra = document.getElementById('btn-actualiser');
+  if (ra) ra.onclick = async () => {
+    ra.disabled = true; ra.textContent = 'Un instant…';
+    try {
+      const detail = await GraineAPI.duel(d.id);
+      vue = { ecran: 'duelReview', duel: { ...d, ...detail } };
+    } catch (e) {
+      const note = document.getElementById('duel-note');
+      if (note) note.textContent = messageDoux(e);
+      ra.disabled = false; ra.textContent = 'Actualiser';
+      return;
+    }
+    render();
+  };
+  const rv = document.getElementById('btn-revanche');
+  if (rv) rv.onclick = () => revanche({ pseudo, friendCode: d.opponent && d.opponent.friendCode });
 }
 
 /* ---------- Démarrage ---------- */

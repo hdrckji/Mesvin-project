@@ -32,6 +32,11 @@ function shuffle(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--
 function loadStore() {
   let s = null;
   try { const r = localStorage.getItem(STORE_KEY); if (r) s = JSON.parse(r); } catch (e) {}
+  return normalizeStore(s);
+}
+// Remet les champs par défaut sur un store quelconque (chargé OU issu d'une
+// fusion avec le serveur) — champs additifs uniquement, jamais destructif.
+function normalizeStore(s) {
   if (!s || typeof s !== 'object') s = {};
   // Champs additifs uniquement : un store v3 existant reste valide tel quel.
   if (!s.cards) s.cards = {};
@@ -44,6 +49,7 @@ function loadStore() {
   // jours d'activité : compteur démarré à la première ouverture (aucun historique inventé)
   if (typeof s.activeDays !== 'number') s.activeDays = 0;
   if (!('activeDayLast' in s)) s.activeDayLast = null; // dernier jour compté
+  if (!s.streak || typeof s.streak !== 'object') s.streak = { count: 0, lastDay: null };
   return s;
 }
 function saveStore() { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
@@ -272,7 +278,7 @@ let studyList = []; // versets présentés sur la page d'étude en cours (avant 
 const go = (name, param) => { route = { name, param: param || null }; render(); window.scrollTo(0, 0); };
 
 function render() {
-  const v = { home: viewHome, memo: viewMemo, study: viewStudy, session: viewSession, moi: viewMoi, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections }[route.name] || viewHome;
+  const v = { home: viewHome, memo: viewMemo, study: viewStudy, session: viewSession, moi: viewMoi, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections, account: viewAccount }[route.name] || viewHome;
   el.innerHTML = v() + tabbar();
   wire();
 }
@@ -287,7 +293,7 @@ function tabbar() {
   // L'écran « Mémoriser » (et ses sous-écrans) reste rattaché à l'onglet Accueil ;
   // le jardin et ses versets restent rattachés à l'onglet Moi.
   const cur = ['memo', 'study', 'collections'].includes(route.name) ? 'home'
-    : ['garden', 'verse'].includes(route.name) ? 'moi' : route.name;
+    : ['garden', 'verse', 'account'].includes(route.name) ? 'moi' : route.name;
   const tab = (n, ic, l) => `<button data-tab="${n}" class="${cur === n ? 'active' : ''}"><span class="ic">${ic}</span>${l}</button>`;
   return `<nav class="tabbar">${tab('home', '🏠', 'Accueil')}${tab('moi', '🌱', 'Moi')}${tab('about', '☖', 'À propos')}</nav>`;
 }
@@ -572,6 +578,7 @@ function renderFill(ex) {
 
 function viewSessionDone() {
   updateStreak();
+  scheduleSync(); // la progression du jour part vers le serveur (débouncé, silencieux)
   const s = store.streak.count;
   const done = session ? session.done.length : 0;
   const mastered = session ? session.mastered.length : 0;
@@ -603,8 +610,9 @@ function viewSessionDone() {
   </div>`;
 }
 
-/* ---------- Moi : espace personnel (stats locales, jardin, amis à venir) ---------- */
+/* ---------- Moi : espace personnel (stats locales, jardin, compte & amis) ---------- */
 function viewMoi() {
+  const user = window.GraineAPI ? GraineAPI.user() : null;
   const gardenN = masteredCards().length, learnN = learningCards().length;
   const completedN = store.completedCollections.length;
   const streakN = store.streak.count || 0, bestN = store.bestStreak || 0, daysN = store.activeDays || 0;
@@ -613,7 +621,11 @@ function viewMoi() {
 
   const head = `<div class="card me-head fade"><div class="me-emoji">🌱</div>
     <h2>Bienvenue chez toi</h2>
-    <p class="muted">Ton chemin avec la Parole, en un coup d'œil. Tout reste sur ton appareil — pas de compte, pas de photo.</p></div>`;
+    <p class="muted">${user
+      ? `Ton chemin avec la Parole, en un coup d'œil — sauvegardé sur ton compte.`
+      : `Ton chemin avec la Parole, en un coup d'œil. Tout reste sur ton appareil.`}</p></div>`;
+
+  const account = user ? moiAccountCard(user) : moiInviteCard();
 
   const memo = `<div class="section-title">🧠 Mémorisation</div>
     <div class="stat-grid fade">
@@ -652,13 +664,9 @@ function viewMoi() {
     </div>
     ${defi.defis === 0 ? `<p class="muted me-note">Pas encore commencé — relève ton premier défi quand tu veux.</p>` : ''}`;
 
-  const friends = `<div class="section-title">🤝 Amis</div>
-    <div class="card friends-card fade">
-      <p><b>Bientôt : retrouve tes amis, partagez vos défis et encouragez-vous.</b></p>
-      <p class="muted">La liste d'amis et le partage arriveront avec les comptes optionnels. Rien ne sera jamais obligatoire.</p>
-    </div>`;
+  const friends = user ? moiFriendsSection(user) : '';
 
-  return topbar() + head + memo + garden + assiduite + lireSec + defiSec + friends;
+  return topbar() + head + account + memo + garden + assiduite + lireSec + defiSec + friends;
 }
 
 /* ---------- Jardin (versets mémorisés) ---------- */
@@ -740,6 +748,474 @@ function viewAbout() {
 }
 
 /* ============================================================================
+   Compte, synchronisation & amis — serveur FACULTATIF (voir API-CONTRAT.md).
+   Le local reste la base : sans compte ou hors-ligne, rien ne change.
+   ========================================================================== */
+const LIRE_KEY = 'graine.lire.v1', DEFI_KEY = 'graine.defi.v1';
+const SYNC_META_KEY = 'graine.sync.meta';
+
+/* ---------- Fusion PURE des stores (testable : window.GraineSync) ----------
+   Règle d'or : ne JAMAIS perdre de progression. En cas de doute, on garde le
+   meilleur des deux côtés (max) et la révision la plus proche (min due). */
+const deepCopy = o => (o === null || o === undefined) ? null : JSON.parse(JSON.stringify(o));
+const isNum = v => typeof v === 'number' && isFinite(v);
+function maxN(a, b) { if (!isNum(a)) return isNum(b) ? b : undefined; if (!isNum(b)) return a; return Math.max(a, b); }
+function minN(a, b) { if (!isNum(a)) return isNum(b) ? b : undefined; if (!isNum(b)) return a; return Math.min(a, b); }
+const setIf = (obj, key, v) => { if (v !== undefined) obj[key] = v; };
+
+// memo (graine.v3) — union des cards ; par card commune : max(validations),
+// max(attempts), min(due) (le plus prudent : elle revient plus tôt),
+// max(lapses/ease/interval) ; streak/bestStreak/activeDays = max ;
+// union des collections complétées ; objectif local prioritaire.
+function mergeMemo(local, server) {
+  if (!server || typeof server !== 'object') return deepCopy(local);
+  if (!local || typeof local !== 'object') return deepCopy(server);
+  const out = deepCopy(local), srv = deepCopy(server);
+  out.cards = out.cards && typeof out.cards === 'object' ? out.cards : {};
+  const sCards = srv.cards && typeof srv.cards === 'object' ? srv.cards : {};
+  for (const id of Object.keys(sCards)) {
+    const sc = sCards[id], lc = out.cards[id];
+    if (!lc || typeof lc !== 'object') { out.cards[id] = sc; continue; }
+    lc.validations = maxN(lc.validations, sc.validations) || 0;
+    lc.attempts = maxN(lc.attempts, sc.attempts) || 0;
+    setIf(lc, 'due', minN(lc.due, sc.due));
+    setIf(lc, 'lapses', maxN(lc.lapses, sc.lapses));
+    setIf(lc, 'ease', maxN(lc.ease, sc.ease));
+    setIf(lc, 'interval', maxN(lc.interval, sc.interval));
+    setIf(lc, 'addedDay', minN(lc.addedDay, sc.addedDay));
+  }
+  const ls = out.streak && typeof out.streak === 'object' ? out.streak : {};
+  const ss = srv.streak && typeof srv.streak === 'object' ? srv.streak : {};
+  out.streak = { count: maxN(ls.count, ss.count) || 0 };
+  const lastDay = maxN(ls.lastDay, ss.lastDay);
+  out.streak.lastDay = lastDay === undefined ? null : lastDay;
+  out.bestStreak = maxN(out.bestStreak, srv.bestStreak) || 0;
+  out.activeDays = maxN(out.activeDays, srv.activeDays) || 0;
+  const adl = maxN(out.activeDayLast, srv.activeDayLast);
+  if (adl !== undefined) out.activeDayLast = adl;
+  const lcc = Array.isArray(out.completedCollections) ? out.completedCollections : [];
+  const scc = Array.isArray(srv.completedCollections) ? srv.completedCollections : [];
+  out.completedCollections = Array.from(new Set(lcc.concat(scc)));
+  out.activeCollection = out.activeCollection || srv.activeCollection || null;
+  return out;
+}
+
+// lire (graine.lire.v1) — OR case par case des tableaux read, union des plans
+// (max 3, priorité aux plans locaux), minutes et autres champs locaux prioritaires.
+function mergeLire(local, server) {
+  if (!server || typeof server !== 'object') return deepCopy(local);
+  if (!local || typeof local !== 'object') return deepCopy(server);
+  const out = deepCopy(local), srv = deepCopy(server);
+  const lp = out.plans && typeof out.plans === 'object' ? out.plans : {};
+  const sp = srv.plans && typeof srv.plans === 'object' ? srv.plans : {};
+  const merged = {};
+  for (const id of new Set(Object.keys(lp).concat(Object.keys(sp)))) {
+    const l = lp[id], s = sp[id];
+    if (l && s && typeof l === 'object' && typeof s === 'object') {
+      const m = Object.assign({}, s, l); // champ par champ : priorité locale
+      const lr = Array.isArray(l.read) ? l.read : [], sr = Array.isArray(s.read) ? s.read : [];
+      const len = Math.max(lr.length, sr.length);
+      m.read = Array.from({ length: len }, (_, i) => !!(lr[i] || sr[i]));
+      merged[id] = m;
+    } else merged[id] = l || s;
+  }
+  const keep = Object.keys(lp).concat(Object.keys(sp).filter(id => !(id in lp))).slice(0, 3);
+  out.plans = {};
+  for (const id of keep) out.plans[id] = merged[id];
+  for (const k of Object.keys(srv)) if (!(k in out)) out[k] = srv[k]; // minutes… : local prioritaire
+  return out;
+}
+
+// defi (graine.defi.v1) — max des compteurs (défis, séries, records) ;
+// objets (cats, jour…) : max par clé numérique, sinon priorité locale.
+function mergeDefi(local, server) {
+  if (!server || typeof server !== 'object') return deepCopy(local);
+  if (!local || typeof local !== 'object') return deepCopy(server);
+  const out = deepCopy(local), srv = deepCopy(server);
+  for (const k of Object.keys(srv)) {
+    const sv = srv[k], lv = out[k];
+    if (isNum(sv) && isNum(lv)) out[k] = Math.max(lv, sv);
+    else if (sv && lv && typeof sv === 'object' && typeof lv === 'object' && !Array.isArray(sv) && !Array.isArray(lv)) {
+      for (const kk of Object.keys(sv)) {
+        if (isNum(sv[kk]) && isNum(lv[kk])) lv[kk] = Math.max(lv[kk], sv[kk]);
+        else if (!(kk in lv)) lv[kk] = sv[kk];
+      }
+    } else if (lv === undefined) out[k] = sv;
+    // sinon : priorité locale
+  }
+  return out;
+}
+
+/* ---------- Orchestration de la synchro (silencieuse, non bloquante) ---------- */
+let syncUi = { status: 'idle', lastAt: null }; // idle|syncing|ok|offline|error
+try { const r = localStorage.getItem(SYNC_META_KEY); if (r) syncUi.lastAt = JSON.parse(r).lastAt || null; } catch (e) {}
+function saveSyncMeta() { try { localStorage.setItem(SYNC_META_KEY, JSON.stringify({ lastAt: syncUi.lastAt })); } catch (e) {} }
+function readLocalBlob(key) { try { const r = localStorage.getItem(key); if (r) return JSON.parse(r); } catch (e) {} return null; }
+
+let syncTimer = null, syncRunning = false;
+// « planifier une synchro dans 3 s » — débouncé, appelé aux moments de
+// progression majeure (fin de session, célébration). Sans compte : no-op.
+function scheduleSync(delay) {
+  if (!window.GraineAPI || !GraineAPI.isLoggedIn()) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => { syncNow(); }, delay || 3000);
+}
+
+async function syncNow() {
+  if (!window.GraineAPI || !GraineAPI.isLoggedIn() || syncRunning) return;
+  syncRunning = true;
+  syncUi.status = 'syncing';
+  renderIfIdle();
+  try {
+    // 1) pull : l'état du serveur…
+    const remote = await GraineAPI.syncGet();
+    // 2) …fusionné dans le local, sans jamais perdre de progression…
+    const mergedMemo = mergeMemo(store, remote.memo);
+    if (mergedMemo && !session) { store = normalizeStore(mergedMemo); saveStore(); }
+    const mergedLire = mergeLire(readLocalBlob(LIRE_KEY), remote.lire);
+    if (mergedLire) localStorage.setItem(LIRE_KEY, JSON.stringify(mergedLire));
+    const mergedDefi = mergeDefi(readLocalBlob(DEFI_KEY), remote.defi);
+    if (mergedDefi) localStorage.setItem(DEFI_KEY, JSON.stringify(mergedDefi));
+    // 3) puis push du résultat fusionné.
+    const blobs = {};
+    if (!session) blobs.memo = store;
+    if (mergedLire) blobs.lire = mergedLire;
+    if (mergedDefi) blobs.defi = mergedDefi;
+    if (Object.keys(blobs).length) await GraineAPI.syncPut(blobs);
+    syncCompletedCollections(); // la fusion peut révéler des collections complètes
+    syncUi.status = 'ok';
+    syncUi.lastAt = new Date().toISOString();
+    saveSyncMeta();
+    if (friendsCache === 'error') friendsCache = null; // on est en ligne : on retentera la liste d'amis
+  } catch (e) {
+    // Hors-ligne ou erreur : AUCUN message intrusif — on réessaiera.
+    syncUi.status = (e && e.offline) ? 'offline' : 'error';
+  }
+  syncRunning = false;
+  renderIfIdle();
+}
+function syncStatusText() {
+  if (syncUi.status === 'syncing') return 'Synchronisation…';
+  if (syncUi.status === 'offline') return 'Hors-ligne — tes données restent ici, on réessaiera.';
+  if (syncUi.status === 'error') return 'Synchro impossible pour l\'instant — on réessaiera.';
+  if (syncUi.lastAt) {
+    const mins = Math.round((Date.now() - new Date(syncUi.lastAt).getTime()) / 60000);
+    if (mins < 1) return 'Synchronisé à l\'instant ✓';
+    if (mins < 60) return `Synchronisé il y a ${mins} min ✓`;
+    const h = Math.round(mins / 60);
+    if (h < 24) return `Synchronisé il y a ${h} h ✓`;
+    return 'Synchronisé le ' + new Date(syncUi.lastAt).toLocaleDateString('fr-FR') + ' ✓';
+  }
+  return 'Pas encore synchronisé.';
+}
+// Re-rendre sans gêner : seulement sur Moi / le parcours compte, et jamais
+// pendant que l'utilisateur écrit dans un champ.
+function renderIfIdle() {
+  if (route.name !== 'moi' && route.name !== 'account') return;
+  const a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return;
+  render();
+}
+// Fonctions de fusion exposées, pures et testables.
+window.GraineSync = { mergeMemo, mergeLire, mergeDefi, syncNow, scheduleSync, status: () => Object.assign({}, syncUi) };
+
+/* ---------- Parcours compte (écrans successifs, style de l'appli) ---------- */
+let auth = null; // { step:'email'|'code'|'pseudo'|'welcome', email, code, pseudo, devCode, error, notice, busy }
+let pseudoEdit = null;      // { value, error, busy } — édition du pseudo dans Moi
+let accountNotice = null, accountError = null; // messages doux de la carte compte
+let friendsCache = null;    // null = pas chargé | 'error' | [ { pseudo, friendCode, since } ]
+let friendsLoading = false;
+let friendField = '', friendError = null, friendNotice = null;
+
+function friendlyError(e) {
+  if (e && e.offline) return 'Pas de connexion — réessaie quand tu seras en ligne.';
+  return (e && e.message) || 'Une erreur est survenue — réessaie.';
+}
+function startAccountFlow() {
+  accountNotice = accountError = null;
+  auth = { step: 'email', email: '', code: '', pseudo: '', devCode: null, error: null, notice: null, busy: false };
+  go('account');
+}
+function viewAccount() {
+  if (!auth || !window.GraineAPI) { go('moi'); return ''; }
+  const err = auth.error ? `<p class="field-error">${esc(auth.error)}</p>` : '';
+  const busy = auth.busy ? 'disabled' : '';
+  const back = `<button class="back-link" data-tab="moi">‹ Moi</button>`;
+  if (auth.step === 'email') {
+    return `<div class="fade">${back}
+      <h2 style="font-family:var(--serif);margin-bottom:2px">☁️ Ton compte</h2>
+      <p class="muted" style="margin:0 2px 14px">Gratuit et facultatif : sauvegarde ta progression, retrouve-la partout, défie tes amis. On te demande un e-mail et un pseudo — rien d'autre, jamais ton vrai nom.</p>
+      <div class="card">
+        <form data-authstep="email" novalidate>
+          <label class="lbl" for="auth-email">Ton adresse e-mail</label>
+          <input class="field" type="email" id="auth-email" inputmode="email" autocomplete="email" placeholder="toi@exemple.fr" value="${esc(auth.email)}">
+          ${err}
+          <button class="btn btn-primary" type="submit" ${busy} style="margin-top:14px">${auth.busy ? 'Envoi…' : 'Recevoir mon code'}</button>
+        </form>
+        <p class="muted" style="font-size:.85rem;margin:12px 2px 0">Pas de mot de passe : on t'envoie un code à 6 chiffres par e-mail, valable 10 minutes.</p>
+      </div></div>`;
+  }
+  if (auth.step === 'code') {
+    return `<div class="fade">${back}
+      <h2 style="font-family:var(--serif);margin-bottom:2px">📬 Ton code</h2>
+      <p class="muted" style="margin:0 2px 14px">Un code à 6 chiffres a été envoyé à <b>${esc(auth.email)}</b>.</p>
+      <div class="card">
+        <form data-authstep="code">
+          <label class="lbl" for="auth-code">Code reçu par e-mail</label>
+          <input class="field code-field" type="text" id="auth-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="••••••" value="${esc(auth.code)}">
+          ${err}${auth.notice ? `<p class="field-ok">${esc(auth.notice)}</p>` : ''}
+          <button class="btn btn-primary" type="submit" ${busy} style="margin-top:14px">${auth.busy ? 'Vérification…' : 'Valider'}</button>
+        </form>
+        ${auth.devCode ? `<p class="dev-code">mode test : code ${esc(auth.devCode)}</p>` : ''}
+        <div class="ex-tools">
+          <button class="linkbtn" data-authback="1">‹ Changer d'e-mail</button>
+          <button class="linkbtn" data-authresend="1">Renvoyer un code</button>
+        </div>
+      </div></div>`;
+  }
+  if (auth.step === 'pseudo') {
+    return `<div class="fade">${back}
+      <h2 style="font-family:var(--serif);margin-bottom:2px">🌱 Ton pseudo</h2>
+      <p class="muted" style="margin:0 2px 14px">Première connexion : choisis le nom que tes amis verront.</p>
+      <div class="card">
+        <form data-authstep="pseudo">
+          <label class="lbl" for="auth-pseudo">Ton pseudo</label>
+          <input class="field" type="text" id="auth-pseudo" maxlength="20" autocomplete="nickname" placeholder="ex. Semeur" value="${esc(auth.pseudo)}">
+          <p class="muted" style="font-size:.85rem;margin:8px 2px 0">2 à 20 caractères. Un surnom suffit — jamais ton vrai nom si tu ne veux pas.</p>
+          ${err}
+          <button class="btn btn-primary" type="submit" ${busy} style="margin-top:14px">${auth.busy ? 'Création…' : 'C\'est mon pseudo'}</button>
+        </form>
+      </div></div>`;
+  }
+  // welcome — compte prêt, première synchro déjà lancée en arrière-plan.
+  const u = GraineAPI.user() || {};
+  return `<div class="done-screen fade">
+    <div class="seal">🎉</div>
+    <h2 style="font-family:var(--serif);margin:10px 0">Bienvenue, ${esc(u.pseudo || '')} !</h2>
+    <p class="muted">Ton compte est prêt — ta progression se synchronise en arrière-plan.</p>
+    <div class="friend-code-row" style="max-width:300px;margin:18px auto 0;text-align:left">
+      <div><div class="fc-label">Ton code ami</div><div class="friend-code">${esc(u.friendCode || '')}</div></div>
+      <button class="btn btn-soft" data-copycode="1">Copier</button></div>
+    <p class="muted" style="font-size:.9rem;margin-top:12px">Partage-le en privé : c'est lui qui relie tes amis à toi.</p>
+    <button class="btn btn-primary" data-authdone="1" style="margin-top:18px">C'est parti</button>
+  </div>`;
+}
+async function authSubmit(step) {
+  if (!auth || auth.busy) return;
+  auth.notice = null;
+  if (step === 'email') {
+    const email = (auth.email || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { auth.error = 'Entre une adresse e-mail valide.'; render(); return; }
+    auth.email = email; auth.error = null; auth.busy = true; render();
+    try {
+      const r = await GraineAPI.requestCode(email);
+      auth.devCode = r && r.devCode ? String(r.devCode) : null;
+      auth.step = 'code'; auth.code = '';
+    } catch (e) { auth.error = friendlyError(e); }
+    auth.busy = false; render();
+  } else if (step === 'code') {
+    const code = (auth.code || '').replace(/\D/g, '');
+    if (code.length !== 6) { auth.error = 'Le code contient 6 chiffres.'; render(); return; }
+    auth.code = code; auth.error = null; auth.busy = true; render();
+    try { await GraineAPI.verify(auth.email, code); authSuccess(); }
+    catch (e) {
+      if (e && e.data && e.data.needPseudo) { auth.step = 'pseudo'; auth.error = null; }
+      else auth.error = friendlyError(e);
+    }
+    auth.busy = false; render();
+  } else if (step === 'pseudo') {
+    const pseudo = (auth.pseudo || '').trim();
+    if (pseudo.length < 2 || pseudo.length > 20) { auth.error = 'Ton pseudo doit faire entre 2 et 20 caractères.'; render(); return; }
+    auth.pseudo = pseudo; auth.error = null; auth.busy = true; render();
+    try { await GraineAPI.verify(auth.email, auth.code, pseudo); authSuccess(); }
+    catch (e) { auth.error = friendlyError(e); }
+    auth.busy = false; render();
+  }
+}
+function authSuccess() {
+  auth.step = 'welcome';
+  friendsCache = null;
+  syncNow(); // PREMIÈRE SYNCHRO — silencieuse, non bloquante
+}
+async function authResend() {
+  if (!auth || auth.busy) return;
+  auth.busy = true; auth.error = null; auth.notice = null; render();
+  try {
+    const r = await GraineAPI.requestCode(auth.email);
+    auth.devCode = r && r.devCode ? String(r.devCode) : auth.devCode;
+    auth.notice = 'Nouveau code envoyé.';
+  } catch (e) { auth.error = friendlyError(e); }
+  auth.busy = false; render();
+}
+
+/* ---------- Carte compte dans Moi ---------- */
+function moiInviteCard() {
+  return `<div class="card account-card fade">
+    ${accountNotice ? `<p class="field-ok" style="margin:0 0 10px">${esc(accountNotice)}</p>` : ''}
+    <div class="acc-head"><span class="acc-ic">☁️</span><b>Synchronise et retrouve tes amis</b></div>
+    <p class="muted">Sauvegarde ta progression, retrouve-la sur tous tes appareils, défie tes amis.</p>
+    <p class="muted acc-privacy">🔒 Facultatif et gratuit. E-mail + pseudo, rien d'autre — jamais ton vrai nom.</p>
+    <button class="btn btn-primary" data-account="1" style="margin-top:12px">Créer mon compte / Me connecter</button>
+  </div>`;
+}
+function moiAccountCard(u) {
+  let actions;
+  if (pseudoEdit) {
+    actions = `<form data-pseudoform="1" class="add-friend-row" style="margin-top:12px">
+        <input class="field" type="text" id="pseudoInput" maxlength="20" autocomplete="nickname" value="${esc(pseudoEdit.value)}">
+        <button class="btn btn-grow" type="submit" ${pseudoEdit.busy ? 'disabled' : ''}>OK</button>
+      </form>
+      ${pseudoEdit.error ? `<p class="field-error">${esc(pseudoEdit.error)}</p>` : ''}
+      <button class="linkbtn" data-cancelpseudo="1">Annuler</button>`;
+  } else {
+    actions = `<button class="btn btn-soft btn-block" data-syncnow="1" ${syncUi.status === 'syncing' ? 'disabled' : ''} style="margin-top:12px">Synchroniser maintenant</button>
+      <div class="btn-row" style="margin-top:8px">
+        <button class="btn btn-ghost" data-editpseudo="1">Changer de pseudo</button>
+        <button class="btn btn-ghost" data-logout="1">Se déconnecter</button>
+      </div>`;
+  }
+  return `<div class="card account-card fade">
+    <div class="acc-user"><span class="acc-ic">☁️</span>
+      <div class="acc-id"><b>${esc(u.pseudo)}</b><br><span class="muted acc-mail">${esc(u.email)}</span></div></div>
+    <div class="friend-code-row">
+      <div><div class="fc-label">Code ami</div><div class="friend-code" id="friendCode">${esc(u.friendCode)}</div></div>
+      <button class="btn btn-soft" data-copycode="1">Copier</button></div>
+    <p class="sync-status muted">${esc(syncStatusText())}</p>
+    ${actions}
+    ${accountError ? `<p class="field-error">${esc(accountError)}</p>` : ''}
+    <details class="danger-zone"><summary>Supprimer mon compte…</summary>
+      <p class="muted" style="margin:8px 2px">Cela efface <b>tout sur le serveur</b> : compte, sauvegarde, amis, duels. Tes données locales, elles, restent sur cet appareil.</p>
+      <button class="btn btn-ghost btn-block btn-danger" data-delaccount="1">Oui, supprimer mon compte du serveur</button>
+    </details>
+  </div>`;
+}
+async function doLogout() {
+  await GraineAPI.logout(); // même hors-ligne, la session locale est effacée
+  pseudoEdit = null; friendsCache = null; friendField = ''; friendError = friendNotice = null;
+  syncUi = { status: 'idle', lastAt: null };
+  try { localStorage.removeItem(SYNC_META_KEY); } catch (e) {}
+  accountNotice = 'Tu es déconnecté. Tes données locales sont intactes.';
+  render();
+}
+async function doDeleteAccount() {
+  accountError = null;
+  try {
+    await GraineAPI.deleteAccount();
+    pseudoEdit = null; friendsCache = null; friendField = ''; friendError = friendNotice = null;
+    syncUi = { status: 'idle', lastAt: null };
+    try { localStorage.removeItem(SYNC_META_KEY); } catch (e) {}
+    accountNotice = 'Ton compte a été supprimé du serveur. Tes données locales sont intactes.';
+  } catch (e) { accountError = friendlyError(e); }
+  render();
+}
+async function savePseudo() {
+  if (!pseudoEdit || pseudoEdit.busy) return;
+  const p = (pseudoEdit.value || '').trim();
+  if (p.length < 2 || p.length > 20) { pseudoEdit.error = 'Entre 2 et 20 caractères.'; render(); return; }
+  pseudoEdit.busy = true; pseudoEdit.error = null; render();
+  try { await GraineAPI.setPseudo(p); pseudoEdit = null; }
+  catch (e) { pseudoEdit.busy = false; pseudoEdit.error = friendlyError(e); }
+  render();
+}
+function copyFriendCode() {
+  const u = GraineAPI.user(); if (!u) return;
+  const done = () => {
+    const b = el.querySelector('[data-copycode]');
+    if (b) { b.textContent = 'Copié ✓'; setTimeout(() => { const b2 = el.querySelector('[data-copycode]'); if (b2) b2.textContent = 'Copier'; }, 1600); }
+  };
+  const fallback = () => { // repli : sélection + execCommand
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = u.friendCode; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      done();
+    } catch (e) { /* le code reste visible à recopier */ }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u.friendCode).then(done).catch(fallback);
+  else fallback();
+}
+
+/* ---------- Amis ---------- */
+function normalizeFriendCode(raw) {
+  let c = String(raw || '').toUpperCase().replace(/[\s-]+/g, '');
+  if (/^[A-Z0-9]{4}$/.test(c)) c = 'GRN' + c; // on tolère les 4 caractères seuls
+  return /^GRN[A-Z0-9]{4}$/.test(c) ? 'GRN-' + c.slice(3) : null;
+}
+function sinceText(iso) {
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return 'amis';
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const dd = new Date(d); dd.setHours(0, 0, 0, 0);
+    if (dd.getTime() === today.getTime()) return 'amis depuis aujourd\'hui';
+    return 'amis depuis le ' + d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  } catch (e) { return 'amis'; }
+}
+function ensureFriends() {
+  if (!window.GraineAPI || !GraineAPI.isLoggedIn() || friendsCache !== null || friendsLoading) return;
+  friendsLoading = true;
+  GraineAPI.friends()
+    .then(f => { friendsCache = Array.isArray(f) ? f : []; })
+    .catch(() => { friendsCache = 'error'; })
+    .then(() => { friendsLoading = false; renderIfIdle(); });
+}
+function moiFriendsSection(u) {
+  let list;
+  if (friendsCache === null) list = `<p class="muted fr-empty">Chargement de ta liste d'amis…</p>`;
+  else if (friendsCache === 'error') list = `<p class="muted fr-empty">Ta liste d'amis apparaîtra dès que tu seras en ligne.</p>`;
+  else if (!friendsCache.length) list = `<p class="muted fr-empty">Pas encore d'ami — échangez vos codes pour vous retrouver.</p>`;
+  else list = friendsCache.map(f => `<div class="friend-row">
+      <span class="fr-avatar">🌿</span>
+      <span class="fr-main"><b>${esc(f.pseudo)}</b><br><span class="muted fr-since">${esc(sinceText(f.since))}</span></span>
+      <button class="fr-x" data-unfriend="${esc(f.friendCode)}" data-pseudo="${esc(f.pseudo)}" title="Retirer cet ami" aria-label="Retirer ${esc(f.pseudo)}">✕</button>
+    </div>`).join('');
+  return `<div class="section-title">🤝 Amis</div>
+    <div class="card friends-card fade">
+      <p style="margin:0 0 10px">Ton code ami : <span class="friend-code inline">${esc(u.friendCode)}</span></p>
+      <form data-addfriendform="1" class="add-friend-row">
+        <input class="field" type="text" id="friendInput" placeholder="Code d'un ami (GRN-XXXX)" autocomplete="off" autocapitalize="characters" value="${esc(friendField)}">
+        <button class="btn btn-grow" type="submit">Ajouter</button>
+      </form>
+      ${friendError ? `<p class="field-error">${esc(friendError)}</p>` : ''}
+      ${friendNotice ? `<p class="field-ok">${esc(friendNotice)}</p>` : ''}
+      ${list}
+    </div>
+    <p class="muted me-note">Pour vous défier, rendez-vous dans Défi → « Défier un ami ».</p>`;
+}
+async function doAddFriend() {
+  friendNotice = null;
+  const code = normalizeFriendCode(friendField);
+  if (!code) { friendError = 'Un code ami ressemble à GRN-XXXX.'; render(); return; }
+  const me = GraineAPI.user();
+  if (me && code === me.friendCode) { friendError = 'C\'est ton propre code 🙂'; render(); return; }
+  friendError = null;
+  try {
+    const r = await GraineAPI.addFriend(code);
+    friendField = '';
+    const pseudo = r && r.friend && r.friend.pseudo ? r.friend.pseudo : 'ton ami';
+    friendNotice = `Vous voilà amis avec ${pseudo} 🌱`;
+    if (Array.isArray(friendsCache) && r && r.friend) friendsCache.push(r.friend);
+    else friendsCache = null; // on rechargera la liste
+  } catch (e) {
+    if (e && e.offline) friendError = 'Pas de connexion — réessaie quand tu seras en ligne.';
+    else if (e && e.status === 404) friendError = 'Code inconnu — vérifie-le auprès de ton ami.';
+    else if (e && e.status === 409) friendError = 'Vous êtes déjà amis 🙂';
+    else friendError = friendlyError(e);
+  }
+  render();
+}
+async function doRemoveFriend(code, pseudo) {
+  if (!confirm(`Retirer ${pseudo} de tes amis ?`)) return;
+  try {
+    await GraineAPI.removeFriend(code);
+    if (Array.isArray(friendsCache)) friendsCache = friendsCache.filter(f => f.friendCode !== code);
+  } catch (e) { friendError = friendlyError(e); }
+  render();
+}
+
+/* ============================================================================
    Interactions
    ========================================================================== */
 function wire() {
@@ -766,6 +1242,33 @@ function wire() {
   el.querySelectorAll('[data-selectcoll]').forEach(b => b.addEventListener('click', () => selectCollection(b.dataset.selectcoll)));
   el.querySelectorAll('[data-clearcoll]').forEach(b => b.addEventListener('click', () => { store.activeCollection = null; saveStore(); go('memo'); }));
   el.querySelectorAll('[data-gview]').forEach(b => b.addEventListener('click', () => { gardenView = b.dataset.gview; render(); }));
+
+  // Compte, synchro & amis
+  if (route.name === 'moi') ensureFriends();
+  if (q('[data-account]')) q('[data-account]').addEventListener('click', startAccountFlow);
+  if (q('[data-syncnow]')) q('[data-syncnow]').addEventListener('click', () => { syncNow(); });
+  if (q('[data-copycode]')) q('[data-copycode]').addEventListener('click', copyFriendCode);
+  if (q('[data-editpseudo]')) q('[data-editpseudo]').addEventListener('click', () => {
+    pseudoEdit = { value: (GraineAPI.user() || {}).pseudo || '', error: null, busy: false }; render();
+  });
+  if (q('[data-cancelpseudo]')) q('[data-cancelpseudo]').addEventListener('click', () => { pseudoEdit = null; render(); });
+  if (q('[data-pseudoform]')) q('[data-pseudoform]').addEventListener('submit', e => { e.preventDefault(); savePseudo(); });
+  if (q('[data-logout]')) q('[data-logout]').addEventListener('click', doLogout);
+  if (q('[data-delaccount]')) q('[data-delaccount]').addEventListener('click', doDeleteAccount);
+  if (q('[data-addfriendform]')) q('[data-addfriendform]').addEventListener('submit', e => { e.preventDefault(); doAddFriend(); });
+  el.querySelectorAll('[data-unfriend]').forEach(b => b.addEventListener('click', () => doRemoveFriend(b.dataset.unfriend, b.dataset.pseudo)));
+  // parcours compte (écrans successifs)
+  el.querySelectorAll('form[data-authstep]').forEach(f => f.addEventListener('submit', e => { e.preventDefault(); authSubmit(f.dataset.authstep); }));
+  if (q('[data-authback]')) q('[data-authback]').addEventListener('click', () => { if (auth) { auth.step = 'email'; auth.error = auth.notice = null; render(); } });
+  if (q('[data-authresend]')) q('[data-authresend]').addEventListener('click', authResend);
+  if (q('[data-authdone]')) q('[data-authdone]').addEventListener('click', () => { auth = null; go('moi'); });
+  // les saisies survivent aux re-rendus (l'état est la source de vérité)
+  const bindInput = (id, fn) => { const n = q('#' + id); if (n) n.addEventListener('input', () => fn(n.value)); };
+  bindInput('auth-email', v => { if (auth) auth.email = v; });
+  bindInput('auth-code', v => { if (auth) auth.code = v; });
+  bindInput('auth-pseudo', v => { if (auth) auth.pseudo = v; });
+  bindInput('pseudoInput', v => { if (pseudoEdit) pseudoEdit.value = v; });
+  bindInput('friendInput', v => { friendField = v; });
 }
 function fillNext(pid) {
   const ex = session.ex; const k = ex.filled.findIndex(x => x === null);
@@ -820,4 +1323,7 @@ function removeVerse(id) {
   await Promise.all([loadLibrary(), loadCollections()]);
   syncCompletedCollections();
   render();
+  // Synchronisation à l'ouverture si connecté — silencieuse, non bloquante :
+  // hors-ligne, l'appli locale continue exactement comme avant.
+  if (window.GraineAPI && GraineAPI.isLoggedIn()) syncNow();
 })();

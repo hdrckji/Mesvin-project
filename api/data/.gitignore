@@ -1,0 +1,5 @@
+# Base SQLite locale (mode dev) — jamais versionnée.
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
