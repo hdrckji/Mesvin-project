@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Graine de Parole">
+  <rect width="512" height="512" rx="112" fill="#1b2a4a"/>
+  <!-- terre / colline -->
+  <path d="M96 372c40-26 96-26 160-26s120 0 160 26v20H96z" fill="#243a5e"/>
+  <!-- tige -->
+  <path d="M256 372c0-70 0-120 0-150" stroke="#6fb07c" stroke-width="18" stroke-linecap="round" fill="none"/>
+  <!-- feuille gauche -->
+  <path d="M256 268c-16-52-70-70-104-64 6 44 44 84 104 76z" fill="#4b8055"/>
+  <!-- feuille droite -->
+  <path d="M256 246c14-46 62-62 92-56-4 40-38 74-92 66z" fill="#6fb07c"/>
+  <!-- graine / lumière -->
+  <circle cx="256" cy="196" r="20" fill="#d9b45f"/>
+</svg>

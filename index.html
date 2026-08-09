@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Graine de Parole — Cache la Parole dans ton cœur</title>
+  <meta name="description" content="Mémorise des versets bibliques et garde-les vivants, un peu chaque jour." />
+  <meta name="theme-color" content="#1b2a4a" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <div id="app" aria-live="polite"></div>
+
+  <!-- La barre de navigation est injectée par le JS pour rester cohérente d'un écran à l'autre. -->
+
+  <script src="app.js" defer></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

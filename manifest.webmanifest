@@ -1,0 +1,15 @@
+{
+  "name": "Graine de Parole — mémorise la Parole",
+  "short_name": "Graine",
+  "description": "Mémorise des versets bibliques et garde-les vivants, un peu chaque jour.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f3ea",
+  "theme_color": "#1b2a4a",
+  "lang": "fr",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
