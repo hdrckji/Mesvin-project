@@ -54,7 +54,14 @@ if ($path === '/api/health' && $method === 'GET') {
             'hint'  => mb_substr($e->getMessage(), 0, 160),
         ], 500);
     }
-    json_out(['ok' => true, 'db' => db_driver($pdo), 'mail' => mail_mode()]);
+    json_out([
+        'ok'   => true,
+        'db'   => db_driver($pdo),
+        'mail' => mail_mode(),
+        // Diagnostic de déploiement : la page de démonstration de l'image de
+        // base est-elle encore présente à la racine web ? (doit être false)
+        'demo' => file_exists(dirname(__DIR__) . '/index.php'),
+    ]);
 }
 
 $pdo = db();

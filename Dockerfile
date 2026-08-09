@@ -27,6 +27,10 @@ COPY api/ ./api/
 # sur Railway, MYSQL_URL est définie et ce dossier ne sert pas).
 RUN mkdir -p api/data && chmod 777 api/data
 
+# Ceinture et bretelles : quel que soit l'état des couches précédentes, la
+# page de démonstration de l'image de base ne doit pas survivre au build.
+RUN rm -f /app/public/index.php && ls -la /app/public | head -20
+
 # Port par défaut en local ; Railway injecte $PORT, lu par le Caddyfile.
 ENV PORT=8080
 EXPOSE 8080
