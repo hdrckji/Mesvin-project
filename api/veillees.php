@@ -72,7 +72,7 @@ function veillee_load(PDO $pdo, string $code): array {
     $st->execute([$code]);
     $v = $st->fetch();
     if ($v === false) {
-        json_error('Veillée introuvable — vérifie le code.', 404);
+        json_error('Quiz introuvable — vérifie le code.', 404);
     }
     return $v;
 }
@@ -333,7 +333,7 @@ function handle_veillees_state(PDO $pdo, string $code): never {
 function handle_veillees_join(PDO $pdo, string $code): never {
     $v = veillee_load($pdo, $code);
     if ($v['statut'] === 'done') {
-        json_error('Cette veillée est déjà terminée.', 410);
+        json_error('Ce quiz est déjà terminé.', 410);
     }
     $prenom = validate_pseudo(read_json_body()['prenom'] ?? null);
     if ($prenom === null) {
@@ -343,13 +343,13 @@ function handle_veillees_join(PDO $pdo, string $code): never {
     $st = $pdo->prepare('SELECT COUNT(*) AS n FROM veillee_players WHERE veillee_id = ?');
     $st->execute([(int) $v['id']]);
     if ((int) $st->fetch()['n'] >= VEILLEE_MAX_PLAYERS) {
-        json_error('La veillée est au complet (' . VEILLEE_MAX_PLAYERS . ' participants).', 409);
+        json_error('Le quiz est au complet (' . VEILLEE_MAX_PLAYERS . ' participants).', 409);
     }
     // Un prénom = une personne sur le grand écran : pas de doublon.
     $st = $pdo->prepare('SELECT 1 FROM veillee_players WHERE veillee_id = ? AND prenom = ?');
     $st->execute([(int) $v['id'], $prenom]);
     if ($st->fetch() !== false) {
-        json_error('Ce prénom est déjà pris dans cette veillée — ajoute une initiale.', 409);
+        json_error('Ce prénom est déjà pris dans ce quiz — ajoute une initiale.', 409);
     }
 
     $playerKey = bin2hex(random_bytes(16));
@@ -371,13 +371,13 @@ function handle_veillees_answer(PDO $pdo, string $code): never {
 
     $key = (string) ($body['playerKey'] ?? '');
     if (!preg_match('/^[a-f0-9]{32}$/', $key)) {
-        json_error('Participant inconnu — rejoins la veillée d\'abord.', 401);
+        json_error('Participant inconnu — rejoins le quiz d\'abord.', 401);
     }
     $st = $pdo->prepare('SELECT * FROM veillee_players WHERE veillee_id = ? AND player_key = ?');
     $st->execute([(int) $v['id'], $key]);
     $me = $st->fetch();
     if ($me === false) {
-        json_error('Participant inconnu — rejoins la veillée d\'abord.', 401);
+        json_error('Participant inconnu — rejoins le quiz d\'abord.', 401);
     }
 
     $qIndex = (int) $v['current_q'];
@@ -425,7 +425,7 @@ function handle_veillees_advance(PDO $pdo, string $code): never {
     $user = require_user($pdo);
     $v = veillee_load($pdo, $code);
     if ((int) $v['host_user_id'] !== (int) $user['id']) {
-        json_error('Seul l\'animateur de cette veillée peut la piloter.', 403);
+        json_error('Seul l\'animateur de ce quiz peut le piloter.', 403);
     }
 
     $action = (string) (read_json_body()['action'] ?? '');
@@ -434,12 +434,12 @@ function handle_veillees_advance(PDO $pdo, string $code): never {
 
     if ($action === 'start') {
         if ($v['statut'] !== 'lobby') {
-            json_error('La veillée est déjà lancée.', 409);
+            json_error('Le quiz est déjà lancé.', 409);
         }
         $st = $pdo->prepare('SELECT COUNT(*) AS n FROM veillee_players WHERE veillee_id = ?');
         $st->execute([(int) $v['id']]);
         if ((int) $st->fetch()['n'] < 1) {
-            json_error('Attends qu\'au moins une personne ait rejoint la veillée.', 409);
+            json_error('Attends qu\'au moins une personne ait rejoint le quiz.', 409);
         }
         veillee_touch($pdo, (int) $v['id'], ['statut' => 'question', 'current_q' => 0, 'question_started_at' => now_sql()]);
     } elseif ($action === 'reveal') {

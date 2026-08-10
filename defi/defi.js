@@ -671,8 +671,8 @@ function renderAccueil() {
     <button class="card hub-card" id="btn-veillee">
       <span class="hub-ic">🔥</span>
       <span class="hub-txt">
-        <span class="hub-title">Veillée en direct</span>
-        <span class="hub-sub">Un grand écran pour tous, chacun répond sur son téléphone, en même temps.</span>
+        <span class="hub-title">Quiz dans ton église</span>
+        <span class="hub-sub">En direct : un grand écran pour tous, chacun répond sur son téléphone.</span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -1471,17 +1471,33 @@ async function vlPoll() {
     const etat = await GraineAPI.veilleeState(vl.code, vl.playerKey || undefined);
     const avant = vl.etat;
     if (avant && etat.qIndex !== avant.qIndex) vl.maReponse = null; // nouvelle question
-    const j = JSON.stringify(etat);
+    // On ne re-rend l'écran QUE sur un vrai changement (phase, question,
+    // participants…). Les champs qui bougent à chaque appel — décompte,
+    // nombre de réponses — sont mis à jour EN PLACE par vlPatch/vlTick :
+    // re-rendre à chaque poll faisait « clignoter » l'écran (l'animation
+    // d'apparition repartait toutes les deux secondes).
+    const stable = { ...etat };
+    delete stable.remaining;
+    delete stable.nAnswered;
+    const j = JSON.stringify(stable);
     const change = j !== vl.lastJson;
     vl.lastJson = j;
     vl.etat = etat;
     vl.remainingAt = Date.now();
     if (change) render();
+    else vlPatch();
     if (vl.mode === 'host') vlAutoReveal();
   } catch (e) {
-    if (e && e.status === 404) { vlQuitter('Cette veillée n\'existe plus.'); return; }
+    if (e && e.status === 404) { vlQuitter('Ce quiz n\'existe plus.'); return; }
     // hors-ligne passager : on garde l'écran tel quel, le prochain tour retentera
   }
+}
+/* Met à jour les chiffres vivants sans re-rendre (pas de clignotement). */
+function vlPatch() {
+  const e = vl && vl.etat;
+  if (!e) return;
+  const rep = document.getElementById('vl-nb-rep');
+  if (rep) rep.textContent = `${e.nAnswered}/${e.nPlayers} ont répondu`;
 }
 function vlRestant() {
   if (!vl || !vl.etat || vl.etat.statut !== 'question') return 0;
@@ -1598,7 +1614,7 @@ function renderVeilleeMenu() {
   <div class="fade">
     <button class="back-link" id="btn-retour-defi">‹ Défi</button>
     <div class="topbar"><div class="brand">
-      <h1 class="app-title">Veillée <span class="seed">•</span> <span class="muted">en direct</span></h1>
+      <h1 class="app-title">Quiz dans ton église <span class="seed">•</span> <span class="muted">en direct</span></h1>
     </div></div>
 
     <p class="defi-lead" style="margin:0 4px 16px">L'animateur projette un grand écran ; chacun rejoint avec un code et répond sur son téléphone. Après chaque question, la référence ramène au texte.</p>
@@ -1609,7 +1625,7 @@ function renderVeilleeMenu() {
       <span class="hub-ic">↩️</span>
       <span class="hub-txt">
         <span class="hub-title">Reprendre</span>
-        <span class="hub-sub">${reprise.host ? `Tu animais la veillée <b>${esc(reprise.code)}</b>.` : `Tu étais <b>${esc(reprise.prenom || '')}</b> dans la veillée <b>${esc(reprise.code)}</b>.`}</span>
+        <span class="hub-sub">${reprise.host ? `Tu animais le quiz <b>${esc(reprise.code)}</b>.` : `Tu étais <b>${esc(reprise.prenom || '')}</b> dans le quiz <b>${esc(reprise.code)}</b>.`}</span>
       </span>
       <span class="chev">›</span>
     </button>` : ''}
@@ -1627,7 +1643,7 @@ function renderVeilleeMenu() {
       <span class="hub-ic">🎤</span>
       <span class="hub-txt">
         <span class="hub-title">Animer</span>
-        <span class="hub-sub">Crée la veillée et projette cet écran — pour toute l'assemblée.</span>
+        <span class="hub-sub">Crée le quiz et projette cet écran — pour toute l'assemblée.</span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -1648,11 +1664,11 @@ function renderVeilleeMenu() {
 function renderVeilleeCompte() {
   el.innerHTML = `
   <div class="fade">
-    <button class="back-link" id="btn-vl-retour">‹ Veillée</button>
+    <button class="back-link" id="btn-vl-retour">‹ Quiz</button>
     <div class="card" style="text-align:center;padding:26px 18px">
       <div style="font-size:2.2rem">🎤</div>
       <h2 style="font-family:var(--serif);margin:10px 0 6px">Animer demande un compte</h2>
-      <p class="defi-lead">C'est gratuit et rapide — il garde ta veillée à toi seul aux commandes. Les participants, eux, n'en ont pas besoin.</p>
+      <p class="defi-lead">C'est gratuit et rapide — il garde ton quiz à toi seul aux commandes. Les participants, eux, n'en ont pas besoin.</p>
       <p class="defi-lead">Ouvre l'appli principale, onglet <b>Moi</b>, puis « Créer mon compte / Me connecter » (par e-mail ou avec Google), et reviens ici.</p>
       <div class="defi-actions">
         <a class="btn btn-primary btn-block" href="../index.html">Aller me connecter</a>
@@ -1665,9 +1681,9 @@ function renderVeilleeCompte() {
 function renderVeilleeCreer() {
   el.innerHTML = `
   <div class="fade">
-    <button class="back-link" id="btn-vl-retour">‹ Veillée</button>
+    <button class="back-link" id="btn-vl-retour">‹ Quiz</button>
     <div class="topbar"><div class="brand">
-      <h1 class="app-title">Animer <span class="seed">•</span> <span class="muted">préparer la veillée</span></h1>
+      <h1 class="app-title">Animer <span class="seed">•</span> <span class="muted">préparer le quiz</span></h1>
     </div></div>
 
     <div class="card">
@@ -1696,7 +1712,7 @@ function renderVeilleeCreer() {
       <p class="prepa-note">≈ ${Math.max(2, Math.round(vl.nb * (vl.seconds + 15) / 60))} min, échanges compris. Les questions sont tirées par le site, personne ne les connaît d'avance — pas même toi.</p>
       ${vl.error ? `<p class="field-error">${esc(vl.error)}</p>` : ''}
       <div class="defi-actions">
-        <button class="btn btn-primary" id="btn-vl-creer" ${vl.busy ? 'disabled' : ''}>${vl.busy ? 'Création…' : 'Créer la veillée'}</button>
+        <button class="btn btn-primary" id="btn-vl-creer" ${vl.busy ? 'disabled' : ''}>${vl.busy ? 'Création…' : 'Créer le quiz'}</button>
       </div>
     </div>
   </div>`;
@@ -1712,9 +1728,9 @@ function renderVeilleeCreer() {
 function renderVeilleeJoin() {
   el.innerHTML = `
   <div class="fade">
-    <button class="back-link" id="btn-vl-retour">‹ Veillée</button>
+    <button class="back-link" id="btn-vl-retour">‹ Quiz</button>
     <div class="topbar"><div class="brand">
-      <h1 class="app-title">Rejoindre <span class="seed">•</span> <span class="muted">la veillée</span></h1>
+      <h1 class="app-title">Rejoindre <span class="seed">•</span> <span class="muted">le quiz</span></h1>
     </div></div>
 
     <div class="card">
@@ -1761,13 +1777,13 @@ function renderVeilleeHost() {
   if (e.statut === 'lobby') {
     corps = `
     <div class="card vl-proj">
-      <p class="vl-invite">Sur vos téléphones : <b>${esc(location.host)}</b> › Sonder › Veillée en direct › <b>Rejoindre</b></p>
+      <p class="vl-invite">Sur vos téléphones : <b>${esc(location.host)}</b> › Sonder › Quiz dans ton église › <b>Rejoindre</b></p>
       <div class="vl-code-big">${esc(e.code)}</div>
       <p class="vl-nb">${e.nPlayers === 0 ? 'En attente des premiers participants…' : `${e.nPlayers} participant${e.nPlayers > 1 ? 's' : ''}`}</p>
       <div class="vl-chips">${e.players.map(p => `<span class="vl-chip">${esc(p.prenom)}</span>`).join('')}</div>
     </div>
     <div class="defi-actions">
-      <button class="btn btn-primary btn-block" id="btn-vl-start" ${e.nPlayers === 0 || vl.busy ? 'disabled' : ''}>Lancer la veillée</button>
+      <button class="btn btn-primary btn-block" id="btn-vl-start" ${e.nPlayers === 0 || vl.busy ? 'disabled' : ''}>Lancer le quiz</button>
     </div>`;
   } else if (e.statut === 'question') {
     corps = `
@@ -1778,7 +1794,7 @@ function renderVeilleeHost() {
       <div class="vl-options">
         ${e.question.options.map((o, i) => `<div class="vl-opt"><span class="vl-letter">${lettres[i]}</span>${esc(o)}</div>`).join('')}
       </div>
-      <p class="vl-nb">${e.nAnswered}/${e.nPlayers} ont répondu</p>
+      <p class="vl-nb" id="vl-nb-rep">${e.nAnswered}/${e.nPlayers} ont répondu</p>
     </div>
     <div class="defi-actions">
       <button class="btn btn-soft btn-block" id="btn-vl-reveal" ${vl.busy ? 'disabled' : ''}>Révéler sans attendre</button>
@@ -1817,7 +1833,7 @@ function renderVeilleeHost() {
     corps = `
     <div class="card vl-proj done-screen">
       <div class="seal">🌾</div>
-      <h2 style="font-family:var(--serif)">Belle veillée !</h2>
+      <h2 style="font-family:var(--serif)">Beau moment ensemble !</h2>
       ${e.bilan ? `<p class="defi-word">Ensemble, vous avez trouvé <b>${e.bilan.bonnes}</b> bonne${e.bilan.bonnes > 1 ? 's' : ''} réponse${e.bilan.bonnes > 1 ? 's' : ''} sur ${e.bilan.reponses}. Chaque référence est une porte vers le texte.</p>` : ''}
       <div class="vl-podium">
         ${podium.map(p => `<div class="vl-pod r${p.rang}"><span class="medal">${['🥇', '🥈', '🥉'][p.rang - 1] || '🌱'}</span><b>${esc(p.prenom)}</b><span class="pts">${p.score} pts</span></div>`).join('')}
@@ -1837,20 +1853,20 @@ function renderVeilleeHost() {
   <div class="fade">
     <div class="vl-topline">
       <button class="back-link" id="btn-vl-quitter" style="margin:0">‹ Quitter</button>
-      ${e.statut !== 'done' && e.statut !== 'lobby' ? `<span class="vl-code-mini">Veillée ${esc(e.code)}</span>` : ''}
-      ${e.statut !== 'done' ? `<button class="linkbtn" id="btn-vl-end">Clore la veillée</button>` : ''}
+      ${e.statut !== 'done' && e.statut !== 'lobby' ? `<span class="vl-code-mini">Quiz ${esc(e.code)}</span>` : ''}
+      ${e.statut !== 'done' ? `<button class="linkbtn" id="btn-vl-end">Clore le quiz</button>` : ''}
     </div>
     ${vl.error ? `<p class="field-error" style="margin:0 4px 10px">${esc(vl.error)}</p>` : ''}
     ${corps}
   </div>`;
 
   document.getElementById('btn-vl-quitter').onclick = () => {
-    if (e.statut === 'done' || confirm('Quitter l\'écran d\'animation ? La veillée reste ouverte : tu pourras la reprendre depuis « Veillée en direct ».')) {
+    if (e.statut === 'done' || confirm('Quitter l\'écran d\'animation ? Le quiz reste ouvert : tu pourras le reprendre depuis « Quiz dans ton église ».')) {
       vlArreterPolling(); vl = { mode: 'menu' }; render();
     }
   };
   const endB = document.getElementById('btn-vl-end');
-  if (endB) endB.onclick = () => { if (confirm('Clore la veillée pour tout le monde ?')) vlAvancer('end'); };
+  if (endB) endB.onclick = () => { if (confirm('Clore le quiz pour tout le monde ?')) vlAvancer('end'); };
   const s = document.getElementById('btn-vl-start');
   if (s) s.onclick = () => vlAvancer('start');
   const rv = document.getElementById('btn-vl-reveal');
@@ -1877,7 +1893,7 @@ function renderVeilleePlayer() {
     <div class="card center" style="padding:30px 18px">
       <div style="font-size:2.2rem">🔥</div>
       <h2 style="font-family:var(--serif);margin:10px 0 6px">Tu y es, ${esc(vl.prenom)} !</h2>
-      <p class="defi-lead" style="margin:0">Regarde le grand écran — l'animateur va lancer la veillée.</p>
+      <p class="defi-lead" style="margin:0">Regarde le grand écran — l'animateur va lancer le quiz.</p>
       <p class="muted" style="margin-top:10px">${e.nPlayers} participant${e.nPlayers > 1 ? 's' : ''} · ${e.qTotal} questions</p>
     </div>`;
   } else if (e.statut === 'question') {
@@ -1923,14 +1939,14 @@ function renderVeilleePlayer() {
   <div class="fade">
     <div class="vl-topline">
       <button class="back-link" id="btn-vl-quitter" style="margin:0">‹ Quitter</button>
-      <span class="vl-code-mini">Veillée ${esc(e.code)}</span>
+      <span class="vl-code-mini">Quiz ${esc(e.code)}</span>
     </div>
     ${vl.error ? `<p class="field-error" style="margin:0 4px 10px">${esc(vl.error)}</p>` : ''}
     ${corps}
   </div>`;
 
   document.getElementById('btn-vl-quitter').onclick = () => {
-    if (e.statut === 'done' || confirm('Quitter la veillée ?')) vlQuitter();
+    if (e.statut === 'done' || confirm('Quitter le quiz ?')) vlQuitter();
   };
   document.querySelectorAll('#options .defi-option').forEach(b => {
     b.onclick = () => vlRepondre(Number(b.dataset.pos));

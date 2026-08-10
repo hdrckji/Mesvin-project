@@ -787,6 +787,11 @@ function viewAbout() {
       <p>🔒 <b>Vie privée d'abord.</b> Tout fonctionne hors-ligne, sans compte. Le compte est facultatif (e-mail + pseudo, rien d'autre) et se supprime en un geste.</p>
       <p>🌱 <b>Encourager, pas culpabiliser.</b> Pas de « retard », pas de reproche.</p>
       <p>📖 <b>Respect du texte.</b> Versets ${esc(LIB_VERSION)} (domaine public).</p></div>
+    <div class="section-title">Pour les églises</div>
+    <div class="card">
+      <p>⛪ <b>Pasteur, responsable d'église ou de jeunesse ?</b> Tu aimerais utiliser Bible Horizon avec ton assemblée — quiz sur grand écran, groupes, suivi ? Écris-nous : on regardera ensemble comment l'adapter au mieux à tes besoins.</p>
+      <p class="center" style="margin-top:12px"><a class="btn btn-soft" href="mailto:contact@biblehorizon.fr?subject=Bible%20Horizon%20pour%20mon%20%C3%A9glise">contact@biblehorizon.fr</a></p>
+    </div>
     <p class="muted center" style="margin-top:20px">« La semence, c'est la parole de Dieu. » — Luc 8.11</p>
     <p class="muted center" style="font-size:.8rem;margin-top:10px">Version 0.3 · projet en construction</p>`;
 }
