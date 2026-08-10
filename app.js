@@ -282,11 +282,20 @@ function render() {
   el.innerHTML = v() + tabbar();
   wire();
 }
-function topbar() {
+function topbar(withAccount) {
   const s = store.streak.count;
   const flame = s > 0 ? `<span class="streak">🔥 ${s} jour${s > 1 ? 's' : ''}</span>` : '';
+  // Sur l'accueil : l'entrée compte est visible d'emblée, en haut à droite.
+  let account = '';
+  if (withAccount) {
+    const u = window.GraineAPI ? GraineAPI.user() : null;
+    account = u
+      ? `<button class="acc-chip" data-accchip="1" title="Mon compte">☁️ ${esc(u.pseudo)}</button>`
+      : `<button class="acc-chip connect" data-accchip="1">Se connecter</button>`;
+  }
   return `<div class="topbar"><div class="brand"><img class="logo" src="icon.svg" alt="" />
-    <span class="app-title">Bible <span class="seed">Horizon</span></span></div>${flame}</div>`;
+    <span class="app-title">Bible <span class="seed">Horizon</span></span></div>
+    <span class="top-right">${flame}${account}</span></div>`;
 }
 function tabbar() {
   if (route.name === 'session') return '';
@@ -329,7 +338,7 @@ function viewHome() {
         <span class="hub-sub">Des questions pour tester ta connaissance de la Bible, seul ou entre amis</span></span>
       <span class="chev">›</span></a>`;
 
-  return topbar() + hero + hub;
+  return topbar(true) + hero + hub;
 }
 
 /* ---------- Mémoriser : session du jour, apprendre, objectif, jardin ---------- */
@@ -1310,6 +1319,10 @@ function wire() {
   // Compte, synchro & amis
   if (route.name === 'moi') ensureFriends();
   if (q('[data-account]')) q('[data-account]').addEventListener('click', startAccountFlow);
+  if (q('[data-accchip]')) q('[data-accchip]').addEventListener('click', () => {
+    if (window.GraineAPI && GraineAPI.isLoggedIn()) go('moi');
+    else startAccountFlow();
+  });
   if (q('[data-syncnow]')) q('[data-syncnow]').addEventListener('click', () => { syncNow(); });
   if (q('[data-copycode]')) q('[data-copycode]').addEventListener('click', copyFriendCode);
   if (q('[data-editpseudo]')) q('[data-editpseudo]').addEventListener('click', () => {
