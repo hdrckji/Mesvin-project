@@ -1,7 +1,17 @@
 /* Bible Horizon — feuille de style
    Ton : sobre, chaleureux, digne. Le texte biblique en serif (comme une Bible),
    l'interface en sans-serif. Palette calme, accent doré discret, vert « croissance ».
-   Clair / sombre gérés automatiquement selon le réglage du téléphone. */
+
+   Thèmes : quatre choix dans Moi → Apparence, stockés sous localStorage
+   'graine.theme' et appliqués via l'attribut data-theme sur <html> :
+   - Auto  (défaut)  : attribut ABSENT → :root clair + media query sombre ;
+   - Clair / Sombre / Sépia : data-theme="clair" | "sombre" | "sepia".
+   Le sélecteur :root:not([data-theme]) dans la media query garantit qu'un
+   choix explicite « clair » gagne même quand le système est en sombre.
+
+   Contraste (vérifié, WCAG) : ≥ 7:1 pour --ink sur tous ses fonds,
+   ≥ 4.5:1 pour --ink-soft et les encres colorées (--accent-ink, --grow,
+   --danger) — dans les trois palettes. */
 
 :root {
   --bg:        #f7f3ea;   /* parchemin clair */
@@ -12,30 +22,81 @@
   --line:      #e2d9c6;
   --accent:    #b98a2e;   /* or discret */
   --accent-ink:#7a5a15;
-  --grow:      #4b8055;   /* vert croissance */
+  --grow:      #3f6c49;   /* vert croissance */
   --grow-soft: #e4efe4;
-  --danger:    #b4552f;
+  --danger:    #a34a24;
+  --on-accent: #241a05;   /* texte posé SUR l'or (boutons primaires) */
+  --on-grow:   #fff;      /* texte posé SUR le vert (boutons, pastilles) */
+  /* auto-évaluation (Encore / Difficile) : paires fond + encre dédiées */
+  --eval-again-bg: #f3ddd2; --eval-again-ink: #7a3417;
+  --eval-hard-bg:  #f5e6cf; --eval-hard-ink:  #7a5410;
   --shadow:    0 6px 24px rgba(40, 34, 20, .10);
   --radius:    18px;
   --serif:     "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
   --sans:      system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
+/* ---------- Sombre — bleu nuit chaleureux ----------
+   Deux portes d'entrée, MÊMES valeurs (garder les deux blocs identiques) :
+   1) le système est sombre et aucun choix explicite n'est posé ;
+   2) l'utilisateur a choisi « Sombre » dans Moi → Apparence. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --bg:        #141b28;
     --surface:   #1b2434;
     --surface-2: #232f43;
-    --ink:       #eef2f8;
-    --ink-soft:  #9fb0c6;
+    --ink:       #f2f5fa;
+    --ink-soft:  #aebfd4;
     --line:      #2c3a52;
     --accent:    #d9b45f;
     --accent-ink:#e7c987;
-    --grow:      #6fb07c;
+    --grow:      #7cbb89;
     --grow-soft: #22322a;
-    --danger:    #e08a63;
+    --danger:    #e89880;
+    --on-accent: #241a05;
+    --on-grow:   #10241a; /* un vert clair porte mal le blanc : encre sombre */
+    --eval-again-bg: #3a2519; --eval-again-ink: #f0b191;
+    --eval-hard-bg:  #3a2f17; --eval-hard-ink:  #e6c877;
     --shadow:    0 8px 28px rgba(0, 0, 0, .35);
   }
+}
+:root[data-theme="sombre"] {
+  --bg:        #141b28;
+  --surface:   #1b2434;
+  --surface-2: #232f43;
+  --ink:       #f2f5fa;
+  --ink-soft:  #aebfd4;
+  --line:      #2c3a52;
+  --accent:    #d9b45f;
+  --accent-ink:#e7c987;
+  --grow:      #7cbb89;
+  --grow-soft: #22322a;
+  --danger:    #e89880;
+  --on-accent: #241a05;
+  --on-grow:   #10241a; /* un vert clair porte mal le blanc : encre sombre */
+  --eval-again-bg: #3a2519; --eval-again-ink: #f0b191;
+  --eval-hard-bg:  #3a2f17; --eval-hard-ink:  #e6c877;
+  --shadow:    0 8px 28px rgba(0, 0, 0, .35);
+}
+
+/* ---------- Sépia — papier ancien, encres brunes ---------- */
+:root[data-theme="sepia"] {
+  --bg:        #f2e6cf;   /* crème ambrée */
+  --surface:   #faf3e2;
+  --surface-2: #e9d9b7;
+  --ink:       #3b2f1b;   /* brun d'encre */
+  --ink-soft:  #6d5a39;
+  --line:      #d9c49a;
+  --accent:    #a87e22;
+  --accent-ink:#77500e;
+  --grow:      #3c6845;
+  --grow-soft: #dde5c8;
+  --danger:    #9c4220;
+  --on-accent: #241a05;
+  --on-grow:   #fff;
+  --eval-again-bg: #eed6c3; --eval-again-ink: #7a3417;
+  --eval-hard-bg:  #ecdcba; --eval-hard-ink:  #6f4c0e;
+  --shadow:    0 6px 24px rgba(84, 62, 22, .14);
 }
 
 * { box-sizing: border-box; }
@@ -84,7 +145,7 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.01em; margin: 0; }
   max-width: 40vw; overflow: hidden; text-overflow: ellipsis;
   -webkit-tap-highlight-color: transparent;
 }
-.acc-chip.connect { color: #241a05; background: var(--accent); border-color: var(--accent); }
+.acc-chip.connect { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
 
 /* ---------- Cartes ---------- */
 .card {
@@ -123,8 +184,8 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.01em; margin: 0; }
   -webkit-tap-highlight-color: transparent;
 }
 .btn:active { transform: scale(.98); }
-.btn-primary { background: var(--accent); color: #241a05; width: 100%; font-size: 1.05rem; }
-.btn-grow    { background: var(--grow); color: #fff; }
+.btn-primary { background: var(--accent); color: var(--on-accent); width: 100%; font-size: 1.05rem; }
+.btn-grow    { background: var(--grow); color: var(--on-grow); }
 .btn-ghost   { background: transparent; color: var(--ink); border-color: var(--line); }
 .btn-soft    { background: var(--surface-2); color: var(--ink); }
 .btn-block   { width: 100%; }
@@ -200,14 +261,10 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.01em; margin: 0; }
 .eval-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
 .eval-grid .btn { flex-direction: column; gap: 2px; padding: 14px 8px; font-size: .95rem; }
 .eval-grid .btn .sub { font-size: .72rem; font-weight: 500; opacity: .8; }
-.eval-again { background: #f3ddd2; color: #7a3417; }
-.eval-hard  { background: #f5e6cf; color: #7a5410; }
+.eval-again { background: var(--eval-again-bg); color: var(--eval-again-ink); }
+.eval-hard  { background: var(--eval-hard-bg); color: var(--eval-hard-ink); }
 .eval-good  { background: var(--grow-soft); color: var(--grow); border:1px solid var(--grow); }
-.eval-easy  { background: var(--grow); color: #fff; }
-@media (prefers-color-scheme: dark) {
-  .eval-again { background: #3a2519; color: #f0b191; }
-  .eval-hard  { background: #3a2f17; color: #e6c877; }
-}
+.eval-easy  { background: var(--grow); color: var(--on-grow); }
 
 /* fin de session */
 .done-screen { text-align: center; padding: 22px 8px; }
@@ -240,7 +297,7 @@ label.lbl { display: block; font-weight: 600; margin: 14px 2px 6px; font-size: .
   border: 1px solid var(--line); background: var(--surface); color: var(--ink);
   border-radius: 999px; padding: 8px 14px; font: inherit; cursor: pointer;
 }
-.pill.on { background: var(--grow); color: #fff; border-color: var(--grow); }
+.pill.on { background: var(--grow); color: var(--on-grow); border-color: var(--grow); }
 .back-link { background: none; border: 0; color: var(--ink-soft); font: inherit;
   cursor: pointer; padding: 4px 0; margin-bottom: 10px; }
 .context-box { background: var(--surface-2); border-radius: 12px; padding: 14px 16px; margin-top: 14px;
