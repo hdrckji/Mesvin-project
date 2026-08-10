@@ -111,16 +111,23 @@ function habille(q, rnd) {
 }
 
 function tirage(mode, filtres) {
-  let pool = BANQUE;
-  let rnd;
   if (mode === 'jour') {
-    rnd = rngSeme('graine-defi-' + dateISO());
-  } else {
-    rnd = rngSeme('libre-' + Date.now() + '-' + Math.random());
-    pool = poolFiltre(filtres);
+    // SANS REDITE : la banque entière est mélangée une fois par « période »
+    // de floor(N/10) jours, et chaque jour prend sa tranche de 10 questions.
+    // Une question ne peut donc pas revenir avant la fin de la période
+    // (~30 jours avec 300 questions). Tout dérive de la date : même défi
+    // pour tout le monde, sans serveur ni mémoire locale.
+    const jour = Math.floor(Date.parse(dateISO() + 'T00:00:00Z') / 86400000);
+    const parPeriode = Math.max(1, Math.floor(BANQUE.length / NB_QUESTIONS));
+    const periode = Math.floor(jour / parPeriode);
+    const rang = jour - periode * parPeriode;
+    const ordre = melange(BANQUE, rngSeme('graine-defi-periode-' + periode));
+    const rnd = rngSeme('graine-defi-' + dateISO()); // ordre des options du jour
+    return ordre.slice(rang * NB_QUESTIONS, rang * NB_QUESTIONS + NB_QUESTIONS).map(q => habille(q, rnd));
   }
-  // L'ordre des 4 réponses est lui aussi mélangé (déterministe pour le défi du jour).
-  return melange(pool, rnd).slice(0, NB_QUESTIONS).map(q => habille(q, rnd));
+  const rnd = rngSeme('libre-' + Date.now() + '-' + Math.random());
+  // L'ordre des 4 réponses est lui aussi mélangé.
+  return melange(poolFiltre(filtres), rnd).slice(0, NB_QUESTIONS).map(q => habille(q, rnd));
 }
 
 /* Tirage équitable pour le compétitif : les manches sont construites niveau
