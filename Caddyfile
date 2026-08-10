@@ -43,9 +43,15 @@
 	@manifest path *.webmanifest
 	header @manifest Content-Type "application/manifest+json"
 
-	# Cache raisonnable pour les fichiers statiques (revalidés à chaque version).
+	# Fichiers statiques : TOUJOURS revalider (no-cache ≠ pas de cache : le
+	# navigateur garde le fichier mais demande « a-t-il changé ? » à chaque
+	# visite — réponse 304 quasi gratuite). L'ancien max-age=3600 faisait
+	# coller les vieux JS/CSS jusqu'à une heure après chaque déploiement,
+	# et écrasait même le no-cache de sw.js (les deux règles matchent *.js
+	# et la dernière écrite gagne). Le hors-ligne, lui, reste assuré par le
+	# service worker, pas par ce cache HTTP.
 	@assets path *.css *.js *.svg *.json
-	header @assets Cache-Control "public, max-age=3600"
+	header @assets Cache-Control "no-cache"
 
 	# Sert les fichiers statiques et exécute les .php (ici : api/index.php seul).
 	php_server
