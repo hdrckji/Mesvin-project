@@ -3,6 +3,8 @@
 Backend PHP classique (pas de framework, pas de Composer) qui ajoute à la PWA :
 comptes par code e-mail **ou compte Google**, synchronisation, amis par code,
 duels asynchrones et **veillées en direct** (grand écran + téléphones).
+Les fondations serveur des **groupes d'église** (code `GRP-XXXXX`, verset de
+la semaine poussé par le responsable) sont posées — encore aucune interface.
 Le contrat complet des routes est dans [`../API-CONTRAT.md`](../API-CONTRAT.md).
 
 ## Comment c'est construit
@@ -15,7 +17,7 @@ Le contrat complet des routes est dans [`../API-CONTRAT.md`](../API-CONTRAT.md).
   automatique sur SQLite (`api/data/dev.sqlite`) pour les tests locaux.
   Les tables sont créées automatiquement au premier appel.
 - **Fichiers** : `index.php` (routage) → `auth.php`, `sync.php`, `friends.php`,
-  `duels.php`, `veillees.php`, `admin.php` (les routes), avec `db.php`
+  `groupes.php`, `duels.php`, `veillees.php`, `admin.php` (les routes), avec `db.php`
   (connexion + migrations), `mail.php` (envoi des codes), `helpers.php`
   (fonctions partagées).
 

@@ -15,7 +15,8 @@
    - GET  /api/me                : utilisateur connecté.
    - POST /api/me/pseudo         : changer de pseudo.
    - POST /api/auth/logout       : invalide le token.
-   - DELETE /api/me              : efface TOUT (compte, synchro, amis, duels).
+   - DELETE /api/me              : efface TOUT (compte, synchro, amis, duels,
+                                   adhésions aux groupes — avec passation).
    ========================================================================== */
 
 defined('GRAINE_API') || exit;
@@ -295,9 +296,15 @@ function handle_auth_logout(PDO $pdo): never {
 /* ---- DELETE /api/me — suppression totale du compte ------------------------ */
 
 /**
- * Efface COMPLÈTEMENT un compte : synchro, amitiés, duels, sessions, codes
- * de connexion, puis la ligne users elle-même. Partagée entre DELETE /api/me
- * (l'utilisateur lui-même) et DELETE /api/admin/users/{id} (l'administration).
+ * Efface COMPLÈTEMENT un compte : synchro, amitiés, duels, groupes, sessions,
+ * codes de connexion, puis la ligne users elle-même. Partagée entre DELETE
+ * /api/me (l'utilisateur lui-même) et DELETE /api/admin/users/{id}
+ * (l'administration).
+ *
+ * Groupes d'église : ses adhésions sont retirées ; pour chaque groupe dont il
+ * est responsable, le groupe est supprimé s'il y était seul, sinon le membre
+ * restant le plus ancien est promu responsable (groupes.responsable_id ET son
+ * role dans groupe_membres) — l'assemblée ne reste jamais sans berger.
  */
 function delete_user_completely(PDO $pdo, array $user): void {
     $id = $user['id'];
@@ -310,6 +317,36 @@ function delete_user_completely(PDO $pdo, array $user): void {
         $st->execute([$id, $id]);
         $st = $pdo->prepare('DELETE FROM duels WHERE challenger_id = ? OR opponent_id = ?');
         $st->execute([$id, $id]);
+
+        // Groupes dont il est responsable : suppression s'il y est seul,
+        // sinon passation au membre restant le plus ancien.
+        $st = $pdo->prepare('SELECT id FROM groupes WHERE responsable_id = ?');
+        $st->execute([$id]);
+        foreach (array_column($st->fetchAll(), 'id') as $groupeId) {
+            $st = $pdo->prepare(
+                'SELECT user_id FROM groupe_membres
+                 WHERE groupe_id = ? AND user_id <> ?
+                 ORDER BY joined_at ASC, user_id ASC LIMIT 1'
+            );
+            $st->execute([$groupeId, $id]);
+            $heritier = $st->fetch();
+            if ($heritier === false) {
+                $pdo->prepare('DELETE FROM groupe_membres WHERE groupe_id = ?')->execute([$groupeId]);
+                $pdo->prepare('DELETE FROM groupes WHERE id = ?')->execute([$groupeId]);
+            } else {
+                $pdo->prepare('UPDATE groupes SET responsable_id = ? WHERE id = ?')
+                    ->execute([$heritier['user_id'], $groupeId]);
+                $st = $pdo->prepare(
+                    'UPDATE groupe_membres SET role = \'responsable\'
+                     WHERE groupe_id = ? AND user_id = ?'
+                );
+                $st->execute([$groupeId, $heritier['user_id']]);
+            }
+        }
+        // Puis toutes ses adhésions (simples membres comme responsable sortant).
+        $st = $pdo->prepare('DELETE FROM groupe_membres WHERE user_id = ?');
+        $st->execute([$id]);
+
         $st = $pdo->prepare('DELETE FROM sessions WHERE user_id = ?');
         $st->execute([$id]);
         $st = $pdo->prepare('DELETE FROM login_codes WHERE email = ?');
