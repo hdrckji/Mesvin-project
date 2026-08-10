@@ -51,12 +51,17 @@ function handle_auth_request_code(PDO $pdo): never {
          VALUES (?, ?, ?, 0, ?)'
     );
     $st->execute([$email, password_hash($code, PASSWORD_DEFAULT), now_sql_plus(CODE_VALIDITY_SECONDS), now_sql()]);
+    $codeId = (int) $pdo->lastInsertId();
 
     if (mail_mode() === 'dev') {
         // Aucun envoi d'e-mail configuré : mode développement uniquement.
         json_out(['ok' => true, 'devCode' => $code]);
     }
     if (!mail_send_code($email, $code)) {
+        // L'e-mail n'est pas parti : l'utilisateur n'a rien reçu, cette
+        // tentative ne doit PAS consommer son quota horaire.
+        $st = $pdo->prepare('DELETE FROM login_codes WHERE id = ?');
+        $st->execute([$codeId]);
         json_error("L'envoi de l'e-mail a échoué — réessaie dans un instant.", 502);
     }
     json_out(['ok' => true]);
