@@ -24,6 +24,7 @@ require __DIR__ . '/sync.php';
 require __DIR__ . '/friends.php';
 require __DIR__ . '/duels.php';
 require __DIR__ . '/veillees.php';
+require __DIR__ . '/admin.php';
 
 set_exception_handler(function (Throwable $e): void {
     error_log(sprintf('API : %s — %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
@@ -106,6 +107,22 @@ if (preg_match('#^/api/duels/([0-9]+)$#', $path, $m) && $method === 'GET') {
 }
 if (preg_match('#^/api/duels/([0-9]+)/result$#', $path, $m) && $method === 'POST') {
     handle_duels_result($pdo, (int) $m[1]);
+}
+
+/* ---- Questions du Défi (banque fusionnée, publique) ---------------------------- */
+if ($path === '/api/questions' && $method === 'GET') handle_questions_get($pdo);
+
+/* ---- Administration (ADMIN_EMAILS seulement) ----------------------------------- */
+if ($path === '/api/admin/users' && $method === 'GET') handle_admin_users($pdo);
+if (preg_match('#^/api/admin/users/([0-9]+)$#', $path, $m) && $method === 'DELETE') {
+    handle_admin_user_delete($pdo, (int) $m[1]);
+}
+if ($path === '/api/admin/questions' && $method === 'POST') handle_admin_question_save($pdo);
+if (preg_match('#^/api/admin/questions/([A-Za-z0-9-]{1,40})$#', $path, $m) && $method === 'DELETE') {
+    handle_admin_question_delete($pdo, $m[1]);
+}
+if (preg_match('#^/api/admin/questions/([A-Za-z0-9-]{1,40})/restore$#', $path, $m) && $method === 'POST') {
+    handle_admin_question_restore($pdo, $m[1]);
 }
 
 /* ---- Veillées en direct -------------------------------------------------------- */

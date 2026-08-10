@@ -92,7 +92,18 @@ let BANQUE = [];      // toutes les questions
 let CATEGORIES = [];  // ordre d'affichage des catégories
 
 async function chargerBanque() {
-  const d = await (await fetch('data/questions.json', { cache: 'no-cache' })).json();
+  // La banque « vivante » du serveur d'abord (elle inclut les retouches de
+  // l'administration) ; en cas d'échec — hors-ligne, serveur indisponible —
+  // repli silencieux sur le fichier embarqué (et pré-caché) du module.
+  // La page vit dans /defi/, l'API à la racine : d'où le chemin ../api.
+  let d = null;
+  try {
+    const r = await fetch('../api/questions', { cache: 'no-cache' });
+    if (r.ok) d = await r.json();
+  } catch (e) { /* pas de réseau : le fichier local suffit */ }
+  if (!d || !Array.isArray(d.questions) || d.questions.length === 0) {
+    d = await (await fetch('data/questions.json', { cache: 'no-cache' })).json();
+  }
   BANQUE = d.questions || [];
   CATEGORIES = d.categories || [...new Set(BANQUE.map(q => q.categorie))];
 }

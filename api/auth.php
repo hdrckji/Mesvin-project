@@ -286,8 +286,12 @@ function handle_auth_logout(PDO $pdo): never {
 
 /* ---- DELETE /api/me — suppression totale du compte ------------------------ */
 
-function handle_me_delete(PDO $pdo): never {
-    $user = require_user($pdo);
+/**
+ * Efface COMPLÈTEMENT un compte : synchro, amitiés, duels, sessions, codes
+ * de connexion, puis la ligne users elle-même. Partagée entre DELETE /api/me
+ * (l'utilisateur lui-même) et DELETE /api/admin/users/{id} (l'administration).
+ */
+function delete_user_completely(PDO $pdo, array $user): void {
     $id = $user['id'];
 
     $pdo->beginTransaction();
@@ -309,5 +313,10 @@ function handle_me_delete(PDO $pdo): never {
         $pdo->rollBack();
         throw $e;
     }
+}
+
+function handle_me_delete(PDO $pdo): never {
+    $user = require_user($pdo);
+    delete_user_completely($pdo, $user);
     json_out(['ok' => true]);
 }

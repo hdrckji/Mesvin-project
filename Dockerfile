@@ -19,6 +19,7 @@ COPY index.html app.css app.js api-client.js sw.js manifest.webmanifest icon.svg
 COPY data/ ./data/
 COPY lire/ ./lire/
 COPY defi/ ./defi/
+COPY admin/ ./admin/
 
 # Backend PHP. Toutes les requêtes /api/* passent par api/index.php
 # (réécriture dans le Caddyfile) : les autres .php ne sont jamais servis.

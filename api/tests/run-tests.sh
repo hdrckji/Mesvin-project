@@ -6,7 +6,8 @@
 #
 # Lance `php -S` sur le port 8180 avec le routeur qui simule la réécriture
 # Caddy (/api/* → api/index.php), puis déroule le parcours complet du contrat :
-# santé → connexion → synchro → amis → duels → déconnexion → suppression.
+# santé → connexion → synchro → amis → duels → veillées → administration
+# → déconnexion → suppression.
 # Nécessite : php (>= 8.1), curl, jq.
 # ============================================================================
 
@@ -47,7 +48,7 @@ check "php -l sans erreur" oui "$LINT_OK"
 say "Démarrage du serveur de test (php -S, SQLite, mode dev)"
 rm -f "$ROOT"/api/data/dev.sqlite "$ROOT"/api/data/dev.sqlite-*
 cd "$ROOT"
-env -u MYSQL_URL -u BREVO_API_KEY -u SMTP_HOST \
+env -u MYSQL_URL -u BREVO_API_KEY -u SMTP_HOST ADMIN_EMAILS=alice@example.org \
   php -S 127.0.0.1:$PORT api/tests/router.php > "$TMP/server.log" 2>&1 &
 SERVER_PID=$!
 trap 'kill "$SERVER_PID" 2>/dev/null; rm -rf "$TMP"' EXIT
@@ -263,6 +264,107 @@ api GET "/api/veillees/$VCODE/state?player=$PKEY2" > /dev/null
 check "bilan collectif présent"         true "$(jval '.veillee | has("bilan")')"
 check "Léa a un rang"                   true "$(jval '.veillee.me.rang >= 1')"
 check "rejoindre une veillée close → 410" 410 "$(api POST "/api/veillees/$VCODE/join" '' '{"prenom":"Paul"}')"
+
+# ---------------------------------------------------------------------------
+say "Administration — rôle admin (ADMIN_EMAILS=alice@example.org)"
+api GET /api/me "$TOKEN1" > /dev/null
+check "me alice : isAdmin true"         true  "$(jval .user.isAdmin)"
+api GET /api/me "$TOKEN3" > /dev/null
+check "me chloé : isAdmin false"        false "$(jval .user.isAdmin)"
+check "admin/users sans token → 401"    401 "$(api GET /api/admin/users)"
+check "admin/users non-admin → 403"     403 "$(api GET /api/admin/users "$TOKEN3")"
+check "admin/users alice → 200"         200 "$(api GET /api/admin/users "$TOKEN1")"
+check "3 comptes listés"                3   "$(jval '.users | length')"
+check "champs id/pseudo/email/code/dates" true \
+  "$(jval '[.users[] | has("id") and has("pseudo") and has("email") and has("friendCode") and has("createdAt") and has("lastSeen")] | all')"
+ALICE_ID="$(jval '.users[] | select(.email == "alice@example.org") | .id')"
+check "alice se supprime elle-même → 400" 400 "$(api DELETE "/api/admin/users/$ALICE_ID" "$TOKEN1")"
+check "id inexistant → 404"             404 "$(api DELETE /api/admin/users/999999 "$TOKEN1")"
+check "suppression par non-admin → 403" 403 "$(api DELETE "/api/admin/users/$ALICE_ID" "$TOKEN3")"
+
+say "Administration — suppression totale d'un compte (u4 jetable)"
+api POST /api/auth/request-code '' '{"email":"david@example.org"}' > /dev/null
+CODE4="$(jval .devCode)"
+api POST /api/auth/verify '' "{\"email\":\"david@example.org\",\"code\":\"$CODE4\",\"pseudo\":\"David\"}" > /dev/null
+TOKEN4="$(jval .token)"
+api GET /api/admin/users "$TOKEN1" > /dev/null
+check "4 comptes après l'arrivée de u4" 4   "$(jval '.users | length')"
+DAVID_ID="$(jval '.users[] | select(.email == "david@example.org") | .id')"
+check "admin supprime u4 → 200"         200 "$(api DELETE "/api/admin/users/$DAVID_ID" "$TOKEN1")"
+check "la session de u4 est close"      401 "$(api GET /api/me "$TOKEN4")"
+api GET /api/admin/users "$TOKEN1" > /dev/null
+check "3 comptes restants"              3   "$(jval '.users | length')"
+
+# ---------------------------------------------------------------------------
+say "Questions — banque publique fusionnée"
+check "GET /api/questions → 200"        200 "$(api GET /api/questions)"
+check "version 2"                       2   "$(jval .version)"
+check "6 catégories"                    6   "$(jval '.categories | length')"
+check "300 questions (fichier seul)"    300 "$(jval '.questions | length')"
+
+say "Questions — écriture réservée à l'admin"
+QOK='{"categorie":"Personnages","niveau":1,"question":"Question de test ?","options":["A","B","C","D"],"bonne":2,"reference":"Test 1.1"}'
+check "POST sans token → 401"           401 "$(api POST /api/admin/questions '' "$QOK")"
+check "POST non-admin → 403"            403 "$(api POST /api/admin/questions "$TOKEN3" "$QOK")"
+check "DELETE non-admin → 403"          403 "$(api DELETE /api/admin/questions/per-01 "$TOKEN3")"
+check "restore non-admin → 403"         403 "$(api POST /api/admin/questions/per-01/restore "$TOKEN3")"
+
+say "Questions — validations"
+check "catégorie inconnue → 400"        400 "$(api POST /api/admin/questions "$TOKEN1" '{"categorie":"Cuisine","niveau":1,"question":"Q ?","options":["A","B","C","D"],"bonne":0,"reference":"R"}')"
+check "niveau hors bornes → 400"        400 "$(api POST /api/admin/questions "$TOKEN1" '{"categorie":"Personnages","niveau":4,"question":"Q ?","options":["A","B","C","D"],"bonne":0,"reference":"R"}')"
+check "question vide → 400"             400 "$(api POST /api/admin/questions "$TOKEN1" '{"categorie":"Personnages","niveau":1,"question":"  ","options":["A","B","C","D"],"bonne":0,"reference":"R"}')"
+check "3 options seulement → 400"       400 "$(api POST /api/admin/questions "$TOKEN1" '{"categorie":"Personnages","niveau":1,"question":"Q ?","options":["A","B","C"],"bonne":0,"reference":"R"}')"
+check "option vide → 400"               400 "$(api POST /api/admin/questions "$TOKEN1" '{"categorie":"Personnages","niveau":1,"question":"Q ?","options":["A","","C","D"],"bonne":0,"reference":"R"}')"
+check "bonne hors bornes → 400"         400 "$(api POST /api/admin/questions "$TOKEN1" '{"categorie":"Personnages","niveau":1,"question":"Q ?","options":["A","B","C","D"],"bonne":4,"reference":"R"}')"
+check "référence vide → 400"            400 "$(api POST /api/admin/questions "$TOKEN1" '{"categorie":"Personnages","niveau":1,"question":"Q ?","options":["A","B","C","D"],"bonne":0,"reference":""}')"
+check "id ni fichier ni adm- → 404"     404 "$(api POST /api/admin/questions "$TOKEN1" '{"id":"xyz-99","categorie":"Personnages","niveau":1,"question":"Q ?","options":["A","B","C","D"],"bonne":0,"reference":"R"}')"
+
+say "Questions — ajout avec id (adm-test-1)"
+check "ajout adm-test-1 → 200"          200 "$(api POST /api/admin/questions "$TOKEN1" '{"id":"adm-test-1","categorie":"Personnages","niveau":1,"question":"Question de test ?","options":["A","B","C","D"],"bonne":2,"reference":"Test 1.1"}')"
+check "→ id conservé"                   adm-test-1 "$(jval .question.id)"
+api GET /api/questions > /dev/null
+check "banque à 301"                    301 "$(jval '.questions | length')"
+check "adm-test-1 servie"               "Question de test ?" "$(jval '.questions[] | select(.id == "adm-test-1") | .question')"
+
+say "Questions — ajout sans id (généré), puis suppression"
+check "ajout sans id → 200"             200 "$(api POST /api/admin/questions "$TOKEN1" "$QOK")"
+GEN_ID="$(jval .question.id)"
+check "id généré préfixé adm-"          adm- "$(printf '%s' "$GEN_ID" | cut -c1-4)"
+check "id généré : adm- + 6 hex"        10  "${#GEN_ID}"
+api GET /api/questions > /dev/null
+check "banque à 302"                    302 "$(jval '.questions | length')"
+check "suppression de l'ajout → 200"    200 "$(api DELETE "/api/admin/questions/$GEN_ID" "$TOKEN1")"
+api GET /api/questions > /dev/null
+check "banque revenue à 301"            301 "$(jval '.questions | length')"
+
+say "Questions — surcharge d'une question du fichier (per-01)"
+P01_FICHIER="$(jq -r '.questions[] | select(.id == "per-01") | .question' "$ROOT/defi/data/questions.json")"
+check "modification per-01 → 200"       200 "$(api POST /api/admin/questions "$TOKEN1" '{"id":"per-01","categorie":"Personnages","niveau":2,"question":"Qui construisit une arche ? (version admin)","options":["Abraham","Noé","Moïse","Élie"],"bonne":1,"reference":"Genèse 6.14"}')"
+api GET /api/questions > /dev/null
+check "la banque reste à 301"           301 "$(jval '.questions | length')"
+check "per-01 : version modifiée servie" "Qui construisit une arche ? (version admin)" \
+  "$(jval '.questions[] | select(.id == "per-01") | .question')"
+check "per-01 : une seule occurrence"   1   "$(jval '[.questions[] | select(.id == "per-01")] | length')"
+
+say "Questions — désactivation puis restauration (per-01)"
+check "DELETE per-01 (désactive) → 200" 200 "$(api DELETE /api/admin/questions/per-01 "$TOKEN1")"
+api GET /api/questions > /dev/null
+check "banque à 300 (per-01 retirée, adm-test-1 encore là)" 300 "$(jval '.questions | length')"
+check "per-01 absente de la banque"     0   "$(jval '[.questions[] | select(.id == "per-01")] | length')"
+check "restore sans surcharge (per-02) → 404" 404 "$(api POST /api/admin/questions/per-02/restore "$TOKEN1")"
+check "restore per-01 → 200"            200 "$(api POST /api/admin/questions/per-01/restore "$TOKEN1")"
+api GET /api/questions > /dev/null
+check "banque repasse à 301 (adm-test-1 existe encore)" 301 "$(jval '.questions | length')"
+check "per-01 : version du fichier de retour" "$P01_FICHIER" \
+  "$(jval '.questions[] | select(.id == "per-01") | .question')"
+
+say "Questions — suppression d'un ajout (adm-test-1)"
+check "DELETE d'un id inconnu → 404"    404 "$(api DELETE /api/admin/questions/adm-inconnu "$TOKEN1")"
+check "DELETE adm-test-1 → 200"         200 "$(api DELETE /api/admin/questions/adm-test-1 "$TOKEN1")"
+api GET /api/questions > /dev/null
+check "banque revenue à 300"            300 "$(jval '.questions | length')"
+check "per-01 toujours version fichier" "$P01_FICHIER" \
+  "$(jval '.questions[] | select(.id == "per-01") | .question')"
 
 # ---------------------------------------------------------------------------
 say "Limites : essais de code et demandes par heure (u3)"

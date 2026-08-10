@@ -110,6 +110,16 @@
     async duel(id) { return (await call('GET', '/api/duels/' + id)).duel; },
     async duelResult(id, answers) { return (await call('POST', '/api/duels/' + id + '/result', { answers })).duel; },
 
+    /* ---- questions du Défi (banque fusionnée, publique) ---- */
+    async questions() { return call('GET', '/api/questions'); },
+
+    /* ---- administration (adresses listées dans ADMIN_EMAILS) ---- */
+    async adminUsers() { return (await call('GET', '/api/admin/users')).users; },
+    async adminDeleteUser(id) { return call('DELETE', '/api/admin/users/' + id); },
+    async adminSaveQuestion(q) { return (await call('POST', '/api/admin/questions', q)).question; },
+    async adminDeleteQuestion(id) { return call('DELETE', '/api/admin/questions/' + encodeURIComponent(id)); },
+    async adminRestoreQuestion(id) { return call('POST', '/api/admin/questions/' + encodeURIComponent(id) + '/restore'); },
+
     /* ---- veillées en direct ---- */
     async createVeillee(opts) { return (await call('POST', '/api/veillees', opts || {})).veillee; },
     async veilleeState(code, playerKey) {
