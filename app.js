@@ -842,29 +842,88 @@ function mergeMemo(local, server) {
   return out;
 }
 
-// lire (graine.lire.v1) — OR case par case des tableaux read, union des plans
-// (max 3, priorité aux plans locaux), minutes et autres champs locaux prioritaires.
-function mergeLire(local, server) {
-  if (!server || typeof server !== 'object') return deepCopy(local);
-  if (!local || typeof local !== 'object') return deepCopy(server);
-  const out = deepCopy(local), srv = deepCopy(server);
-  const lp = out.plans && typeof out.plans === 'object' ? out.plans : {};
-  const sp = srv.plans && typeof srv.plans === 'object' ? srv.plans : {};
-  const merged = {};
-  for (const id of new Set(Object.keys(lp).concat(Object.keys(sp)))) {
-    const l = lp[id], s = sp[id];
-    if (l && s && typeof l === 'object' && typeof s === 'object') {
-      const m = Object.assign({}, s, l); // champ par champ : priorité locale
-      const lr = Array.isArray(l.read) ? l.read : [], sr = Array.isArray(s.read) ? s.read : [];
-      const len = Math.max(lr.length, sr.length);
-      m.read = Array.from({ length: len }, (_, i) => !!(lr[i] || sr[i]));
-      merged[id] = m;
-    } else merged[id] = l || s;
+// lire (graine.lire.v1) — le module écrit un format v2 (voir lire/lire.js) :
+// { v:2, active:<planId>|null, books:{ <livre>:{ read:[bool…] } },
+//   plans:[ { id, nom, objectif, seq:[livre…], minutes } ] }.
+// Fusion : chaque côté passe d'abord par la même migration douce que lire.js
+// (un blob resté à l'ancien format ne corrompt rien), puis OR case par case
+// des tableaux `read` de chaque livre, union des chemins par IDENTITÉ
+// (objectif + séquence de livres — les ids sont propres à chaque appareil),
+// max 3 chemins avec priorité aux locaux, chemin actif local prioritaire.
+const LIRE_MAX_PLANS = 3;
+// L'ancien module ne proposait que Marc et Jean : de quoi nommer un chemin
+// migré depuis un blob v1 (lire.js, lui, a le catalogue complet).
+const LIRE_NOMS_V1 = { marc: "L'Évangile de Marc", jean: "L'Évangile de Jean" };
+const lireNormMinutes = m => (m === 10 ? 15 : m); // ancien rythme « 10 min » → 15
+
+// Migration douce, PURE (copie) : v1 → v2, v2 → hygiène minimale (même esprit
+// que migrate() de lire/lire.js). Renvoie null si le blob est inexploitable.
+function lireMigrate(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const b = deepCopy(raw);
+  if (b.v === 2) {
+    if (!b.books || typeof b.books !== 'object' || Array.isArray(b.books)) b.books = {};
+    b.plans = Array.isArray(b.plans) ? b.plans.filter(p => p && typeof p === 'object') : [];
+    b.plans.forEach(p => { p.minutes = lireNormMinutes(p.minutes); });
+    if (typeof b.active !== 'string') b.active = null;
+    return b;
   }
-  const keep = Object.keys(lp).concat(Object.keys(sp).filter(id => !(id in lp))).slice(0, 3);
-  out.plans = {};
-  for (const id of keep) out.plans[id] = merged[id];
-  for (const k of Object.keys(srv)) if (!(k in out)) out[k] = srv[k]; // minutes… : local prioritaire
+  // ---- ancien format : { active, minutes, plans: { <livre>: { read } } } ----
+  const s = { v: 2, active: null, books: {}, plans: [] };
+  const old = (b.plans && typeof b.plans === 'object' && !Array.isArray(b.plans)) ? b.plans : {};
+  for (const id of Object.keys(old)) {
+    if (old[id] && Array.isArray(old[id].read)) s.books[id] = { read: old[id].read.map(Boolean) };
+  }
+  if (typeof b.active === 'string' && b.active) {
+    const plan = {
+      id: 'pv1-' + b.active,
+      nom: LIRE_NOMS_V1[b.active] || (b.active.charAt(0).toUpperCase() + b.active.slice(1)),
+      objectif: null, seq: [b.active],
+      minutes: isNum(b.minutes) ? lireNormMinutes(b.minutes) : null
+    };
+    s.plans.push(plan);
+    s.active = plan.id;
+  }
+  return s;
+}
+
+function mergeLire(local, server) {
+  const loc = lireMigrate(local), srv = lireMigrate(server); // déjà des copies
+  if (!srv) return loc;
+  if (!loc) return srv;
+  const out = { v: 2, active: null, books: {}, plans: [] };
+  // 1) Livres : OR case par case — un chapitre lu quelque part reste lu.
+  for (const id of new Set(Object.keys(loc.books).concat(Object.keys(srv.books)))) {
+    const lb = loc.books[id], sb = srv.books[id];
+    const lr = (lb && Array.isArray(lb.read)) ? lb.read : [];
+    const sr = (sb && Array.isArray(sb.read)) ? sb.read : [];
+    const m = Object.assign({}, sb, lb); // champs éventuels : priorité locale
+    m.read = Array.from({ length: Math.max(lr.length, sr.length) }, (_, i) => !!(lr[i] || sr[i]));
+    out.books[id] = m;
+  }
+  // 2) Chemins : identité = objectif + séquence (les ids diffèrent par appareil).
+  const sig = p => (p.objectif || '') + '|' + (Array.isArray(p.seq) ? p.seq.join(',') : '');
+  const plans = loc.plans.map(p => Object.assign({}, p));
+  for (const sp of srv.plans) {
+    const twin = plans.find(p => sig(p) === sig(sp));
+    if (twin) { // même chemin des deux côtés : on comble les trous locaux
+      for (const k of Object.keys(sp)) if (twin[k] === undefined || twin[k] === null) twin[k] = sp[k];
+    } else if (plans.length < LIRE_MAX_PLANS) {
+      plans.push(Object.assign({}, sp));
+    }
+  }
+  out.plans = plans;
+  // 3) Chemin actif : le choix local d'abord ; sinon celui du serveur,
+  //    retrouvé par identité (son id peut différer d'un appareil à l'autre).
+  const srvActive = srv.plans.find(p => p.id === srv.active);
+  if (loc.active && plans.some(p => p.id === loc.active)) out.active = loc.active;
+  else if (srvActive) {
+    const twin = plans.find(p => sig(p) === sig(srvActive));
+    out.active = twin ? twin.id : null;
+  }
+  // 4) Autres champs éventuels : priorité locale, rien n'est perdu.
+  for (const k of Object.keys(loc)) if (!(k in out)) out[k] = loc[k];
+  for (const k of Object.keys(srv)) if (!(k in out)) out[k] = srv[k];
   return out;
 }
 
