@@ -320,13 +320,13 @@ function viewHome() {
       <span class="chev">›</span></button>
     <a class="card hub-card fade" href="lire/">
       <span class="hub-ic">📖</span>
-      <span class="hub-txt"><span class="hub-title">Lire</span>
-        <span class="hub-sub">Avance dans l'Évangile à ton rythme</span></span>
+      <span class="hub-txt"><span class="hub-title">Marcher</span>
+        <span class="hub-sub">Suis ton plan de lecture de la Bible, à ton rythme</span></span>
       <span class="chev">›</span></a>
     <a class="card hub-card fade" href="defi/">
       <span class="hub-ic">🕯️</span>
-      <span class="hub-txt"><span class="hub-title">Défi</span>
-        <span class="hub-sub">Teste ta connaissance de la Bible</span></span>
+      <span class="hub-txt"><span class="hub-title">Sonder</span>
+        <span class="hub-sub">Des questions pour tester ta connaissance de la Bible</span></span>
       <span class="chev">›</span></a>`;
 
   const foot = total === 0
