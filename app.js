@@ -368,8 +368,15 @@ function lireStats() {
     const raw = localStorage.getItem('graine.lire.v1');
     if (!raw) return out;
     const s = JSON.parse(raw);
-    const plans = s && typeof s === 'object' && s.plans && typeof s.plans === 'object' ? s.plans : {};
-    for (const p of Object.values(plans)) {
+    if (!s || typeof s !== 'object') return out;
+    // Deux formats : v2 (s.books — ce que lire.js écrit aujourd'hui) et
+    // l'ancien v1 (s.plans objet par livre). Sans le v2, les compteurs
+    // « Lecture » de Moi restaient à zéro pour les stores récents.
+    let parLivre = null;
+    if (s.books && typeof s.books === 'object' && !Array.isArray(s.books)) parLivre = s.books;
+    else if (s.plans && typeof s.plans === 'object' && !Array.isArray(s.plans)) parLivre = s.plans;
+    if (!parLivre) return out;
+    for (const p of Object.values(parLivre)) {
       if (!p || !Array.isArray(p.read)) continue;
       const n = p.read.filter(Boolean).length;
       out.chapters += n;
