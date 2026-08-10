@@ -91,12 +91,33 @@ function require_user(PDO $pdo): array {
     return $user;
 }
 
+/**
+ * Vrai si l'e-mail de l'utilisateur figure dans la variable d'environnement
+ * ADMIN_EMAILS (liste séparée par des virgules, insensible à la casse).
+ * Aucune colonne en base : le rôle se donne et se retire en changeant la
+ * variable, sans migration ni redéploiement de données.
+ */
+function is_admin(array $user): bool {
+    $env = getenv('ADMIN_EMAILS');
+    if ($env === false || trim($env) === '') {
+        return false;
+    }
+    $admins = array_filter(array_map(
+        fn (string $e): string => strtolower(trim($e)),
+        explode(',', $env)
+    ));
+    return in_array(strtolower((string) ($user['email'] ?? '')), $admins, true);
+}
+
 /** Représentation publique d'un utilisateur (jamais l'id interne). */
 function user_payload(array $user): array {
     return [
         'pseudo'     => $user['pseudo'],
         'email'      => $user['email'],
         'friendCode' => $user['friend_code'],
+        // Le client le range dans sa session locale pour afficher (ou non)
+        // l'entrée « Administration » — le serveur revérifie à chaque route.
+        'isAdmin'    => is_admin($user),
     ];
 }
 

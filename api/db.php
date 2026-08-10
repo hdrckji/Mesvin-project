@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM veillee_answers LIMIT 1');
+        $pdo->query('SELECT 1 FROM quiz_questions LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -159,6 +159,24 @@ function db_migrate(PDO $pdo): void {
                 answered_at DATETIME NOT NULL,
                 PRIMARY KEY (veillee_id, q_index, player_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Retouches de la banque de questions du Défi (administration).
+            // Le fichier defi/data/questions.json est embarqué dans l'image et
+            // Railway a un système de fichiers éphémère : les modifications
+            // vivent donc ici. Un id présent dans le fichier = SURCHARGE
+            // (édition, ou désactivation si actif = 0) ; un id nouveau
+            // (préfixe adm-) = AJOUT.
+            'CREATE TABLE IF NOT EXISTS quiz_questions (
+                id VARCHAR(40) NOT NULL PRIMARY KEY,
+                categorie VARCHAR(60) NOT NULL,
+                niveau TINYINT NOT NULL,
+                question VARCHAR(300) NOT NULL,
+                options_json TEXT NOT NULL,
+                bonne TINYINT NOT NULL,
+                reference VARCHAR(60) NOT NULL,
+                actif TINYINT NOT NULL DEFAULT 1,
+                updated_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
         ];
     } else {
         $ddl = [
@@ -252,6 +270,20 @@ function db_migrate(PDO $pdo): void {
                 points INTEGER NOT NULL,
                 answered_at TEXT NOT NULL,
                 PRIMARY KEY (veillee_id, q_index, player_id)
+            )',
+
+            // Retouches de la banque de questions du Défi — voir le
+            // commentaire du dialecte MySQL ci-dessus.
+            'CREATE TABLE IF NOT EXISTS quiz_questions (
+                id TEXT NOT NULL PRIMARY KEY,
+                categorie TEXT NOT NULL,
+                niveau INTEGER NOT NULL,
+                question TEXT NOT NULL,
+                options_json TEXT NOT NULL,
+                bonne INTEGER NOT NULL,
+                reference TEXT NOT NULL,
+                actif INTEGER NOT NULL DEFAULT 1,
+                updated_at TEXT NOT NULL
             )',
         ];
     }

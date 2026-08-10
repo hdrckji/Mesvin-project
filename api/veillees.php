@@ -96,17 +96,13 @@ function veillee_remaining(array $v): int {
 }
 
 /**
- * Tire $nb questions dans la banque du Défi (filtres facultatifs), mélange
- * l'ordre des options et fige le tout — même logique que les duels, avec la
- * catégorie et le niveau conservés pour l'affichage sur le grand écran.
+ * Tire $nb questions dans la banque fusionnée du Défi (quiz_bank : fichier +
+ * retouches d'administration ; filtres facultatifs), mélange l'ordre des
+ * options et fige le tout — même logique que les duels, avec la catégorie
+ * et le niveau conservés pour l'affichage sur le grand écran.
  */
-function veillee_pick_questions(int $nb, ?string $categorie, ?int $niveau): array {
-    $file = __DIR__ . '/../defi/data/questions.json';
-    $bank = json_decode((string) file_get_contents($file), true);
-    $all = $bank['questions'] ?? null;
-    if (!is_array($all)) {
-        throw new RuntimeException('Banque de questions introuvable : ' . $file);
-    }
+function veillee_pick_questions(PDO $pdo, int $nb, ?string $categorie, ?int $niveau): array {
+    $all = quiz_bank($pdo);
     if ($categorie !== null) {
         $all = array_values(array_filter($all, fn (array $q): bool => ($q['categorie'] ?? '') === $categorie));
     }
@@ -298,7 +294,7 @@ function handle_veillees_create(PDO $pdo): never {
         json_error('Niveau invalide (1 à 3).', 400);
     }
 
-    $questions = veillee_pick_questions($nb, $categorie, $niveau);
+    $questions = veillee_pick_questions($pdo, $nb, $categorie, $niveau);
     $code = veillee_generate_code($pdo);
     $st = $pdo->prepare(
         'INSERT INTO veillees (code, host_user_id, statut, questions_json, current_q, seconds, created_at, updated_at)

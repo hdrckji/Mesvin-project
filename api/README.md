@@ -15,9 +15,9 @@ Le contrat complet des routes est dans [`../API-CONTRAT.md`](../API-CONTRAT.md).
   automatique sur SQLite (`api/data/dev.sqlite`) pour les tests locaux.
   Les tables sont créées automatiquement au premier appel.
 - **Fichiers** : `index.php` (routage) → `auth.php`, `sync.php`, `friends.php`,
-  `duels.php`, `veillees.php` (les routes), avec `db.php` (connexion +
-  migrations), `mail.php` (envoi des codes), `helpers.php` (fonctions
-  partagées).
+  `duels.php`, `veillees.php`, `admin.php` (les routes), avec `db.php`
+  (connexion + migrations), `mail.php` (envoi des codes), `helpers.php`
+  (fonctions partagées).
 
 ## Installation sur Railway
 
@@ -84,7 +84,23 @@ serveur revérifie auprès de Google. Le bouton apparaît tout seul dès que la
 variable est définie (`GET /api/config` permet de vérifier). Un compte Google
 et un compte e-mail avec la **même adresse** sont **le même compte**.
 
-### 4. Vérifier que tout marche
+### 4. Les administrateurs (facultatif)
+
+| Variable | Exemple | Rôle |
+|---|---|---|
+| `ADMIN_EMAILS` | `moi@mondomaine.fr, elle@mondomaine.fr` | adresses admin, séparées par des virgules (casse ignorée) |
+
+Les comptes dont l'e-mail figure dans la liste voient une carte
+« Administration » dans l'écran Moi et accèdent à l'adresse **`/admin/`** :
+liste et suppression des comptes, et gestion de la banque de questions du
+Défi. Le fichier `defi/data/questions.json` est embarqué dans l'image et le
+système de fichiers de Railway est éphémère : les retouches (éditions,
+désactivations, ajouts) vivent donc en base, dans la table `quiz_questions`,
+et tout le monde (Défi, duels, veillées) tire dans la banque fusionnée servie
+par `GET /api/questions`. Pas de colonne en base : retirer une adresse de la
+variable retire le rôle.
+
+### 5. Vérifier que tout marche
 
 Ouvrir `https://<mon-domaine>/api/health` :
 

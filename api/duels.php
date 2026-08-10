@@ -2,9 +2,10 @@
 /* ============================================================================
    Duels asynchrones entre amis.
 
-   - Le SERVEUR tire 10 questions dans defi/data/questions.json (catégories
-     et niveaux variés), mélange l'ordre des options et STOCKE le tout dans
-     duels.questions_json : les deux joueurs voient exactement le même duel.
+   - Le SERVEUR tire 10 questions dans la banque fusionnée (quiz_bank :
+     fichier + retouches d'administration ; catégories et niveaux variés),
+     mélange l'ordre des options et STOCKE le tout dans duels.questions_json :
+     les deux joueurs voient exactement le même duel.
    - La bonne réponse n'est JAMAIS envoyée au client tant qu'il n'a pas joué.
    - Le score est recalculé côté serveur à partir des réponses stockées :
      le score envoyé par le client n'est jamais cru.
@@ -26,12 +27,10 @@ const DUEL_MAX_PER_LEVEL    = 4;
  * Chaque entrée stockée : { id, question, options[4], bonne, reference }
  * (bonne = index de la bonne réponse APRÈS mélange des options).
  */
-function duel_pick_questions(): array {
-    $file = __DIR__ . '/../defi/data/questions.json';
-    $bank = json_decode((string) file_get_contents($file), true);
-    $all = $bank['questions'] ?? null;
-    if (!is_array($all) || count($all) < DUEL_QUESTION_COUNT) {
-        throw new RuntimeException('Banque de questions introuvable ou incomplète : ' . $file);
+function duel_pick_questions(PDO $pdo): array {
+    $all = quiz_bank($pdo);
+    if (count($all) < DUEL_QUESTION_COUNT) {
+        throw new RuntimeException('Banque de questions incomplète.');
     }
 
     // Variété : on mélange toute la banque, puis on prend au plus
@@ -184,7 +183,7 @@ function handle_duels_create(PDO $pdo): never {
         json_error('Vous devez d\'abord être amis pour vous défier.', 403);
     }
 
-    $questions = duel_pick_questions();
+    $questions = duel_pick_questions($pdo);
     $st = $pdo->prepare(
         'INSERT INTO duels (challenger_id, opponent_id, questions_json, created_at)
          VALUES (?, ?, ?, ?)'

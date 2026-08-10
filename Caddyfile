@@ -27,6 +27,8 @@
 	rewrite @lire /lire/index.html
 	@defi path /defi /defi/
 	rewrite @defi /defi/index.html
+	@admin path /admin /admin/
+	rewrite @admin /admin/index.html
 
 	# Le service worker ne doit jamais être mis en cache,
 	# sinon les mises à jour de l'appli ne parviennent pas aux utilisateurs.
@@ -36,7 +38,7 @@
 	# Les pages HTML non plus : sans en-tête, les navigateurs les gardent en
 	# cache « heuristique » et une ancienne page d'accueil peut coller
 	# longtemps après un déploiement. no-cache = revalider à chaque visite.
-	@html path / /index.html /lire /lire/ /lire/index.html /defi /defi/ /defi/index.html
+	@html path / /index.html /lire /lire/ /lire/index.html /defi /defi/ /defi/index.html /admin /admin/ /admin/index.html
 	header @html Cache-Control "no-cache"
 
 	# Type MIME correct pour le manifeste PWA.

@@ -27,7 +27,9 @@ contient aussi `"devCode": "123456"` — JAMAIS en production.
 Corps : `{ "email": "...", "code": "123456", "pseudo": "..." }` — `pseudo`
 obligatoire seulement à la première connexion (création du compte) ; s'il est
 requis et absent → 422 `{ "error": "...", "needPseudo": true }`.
-→ `{ "token": "...", "user": { "pseudo": "...", "email": "...", "friendCode": "GRN-7F3K" } }`
+→ `{ "token": "...", "user": { "pseudo": "...", "email": "...", "friendCode": "GRN-7F3K", "isAdmin": false } }`
+(`isAdmin` : l'e-mail figure dans `ADMIN_EMAILS` — voir la section Administration ;
+le client le range dans sa session locale, le serveur revérifie à chaque route)
 
 ### POST /api/auth/google
 Connexion **en un geste** avec un compte Google — active seulement si la
@@ -44,7 +46,7 @@ si rien ne convient → 422 `{ "needPseudo": true }` (renvoyer le même
 Configuration **publique** (aucune authentification) :
 → `{ "googleClientId": "…" | null }` — null = bouton Google masqué côté client.
 
-### GET /api/me → `{ "user": { … } }`
+### GET /api/me → `{ "user": { …, "isAdmin": true|false } }`
 ### POST /api/me/pseudo — corps `{ "pseudo": "..." }` → `{ "user": { … } }`
 ### POST /api/auth/logout → `{ "ok": true }` (invalide le token)
 ### DELETE /api/me → `{ "ok": true }` (supprime compte, synchro, amitiés, duels)
@@ -142,13 +144,69 @@ Corps : `{ "action": "start" | "reveal" | "next" | "end" }`
 → `{ "veillee": { … } }` — transitions strictes (409 sinon) ; `start` exige
 au moins un participant ; `next` après la dernière question passe en `done`.
 
+## Questions du Défi
+
+La banque de base vit dans `defi/data/questions.json`, embarquée dans l'image
+Docker ; le système de fichiers de Railway étant éphémère, les retouches
+d'administration vivent en base (table `quiz_questions`). Tout le monde —
+module Défi, duels, veillées — tire dans la banque **fusionnée** : les
+questions du fichier, remplacées par leur surcharge active s'il y en a une,
+retirées si la surcharge est inactive, plus les ajouts (id préfixés `adm-`).
+
+### GET /api/questions
+Public, sans authentification.
+→ `{ "version": 2, "categories": [...], "questions": [banque fusionnée] }`
+Le module Défi l'essaie d'abord et retombe sur son fichier local hors-ligne.
+
+## Administration
+
+Un utilisateur est **admin** si son e-mail figure dans la variable
+d'environnement `ADMIN_EMAILS` (liste séparée par des virgules, insensible à
+la casse) — aucune colonne en base. Le payload utilisateur (connexion et
+`GET /api/me`) porte `"isAdmin": true|false`. Toutes les routes `/api/admin/*`
+exigent une session valide **et** le rôle admin (403 sinon). L'écran vit à
+l'adresse `/admin/` (en ligne seulement, jamais pré-caché).
+
+### GET /api/admin/users
+→ `{ "users": [ { "id": 3, "pseudo": "...", "email": "...", "friendCode": "GRN-XXXX",
+  "createdAt": "ISO", "lastSeen": "ISO" } ] }`
+
+### DELETE /api/admin/users/{id}
+→ `{ "ok": true }` — suppression **totale** du compte, même effet que
+`DELETE /api/me` (compte, synchro, amitiés, duels, sessions, codes).
+400 si l'admin vise son propre compte (il passe par l'écran Moi),
+404 si l'id n'existe pas.
+
+### POST /api/admin/questions
+Créer ou modifier une question. Corps :
+`{ "id"?, "categorie", "niveau", "question", "options": [4], "bonne", "reference" }`
+- sans `id` → **ajout**, id généré `adm-<6 hex>` ;
+- `id` du fichier → **surcharge** (la version en base remplace celle du fichier) ;
+- `id` en `adm-` → modification de l'ajout ; autre id → 404.
+Validations : catégorie parmi celles du fichier, niveau 1–3, question non vide
+≤ 300 caractères, exactement 4 options non vides ≤ 120 caractères, `bonne`
+entre 0 et 3, référence non vide ≤ 60 caractères.
+→ `{ "question": { … } }` (la question enregistrée)
+
+### DELETE /api/admin/questions/{id}
+- id du fichier : pose une surcharge `actif = 0` — la question est
+  **désactivée** (elle reste dans le fichier ; réversible avec `/restore`) ;
+- id `adm-` : l'ajout est **supprimé** pour de bon.
+→ `{ "ok": true }` — 404 si l'id n'existe ni en base ni dans le fichier.
+
+### POST /api/admin/questions/{id}/restore
+Retire la surcharge : la version du fichier redevient active (annule une
+édition ou une désactivation). → `{ "ok": true }` — 404 si pas de surcharge.
+
 ## Backend — notes d'implémentation
 
 - PHP 8 + PDO. `MYSQL_URL` (Railway) ; **repli SQLite** (`api/data/dev.sqlite`)
   si absent → tests locaux possibles avec `php -S`.
 - Migrations auto au premier appel (CREATE TABLE IF NOT EXISTS).
 - Tables : `users`, `login_codes`, `sessions`, `sync_blobs`, `friendships`,
-  `duels`, `veillees`, `veillee_players`, `veillee_answers`.
+  `duels`, `veillees`, `veillee_players`, `veillee_answers`, `quiz_questions`.
+- Rôle admin : `ADMIN_EMAILS` (adresses séparées par des virgules, casse
+  ignorée) — pas de colonne en base, le rôle se retire en éditant la variable.
 - E-mail : SMTP via env (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`,
   `MAIL_FROM`) — sinon mode dev (`devCode` dans la réponse).
 - Connexion Google : `GOOGLE_CLIENT_ID` (client OAuth « application Web » ;

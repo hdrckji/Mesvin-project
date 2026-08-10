@@ -682,12 +682,6 @@ function viewMoi() {
         <div class="st-l">jour${daysN > 1 ? 's' : ''} d'activité en tout</div></div>
     </div>`;
 
-  const garden = `<button class="card hub-card fade" data-tab="garden" style="margin-top:14px">
-      <span class="hub-ic">🌳</span>
-      <span class="hub-txt"><span class="hub-title">Mon jardin</span>
-        <span class="hub-sub">${gardenN} verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}</span></span>
-      <span class="chev">›</span></button>`;
-
   const lireSec = `<div class="section-title">📖 Lecture</div>
     <div class="stat-grid fade">
       ${tile(lire.chapters, `chapitre${lire.chapters > 1 ? 's' : ''} lu${lire.chapters > 1 ? 's' : ''}`)}
@@ -705,7 +699,16 @@ function viewMoi() {
 
   const friends = user ? moiFriendsSection(user) : '';
 
-  return topbar() + head + account + apparence + memo + garden + assiduite + lireSec + defiSec + friends;
+  // Petite carte discrète vers l'espace d'administration — seulement pour
+  // les comptes dont l'e-mail figure dans ADMIN_EMAILS (champ isAdmin du
+  // payload utilisateur ; le serveur revérifie de toute façon à chaque route).
+  const admin = user && user.isAdmin ? `<a class="card hub-card fade" href="admin/" style="margin-top:14px">
+      <span class="hub-ic">🔧</span>
+      <span class="hub-txt"><span class="hub-title">Administration</span>
+        <span class="hub-sub">Comptes et banque de questions du Défi</span></span>
+      <span class="chev">›</span></a>` : '';
+
+  return topbar() + head + account + apparence + memo + assiduite + lireSec + defiSec + friends + admin;
 }
 
 /* ---------- Jardin (versets mémorisés) ---------- */
