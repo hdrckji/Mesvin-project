@@ -61,7 +61,8 @@ Configuration **publique** (aucune authentification) :
 ### GET /api/me → `{ "user": { …, "isAdmin": true|false } }`
 ### POST /api/me/pseudo — corps `{ "pseudo": "..." }` → `{ "user": { … } }`
 ### POST /api/auth/logout → `{ "ok": true }` (invalide le token)
-### DELETE /api/me → `{ "ok": true }` (supprime compte, synchro, amitiés, duels)
+### DELETE /api/me → `{ "ok": true }` (supprime compte, synchro, amitiés, duels,
+adhésions aux groupes — voir la section Groupes pour la passation)
 
 ## Synchronisation
 
@@ -156,6 +157,61 @@ Corps : `{ "action": "start" | "reveal" | "next" | "end" }`
 → `{ "veillee": { … } }` — transitions strictes (409 sinon) ; `start` exige
 au moins un participant ; `next` après la dernière question passe en `done`.
 
+## Groupes d'église (fondations — encore aucune interface)
+
+Le serveur est prêt, l'écran viendra ensuite : **rien n'est visible dans
+l'appli pour l'instant**. L'esprit (VISION.md) : on rejoint le groupe de son
+église avec un **code court** (`GRP-XXXXX`, 5 caractères dans l'alphabet sans
+ambiguïté des codes amis — l'espace élargi résiste à l'énumération) ; le
+**responsable** pousse le verset de la semaine au groupe ; le suivi reste
+bienveillant — jamais de classement individuel public, et les e-mails des
+membres ne sont **jamais** exposés.
+
+Toutes les routes exigent une session (`Authorization: Bearer …`). Le payload
+`groupe` commun : `{ "code", "nom", "role" ("responsable" | "membre" — celui
+du demandeur), "nbMembres", "verset": { "reference", "texte", "depuis": "ISO" } | null }`.
+
+### POST /api/groupes
+Corps : `{ "nom": "..." }` — 2 à 40 caractères : lettres (accents compris),
+chiffres, espaces, tirets et apostrophes (droite ou typographique).
+Le créateur devient **responsable** du groupe. Garde-fou : 5 groupes au plus
+par responsable (400 au-delà).
+→ 201 `{ "groupe": { … } }`
+
+### POST /api/groupes/rejoindre
+Corps : `{ "code": "GRP-XXXXX" }` — on rejoint en **membre**.
+→ `{ "groupe": { … } }` — 400 code mal formé, 404 code inconnu,
+409 déjà membre ou groupe complet (500 membres au maximum).
+
+### GET /api/groupes
+→ `{ "groupes": [ { code, nom, role, nbMembres, verset|null } ] }` — mes groupes.
+
+### GET /api/groupes/{code}
+**Membres seulement** (403 sinon).
+→ `{ "groupe": { code, nom, role, nbMembres,
+  "membres": [ { "pseudo", "role" } ], verset|null } }`
+(les membres n'exposent que pseudo et rôle — **jamais les e-mails**)
+
+### POST /api/groupes/{code}/verset
+**Responsable seulement** (403 sinon). Corps : `{ "reference": "…" (1–60),
+"texte": "…" (1–500) }` — pose le verset de la semaine (remplace le précédent,
+`depuis` est horodaté par le serveur). → `{ "groupe": { … } }`
+
+### DELETE /api/groupes/{code}/membres/moi
+Quitter le groupe. → `{ "ok": true }` — un responsable ne peut pas quitter
+tant qu'il reste d'autres membres (400 : il faut d'abord transmettre la
+responsabilité — la passation viendra plus tard) ; s'il est le dernier, le
+groupe est supprimé avec lui. 404 si l'on n'est pas membre.
+
+### DELETE /api/groupes/{code}
+**Responsable seulement** (403 sinon) : supprime le groupe et toutes ses
+adhésions. → `{ "ok": true }`
+
+À la suppression d'un compte (`DELETE /api/me` ou administration) : ses
+adhésions sont retirées ; pour chaque groupe dont il était responsable, le
+groupe est supprimé s'il y était seul, sinon le **membre restant le plus
+ancien** est promu responsable — l'assemblée ne reste jamais sans berger.
+
 ## Questions du Défi
 
 La banque de base vit dans `defi/data/questions.json`, embarquée dans l'image
@@ -216,7 +272,8 @@ Retire la surcharge : la version du fichier redevient active (annule une
   si absent → tests locaux possibles avec `php -S`.
 - Migrations auto au premier appel (CREATE TABLE IF NOT EXISTS).
 - Tables : `users`, `login_codes`, `sessions`, `sync_blobs`, `friendships`, `throttle`, `admin_log`,
-  `duels`, `veillees`, `veillee_players`, `veillee_answers`, `quiz_questions`.
+  `duels`, `veillees`, `veillee_players`, `veillee_answers`, `quiz_questions`,
+  `groupes`, `groupe_membres`.
 - Rôle admin : `ADMIN_EMAILS` (adresses séparées par des virgules, casse
   ignorée) — pas de colonne en base, le rôle se retire en éditant la variable.
 - E-mail : SMTP via env (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`,

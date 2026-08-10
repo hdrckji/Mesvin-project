@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM admin_log LIMIT 1');
+        $pdo->query('SELECT 1 FROM groupe_membres LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -194,6 +194,32 @@ function db_migrate(PDO $pdo): void {
                 cible VARCHAR(190) NOT NULL,
                 created_at DATETIME NOT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Groupes d'église (fondations serveur — voir groupes.php).
+            // On rejoint par code court (GRP-XXXXX) ; le responsable pousse
+            // le verset de la semaine (verset_*), NULL tant que rien n'est posé.
+            'CREATE TABLE IF NOT EXISTS groupes (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                code VARCHAR(10) NOT NULL UNIQUE,
+                nom VARCHAR(40) NOT NULL,
+                responsable_id INT UNSIGNED NOT NULL,
+                verset_ref VARCHAR(60) NULL,
+                verset_texte VARCHAR(500) NULL,
+                verset_updated_at DATETIME NULL,
+                created_at DATETIME NOT NULL,
+                INDEX idx_groupes_responsable (responsable_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Adhésions aux groupes : une ligne par membre, y compris le
+            // responsable (role « responsable » ou « membre »).
+            'CREATE TABLE IF NOT EXISTS groupe_membres (
+                groupe_id INT UNSIGNED NOT NULL,
+                user_id INT UNSIGNED NOT NULL,
+                role VARCHAR(12) NOT NULL,
+                joined_at DATETIME NOT NULL,
+                PRIMARY KEY (groupe_id, user_id),
+                INDEX idx_gmembres_user (user_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
         ];
     } else {
         $ddl = [
@@ -319,6 +345,30 @@ function db_migrate(PDO $pdo): void {
                 cible TEXT NOT NULL,
                 created_at TEXT NOT NULL
             )',
+
+            // Groupes d'église — voir le commentaire du dialecte MySQL ci-dessus.
+            'CREATE TABLE IF NOT EXISTS groupes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT NOT NULL UNIQUE,
+                nom TEXT NOT NULL,
+                responsable_id INTEGER NOT NULL,
+                verset_ref TEXT NULL,
+                verset_texte TEXT NULL,
+                verset_updated_at TEXT NULL,
+                created_at TEXT NOT NULL
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_groupes_responsable ON groupes (responsable_id)',
+
+            // Adhésions aux groupes : une ligne par membre, y compris le
+            // responsable (role « responsable » ou « membre »).
+            'CREATE TABLE IF NOT EXISTS groupe_membres (
+                groupe_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                role TEXT NOT NULL,
+                joined_at TEXT NOT NULL,
+                PRIMARY KEY (groupe_id, user_id)
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_gmembres_user ON groupe_membres (user_id)',
         ];
     }
 

@@ -6,8 +6,8 @@
 #
 # Lance `php -S` sur le port 8180 avec le routeur qui simule la réécriture
 # Caddy (/api/* → api/index.php), puis déroule le parcours complet du contrat :
-# santé → connexion → synchro → amis → duels → veillées → administration
-# → déconnexion → suppression.
+# santé → connexion → synchro → amis → duels → veillées → groupes d'église
+# → administration → déconnexion → suppression.
 # Nécessite : php (>= 8.1), curl, jq.
 # ============================================================================
 
@@ -265,6 +265,82 @@ check "Léa a un rang"                   true "$(jval '.veillee.me.rang >= 1')"
 check "rejoindre une veillée close → 410" 410 "$(api POST "/api/veillees/$VCODE/join" '' '{"prenom":"Paul"}')"
 
 # ---------------------------------------------------------------------------
+# Groupes d'église (fondations serveur — aucune interface encore).
+# Aucun appel request-code ici : on réutilise TOKEN1/TOKEN2/TOKEN3 pour ne pas
+# entamer les plafonds testés plus loin (par e-mail et par IP).
+say "Groupes d'église — création (u1 responsable)"
+check "créer sans compte → 401"         401 "$(api POST /api/groupes '' '{"nom":"Béthel"}')"
+check "nom trop court → 400"            400 "$(api POST /api/groupes "$TOKEN1" '{"nom":"B"}')"
+check "nom avec caractère interdit → 400" 400 "$(api POST /api/groupes "$TOKEN1" '{"nom":"Béthel <7>"}')"
+check "création (apostrophes, accents) → 201" 201 "$(api POST /api/groupes "$TOKEN1" '{"nom":"L’Église d’Éphèse"}')"
+GCODE="$(jval .groupe.code)"
+check "code au format GRP-XXXXX (préfixe)"  GRP "${GCODE%-*}"
+check "code au format GRP-XXXXX (longueur)" 9   "${#GCODE}"
+check "le créateur est responsable"     responsable "$(jval .groupe.role)"
+check "1 membre au départ"              1    "$(jval .groupe.nbMembres)"
+check "pas encore de verset"            null "$(jval .groupe.verset)"
+
+say "Groupes — u3 rejoint par code"
+check "code mal formé → 400"            400 "$(api POST /api/groupes/rejoindre "$TOKEN3" '{"code":"BETHEL7"}')"
+check "code inconnu → 404"              404 "$(api POST /api/groupes/rejoindre "$TOKEN3" '{"code":"GRP-00000"}')"
+GCODE_MIN="$(printf '%s' "$GCODE" | tr '[:upper:]' '[:lower:]')"
+check "u3 rejoint (code en minuscules) → 200" 200 "$(api POST /api/groupes/rejoindre "$TOKEN3" "{\"code\":\"$GCODE_MIN\"}")"
+check "→ role membre"                   membre "$(jval .groupe.role)"
+check "→ 2 membres"                     2      "$(jval .groupe.nbMembres)"
+check "re-rejoindre → 409"              409 "$(api POST /api/groupes/rejoindre "$TOKEN3" "{\"code\":\"$GCODE\"}")"
+
+say "Groupes — liste et détail (membres seulement, jamais les e-mails)"
+check "liste u1 → 200"                  200 "$(api GET /api/groupes "$TOKEN1")"
+check "u1 a 1 groupe"                   1   "$(jval '.groupes | length')"
+check "u1 : role responsable"           responsable "$(jval '.groupes[0].role')"
+check "liste u2 : aucun groupe"         0   "$(api GET /api/groupes "$TOKEN2" > /dev/null; jval '.groupes | length')"
+check "détail u2 (non-membre) → 403"    403 "$(api GET "/api/groupes/$GCODE" "$TOKEN2")"
+check "détail u1 (membre) → 200"        200 "$(api GET "/api/groupes/$GCODE" "$TOKEN1")"
+check "2 membres listés"                2   "$(jval '.groupe.membres | length')"
+check "membres : pseudo et role seulement" "pseudo,role" "$(jval '.groupe.membres | map(keys) | flatten | unique | sort | join(",")')"
+check "JAMAIS d'e-mail dans le détail"  false "$(jval 'tostring | contains("@")')"
+
+say "Groupes — verset de la semaine (responsable seul)"
+check "u3 (membre) pose le verset → 403" 403 "$(api POST "/api/groupes/$GCODE/verset" "$TOKEN3" '{"reference":"Jean 3.16","texte":"Car Dieu a tant aimé le monde…"}')"
+check "texte vide → 400"                400 "$(api POST "/api/groupes/$GCODE/verset" "$TOKEN1" '{"reference":"Jean 3.16","texte":"  "}')"
+check "u1 (responsable) → 200"          200 "$(api POST "/api/groupes/$GCODE/verset" "$TOKEN1" '{"reference":"Jean 3.16","texte":"Car Dieu a tant aimé le monde…"}')"
+check "→ verset.reference"              "Jean 3.16" "$(jval .groupe.verset.reference)"
+check "→ verset.depuis en ISO"          Z   "$(jval .groupe.verset.depuis | tail -c 2)"
+api GET "/api/groupes/$GCODE" "$TOKEN3" > /dev/null
+check "le verset est visible des membres" "Car Dieu a tant aimé le monde…" "$(jval .groupe.verset.texte)"
+
+say "Groupes — quitter"
+check "u1 responsable ne peut pas quitter (u3 est là) → 400" 400 "$(api DELETE "/api/groupes/$GCODE/membres/moi" "$TOKEN1")"
+check "u3 quitte → 200"                 200 "$(api DELETE "/api/groupes/$GCODE/membres/moi" "$TOKEN3")"
+check "u3 re-quitte → 404"              404 "$(api DELETE "/api/groupes/$GCODE/membres/moi" "$TOKEN3")"
+check "u3 : liste vide"                 0   "$(api GET /api/groupes "$TOKEN3" > /dev/null; jval '.groupes | length')"
+check "u1, resté seul, quitte → 200"    200 "$(api DELETE "/api/groupes/$GCODE/membres/moi" "$TOKEN1")"
+check "le groupe a disparu avec lui → 404" 404 "$(api POST /api/groupes/rejoindre "$TOKEN3" "{\"code\":\"$GCODE\"}")"
+
+say "Groupes — plafond de 5 groupes par responsable, puis suppression"
+GCODES=""
+for i in 1 2 3 4 5; do
+  api POST /api/groupes "$TOKEN1" "{\"nom\":\"Groupe numéro $i\"}" > /dev/null
+  GCODES="$GCODES $(jval .groupe.code)"
+done
+check "u1 responsable de 5 groupes"     5   "$(api GET /api/groupes "$TOKEN1" > /dev/null; jval '.groupes | length')"
+check "6e groupe → 400"                 400 "$(api POST /api/groupes "$TOKEN1" '{"nom":"Groupe de trop"}')"
+set -- $GCODES
+check "suppression par u3 (non-responsable) → 403" 403 "$(api DELETE "/api/groupes/$1" "$TOKEN3")"
+SUPPRIMES=0
+for c in $GCODES; do
+  [ "$(api DELETE "/api/groupes/$c" "$TOKEN1")" = 200 ] && SUPPRIMES=$((SUPPRIMES + 1))
+done
+check "u1 supprime ses 5 groupes"       5   "$SUPPRIMES"
+check "u1 : liste vide"                 0   "$(api GET /api/groupes "$TOKEN1" > /dev/null; jval '.groupes | length')"
+
+say "Groupes — deuxième groupe : u2 responsable, u3 membre (passation testée après la suppression de u2)"
+check "u2 crée son groupe → 201"        201 "$(api POST /api/groupes "$TOKEN2" '{"nom":"Groupe de Benoît"}')"
+G2CODE="$(jval .groupe.code)"
+check "u3 rejoint → 200"                200 "$(api POST /api/groupes/rejoindre "$TOKEN3" "{\"code\":\"$G2CODE\"}")"
+check "→ 2 membres"                     2   "$(jval .groupe.nbMembres)"
+
+# ---------------------------------------------------------------------------
 say "Administration — rôle admin (ADMIN_EMAILS=alice@example.org)"
 api GET /api/me "$TOKEN1" > /dev/null
 check "me alice : isAdmin true"         true  "$(jval .user.isAdmin)"
@@ -380,6 +456,15 @@ check "logout u1 → 200"                 200 "$(api POST /api/auth/logout "$TOK
 check "me après logout → 401"           401 "$(api GET /api/me "$TOKEN1")"
 check "DELETE /api/me (u2) → 200"       200 "$(api DELETE /api/me "$TOKEN2")"
 check "me après suppression → 401"      401 "$(api GET /api/me "$TOKEN2")"
+
+say "Groupes — le responsable supprimé : u3, plus ancien membre restant, est promu"
+api GET /api/groupes "$TOKEN3" > /dev/null
+check "u3 a toujours son groupe"        1 "$(jval '.groupes | length')"
+check "u3 promu responsable"            responsable "$(jval ".groupes[] | select(.code == \"$G2CODE\") | .role")"
+check "1 membre restant"                1 "$(jval ".groupes[] | select(.code == \"$G2CODE\") | .nbMembres")"
+api GET "/api/groupes/$G2CODE" "$TOKEN3" > /dev/null
+check "détail : Chloé responsable"      responsable "$(jval '.groupe.membres[] | select(.pseudo == "Chloé") | .role')"
+check "u3 peut poser le verset → 200"   200 "$(api POST "/api/groupes/$G2CODE/verset" "$TOKEN3" '{"reference":"Psaume 23.1","texte":"L’Éternel est mon berger : je ne manquerai de rien."}')"
 
 say "u1 se reconnecte : l'ami supprimé et ses duels ont disparu"
 api POST /api/auth/request-code '' '{"email":"alice@example.org"}' > /dev/null

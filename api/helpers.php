@@ -237,3 +237,58 @@ function generate_friend_code(PDO $pdo): string {
     }
     throw new RuntimeException('Impossible de générer un code ami unique.');
 }
+
+/**
+ * Valide un nom de groupe : 2 à 40 caractères, mêmes règles qu'un pseudo
+ * (lettres avec accents, chiffres, espaces, tirets) plus les apostrophes —
+ * droite (') et typographique (’) — pour « L'Église d'Éphèse ».
+ * Retourne le nom nettoyé, ou null s'il est invalide.
+ */
+function validate_group_name(mixed $nom): ?string {
+    if (!is_string($nom)) {
+        return null;
+    }
+    $nom = trim($nom);
+    $length = mb_strlen($nom);
+    if ($length < 2 || $length > 40) {
+        return null;
+    }
+    if (!preg_match("/^[\p{L}\p{N} '’\-]+\$/u", $nom) || !preg_match('/[\p{L}\p{N}]/u', $nom)) {
+        return null;
+    }
+    return $nom;
+}
+
+/** Valide un code de groupe "GRP-XXXXX" (normalisé en majuscules), ou null. */
+function normalize_group_code(mixed $code): ?string {
+    if (!is_string($code)) {
+        return null;
+    }
+    $code = strtoupper(trim($code));
+    if (!preg_match('/^GRP-[A-Z0-9]{5}$/', $code)) {
+        return null;
+    }
+    return $code;
+}
+
+/**
+ * Génère un code de groupe unique "GRP-XXXXX" (même alphabet sans ambiguïté
+ * que les codes amis, mais 5 caractères : un code de groupe ouvre la porte à
+ * toute une assemblée — l'espace élargi résiste mieux à l'énumération).
+ */
+function generate_group_code(PDO $pdo): string {
+    $alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    $max = strlen($alphabet) - 1;
+    for ($try = 0; $try < 50; $try++) {
+        $code = 'GRP-';
+        for ($i = 0; $i < 5; $i++) {
+            $code .= $alphabet[random_int(0, $max)];
+        }
+        $st = $pdo->prepare('SELECT 1 FROM groupes WHERE code = ?');
+        $st->execute([$code]);
+        if ($st->fetch() === false) {
+            return $code;
+        }
+    }
+    throw new RuntimeException('Impossible de générer un code de groupe unique.');
+}

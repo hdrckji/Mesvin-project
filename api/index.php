@@ -22,6 +22,7 @@ require __DIR__ . '/mail.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/sync.php';
 require __DIR__ . '/friends.php';
+require __DIR__ . '/groupes.php';
 require __DIR__ . '/duels.php';
 require __DIR__ . '/veillees.php';
 require __DIR__ . '/admin.php';
@@ -95,6 +96,21 @@ if ($path === '/api/friends'     && $method === 'GET')  handle_friends_list($pdo
 if ($path === '/api/friends/add' && $method === 'POST') handle_friends_add($pdo);
 if (preg_match('#^/api/friends/([^/]+)$#', $path, $m) && $method === 'DELETE') {
     handle_friends_remove($pdo, $m[1]);
+}
+
+/* ---- Groupes d'église (fondations serveur — aucune interface encore) ----------- */
+if ($path === '/api/groupes' && $method === 'POST') handle_groupes_create($pdo);
+if ($path === '/api/groupes' && $method === 'GET')  handle_groupes_list($pdo);
+if ($path === '/api/groupes/rejoindre' && $method === 'POST') handle_groupes_join($pdo);
+if (preg_match('#^/api/groupes/([^/]+)/verset$#', $path, $m) && $method === 'POST') {
+    handle_groupes_verset($pdo, $m[1]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/membres/moi$#', $path, $m) && $method === 'DELETE') {
+    handle_groupes_leave($pdo, $m[1]);
+}
+if (preg_match('#^/api/groupes/([^/]+)$#', $path, $m)) {
+    if ($method === 'GET')    handle_groupes_detail($pdo, $m[1]);
+    if ($method === 'DELETE') handle_groupes_delete($pdo, $m[1]);
 }
 
 /* ---- Duels -------------------------------------------------------------------- */
