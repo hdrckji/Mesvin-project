@@ -79,6 +79,135 @@ function applyTheme(choix) {
   if (meta) meta.setAttribute('content', THEME_FONDS[effectif] || THEME_FONDS.clair);
 }
 
+/* ---------- Notifications « Le verset offert » (Moi) ----------
+   Chaque jour, à l'heure choisie, une notification OFFRE un verset — elle ne
+   réclame jamais rien (pas de « viens faire », pas de « tu as manqué »).
+   L'état affiché vient d'une préférence locale (graine.push) : pas besoin
+   d'interroger le serveur pour dessiner la carte. L'abonnement lui-même vit
+   chez le navigateur (pushManager) et sur le serveur (POST subscribe). */
+const PUSH_KEY = 'graine.push';         // { endpoint, heure } quand c'est actif
+const PUSH_HEURES = [7, 8, 12, 20];     // pastilles d'heure proposées (défaut 8 h)
+let pushBusy = false, pushError = null, pushNotice = null;
+
+function pushPref() {
+  try { const r = localStorage.getItem(PUSH_KEY); if (r) return JSON.parse(r); } catch (e) {}
+  return null;
+}
+function savePushPref(p) {
+  try { if (p) localStorage.setItem(PUSH_KEY, JSON.stringify(p)); else localStorage.removeItem(PUSH_KEY); } catch (e) {}
+}
+// 'oui' : tout est là ; 'ios' : iPhone/iPad pas encore installé sur l'écran
+// d'accueil (Safari n'expose l'API push qu'aux PWA installées) ; 'non' : pas
+// de prise en charge du tout.
+function pushSupport() {
+  if ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window) return 'oui';
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPad récent
+  const installe = (window.matchMedia && matchMedia('(display-mode: standalone)').matches)
+    || navigator.standalone === true;
+  return ios && !installe ? 'ios' : 'non';
+}
+// Clé publique VAPID : base64url → Uint8Array pour pushManager.subscribe.
+function pushB64uToU8(s) {
+  const b64 = s.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(s.length / 4) * 4, '=');
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+}
+function pushFriendlyError(e) {
+  if (e && e.offline) return 'Pas de connexion — réessaie quand tu seras en ligne.';
+  if (e && e.status) return e.message || 'Le serveur n\'a pas pu enregistrer l\'abonnement — réessaie plus tard.';
+  return 'Impossible d\'activer les notifications pour l\'instant — réessaie plus tard.';
+}
+async function pushActivate(heure) {
+  if (pushBusy || !window.GraineAPI) return;
+  pushBusy = true; pushError = pushNotice = null; render();
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      // Refus ou fermeture de la demande : on n'insiste pas, jamais.
+      pushError = perm === 'denied'
+        ? 'Ton navigateur bloque les notifications pour ce site — tu peux le changer dans ses réglages.'
+        : 'Pas de souci — tu pourras activer quand tu veux.';
+    } else {
+      const reg = await navigator.serviceWorker.ready;
+      const { vapidPublicKey } = await GraineAPI.pushKey();
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: pushB64uToU8(vapidPublicKey)
+        });
+      }
+      await GraineAPI.pushSubscribe(sub.toJSON(), heure, new Date().getTimezoneOffset());
+      savePushPref({ endpoint: sub.endpoint, heure });
+      pushNotice = 'C\'est prêt : chaque jour vers ' + heure + ' h, un verset t\'attendra 🌱';
+    }
+  } catch (e) { pushError = pushFriendlyError(e); }
+  pushBusy = false; render();
+}
+async function pushSetHour(heure) {
+  const pref = pushPref();
+  if (!pref || pushBusy || !window.GraineAPI) return;
+  if (pref.heure === heure) return;
+  pushBusy = true; pushError = pushNotice = null; render();
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) { // l'abonnement navigateur a disparu : on refait le chemin complet
+      savePushPref(null); pushBusy = false;
+      return pushActivate(heure);
+    }
+    await GraineAPI.pushSubscribe(sub.toJSON(), heure, new Date().getTimezoneOffset());
+    savePushPref({ endpoint: sub.endpoint, heure });
+  } catch (e) { pushError = pushFriendlyError(e); }
+  pushBusy = false; render();
+}
+async function pushDeactivate() {
+  if (pushBusy) return;
+  pushBusy = true; pushError = pushNotice = null; render();
+  const pref = pushPref();
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    const endpoint = sub ? sub.endpoint : (pref && pref.endpoint);
+    if (sub) await sub.unsubscribe();
+    if (endpoint && window.GraineAPI) {
+      // Hors-ligne, tant pis : le serveur retirera de lui-même l'abonnement
+      // mort après quelques échecs d'envoi.
+      try { await GraineAPI.pushUnsubscribe(endpoint); } catch (e) {}
+    }
+  } catch (e) { /* même en cas de pépin, le choix de l'utilisateur est respecté */ }
+  savePushPref(null);
+  pushNotice = 'Notifications désactivées. Tu peux les retrouver ici quand tu veux.';
+  pushBusy = false; render();
+}
+// La carte « Le verset offert » de l'écran Moi — même modèle que Apparence.
+function moiPushCard() {
+  const support = pushSupport();
+  const pref = pushPref();
+  const desc = `<p class="muted" style="margin:0">Chaque jour, un verset t'est offert en notification. Rien à faire, rien à rattraper — juste recevoir.</p>`;
+  let corps;
+  if (support === 'ios') {
+    // iOS Safari : l'API push n'existe qu'une fois la PWA installée.
+    corps = desc + `<p class="muted" style="font-size:.85rem;margin:12px 2px 0">📲 Sur iPhone ou iPad, ajoute d'abord Bible Horizon à ton écran d'accueil (bouton Partager → « Sur l'écran d'accueil ») pour recevoir des notifications.</p>`;
+  } else if (support === 'non') {
+    corps = desc + `<p class="muted" style="font-size:.85rem;margin:12px 2px 0">Ce navigateur ne prend pas en charge les notifications — tout le reste de l'appli fonctionne normalement.</p>`;
+  } else if (Notification.permission === 'denied') {
+    corps = desc + `<p class="muted" style="font-size:.85rem;margin:12px 2px 0">Ton navigateur bloque les notifications pour ce site — tu peux le changer dans ses réglages, puis revenir ici.</p>`;
+  } else if (pref) {
+    const hpill = h => `<button class="pill ${pref.heure === h ? 'on' : ''}" data-push-heure="${h}" ${pushBusy ? 'disabled' : ''}>${h} h</button>`;
+    corps = `<p class="muted" style="margin:0">Chaque jour vers <b>${pref.heure} h</b>, un verset t'est offert. Change l'heure librement — ou arrête, sans question.</p>
+      <div class="pill-row" style="margin-top:12px">${PUSH_HEURES.map(hpill).join('')}</div>
+      <button class="btn btn-ghost btn-block" data-push-off="1" ${pushBusy ? 'disabled' : ''} style="margin-top:12px">Désactiver</button>`;
+  } else {
+    corps = desc + `<button class="btn btn-primary" data-push-on="1" ${pushBusy ? 'disabled' : ''} style="margin-top:12px">${pushBusy ? 'Activation…' : 'Activer'}</button>`;
+  }
+  return `<div class="section-title">🔔 Le verset offert</div>
+    <div class="card fade">${corps}
+      ${pushError ? `<p class="field-error">${esc(pushError)}</p>` : ''}
+      ${pushNotice ? `<p class="field-ok">${esc(pushNotice)}</p>` : ''}
+    </div>`;
+}
+
 /* ---------- Bibliothèque (parcours) ---------- */
 let LIBRARY = [], LIB_VERSION = 'Segond 1910';
 async function loadLibrary() {
@@ -667,6 +796,9 @@ function viewMoi() {
       <p class="muted" style="font-size:.85rem;margin:12px 2px 0">« Auto » suit le réglage clair/sombre de ton appareil. Ton choix vaut pour toute l'appli.</p>
     </div>`;
 
+  // « Le verset offert » — notifications quotidiennes, sur le même modèle.
+  const pousse = moiPushCard();
+
   const memo = `<div class="section-title">🧠 Mémorisation</div>
     <div class="stat-grid fade">
       ${tile(gardenN, `verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}`)}
@@ -724,7 +856,7 @@ function viewMoi() {
         <span class="hub-sub">Comptes et banque de questions du Défi</span></span>
       <span class="chev">›</span></a>` : '';
 
-  return topbar() + head + account + apparence + memo + assiduite + pierresSec + lireSec + defiSec + friends + admin;
+  return topbar() + head + account + apparence + pousse + memo + assiduite + pierresSec + lireSec + defiSec + friends + admin;
 }
 
 /* ---------- Jardin (versets mémorisés) ---------- */
@@ -1464,6 +1596,11 @@ function wire() {
 
   // Apparence : appliquer + sauvegarder + re-render, sans rechargement
   el.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('click', () => { applyTheme(b.dataset.themePick); render(); }));
+
+  // « Le verset offert » : activer (défaut 8 h), changer d'heure, désactiver
+  if (q('[data-push-on]')) q('[data-push-on]').addEventListener('click', () => pushActivate(8));
+  if (q('[data-push-off]')) q('[data-push-off]').addEventListener('click', pushDeactivate);
+  el.querySelectorAll('[data-push-heure]').forEach(b => b.addEventListener('click', () => pushSetHour(+b.dataset.pushHeure)));
 
   // Compte, synchro & amis
   if (route.name === 'moi') ensureFriends();

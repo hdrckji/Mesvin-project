@@ -39,10 +39,18 @@ jval() { jq -r "$1" "$TMP/body.json"; }
 # ---------------------------------------------------------------------------
 say "Analyse syntaxique (php -l) de chaque fichier PHP"
 LINT_OK=oui
-for f in "$ROOT"/api/*.php "$ROOT"/api/tests/router.php; do
+for f in "$ROOT"/api/*.php "$ROOT"/api/tests/router.php "$ROOT"/api/tests/push-crypto-test.php; do
   if ! php -l "$f" > /dev/null 2>&1; then LINT_OK=non; php -l "$f"; fi
 done
 check "php -l sans erreur" oui "$LINT_OK"
+
+# ---------------------------------------------------------------------------
+say "Crypto Web Push : vecteur RFC 8291 (annexe A) et JWT VAPID"
+if php "$ROOT/api/tests/push-crypto-test.php" > "$TMP/crypto.log" 2>&1; then
+  ok "vecteur RFC 8291 reproduit à l'octet près + VAPID vérifié (openssl_verify)"
+else
+  FAIL=$((FAIL + 1)); printf '   FAIL crypto Web Push\n'; sed 's/^/        /' "$TMP/crypto.log"
+fi
 
 # ---------------------------------------------------------------------------
 say "Démarrage du serveur de test (php -S, SQLite, mode dev)"
@@ -442,6 +450,71 @@ check "per-01 toujours version fichier" "$P01_FICHIER" \
   "$(jval '.questions[] | select(.id == "per-01") | .question')"
 
 # ---------------------------------------------------------------------------
+# Notifications — « le verset offert ». Les clés du vecteur RFC 8291 servent
+# d'abonnement plausible ; l'endpoint https://exemple.invalide est injoignable
+# (aucun envoi réel ici) : c'est la gestion d'échec qui est testée.
+sqlval()  { php -r '$p = new PDO("sqlite:" . $argv[1]); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
+sqlexec() { php -r '$p = new PDO("sqlite:" . $argv[1]); $p->exec($argv[2]);' "$ROOT/api/data/dev.sqlite" "$1"; }
+
+say "Notifications — clé VAPID auto-générée"
+check "config : vapidPublicKey null avant toute activation" null "$(api GET /api/config > /dev/null; jval .vapidPublicKey)"
+check "GET /api/push/cle → 200"          200 "$(api GET /api/push/cle)"
+VKEY="$(jval .vapidPublicKey)"
+check "clé publique P-256 brute (87 caractères base64url)" 87 "${#VKEY}"
+check "la clé est STABLE au 2e appel"    "$VKEY" "$(api GET /api/push/cle > /dev/null; jval .vapidPublicKey)"
+check "config : vapidPublicKey désormais exposée" "$VKEY" "$(api GET /api/config > /dev/null; jval .vapidPublicKey)"
+
+say "Notifications — abonnement (validations puis REPLACE par endpoint)"
+P256DH="BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8"
+AUTHK="BTBZMqHH6r4Tts7J_aSIgg"
+GOODSUB="{\"endpoint\":\"https://exemple.invalide/push/abo-1\",\"keys\":{\"p256dh\":\"$P256DH\",\"auth\":\"$AUTHK\"}}"
+check "subscription absente → 400"       400 "$(api POST /api/push/subscribe '' '{"heure":8}')"
+check "endpoint http (pas https) → 400"  400 "$(api POST /api/push/subscribe '' "{\"subscription\":{\"endpoint\":\"http://exemple.invalide/x\",\"keys\":{\"p256dh\":\"$P256DH\",\"auth\":\"$AUTHK\"}},\"heure\":8,\"tz\":0}")"
+check "p256dh invalide → 400"            400 "$(api POST /api/push/subscribe '' "{\"subscription\":{\"endpoint\":\"https://exemple.invalide/x\",\"keys\":{\"p256dh\":\"pas-une-cle\",\"auth\":\"$AUTHK\"}},\"heure\":8,\"tz\":0}")"
+check "auth invalide → 400"              400 "$(api POST /api/push/subscribe '' "{\"subscription\":{\"endpoint\":\"https://exemple.invalide/x\",\"keys\":{\"p256dh\":\"$P256DH\",\"auth\":\"trop-court\"}},\"heure\":8,\"tz\":0}")"
+check "heure hors bornes → 400"          400 "$(api POST /api/push/subscribe '' "{\"subscription\":$GOODSUB,\"heure\":24,\"tz\":0}")"
+check "fuseau hors bornes → 400"         400 "$(api POST /api/push/subscribe '' "{\"subscription\":$GOODSUB,\"heure\":8,\"tz\":5000}")"
+HEURE_NOW="$(date -u +%-H)"   # l'heure UTC courante (tz 0) : le cron déclenchera
+check "abonnement anonyme valide → 200"  200 "$(api POST /api/push/subscribe '' "{\"subscription\":$GOODSUB,\"heure\":$HEURE_NOW,\"tz\":0}")"
+check "re-subscribe même endpoint (connecté) → 200" 200 "$(api POST /api/push/subscribe "$TOKEN1" "{\"subscription\":$GOODSUB,\"heure\":$HEURE_NOW,\"tz\":0}")"
+check "un SEUL abonnement (REPLACE par endpoint)" 1 "$(sqlval 'SELECT COUNT(*) FROM push_abonnements')"
+check "l'abonnement est maintenant relié au compte" 1 "$(sqlval 'SELECT COUNT(*) FROM push_abonnements WHERE user_id IS NOT NULL')"
+
+say "Notifications — cron : clé exigée, idempotence, gestion d'échec"
+check "cron sans clé → 403"              403 "$(api GET /api/cron/notify)"
+check "cron mauvaise clé → 403"          403 "$(api GET '/api/cron/notify?key=mauvaise-cle')"
+api GET /api/health "$TOKEN1" > /dev/null
+CRONKEY="$(jval .push.cronKey)"
+check "health admin : cronKey (64 hex)"  64 "${#CRONKEY}"
+check "health admin : cronUrl porte la clé" 1 "$(jval .push.cronUrl | grep -c "$CRONKEY")"
+check "health admin : 1 abonnement compté" 1 "$(jval .push.abonnements)"
+check "cron bonne clé → 200"             200 "$(api GET "/api/cron/notify?key=$CRONKEY")"
+check "→ ok true"                        true "$(jval .ok)"
+check "→ envoyes 0 (endpoint injoignable)" 0 "$(jval .envoyes)"
+check "→ supprimes 0 (premier échec)"    0 "$(jval .supprimes)"
+check "l'échec est compté (echecs = 1)"  1 "$(sqlval 'SELECT echecs FROM push_abonnements')"
+check "last_sent_day posé AVANT l'envoi (idempotence)" 1 "$(sqlval 'SELECT COUNT(*) FROM push_abonnements WHERE last_sent_day IS NOT NULL')"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "2e cron du même jour : rien ne repart (echecs reste 1)" 1 "$(sqlval 'SELECT echecs FROM push_abonnements')"
+
+say "Notifications — l'abonnement mort est retiré au 5e échec"
+sqlexec "UPDATE push_abonnements SET echecs = 4, last_sent_day = NULL"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "cron : supprimes = 1"             1 "$(jval .supprimes)"
+check "plus aucun abonnement en base"    0 "$(sqlval 'SELECT COUNT(*) FROM push_abonnements')"
+
+say "Notifications — désabonnement (l'endpoint suffit) et détachement"
+check "endpoint manquant → 400"          400 "$(api POST /api/push/unsubscribe '' '{}')"
+api POST /api/push/subscribe '' "{\"subscription\":$GOODSUB,\"heure\":8,\"tz\":-120}" > /dev/null
+check "unsubscribe → 200"                200 "$(api POST /api/push/unsubscribe '' '{"endpoint":"https://exemple.invalide/push/abo-1"}')"
+check "la ligne a disparu"               0   "$(sqlval 'SELECT COUNT(*) FROM push_abonnements')"
+check "unsubscribe rejoué (déjà parti) → 200" 200 "$(api POST /api/push/unsubscribe '' '{"endpoint":"https://exemple.invalide/push/abo-1"}')"
+# u2 s'abonne avec son compte : à la suppression du compte (plus bas), cet
+# abonnement doit être DÉTACHÉ (user_id NULL), pas supprimé.
+check "abonnement de u2 (compte) → 200"  200 "$(api POST /api/push/subscribe "$TOKEN2" "{\"subscription\":{\"endpoint\":\"https://exemple.invalide/push/abo-u2\",\"keys\":{\"p256dh\":\"$P256DH\",\"auth\":\"$AUTHK\"}},\"heure\":20,\"tz\":-60}")"
+check "relié au compte de u2"            1   "$(sqlval 'SELECT COUNT(*) FROM push_abonnements WHERE user_id IS NOT NULL')"
+
+# ---------------------------------------------------------------------------
 say "Limites : essais de code et demandes par heure (u3)"
 api POST /api/auth/request-code '' '{"email":"chloe@example.org"}' > /dev/null
 for _ in 1 2 3 4 5; do api POST /api/auth/verify '' '{"email":"chloe@example.org","code":"999999"}' > /dev/null; done
@@ -456,6 +529,9 @@ check "logout u1 → 200"                 200 "$(api POST /api/auth/logout "$TOK
 check "me après logout → 401"           401 "$(api GET /api/me "$TOKEN1")"
 check "DELETE /api/me (u2) → 200"       200 "$(api DELETE /api/me "$TOKEN2")"
 check "me après suppression → 401"      401 "$(api GET /api/me "$TOKEN2")"
+check "l'abonnement push de u2 survit, DÉTACHÉ (user_id NULL)" 1 \
+  "$(sqlval 'SELECT COUNT(*) FROM push_abonnements WHERE user_id IS NULL')"
+check "aucun abonnement encore relié à u2" 0 "$(sqlval 'SELECT COUNT(*) FROM push_abonnements WHERE user_id IS NOT NULL')"
 
 say "Groupes — le responsable supprimé : u3, plus ancien membre restant, est promu"
 api GET /api/groupes "$TOKEN3" > /dev/null

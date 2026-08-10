@@ -56,7 +56,10 @@ si rien ne convient → 422 `{ "needPseudo": true }` (renvoyer le même
 
 ### GET /api/config
 Configuration **publique** (aucune authentification) :
-→ `{ "googleClientId": "…" | null }` — null = bouton Google masqué côté client.
+→ `{ "googleClientId": "…" | null, "vapidPublicKey": "…" | null }`
+— `googleClientId` null = bouton Google masqué côté client ; `vapidPublicKey`
+null = personne n'a encore activé les notifications (la clé naît au premier
+`GET /api/push/cle`).
 
 ### GET /api/me → `{ "user": { …, "isAdmin": true|false } }`
 ### POST /api/me/pseudo — corps `{ "pseudo": "..." }` → `{ "user": { … } }`
@@ -212,6 +215,60 @@ adhésions sont retirées ; pour chaque groupe dont il était responsable, le
 groupe est supprimé s'il y était seul, sinon le **membre restant le plus
 ancien** est promu responsable — l'assemblée ne reste jamais sans berger.
 
+## Notifications — le verset offert
+
+Chaque jour, à l'heure choisie, une notification push **offre** un verset
+(titre + texte + référence). Philosophie non négociable : la notification
+**donne, elle ne réclame jamais rien** — pas de « viens faire ta session »,
+pas de « tu as manqué hier » ; l'utilisateur l'active et la désactive
+librement, et son silence n'entraîne jamais de relance.
+
+Le compte est **facultatif** : un abonnement anonyme reçoit la bibliothèque
+(`data/verses.json`) en rotation déterministe par jour de l'année ; un
+abonnement relié à un compte qui a un jardin synchronisé (blob `memo`) reçoit
+**un verset de son jardin** — celui dont la révision (`due`) est la plus
+proche : l'offrir, c'est déjà l'arroser.
+
+Toute la pile est maison (RFC 8291 aes128gcm + RFC 8292 VAPID, en PHP pur,
+validée à l'octet près contre l'annexe A du RFC 8291 — voir
+`api/tests/push-crypto-test.php`). Les clés VAPID et la clé du cron sont
+**auto-générées** au premier besoin et rangées en base (table `vapid`) :
+aucune variable d'environnement à configurer.
+
+### GET /api/push/cle
+Génère les clés VAPID si besoin, puis :
+→ `{ "vapidPublicKey": "<clé P-256 brute en base64url>" }` — à décoder en
+`Uint8Array` pour `pushManager.subscribe({ applicationServerKey })`.
+
+### POST /api/push/subscribe
+Connecté **ou anonyme** (le token, s'il est présent, relie l'abonnement au
+compte). Plafond : 30/heure/IP (scope `push`). Corps :
+`{ "subscription": { "endpoint": "https://…", "keys": { "p256dh": "…", "auth": "…" } },
+"heure": 0–23 (8), "tz": <getTimezoneOffset(), minutes> }`
+→ `{ "ok": true }` — un abonnement par endpoint (REPLACE : re-poster change
+l'heure ou rattache le compte). 400 si l'endpoint n'est pas en https ou si
+les clés ne se décodent pas (p256dh : 65 octets, auth : 16 octets).
+
+### POST /api/push/unsubscribe
+Corps : `{ "endpoint": "https://…" }` → `{ "ok": true }` — **sans
+authentification** : connaître l'endpoint suffit, il est secret par nature
+(seuls le navigateur abonné et notre base le connaissent). Idempotent.
+
+### GET /api/cron/notify?key=CRON_KEY
+Appelé **toutes les heures** par un cron externe (voir `api/README.md`).
+La clé s'affiche dans `GET /api/health` (admins), avec l'URL prête à copier.
+Pour chaque abonnement dont l'heure **locale** courante (via `tz_offset`)
+vaut `heure` et qui n'a rien reçu aujourd'hui (dans **son** fuseau) : verset
+choisi puis envoyé. `last_sent_day` est posé **avant** l'envoi (idempotent :
+relancer dans l'heure ne renvoie rien). 404/410 du service push → abonnement
+supprimé ; autre échec → `echecs + 1` (supprimé au 5e).
+→ `{ "ok": true, "envoyes": n, "supprimes": m }` — clé fausse ou absente → 403.
+
+À la suppression d'un compte, ses abonnements sont **détachés** (`user_id`
+→ NULL), pas supprimés : l'appareil a activé les notifications
+indépendamment du compte et continue de recevoir la rotation générique ;
+la désactivation reste possible à tout moment dans l'écran Moi.
+
 ## Questions du Défi
 
 La banque de base vit dans `defi/data/questions.json`, embarquée dans l'image
@@ -273,7 +330,7 @@ Retire la surcharge : la version du fichier redevient active (annule une
 - Migrations auto au premier appel (CREATE TABLE IF NOT EXISTS).
 - Tables : `users`, `login_codes`, `sessions`, `sync_blobs`, `friendships`, `throttle`, `admin_log`,
   `duels`, `veillees`, `veillee_players`, `veillee_answers`, `quiz_questions`,
-  `groupes`, `groupe_membres`.
+  `groupes`, `groupe_membres`, `vapid`, `push_abonnements`.
 - Rôle admin : `ADMIN_EMAILS` (adresses séparées par des virgules, casse
   ignorée) — pas de colonne en base, le rôle se retire en éditant la variable.
 - E-mail : SMTP via env (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`,

@@ -56,3 +56,35 @@ self.addEventListener('fetch', e => {
     }).catch(() => caches.match(e.request).then(hit => hit || caches.match('index.html')))
   );
 });
+
+/* ---- « Le verset offert » : notifications push ----
+   Le serveur envoie un JSON { title, body, url } chiffré (RFC 8291). La
+   notification OFFRE un verset — elle ne réclame jamais rien. Le tag
+   'verset-offert' fait qu'un nouveau verset REMPLACE le précédent au lieu
+   d'empiler des notifications non lues (jamais de pile culpabilisante). */
+self.addEventListener('push', e => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (err) { /* payload illisible : valeurs sûres */ }
+  e.waitUntil(self.registration.showNotification(data.title || '🌱 Un verset pour toi', {
+    body: data.body || '',
+    icon: 'icon.svg',
+    badge: 'icon.svg',
+    tag: 'verset-offert',
+    data: { url: data.url || '/' }
+  }));
+});
+
+/* Toucher la notification : on retrouve une fenêtre de l'appli déjà ouverte
+   (focus), sinon on en ouvre une sur l'accueil. */
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        if ('focus' in c) return c.focus();
+      }
+      return clients.openWindow(url);
+    })
+  );
+});
