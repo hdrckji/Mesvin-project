@@ -5,7 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Lire — Bible Horizon</title>
   <meta name="description" content="Un plan de lecture biblique qui est un chemin, pas un calendrier : tu avances à ton rythme, sans jamais prendre de retard." />
-  <meta name="theme-color" content="#1b2a4a" />
+  <meta name="theme-color" content="#f7f3ea" />
+  <script>
+    /* Anti-flash : applique le thème choisi (localStorage 'graine.theme') AVANT
+       le chargement du CSS, et fait suivre la couleur de barre du navigateur. */
+    (function () {
+      try {
+        var choix = localStorage.getItem('graine.theme');
+        if (choix === 'clair' || choix === 'sombre' || choix === 'sepia') {
+          document.documentElement.setAttribute('data-theme', choix);
+        }
+        var fonds = { clair: '#f7f3ea', sombre: '#141b28', sepia: '#f2e6cf' };
+        var mq = window.matchMedia('(prefers-color-scheme: dark)');
+        var maj = function () {
+          var t = document.documentElement.getAttribute('data-theme') || (mq.matches ? 'sombre' : 'clair');
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', fonds[t] || fonds.clair);
+        };
+        maj();
+        if (mq.addEventListener) mq.addEventListener('change', maj);
+      } catch (e) { /* stockage indisponible : on suit simplement le système */ }
+    })();
+  </script>
   <link rel="icon" href="../icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="../icon.svg" />
   <link rel="stylesheet" href="../app.css" />

@@ -75,7 +75,7 @@
   transition: transform .06s ease;
 }
 .path .mile:active { transform: scale(.92); }
-.path .mile.read { background: var(--grow); border-color: var(--grow); color: #fff; }
+.path .mile.read { background: var(--grow); border-color: var(--grow); color: var(--on-grow); }
 .path .mile.next { border: 2px solid var(--accent); color: var(--accent-ink); background: var(--surface); }
 
 /* ---------- Lecture du chapitre ---------- */

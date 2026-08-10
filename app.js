@@ -55,6 +55,30 @@ function normalizeStore(s) {
 function saveStore() { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
 let store = loadStore();
 
+/* ---------- Thème (Moi → Apparence) ----------
+   'auto' (défaut) : aucun attribut data-theme, les media queries décident.
+   'clair' | 'sombre' | 'sepia' : posé sur <html>, gagne sur le système.
+   Le mini-script inline de chaque index.html fait la même chose au chargement
+   (anti-flash) ; ici on gère le choix et son application immédiate. */
+const THEME_KEY = 'graine.theme';
+const THEME_CHOICES = ['auto', 'clair', 'sombre', 'sepia'];
+const THEME_FONDS = { clair: '#f7f3ea', sombre: '#141b28', sepia: '#f2e6cf' }; // = --bg de chaque palette
+function themeChoice() {
+  try { const t = localStorage.getItem(THEME_KEY); return THEME_CHOICES.includes(t) ? t : 'auto'; }
+  catch (e) { return 'auto'; }
+}
+function applyTheme(choix) {
+  if (!THEME_CHOICES.includes(choix)) choix = 'auto';
+  try { localStorage.setItem(THEME_KEY, choix); } catch (e) {}
+  if (choix === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', choix);
+  // La barre du navigateur (theme-color) suit le thème effectif.
+  const sombreSysteme = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
+  const effectif = choix === 'auto' ? (sombreSysteme ? 'sombre' : 'clair') : choix;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', THEME_FONDS[effectif] || THEME_FONDS.clair);
+}
+
 /* ---------- Bibliothèque (parcours) ---------- */
 let LIBRARY = [], LIB_VERSION = 'Segond 1910';
 async function loadLibrary() {
@@ -633,6 +657,15 @@ function viewMoi() {
 
   const account = user ? moiAccountCard(user) : moiInviteCard();
 
+  // Apparence : quatre pastilles, le choix s'applique immédiatement.
+  const theme = themeChoice();
+  const tpill = (v, l) => `<button class="pill ${theme === v ? 'on' : ''}" data-theme-pick="${v}">${l}</button>`;
+  const apparence = `<div class="section-title">🎨 Apparence</div>
+    <div class="card fade">
+      <div class="pill-row">${tpill('auto', 'Auto')}${tpill('clair', '☀️ Clair')}${tpill('sombre', '🌙 Sombre')}${tpill('sepia', '📜 Sépia')}</div>
+      <p class="muted" style="font-size:.85rem;margin:12px 2px 0">« Auto » suit le réglage clair/sombre de ton appareil. Ton choix vaut pour toute l'appli.</p>
+    </div>`;
+
   const memo = `<div class="section-title">🧠 Mémorisation</div>
     <div class="stat-grid fade">
       ${tile(gardenN, `verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}`)}
@@ -672,7 +705,7 @@ function viewMoi() {
 
   const friends = user ? moiFriendsSection(user) : '';
 
-  return topbar() + head + account + memo + garden + assiduite + lireSec + defiSec + friends;
+  return topbar() + head + account + apparence + memo + garden + assiduite + lireSec + defiSec + friends;
 }
 
 /* ---------- Jardin (versets mémorisés) ---------- */
@@ -1315,6 +1348,9 @@ function wire() {
   el.querySelectorAll('[data-selectcoll]').forEach(b => b.addEventListener('click', () => selectCollection(b.dataset.selectcoll)));
   el.querySelectorAll('[data-clearcoll]').forEach(b => b.addEventListener('click', () => { store.activeCollection = null; saveStore(); go('memo'); }));
   el.querySelectorAll('[data-gview]').forEach(b => b.addEventListener('click', () => { gardenView = b.dataset.gview; render(); }));
+
+  // Apparence : appliquer + sauvegarder + re-render, sans rechargement
+  el.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('click', () => { applyTheme(b.dataset.themePick); render(); }));
 
   // Compte, synchro & amis
   if (route.name === 'moi') ensureFriends();
