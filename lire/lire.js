@@ -775,7 +775,12 @@ function openChapter(livre, ci) {
 }
 function finishChapter(livre, ci) {
   const st = bookState(livre);
-  if (!st.read[ci]) { st.read[ci] = true; saveStore(); }
+  if (!st.read[ci]) {
+    st.read[ci] = true; saveStore();
+    // Chapitre tout juste enregistré (et peut-être un livre terminé) :
+    // une pierre du chemin peut se poser — premier pas, livre au bout…
+    if (window.GrainePierres) GrainePierres.verifier();
+  }
   const plan = activePlan();
   const livreFini = nextChapter(livre) === -1;
   if (plan && !planNext(plan)) go('planDone');
