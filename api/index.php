@@ -61,6 +61,9 @@ if ($path === '/api/health' && $method === 'GET') {
         // Adresse d'expédition effective : elle doit être un expéditeur
         // VALIDÉ chez Brevo (Senders & Domains), sinon les envois échouent.
         'mailFrom' => mail_from(),
+        // Dernière erreur d'envoi (réponse du fournisseur), null si le
+        // dernier envoi a réussi — évite d'aller fouiller les logs.
+        'lastMailError' => mail_last_error(),
         // Diagnostic de déploiement : la page de démonstration de l'image de
         // base est-elle encore présente à la racine web ? (doit être false)
         'demo' => file_exists(dirname(__DIR__) . '/index.php'),

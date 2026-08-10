@@ -85,10 +85,37 @@ function mail_send_brevo(string $to, string $subject, string $text): bool {
     curl_close($ch);
 
     if ($response === false || $status >= 300) {
-        error_log("Brevo : échec d'envoi (HTTP $status) $curlError " . substr((string) $response, 0, 300));
+        $detail = "HTTP $status $curlError " . substr((string) $response, 0, 300);
+        error_log("Brevo : échec d'envoi — $detail");
+        mail_remember_error('brevo ' . $detail);
         return false;
     }
+    mail_remember_error(null); // dernier envoi réussi : on efface la trace
     return true;
+}
+
+/**
+ * Mémorise (ou efface) la dernière erreur d'envoi dans un petit fichier,
+ * pour que /api/health puisse l'afficher sans fouiller les logs Railway.
+ * Le texte ne contient jamais la clé API ni le destinataire.
+ */
+function mail_remember_error(?string $detail): void {
+    $file = __DIR__ . '/data/mail-error.txt';
+    try {
+        if ($detail === null) {
+            if (file_exists($file)) { @unlink($file); }
+        } else {
+            @file_put_contents($file, gmdate('Y-m-d\TH:i:s\Z') . ' ' . $detail);
+        }
+    } catch (Throwable $e) { /* le diagnostic ne doit jamais casser l'envoi */ }
+}
+
+/** Dernière erreur d'envoi mémorisée (ou null). */
+function mail_last_error(): ?string {
+    $file = __DIR__ . '/data/mail-error.txt';
+    if (!is_file($file)) { return null; }
+    $txt = (string) @file_get_contents($file);
+    return $txt !== '' ? mb_substr($txt, 0, 400) : null;
 }
 
 /* --------------------------------------------------------------------------
