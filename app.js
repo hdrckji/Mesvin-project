@@ -741,7 +741,7 @@ function viewVerse(id) {
 }
 function viewAbout() {
   return topbar() + `<h2 style="font-family:var(--serif)">À propos</h2>
-    <div class="card"><p><b>Bible Horizon</b> t'aide à cacher la Parole dans ton cœur, un peu chaque jour.</p>
+    <div class="card"><p><b>Bible Horizon</b> t'aide à faire grandir la Parole dans ton cœur, un peu chaque jour.</p>
       <p class="muted">Tu reconstitues chaque verset sur l'écran ; l'appli vérifie. Réussi plusieurs fois sur plusieurs jours, il rejoint ton jardin, puis revient juste avant que tu l'oublies.</p></div>
     <div class="section-title">Nos principes</div>
     <div class="card">
