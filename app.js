@@ -300,7 +300,7 @@ function tabbar() {
 
 /* ---------- Accueil : hub des trois modules ---------- */
 function viewHome() {
-  const due = dueCards(), total = Object.keys(store.cards).length;
+  const due = dueCards();
 
   const hero = `<div class="card hero compact fade"><div class="hero-emblem"><img src="icon.svg" alt="" /></div>
     <h1 class="hero-name">Bible <span class="seed">Horizon</span></h1>
@@ -329,10 +329,7 @@ function viewHome() {
         <span class="hub-sub">Des questions pour tester ta connaissance de la Bible, seul ou entre amis</span></span>
       <span class="chev">›</span></a>`;
 
-  const foot = total === 0
-    ? `<p class="muted center" style="margin-top:18px;font-size:.85rem">Gratuit · rien ne quitte ton téléphone</p>`
-    : '';
-  return topbar() + hero + hub + foot;
+  return topbar() + hero + hub;
 }
 
 /* ---------- Mémoriser : session du jour, apprendre, objectif, jardin ---------- */
