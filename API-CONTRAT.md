@@ -1,4 +1,4 @@
-# Contrat d'API — Bible Horizon (phase 1 : comptes + duels)
+# Contrat d'API — Bible Horizon (comptes, duels & veillées en direct)
 
 > Ce document est la **référence commune** entre le backend PHP (`api/`) et le
 > frontend. Toute évolution passe par ici d'abord.
@@ -28,6 +28,21 @@ Corps : `{ "email": "...", "code": "123456", "pseudo": "..." }` — `pseudo`
 obligatoire seulement à la première connexion (création du compte) ; s'il est
 requis et absent → 422 `{ "error": "...", "needPseudo": true }`.
 → `{ "token": "...", "user": { "pseudo": "...", "email": "...", "friendCode": "GRN-7F3K" } }`
+
+### POST /api/auth/google
+Connexion **en un geste** avec un compte Google — active seulement si la
+variable `GOOGLE_CLIENT_ID` est configurée (sinon 501).
+Corps : `{ "credential": "<jeton d'identité Google>", "pseudo": "..."? }`.
+Le serveur vérifie le jeton auprès de Google (audience, émetteur, e-mail
+confirmé) ; le compte est le même que par e-mail — **l'adresse fait foi**.
+À la création, le pseudo est dérivé du prénom Google s'il n'est pas fourni ;
+si rien ne convient → 422 `{ "needPseudo": true }` (renvoyer le même
+`credential` avec un `pseudo`).
+→ `{ "token": "...", "user": { … } }`
+
+### GET /api/config
+Configuration **publique** (aucune authentification) :
+→ `{ "googleClientId": "…" | null }` — null = bouton Google masqué côté client.
 
 ### GET /api/me → `{ "user": { … } }`
 ### POST /api/me/pseudo — corps `{ "pseudo": "..." }` → `{ "user": { … } }`
@@ -84,12 +99,59 @@ Corps : `{ "answers": [0,2,1,…] }` (index de l'option choisie, -1 = sans répo
 → `{ "duel": { …, "myScore": 7, "review": [ { "id": "...", "mine": 2, "bonne": 1, "reference": "..." } ] } }`
 (409 si déjà joué)
 
+## Veillées en direct (mode groupe du Défi)
+
+Un **animateur** (compte requis) crée une salle et projette un grand écran ;
+les **participants** rejoignent avec un code court et leur prénom (**aucun
+compte**) et répondent sur leur téléphone. Déroulé piloté par l'animateur :
+`lobby → question → reveal → … → done`. Les clients suivent en interrogeant
+`/state` toutes les ~2 s (polling). Comme pour les duels : questions tirées
+par le serveur, bonne réponse jamais envoyée pendant la phase de réponse,
+points calculés côté serveur (100 par bonne réponse + jusqu'à 50 de rapidité).
+Les veillées sont balayées après 24 h.
+
+### POST /api/veillees (authentifié — l'animateur)
+Corps (tout facultatif) : `{ "nb": 5–20 (10), "seconds": 10–90 (25),
+"categorie": "..."?, "niveau": 1–3? }`
+→ 201 `{ "veillee": { "code": "K7PM", "statut": "lobby", "qTotal": 10, … } }`
+
+### GET /api/veillees/{code}/state?player={playerKey}
+Public, pollable. → `{ "veillee": { "code", "statut", "qIndex", "qTotal",
+"seconds", "nPlayers", "players": [ { "prenom", "score", "rang" } ], … } }`
+- en phase `question` : + `question` (SANS `bonne` ni `reference`),
+  `remaining` (secondes restantes), `nAnswered` ;
+- en phase `reveal`/`done` : + `question.bonne`, `question.reference`,
+  `distribution` (nombre de réponses par option) ;
+- avec `player` : + `me` (`answered`, puis `answer`, `correct`, `points`,
+  `score`, `rang`) ;
+- en phase `done` : + `bilan` (`reponses`, `bonnes` — le collectif d'abord).
+
+### POST /api/veillees/{code}/join
+Corps : `{ "prenom": "..." }` (2–20 caractères, unique dans la salle).
+→ 201 `{ "playerKey": "<32 hex>", "prenom": "..." }`
+(410 si la veillée est terminée, 409 si prénom pris ou salle pleine)
+
+### POST /api/veillees/{code}/answer
+Corps : `{ "playerKey": "...", "q": <qIndex>, "answer": <index option> }`
+→ `{ "ok": true }` — refusé (409) si la question est fermée, le temps écoulé
+(2 s de grâce réseau) ou la réponse déjà donnée. Le résultat personnel
+n'est PAS renvoyé ici : il arrive avec l'état `reveal`.
+
+### POST /api/veillees/{code}/advance (authentifié — l'animateur seul)
+Corps : `{ "action": "start" | "reveal" | "next" | "end" }`
+→ `{ "veillee": { … } }` — transitions strictes (409 sinon) ; `start` exige
+au moins un participant ; `next` après la dernière question passe en `done`.
+
 ## Backend — notes d'implémentation
 
 - PHP 8 + PDO. `MYSQL_URL` (Railway) ; **repli SQLite** (`api/data/dev.sqlite`)
   si absent → tests locaux possibles avec `php -S`.
 - Migrations auto au premier appel (CREATE TABLE IF NOT EXISTS).
-- Tables : `users`, `login_codes`, `sessions`, `sync_blobs`, `friendships`, `duels`.
+- Tables : `users`, `login_codes`, `sessions`, `sync_blobs`, `friendships`,
+  `duels`, `veillees`, `veillee_players`, `veillee_answers`.
 - E-mail : SMTP via env (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`,
   `MAIL_FROM`) — sinon mode dev (`devCode` dans la réponse).
+- Connexion Google : `GOOGLE_CLIENT_ID` (client OAuth « application Web » ;
+  le domaine du site en origine JavaScript autorisée). Jamais de secret :
+  seul le jeton d'identité est vérifié, via l'endpoint tokeninfo de Google.
 - Tokens : 32 octets aléatoires hex. Codes : 6 chiffres, hachés en base.

@@ -928,9 +928,65 @@ function friendlyError(e) {
   if (e && e.offline) return 'Pas de connexion — réessaie quand tu seras en ligne.';
   return (e && e.message) || 'Une erreur est survenue — réessaie.';
 }
+
+/* ---------- Connexion Google (facultative, si le serveur est configuré) ----- */
+let publicConfig = null;        // { googleClientId } une fois chargée
+let publicConfigAsked = false;
+let gsiLoading = null;          // promesse de chargement du script Google
+
+function loadPublicConfig() {
+  if (publicConfigAsked || !window.GraineAPI) return;
+  publicConfigAsked = true;
+  GraineAPI.config().then(c => { publicConfig = c || null; renderIfIdle(); })
+    .catch(() => { publicConfig = null; });
+}
+function ensureGsi() {
+  if (window.google && window.google.accounts) return Promise.resolve();
+  if (!gsiLoading) {
+    gsiLoading = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.async = true; s.defer = true;
+      s.onload = resolve;
+      s.onerror = () => { gsiLoading = null; reject(new Error('gsi')); };
+      document.head.appendChild(s);
+    });
+  }
+  return gsiLoading;
+}
+function mountGoogleButton() {
+  if (!publicConfig || !publicConfig.googleClientId) return;
+  ensureGsi().then(() => {
+    const slot = document.getElementById('google-btn'); // re-vérifié après l'attente
+    if (!slot || slot.childElementCount) return;
+    google.accounts.id.initialize({
+      client_id: publicConfig.googleClientId,
+      callback: resp => onGoogleCredential(resp && resp.credential),
+      ux_mode: 'popup'
+    });
+    google.accounts.id.renderButton(slot, {
+      type: 'standard', theme: 'outline', size: 'large', shape: 'pill',
+      text: 'continue_with', locale: 'fr', width: 280
+    });
+  }).catch(() => { /* hors-ligne : pas de bouton, le parcours e-mail reste là */ });
+}
+async function onGoogleCredential(credential) {
+  if (!auth || auth.busy || !credential) return;
+  auth.error = null; auth.busy = true; render();
+  try { await GraineAPI.googleSignIn(credential); authSuccess(); }
+  catch (e) {
+    // Pseudo indérivable depuis le profil Google : on le demande, puis on
+    // renvoie le MÊME jeton accompagné du pseudo choisi.
+    if (e && e.data && e.data.needPseudo) { auth.step = 'pseudo'; auth.google = credential; }
+    else auth.error = friendlyError(e);
+  }
+  auth.busy = false; render();
+}
+
 function startAccountFlow() {
   accountNotice = accountError = null;
-  auth = { step: 'email', email: '', code: '', pseudo: '', devCode: null, error: null, notice: null, busy: false };
+  auth = { step: 'email', email: '', code: '', pseudo: '', devCode: null, google: null, error: null, notice: null, busy: false };
+  loadPublicConfig();
   go('account');
 }
 function viewAccount() {
@@ -950,7 +1006,13 @@ function viewAccount() {
           <button class="btn btn-primary" type="submit" ${busy} style="margin-top:14px">${auth.busy ? 'Envoi…' : 'Recevoir mon code'}</button>
         </form>
         <p class="muted" style="font-size:.85rem;margin:12px 2px 0">Pas de mot de passe : on t'envoie un code à 6 chiffres par e-mail, valable 10 minutes.</p>
-      </div></div>`;
+      </div>
+      ${publicConfig && publicConfig.googleClientId ? `
+      <div class="or-sep"><span>ou</span></div>
+      <div class="card" style="text-align:center">
+        <div id="google-btn" style="display:flex;justify-content:center"></div>
+        <p class="muted" style="font-size:.85rem;margin:10px 2px 0">En un geste avec ton compte Google — on ne reçoit que ton e-mail et ton prénom, rien d'autre.</p>
+      </div>` : ''}</div>`;
   }
   if (auth.step === 'code') {
     return `<div class="fade">${back}
@@ -1024,7 +1086,12 @@ async function authSubmit(step) {
     const pseudo = (auth.pseudo || '').trim();
     if (pseudo.length < 2 || pseudo.length > 20) { auth.error = 'Ton pseudo doit faire entre 2 et 20 caractères.'; render(); return; }
     auth.pseudo = pseudo; auth.error = null; auth.busy = true; render();
-    try { await GraineAPI.verify(auth.email, auth.code, pseudo); authSuccess(); }
+    // Selon le chemin d'entrée : compte Google (jeton gardé) ou code e-mail.
+    try {
+      if (auth.google) await GraineAPI.googleSignIn(auth.google, pseudo);
+      else await GraineAPI.verify(auth.email, auth.code, pseudo);
+      authSuccess();
+    }
     catch (e) { auth.error = friendlyError(e); }
     auth.busy = false; render();
   }
@@ -1256,6 +1323,7 @@ function wire() {
   el.querySelectorAll('[data-unfriend]').forEach(b => b.addEventListener('click', () => doRemoveFriend(b.dataset.unfriend, b.dataset.pseudo)));
   // parcours compte (écrans successifs)
   el.querySelectorAll('form[data-authstep]').forEach(f => f.addEventListener('submit', e => { e.preventDefault(); authSubmit(f.dataset.authstep); }));
+  if (q('#google-btn')) mountGoogleButton();
   if (q('[data-authback]')) q('[data-authback]').addEventListener('click', () => { if (auth) { auth.step = 'email'; auth.error = auth.notice = null; render(); } });
   if (q('[data-authresend]')) q('[data-authresend]').addEventListener('click', authResend);
   if (q('[data-authdone]')) q('[data-authdone]').addEventListener('click', () => { auth = null; go('moi'); });
@@ -1323,4 +1391,5 @@ function removeVerse(id) {
   // Synchronisation à l'ouverture si connecté — silencieuse, non bloquante :
   // hors-ligne, l'appli locale continue exactement comme avant.
   if (window.GraineAPI && GraineAPI.isLoggedIn()) syncNow();
+  loadPublicConfig(); // sait déjà, à l'ouverture de « Moi », si Google est proposé
 })();

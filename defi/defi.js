@@ -605,6 +605,7 @@ function render() {
   if (vue.ecran === 'duels') return renderDuels();
   if (vue.ecran === 'duelQuestion') return vue.recap ? renderDuelEnvoi() : renderDuelQuestion();
   if (vue.ecran === 'duelReview') return renderDuelReview();
+  if (vue.ecran === 'veillee') return renderVeillee();
   renderAccueil();
 }
 
@@ -648,12 +649,22 @@ function renderAccueil() {
       </span>
       <span class="chev">›</span>
     </button>
+
+    <button class="card hub-card" id="btn-veillee">
+      <span class="hub-ic">🔥</span>
+      <span class="hub-txt">
+        <span class="hub-title">Veillée en direct</span>
+        <span class="hub-sub">Un grand écran pour tous, chacun répond sur son téléphone, en même temps.</span>
+      </span>
+      <span class="chev">›</span>
+    </button>
   </div>`;
 
   document.getElementById('btn-retour-accueil').onclick = () => { location.href = '../index.html'; };
   document.getElementById('btn-seul').onclick = () => { vue = { ecran: 'solo' }; render(); };
   document.getElementById('btn-plusieurs').onclick = () => { vue = { ecran: 'prepa' }; render(); };
   document.getElementById('btn-ami').onclick = ouvrirDuels;
+  document.getElementById('btn-veillee').onclick = ouvrirVeillee;
 
   // Badge discret si au moins un duel m'attend (silencieux hors-ligne).
   majBadgeDuels();
@@ -1393,6 +1404,521 @@ function renderDuelReview() {
   };
   const rv = document.getElementById('btn-revanche');
   if (rv) rv.onclick = () => revanche({ pseudo, friendCode: d.opponent && d.opponent.friendCode });
+}
+
+/* ============================================================================
+   Veillée en direct — l'animateur projette un grand écran, chacun répond sur
+   son propre téléphone. L'état vit sur le SERVEUR ; on l'interroge toutes les
+   2 s et on ne re-rend l'écran que s'il a changé. Le décompte, lui, est animé
+   localement (une petite horloge à 500 ms qui ne touche que la barre).
+   ========================================================================== */
+const VEILLEE_KEY = 'graine.defi.veillee.v1'; // reprise : { code, playerKey?, prenom?, host?, ts }
+
+let vl = null;                 // état local de l'écran veillée
+let vlPollTimer = null, vlTickTimer = null;
+
+function ouvrirVeillee() {
+  vl = { mode: 'menu' };
+  vue = { ecran: 'veillee' };
+  render();
+}
+function vlSauvegarde() {
+  const s = lireJSON(VEILLEE_KEY);
+  return (s && s.code && s.ts && Date.now() - s.ts < 12 * 3600 * 1000) ? s : null;
+}
+function vlQuitter(notice) {
+  vlArreterPolling();
+  try { localStorage.removeItem(VEILLEE_KEY); } catch (e) {}
+  vl = { mode: 'menu', notice: notice || null };
+  if (vue.ecran === 'veillee') render();
+}
+
+/* ---------- Polling & décompte ---------- */
+function vlDemarrerPolling() {
+  vlArreterPolling();
+  vlPollTimer = setInterval(vlPoll, 2000);
+  vlTickTimer = setInterval(vlTick, 500);
+  vlPoll();
+}
+function vlArreterPolling() {
+  if (vlPollTimer) { clearInterval(vlPollTimer); vlPollTimer = null; }
+  if (vlTickTimer) { clearInterval(vlTickTimer); vlTickTimer = null; }
+}
+async function vlPoll() {
+  if (vue.ecran !== 'veillee' || !vl || (vl.mode !== 'host' && vl.mode !== 'player')) {
+    vlArreterPolling();
+    return;
+  }
+  try {
+    const etat = await GraineAPI.veilleeState(vl.code, vl.playerKey || undefined);
+    const avant = vl.etat;
+    if (avant && etat.qIndex !== avant.qIndex) vl.maReponse = null; // nouvelle question
+    const j = JSON.stringify(etat);
+    const change = j !== vl.lastJson;
+    vl.lastJson = j;
+    vl.etat = etat;
+    vl.remainingAt = Date.now();
+    if (change) render();
+    if (vl.mode === 'host') vlAutoReveal();
+  } catch (e) {
+    if (e && e.status === 404) { vlQuitter('Cette veillée n\'existe plus.'); return; }
+    // hors-ligne passager : on garde l'écran tel quel, le prochain tour retentera
+  }
+}
+function vlRestant() {
+  if (!vl || !vl.etat || vl.etat.statut !== 'question') return 0;
+  const base = typeof vl.etat.remaining === 'number' ? vl.etat.remaining : 0;
+  return Math.max(0, base - (Date.now() - (vl.remainingAt || Date.now())) / 1000);
+}
+function vlTick() {
+  if (!vl || !vl.etat || vl.etat.statut !== 'question') return;
+  const r = vlRestant(), s = Math.max(1, vl.etat.seconds);
+  const n = document.getElementById('vl-count');
+  if (n) n.textContent = String(Math.ceil(r));
+  const b = document.querySelector('#vl-bar i');
+  if (b) b.style.width = (100 * r / s) + '%';
+  if (vl.mode === 'host') vlAutoReveal();
+}
+/* L'animateur révèle automatiquement quand le temps est écoulé ou que tout le
+   monde a répondu — il peut aussi appuyer sur le bouton sans attendre. */
+function vlAutoReveal() {
+  const e = vl.etat;
+  if (!e || e.statut !== 'question' || vl.busy) return;
+  const tousOntRepondu = e.nPlayers > 0 && e.nAnswered >= e.nPlayers;
+  if (vlRestant() <= 0 || tousOntRepondu) vlAvancer('reveal');
+}
+async function vlAvancer(action) {
+  if (vl.busy) return;
+  vl.busy = true;
+  try {
+    const etat = await GraineAPI.veilleeAdvance(vl.code, action);
+    vl.etat = etat;
+    vl.lastJson = JSON.stringify(etat);
+    vl.remainingAt = Date.now();
+    vl.error = null;
+  } catch (e) {
+    // 409 = transition déjà faite (bouton + auto en même temps) : sans gravité.
+    if (!(e && e.status === 409)) vl.error = messageDoux(e);
+  }
+  vl.busy = false;
+  render();
+}
+
+/* ---------- Actions ---------- */
+async function vlCreer() {
+  if (vl.busy) return;
+  const opts = { nb: vl.nb, seconds: vl.seconds };
+  if (vl.categorie) opts.categorie = vl.categorie;
+  if (vl.niveau) opts.niveau = vl.niveau;
+  vl.busy = true; vl.error = null; render();
+  try {
+    const etat = await GraineAPI.createVeillee(opts);
+    vl = { mode: 'host', code: etat.code, etat, lastJson: JSON.stringify(etat), remainingAt: Date.now(), busy: false, error: null };
+    ecrireJSON(VEILLEE_KEY, { code: etat.code, host: true, ts: Date.now() });
+    vlDemarrerPolling();
+  } catch (e) {
+    vl.busy = false; vl.error = messageDoux(e);
+  }
+  render();
+}
+async function vlRejoindre() {
+  if (vl.busy) return;
+  const code = (vl.code || '').trim().toUpperCase();
+  const prenom = (vl.prenom || '').trim();
+  if (!/^[A-Z0-9]{4}$/.test(code)) { vl.error = 'Le code fait 4 lettres ou chiffres — il est affiché sur le grand écran.'; render(); return; }
+  if (prenom.length < 2 || prenom.length > 20) { vl.error = 'Ton prénom : 2 à 20 caractères.'; render(); return; }
+  vl.busy = true; vl.error = null; render();
+  try {
+    const r = await GraineAPI.joinVeillee(code, prenom);
+    vl = { mode: 'player', code, playerKey: r.playerKey, prenom: r.prenom, etat: null, lastJson: '', maReponse: null, busy: false, error: null };
+    ecrireJSON(VEILLEE_KEY, { code, playerKey: r.playerKey, prenom: r.prenom, ts: Date.now() });
+    vlDemarrerPolling();
+  } catch (e) {
+    vl.busy = false; vl.error = messageDoux(e);
+  }
+  render();
+}
+function vlReprendre() {
+  const s = vlSauvegarde();
+  if (!s) { vl = { mode: 'menu' }; render(); return; }
+  if (s.host) {
+    vl = { mode: 'host', code: s.code, etat: null, lastJson: '', busy: false, error: null };
+  } else {
+    vl = { mode: 'player', code: s.code, playerKey: s.playerKey, prenom: s.prenom, etat: null, lastJson: '', maReponse: null, busy: false, error: null };
+  }
+  render();
+  vlDemarrerPolling();
+}
+async function vlRepondre(pos) {
+  const e = vl.etat;
+  if (!e || e.statut !== 'question' || vl.busy || vl.maReponse !== null) return;
+  vl.maReponse = pos; vl.busy = true; render();
+  try {
+    await GraineAPI.veilleeAnswer(vl.code, vl.playerKey, e.qIndex, pos);
+    if (e.me) e.me.answered = true;
+  } catch (err) {
+    if (err && err.status === 409) { if (e.me) e.me.answered = true; } // déjà répondu / question fermée
+    else { vl.maReponse = null; vl.error = messageDoux(err); }
+  }
+  vl.busy = false; render();
+}
+
+/* ---------- Écrans ---------- */
+function renderVeillee() {
+  if (!vl) vl = { mode: 'menu' };
+  if (vl.mode === 'compte') return renderVeilleeCompte();
+  if (vl.mode === 'creer') return renderVeilleeCreer();
+  if (vl.mode === 'join') return renderVeilleeJoin();
+  if (vl.mode === 'host') return renderVeilleeHost();
+  if (vl.mode === 'player') return renderVeilleePlayer();
+  renderVeilleeMenu();
+}
+
+function renderVeilleeMenu() {
+  const reprise = vlSauvegarde();
+  el.innerHTML = `
+  <div class="fade">
+    <button class="back-link" id="btn-retour-defi">‹ Défi</button>
+    <div class="topbar"><div class="brand">
+      <h1 class="app-title">Veillée <span class="seed">•</span> <span class="muted">en direct</span></h1>
+    </div></div>
+
+    <p class="defi-lead" style="margin:0 4px 16px">L'animateur projette un grand écran ; chacun rejoint avec un code et répond sur son téléphone. Après chaque question, la référence ramène au texte.</p>
+    ${vl.notice ? `<p class="field-ok" style="margin:0 4px 12px">${esc(vl.notice)}</p>` : ''}
+
+    ${reprise ? `
+    <button class="card hub-card" id="btn-vl-reprendre">
+      <span class="hub-ic">↩️</span>
+      <span class="hub-txt">
+        <span class="hub-title">Reprendre</span>
+        <span class="hub-sub">${reprise.host ? `Tu animais la veillée <b>${esc(reprise.code)}</b>.` : `Tu étais <b>${esc(reprise.prenom || '')}</b> dans la veillée <b>${esc(reprise.code)}</b>.`}</span>
+      </span>
+      <span class="chev">›</span>
+    </button>` : ''}
+
+    <button class="card hub-card" id="btn-vl-rejoindre">
+      <span class="hub-ic">🙋</span>
+      <span class="hub-txt">
+        <span class="hub-title">Rejoindre</span>
+        <span class="hub-sub">Avec le code affiché sur le grand écran — prénom suffit, aucun compte.</span>
+      </span>
+      <span class="chev">›</span>
+    </button>
+
+    <button class="card hub-card" id="btn-vl-animer">
+      <span class="hub-ic">🎤</span>
+      <span class="hub-txt">
+        <span class="hub-title">Animer</span>
+        <span class="hub-sub">Crée la veillée et projette cet écran — pour toute l'assemblée.</span>
+      </span>
+      <span class="chev">›</span>
+    </button>
+  </div>`;
+
+  document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'accueil' }; render(); };
+  const rp = document.getElementById('btn-vl-reprendre');
+  if (rp) rp.onclick = vlReprendre;
+  document.getElementById('btn-vl-rejoindre').onclick = () => { vl = { mode: 'join', code: '', prenom: '', busy: false, error: null }; render(); };
+  document.getElementById('btn-vl-animer').onclick = () => {
+    vl = connecte()
+      ? { mode: 'creer', nb: 10, seconds: 25, categorie: null, niveau: null, busy: false, error: null }
+      : { mode: 'compte' };
+    render();
+  };
+}
+
+function renderVeilleeCompte() {
+  el.innerHTML = `
+  <div class="fade">
+    <button class="back-link" id="btn-vl-retour">‹ Veillée</button>
+    <div class="card" style="text-align:center;padding:26px 18px">
+      <div style="font-size:2.2rem">🎤</div>
+      <h2 style="font-family:var(--serif);margin:10px 0 6px">Animer demande un compte</h2>
+      <p class="defi-lead">C'est gratuit et rapide — il garde ta veillée à toi seul aux commandes. Les participants, eux, n'en ont pas besoin.</p>
+      <p class="defi-lead">Ouvre l'appli principale, onglet <b>Moi</b>, puis « Créer mon compte / Me connecter » (par e-mail ou avec Google), et reviens ici.</p>
+      <div class="defi-actions">
+        <a class="btn btn-primary btn-block" href="../index.html">Aller me connecter</a>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('btn-vl-retour').onclick = () => { vl = { mode: 'menu' }; render(); };
+}
+
+function renderVeilleeCreer() {
+  el.innerHTML = `
+  <div class="fade">
+    <button class="back-link" id="btn-vl-retour">‹ Veillée</button>
+    <div class="topbar"><div class="brand">
+      <h1 class="app-title">Animer <span class="seed">•</span> <span class="muted">préparer la veillée</span></h1>
+    </div></div>
+
+    <div class="card">
+      <label class="lbl">Nombre de questions</label>
+      <div class="pill-row" id="vl-pills-nb">
+        ${[5, 10, 15, 20].map(n => `<button class="pill ${vl.nb === n ? 'on' : ''}" data-nb="${n}">${n}</button>`).join('')}
+      </div>
+
+      <label class="lbl">Temps par question</label>
+      <div class="pill-row" id="vl-pills-sec">
+        ${[[15, 'Vif · 15 s'], [25, 'Posé · 25 s'], [40, 'Tranquille · 40 s']].map(([s, t]) =>
+          `<button class="pill ${vl.seconds === s ? 'on' : ''}" data-sec="${s}">${t}</button>`).join('')}
+      </div>
+
+      <label class="lbl">Catégorie</label>
+      <div class="pill-row" id="vl-pills-cat">
+        <button class="pill ${vl.categorie === null ? 'on' : ''}" data-cat="">Toutes</button>
+        ${CATEGORIES.map(c => `<button class="pill ${vl.categorie === c ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('')}
+      </div>
+      <label class="lbl">Niveau</label>
+      <div class="pill-row" id="vl-pills-niv">
+        <button class="pill ${vl.niveau === null ? 'on' : ''}" data-niv="">Tous</button>
+        ${[1, 2, 3].map(n => `<button class="pill ${vl.niveau === n ? 'on' : ''}" data-niv="${n}">${NIVEAUX[n]}</button>`).join('')}
+      </div>
+
+      <p class="prepa-note">≈ ${Math.max(2, Math.round(vl.nb * (vl.seconds + 15) / 60))} min, échanges compris. Les questions sont tirées par le site, personne ne les connaît d'avance — pas même toi.</p>
+      ${vl.error ? `<p class="field-error">${esc(vl.error)}</p>` : ''}
+      <div class="defi-actions">
+        <button class="btn btn-primary" id="btn-vl-creer" ${vl.busy ? 'disabled' : ''}>${vl.busy ? 'Création…' : 'Créer la veillée'}</button>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('btn-vl-retour').onclick = () => { vl = { mode: 'menu' }; render(); };
+  document.querySelectorAll('#vl-pills-nb .pill').forEach(b => { b.onclick = () => { vl.nb = Number(b.dataset.nb); render(); }; });
+  document.querySelectorAll('#vl-pills-sec .pill').forEach(b => { b.onclick = () => { vl.seconds = Number(b.dataset.sec); render(); }; });
+  document.querySelectorAll('#vl-pills-cat .pill').forEach(b => { b.onclick = () => { vl.categorie = b.dataset.cat || null; render(); }; });
+  document.querySelectorAll('#vl-pills-niv .pill').forEach(b => { b.onclick = () => { vl.niveau = b.dataset.niv ? Number(b.dataset.niv) : null; render(); }; });
+  document.getElementById('btn-vl-creer').onclick = vlCreer;
+}
+
+function renderVeilleeJoin() {
+  el.innerHTML = `
+  <div class="fade">
+    <button class="back-link" id="btn-vl-retour">‹ Veillée</button>
+    <div class="topbar"><div class="brand">
+      <h1 class="app-title">Rejoindre <span class="seed">•</span> <span class="muted">la veillée</span></h1>
+    </div></div>
+
+    <div class="card">
+      <form id="vl-join-form" novalidate>
+        <label class="lbl" for="vl-code">Le code du grand écran</label>
+        <input class="field code-field vl-code-field" type="text" id="vl-code" maxlength="4" autocomplete="off"
+               autocapitalize="characters" spellcheck="false" placeholder="ABCD" value="${esc(vl.code)}">
+        <label class="lbl" for="vl-prenom" style="margin-top:12px">Ton prénom</label>
+        <input class="field" type="text" id="vl-prenom" maxlength="20" autocomplete="given-name" placeholder="ex. Marie" value="${esc(vl.prenom)}">
+        <p class="muted" style="font-size:.85rem;margin:8px 2px 0">C'est lui qui s'affichera sur le grand écran.</p>
+        ${vl.error ? `<p class="field-error">${esc(vl.error)}</p>` : ''}
+        <div class="defi-actions">
+          <button class="btn btn-primary" type="submit" ${vl.busy ? 'disabled' : ''}>${vl.busy ? 'Un instant…' : 'Rejoindre'}</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+
+  document.getElementById('btn-vl-retour').onclick = () => { vl = { mode: 'menu' }; render(); };
+  document.getElementById('vl-code').oninput = e => { vl.code = e.target.value.toUpperCase(); };
+  document.getElementById('vl-prenom').oninput = e => { vl.prenom = e.target.value; };
+  document.getElementById('vl-join-form').onsubmit = e => { e.preventDefault(); vlRejoindre(); };
+}
+
+/* Barre de décompte partagée (grand écran et téléphone). */
+function vlTimerHTML() {
+  const e = vl.etat, r = vlRestant(), s = Math.max(1, e.seconds);
+  return `<div class="vl-timer-row">
+    <div class="defi-progress vl-timer" id="vl-bar"><i style="width:${Math.round(100 * r / s)}%"></i></div>
+    <span class="vl-count" id="vl-count">${Math.ceil(r)}</span>
+  </div>`;
+}
+
+/* ---------- Grand écran (animateur) ---------- */
+function renderVeilleeHost() {
+  const e = vl.etat;
+  if (!e) {
+    el.innerHTML = `<div class="card center" style="padding:40px"><p class="muted" style="margin:0">Un instant…</p></div>`;
+    return;
+  }
+  const lettres = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+  let corps = '';
+  if (e.statut === 'lobby') {
+    corps = `
+    <div class="card vl-proj">
+      <p class="vl-invite">Sur vos téléphones : <b>${esc(location.host)}</b> › Sonder › Veillée en direct › <b>Rejoindre</b></p>
+      <div class="vl-code-big">${esc(e.code)}</div>
+      <p class="vl-nb">${e.nPlayers === 0 ? 'En attente des premiers participants…' : `${e.nPlayers} participant${e.nPlayers > 1 ? 's' : ''}`}</p>
+      <div class="vl-chips">${e.players.map(p => `<span class="vl-chip">${esc(p.prenom)}</span>`).join('')}</div>
+    </div>
+    <div class="defi-actions">
+      <button class="btn btn-primary btn-block" id="btn-vl-start" ${e.nPlayers === 0 || vl.busy ? 'disabled' : ''}>Lancer la veillée</button>
+    </div>`;
+  } else if (e.statut === 'question') {
+    corps = `
+    <div class="defi-meta"><span>Question ${e.qIndex + 1}/${e.qTotal}</span><span>${esc(e.question.categorie)} · ${NIVEAUX[e.question.niveau] || ''}</span></div>
+    ${vlTimerHTML()}
+    <div class="card vl-proj">
+      <p class="vl-question">${esc(e.question.question)}</p>
+      <div class="vl-options">
+        ${e.question.options.map((o, i) => `<div class="vl-opt"><span class="vl-letter">${lettres[i]}</span>${esc(o)}</div>`).join('')}
+      </div>
+      <p class="vl-nb">${e.nAnswered}/${e.nPlayers} ont répondu</p>
+    </div>
+    <div class="defi-actions">
+      <button class="btn btn-soft btn-block" id="btn-vl-reveal" ${vl.busy ? 'disabled' : ''}>Révéler sans attendre</button>
+    </div>`;
+  } else if (e.statut === 'reveal') {
+    const derniere = e.qIndex + 1 >= e.qTotal;
+    const total = Math.max(1, e.nAnswered);
+    corps = `
+    <div class="defi-meta"><span>Question ${e.qIndex + 1}/${e.qTotal}</span><span>${esc(e.question.categorie)} · ${NIVEAUX[e.question.niveau] || ''}</span></div>
+    <div class="card vl-proj">
+      <p class="vl-question">${esc(e.question.question)}</p>
+      <div class="vl-options">
+        ${e.question.options.map((o, i) => `
+        <div class="vl-opt ${i === e.question.bonne ? 'good' : 'dim'}">
+          <span class="vl-letter">${lettres[i]}</span>${esc(o)}
+          <span class="vl-dist"><i style="width:${Math.round(100 * (e.distribution[i] || 0) / total)}%"></i><b>${e.distribution[i] || 0}</b></span>
+        </div>`).join('')}
+      </div>
+      <p class="defi-ref-line"><span class="arrow">→</span>${esc(e.question.reference)} <span class="muted">· à retrouver dans vos Bibles</span></p>
+    </div>
+    ${e.players.length ? `
+    <div class="section-title">En tête</div>
+    <div class="card">
+      ${e.players.slice(0, 5).map(p => `
+        <div class="rang-row ${p.rang === 1 ? 'top' : ''}">
+          <span class="rang">${rangLabel(p.rang)}</span>
+          <span class="rnom">${esc(p.prenom)}</span>
+          <span class="rscore">${p.score}</span>
+        </div>`).join('')}
+    </div>` : ''}
+    <div class="defi-actions">
+      <button class="btn btn-primary btn-block" id="btn-vl-next" ${vl.busy ? 'disabled' : ''}>${derniere ? 'Voir le podium' : 'Question suivante'}</button>
+    </div>`;
+  } else { // done
+    const podium = e.players.slice(0, 3);
+    corps = `
+    <div class="card vl-proj done-screen">
+      <div class="seal">🌾</div>
+      <h2 style="font-family:var(--serif)">Belle veillée !</h2>
+      ${e.bilan ? `<p class="defi-word">Ensemble, vous avez trouvé <b>${e.bilan.bonnes}</b> bonne${e.bilan.bonnes > 1 ? 's' : ''} réponse${e.bilan.bonnes > 1 ? 's' : ''} sur ${e.bilan.reponses}. Chaque référence est une porte vers le texte.</p>` : ''}
+      <div class="vl-podium">
+        ${podium.map(p => `<div class="vl-pod r${p.rang}"><span class="medal">${['🥇', '🥈', '🥉'][p.rang - 1] || '🌱'}</span><b>${esc(p.prenom)}</b><span class="pts">${p.score} pts</span></div>`).join('')}
+      </div>
+    </div>
+    ${e.players.length > 3 ? `
+    <div class="card">
+      ${e.players.slice(3).map(p => `
+        <div class="rang-row"><span class="rang">${rangLabel(p.rang)}</span><span class="rnom">${esc(p.prenom)}</span><span class="rscore">${p.score}</span></div>`).join('')}
+    </div>` : ''}
+    <div class="defi-actions">
+      <button class="btn btn-ghost btn-block" id="btn-vl-fermer">Fermer</button>
+    </div>`;
+  }
+
+  el.innerHTML = `
+  <div class="fade">
+    <div class="vl-topline">
+      <button class="back-link" id="btn-vl-quitter" style="margin:0">‹ Quitter</button>
+      ${e.statut !== 'done' && e.statut !== 'lobby' ? `<span class="vl-code-mini">Veillée ${esc(e.code)}</span>` : ''}
+      ${e.statut !== 'done' ? `<button class="linkbtn" id="btn-vl-end">Clore la veillée</button>` : ''}
+    </div>
+    ${vl.error ? `<p class="field-error" style="margin:0 4px 10px">${esc(vl.error)}</p>` : ''}
+    ${corps}
+  </div>`;
+
+  document.getElementById('btn-vl-quitter').onclick = () => {
+    if (e.statut === 'done' || confirm('Quitter l\'écran d\'animation ? La veillée reste ouverte : tu pourras la reprendre depuis « Veillée en direct ».')) {
+      vlArreterPolling(); vl = { mode: 'menu' }; render();
+    }
+  };
+  const endB = document.getElementById('btn-vl-end');
+  if (endB) endB.onclick = () => { if (confirm('Clore la veillée pour tout le monde ?')) vlAvancer('end'); };
+  const s = document.getElementById('btn-vl-start');
+  if (s) s.onclick = () => vlAvancer('start');
+  const rv = document.getElementById('btn-vl-reveal');
+  if (rv) rv.onclick = () => vlAvancer('reveal');
+  const nx = document.getElementById('btn-vl-next');
+  if (nx) nx.onclick = () => vlAvancer('next');
+  const fm = document.getElementById('btn-vl-fermer');
+  if (fm) fm.onclick = () => vlQuitter();
+}
+
+/* ---------- Téléphone (participant) ---------- */
+function renderVeilleePlayer() {
+  const e = vl.etat;
+  if (!e) {
+    el.innerHTML = `<div class="card center" style="padding:40px"><p class="muted" style="margin:0">Un instant…</p></div>`;
+    return;
+  }
+  const me = e.me || {};
+  const dejaRepondu = me.answered || vl.maReponse !== null;
+
+  let corps = '';
+  if (e.statut === 'lobby') {
+    corps = `
+    <div class="card center" style="padding:30px 18px">
+      <div style="font-size:2.2rem">🔥</div>
+      <h2 style="font-family:var(--serif);margin:10px 0 6px">Tu y es, ${esc(vl.prenom)} !</h2>
+      <p class="defi-lead" style="margin:0">Regarde le grand écran — l'animateur va lancer la veillée.</p>
+      <p class="muted" style="margin-top:10px">${e.nPlayers} participant${e.nPlayers > 1 ? 's' : ''} · ${e.qTotal} questions</p>
+    </div>`;
+  } else if (e.statut === 'question') {
+    corps = dejaRepondu ? `
+    ${vlTimerHTML()}
+    <div class="card center" style="padding:30px 18px">
+      <div style="font-size:2.2rem">✅</div>
+      <h2 style="font-family:var(--serif);margin:10px 0 6px">C'est noté !</h2>
+      <p class="defi-lead" style="margin:0">Regarde le grand écran — la réponse arrive.</p>
+    </div>` : `
+    <div class="defi-meta"><span>Question ${e.qIndex + 1}/${e.qTotal}</span><span>${esc(e.question.categorie)}</span></div>
+    ${vlTimerHTML()}
+    <div class="card">
+      <p class="defi-question">${esc(e.question.question)}</p>
+      <div id="options">
+        ${e.question.options.map((o, i) => `<button class="defi-option" data-pos="${i}">${esc(o)}</button>`).join('')}
+      </div>
+    </div>`;
+  } else if (e.statut === 'reveal') {
+    const juste = me.answered && me.correct;
+    corps = `
+    <div class="card center" style="padding:26px 18px">
+      <div style="font-size:2.2rem">${me.answered ? (juste ? '🌾' : '🌱') : '⏳'}</div>
+      <h2 style="font-family:var(--serif);margin:10px 0 6px">${me.answered ? (juste ? `Bonne réponse ! +${me.points} points` : 'Pas cette fois…') : 'Temps écoulé'}</h2>
+      ${!juste && e.question ? `<p class="defi-lead" style="margin:0 0 6px">La bonne réponse : <b>${esc(e.question.options[e.question.bonne])}</b></p>` : ''}
+      ${e.question ? `<p class="defi-ref-line" style="justify-content:center"><span class="arrow">→</span>${esc(e.question.reference)}</p>` : ''}
+      <p class="muted" style="margin-top:10px">${typeof me.score === 'number' ? `${me.score} points` : ''}${typeof me.rang === 'number' ? ` · ${rangLabel(me.rang)} sur ${e.nPlayers}` : ''}</p>
+    </div>`;
+  } else { // done
+    corps = `
+    <div class="card center done-screen" style="padding:26px 18px">
+      <div class="seal">🌾</div>
+      <h2 style="font-family:var(--serif)">Merci, ${esc(vl.prenom)} !</h2>
+      <p class="defi-word">${typeof me.score === 'number' ? `${me.score} points · ${rangLabel(me.rang || e.nPlayers)} sur ${e.nPlayers}.` : ''}
+        ${e.bilan ? ` Ensemble : ${e.bilan.bonnes} bonne${e.bilan.bonnes > 1 ? 's' : ''} réponse${e.bilan.bonnes > 1 ? 's' : ''} sur ${e.bilan.reponses}.` : ''}</p>
+      <div class="defi-actions">
+        <button class="btn btn-primary btn-block" id="btn-vl-fin">Terminer</button>
+      </div>
+    </div>`;
+  }
+
+  el.innerHTML = `
+  <div class="fade">
+    <div class="vl-topline">
+      <button class="back-link" id="btn-vl-quitter" style="margin:0">‹ Quitter</button>
+      <span class="vl-code-mini">Veillée ${esc(e.code)}</span>
+    </div>
+    ${vl.error ? `<p class="field-error" style="margin:0 4px 10px">${esc(vl.error)}</p>` : ''}
+    ${corps}
+  </div>`;
+
+  document.getElementById('btn-vl-quitter').onclick = () => {
+    if (e.statut === 'done' || confirm('Quitter la veillée ?')) vlQuitter();
+  };
+  document.querySelectorAll('#options .defi-option').forEach(b => {
+    b.onclick = () => vlRepondre(Number(b.dataset.pos));
+  });
+  const fin = document.getElementById('btn-vl-fin');
+  if (fin) fin.onclick = () => vlQuitter();
 }
 
 /* ---------- Démarrage ---------- */

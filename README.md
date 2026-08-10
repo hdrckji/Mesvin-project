@@ -33,8 +33,11 @@ célébration sobre en fin de livre.
 Connaissance des récits bibliques : questions strictement **factuelles** (qui, quoi, où),
 jamais d'interprétation. **Défi du jour** (10 questions, les mêmes pour tous, tirage
 déterministe par date) et **défi libre** (par catégorie et niveau). Après chaque réponse,
-la **référence biblique** ramène vers le texte. Pas de classement — on s'encourage,
-on ne se compare pas.
+la **référence biblique** ramène vers le texte. Se vit **seul**, **à plusieurs sur un
+même appareil**, en **duel à distance** avec un ami, ou en **veillée en direct** :
+l'animateur projette un grand écran, chacun rejoint avec un code court et répond sur
+son propre téléphone. Les classements restent **bienveillants** — on s'encourage,
+on n'humilie jamais.
 
 ## Pile technique
 
@@ -79,10 +82,10 @@ Les versions plus récentes (Segond 21, Semeur…) sont sous droits et nécessit
 - [x] **Plan de lecture** « chemin, pas calendrier » (Marc, Jean)
 - [x] **Défi** : questions de connaissance biblique (défi du jour + défi libre)
 - [x] Navigation unifiée entre les modules + hors-ligne complet
+- [x] **Veillée en direct** : le défi en groupe — écran projeté, chacun répond sur son téléphone
+- [x] Comptes optionnels (code par e-mail ou **compte Google**) : synchro, amis, duels
 - [ ] Rappel quotidien (notification) pour ancrer l'habitude
-- [ ] **Veillée** : le défi en groupe (écran projeté + téléphones)
 - [ ] Bible complète intégrée (lecture dans le contexte du passage)
-- [ ] Comptes optionnels (lien magique e-mail + Google) pour synchro et groupes d'église
 - [ ] Espace responsable : verset de la semaine, packs, suivi bienveillant du groupe
 
 ## Principes

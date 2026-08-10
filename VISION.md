@@ -18,7 +18,7 @@ l'existant.
 | **Mémoriser** | Mémoriser des versets par répétition espacée. L'appli propose le verset, accompagne l'apprentissage, valide **objectivement** la mémorisation, puis entretient. | ✅ v0.3 |
 | **Collections** | Regrouper les versets par **thème** (pardon, amour, confiance…) ou par livre. Objectif facultatif : on choisit une collection, on la complète. | ✅ |
 | **Lire** | Plan de lecture **« chemin, pas calendrier »** : on avance à son rythme, jamais de « retard », jamais de culpabilité. Marc et Jean intégrés. | ✅ v1 |
-| **Défi / Veillée** | Connaissance biblique (ex-« Ichthus »), **factuelle** (qui/quoi/où). Défi du jour + défi libre en **solo** ✅ ; mode **veillée** en groupe à venir. | ✅ v1 (solo) |
+| **Défi / Veillée** | Connaissance biblique (ex-« Ichthus »), **factuelle** (qui/quoi/où). Défi du jour + défi libre en **solo** ✅, duels à distance ✅, et **Veillée en direct** (grand écran projeté + téléphones) ✅. | ✅ v1 |
 
 *(« Jouer » est volontairement évité : on dit **Défi** en solo, **Veillée** en groupe — respect du texte.)*
 
@@ -43,7 +43,7 @@ l'existant.
 
 ## 3. La dimension communautaire (plus tard, mais prévue)
 
-- **Comptes optionnels** : lien magique par e-mail (principal) + Google
+- **Comptes optionnels** ✅ : code par e-mail (principal) + compte Google
   (option). Aucun compte pour les enfants.
 - **Groupes d'église par code** : on rejoint « BETHEL7 » en un code.
 - **Espace responsable** : verset/collection de la semaine poussé au groupe,
@@ -90,7 +90,7 @@ défi (« complète le verset », « d'où vient-il ? »).
 3. ✅ **Collections** thématiques (option, amenée en douceur)
 4. Rappel quotidien (notification PWA)
 5. ✅ **Plan de lecture** « chemin » (Marc, Jean)
-6. ✅ **Défi** (connaissance biblique, solo) — la **Veillée** en groupe reste à venir
+6. ✅ **Défi** (connaissance biblique) — solo, duels à distance, et **Veillée en direct** en groupe
 7. Comptes optionnels + **groupes d'église** (bascule serveur)
 
 ---

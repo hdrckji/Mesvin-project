@@ -64,8 +64,16 @@
     user() { const s = getSession(); return s ? s.user : null; },
     isLoggedIn() { return !!getSession(); },
 
+    /* ---- configuration publique (ex. client ID Google) ---- */
+    async config() { return call('GET', '/api/config'); },
+
     /* ---- authentification ---- */
     async requestCode(email) { return call('POST', '/api/auth/request-code', { email }); },
+    async googleSignIn(credential, pseudo) {
+      const r = await call('POST', '/api/auth/google', pseudo ? { credential, pseudo } : { credential });
+      setSession({ token: r.token, user: r.user });
+      return r.user;
+    },
     async verify(email, code, pseudo) {
       const r = await call('POST', '/api/auth/verify', pseudo ? { email, code, pseudo } : { email, code });
       setSession({ token: r.token, user: r.user });
@@ -100,7 +108,19 @@
     async createDuel(opponentCode) { return (await call('POST', '/api/duels', { opponentCode })).duel; },
     async duels() { return (await call('GET', '/api/duels')).duels; },
     async duel(id) { return (await call('GET', '/api/duels/' + id)).duel; },
-    async duelResult(id, answers) { return (await call('POST', '/api/duels/' + id + '/result', { answers })).duel; }
+    async duelResult(id, answers) { return (await call('POST', '/api/duels/' + id + '/result', { answers })).duel; },
+
+    /* ---- veillées en direct ---- */
+    async createVeillee(opts) { return (await call('POST', '/api/veillees', opts || {})).veillee; },
+    async veilleeState(code, playerKey) {
+      const qs = playerKey ? '?player=' + encodeURIComponent(playerKey) : '';
+      return (await call('GET', '/api/veillees/' + encodeURIComponent(code) + '/state' + qs)).veillee;
+    },
+    async joinVeillee(code, prenom) { return call('POST', '/api/veillees/' + encodeURIComponent(code) + '/join', { prenom }); },
+    async veilleeAnswer(code, playerKey, q, answer) {
+      return call('POST', '/api/veillees/' + encodeURIComponent(code) + '/answer', { playerKey, q, answer });
+    },
+    async veilleeAdvance(code, action) { return (await call('POST', '/api/veillees/' + encodeURIComponent(code) + '/advance', { action })).veillee; }
   };
 
   window.GraineAPI = GraineAPI;

@@ -23,6 +23,7 @@ require __DIR__ . '/auth.php';
 require __DIR__ . '/sync.php';
 require __DIR__ . '/friends.php';
 require __DIR__ . '/duels.php';
+require __DIR__ . '/veillees.php';
 
 set_exception_handler(function (Throwable $e): void {
     error_log(sprintf('API : %s — %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
@@ -70,11 +71,17 @@ if ($path === '/api/health' && $method === 'GET') {
     ]);
 }
 
+/* ---- GET /api/config : configuration publique (sans base de données) -------- */
+if ($path === '/api/config' && $method === 'GET') {
+    json_out(['googleClientId' => google_client_id()]);
+}
+
 $pdo = db();
 
 /* ---- Authentification & compte --------------------------------------------- */
 if ($path === '/api/auth/request-code' && $method === 'POST') handle_auth_request_code($pdo);
 if ($path === '/api/auth/verify'       && $method === 'POST') handle_auth_verify($pdo);
+if ($path === '/api/auth/google'       && $method === 'POST') handle_auth_google($pdo);
 if ($path === '/api/auth/logout'       && $method === 'POST') handle_auth_logout($pdo);
 if ($path === '/api/me'                && $method === 'GET')  handle_me_get($pdo);
 if ($path === '/api/me/pseudo'         && $method === 'POST') handle_me_pseudo($pdo);
@@ -99,6 +106,16 @@ if (preg_match('#^/api/duels/([0-9]+)$#', $path, $m) && $method === 'GET') {
 }
 if (preg_match('#^/api/duels/([0-9]+)/result$#', $path, $m) && $method === 'POST') {
     handle_duels_result($pdo, (int) $m[1]);
+}
+
+/* ---- Veillées en direct -------------------------------------------------------- */
+if ($path === '/api/veillees' && $method === 'POST') handle_veillees_create($pdo);
+if (preg_match('#^/api/veillees/([A-Za-z0-9]{4})/(state|join|answer|advance)$#', $path, $m)) {
+    $code = strtoupper($m[1]);
+    if ($m[2] === 'state'   && $method === 'GET')  handle_veillees_state($pdo, $code);
+    if ($m[2] === 'join'    && $method === 'POST') handle_veillees_join($pdo, $code);
+    if ($m[2] === 'answer'  && $method === 'POST') handle_veillees_answer($pdo, $code);
+    if ($m[2] === 'advance' && $method === 'POST') handle_veillees_advance($pdo, $code);
 }
 
 json_error('Route inconnue.', 404);

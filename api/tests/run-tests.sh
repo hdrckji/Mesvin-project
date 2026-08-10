@@ -200,6 +200,71 @@ check "u2 : myScore = $SCORE2"          "$SCORE2" "$(jval '.duels[0].myScore')"
 check "u2 : theirScore = $SCORE1"       "$SCORE1" "$(jval '.duels[0].theirScore')"
 
 # ---------------------------------------------------------------------------
+say "Config publique & connexion Google (non configurée en test)"
+check "GET /api/config → 200"           200  "$(api GET /api/config)"
+check "→ googleClientId null"           null "$(jval .googleClientId)"
+check "auth Google → 501 (pas de clé)"  501  "$(api POST /api/auth/google '' '{"credential":"x"}')"
+
+# ---------------------------------------------------------------------------
+say "Veillée en direct — création (u1 anime)"
+check "créer sans compte → 401"         401 "$(api POST /api/veillees '' '{}')"
+check "nb hors bornes → 400"            400 "$(api POST /api/veillees "$TOKEN1" '{"nb":3}')"
+check "créer (5 questions) → 201"       201 "$(api POST /api/veillees "$TOKEN1" '{"nb":5,"seconds":30}')"
+VCODE="$(jval .veillee.code)"
+check "code de 4 caractères"            4     "${#VCODE}"
+check "statut lobby"                    lobby "$(jval .veillee.statut)"
+check "5 questions annoncées"           5     "$(jval .veillee.qTotal)"
+
+say "Veillée — rejoindre (sans compte)"
+check "état public → 200"               200 "$(api GET "/api/veillees/$VCODE/state")"
+check "code inconnu → 404"              404 "$(api GET /api/veillees/ZZZZ/state)"
+check "Marc rejoint → 201"              201 "$(api POST "/api/veillees/$VCODE/join" '' '{"prenom":"Marc"}')"
+PKEY1="$(jval .playerKey)"
+check "clé de participant (32 hex)"     32  "${#PKEY1}"
+check "prénom en double → 409"          409 "$(api POST "/api/veillees/$VCODE/join" '' '{"prenom":"Marc"}')"
+check "Léa rejoint → 201"               201 "$(api POST "/api/veillees/$VCODE/join" '' '{"prenom":"Léa"}')"
+PKEY2="$(jval .playerKey)"
+api GET "/api/veillees/$VCODE/state" > /dev/null
+check "2 participants visibles"         2   "$(jval .veillee.nPlayers)"
+
+say "Veillée — pilotage (animateur seul)"
+check "u3 pilote → 403"                 403 "$(api POST "/api/veillees/$VCODE/advance" "$TOKEN3" '{"action":"start"}')"
+check "répondre avant le début → 409"   409 "$(api POST "/api/veillees/$VCODE/answer" '' "{\"playerKey\":\"$PKEY1\",\"q\":0,\"answer\":0}")"
+check "u1 lance → 200"                  200 "$(api POST "/api/veillees/$VCODE/advance" "$TOKEN1" '{"action":"start"}')"
+check "statut question"                 question "$(jval .veillee.statut)"
+api GET "/api/veillees/$VCODE/state?player=$PKEY1" > /dev/null
+check "question posée, 4 options"       4     "$(jval '.veillee.question.options | length')"
+check "bonne réponse PAS envoyée"       false "$(jval '.veillee.question | has("bonne")')"
+check "décompte en cours (> 0)"         true  "$(jval '.veillee.remaining > 0')"
+
+say "Veillée — réponses"
+check "réponse hors bornes → 400"       400 "$(api POST "/api/veillees/$VCODE/answer" '' "{\"playerKey\":\"$PKEY1\",\"q\":0,\"answer\":9}")"
+check "Marc répond 0 → 200"             200 "$(api POST "/api/veillees/$VCODE/answer" '' "{\"playerKey\":\"$PKEY1\",\"q\":0,\"answer\":0}")"
+check "Marc re-répond → 409"            409 "$(api POST "/api/veillees/$VCODE/answer" '' "{\"playerKey\":\"$PKEY1\",\"q\":0,\"answer\":1}")"
+check "clé inconnue → 401"              401 "$(api POST "/api/veillees/$VCODE/answer" '' '{"playerKey":"00000000000000000000000000000000","q":0,"answer":0}')"
+api GET "/api/veillees/$VCODE/state?player=$PKEY1" > /dev/null
+check "1 réponse comptée"               1    "$(jval .veillee.nAnswered)"
+check "me.answered = true"              true "$(jval .veillee.me.answered)"
+
+say "Veillée — révélation puis fin"
+check "u1 révèle → 200"                 200 "$(api POST "/api/veillees/$VCODE/advance" "$TOKEN1" '{"action":"reveal"}')"
+api GET "/api/veillees/$VCODE/state?player=$PKEY1" > /dev/null
+check "bonne réponse visible"           true "$(jval '.veillee.question | has("bonne")')"
+check "référence visible"               true "$(jval '.veillee.question | has("reference")')"
+check "répartition sur 4 options"       4    "$(jval '.veillee.distribution | length')"
+if [ "$(jval .veillee.question.bonne)" = "0" ]; then
+  check "points de Marc (bonne, ≥ 100)" true "$(jval '.veillee.me.points >= 100')"
+else
+  check "points de Marc (raté) = 0"     0    "$(jval .veillee.me.points)"
+fi
+check "u1 clôt la veillée → 200"        200  "$(api POST "/api/veillees/$VCODE/advance" "$TOKEN1" '{"action":"end"}')"
+check "statut done"                     done "$(jval .veillee.statut)"
+api GET "/api/veillees/$VCODE/state?player=$PKEY2" > /dev/null
+check "bilan collectif présent"         true "$(jval '.veillee | has("bilan")')"
+check "Léa a un rang"                   true "$(jval '.veillee.me.rang >= 1')"
+check "rejoindre une veillée close → 410" 410 "$(api POST "/api/veillees/$VCODE/join" '' '{"prenom":"Paul"}')"
+
+# ---------------------------------------------------------------------------
 say "Limites : essais de code et demandes par heure (u3)"
 api POST /api/auth/request-code '' '{"email":"chloe@example.org"}' > /dev/null
 for _ in 1 2 3 4 5; do api POST /api/auth/verify '' '{"email":"chloe@example.org","code":"999999"}' > /dev/null; done

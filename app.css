@@ -428,6 +428,10 @@ a.verse-item { text-decoration: none; }
 .field-error { color: var(--danger); font-size: .88rem; margin: 8px 2px 0; }
 .field-ok { color: var(--grow); font-size: .88rem; margin: 8px 2px 0; }
 
+/* séparateur « ou » entre le parcours e-mail et le bouton Google */
+.or-sep { display: flex; align-items: center; gap: 12px; margin: 14px 4px; color: var(--ink-soft); font-size: .85rem; }
+.or-sep::before, .or-sep::after { content: ''; flex: 1; border-top: 1px solid var(--line); }
+
 /* saisie du code à 6 chiffres : champ grand, centré */
 .code-field {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

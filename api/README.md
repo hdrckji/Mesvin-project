@@ -1,7 +1,8 @@
 # API Bible Horizon — installation & exploitation (Railway)
 
 Backend PHP classique (pas de framework, pas de Composer) qui ajoute à la PWA :
-comptes par code e-mail, synchronisation, amis par code, duels asynchrones.
+comptes par code e-mail **ou compte Google**, synchronisation, amis par code,
+duels asynchrones et **veillées en direct** (grand écran + téléphones).
 Le contrat complet des routes est dans [`../API-CONTRAT.md`](../API-CONTRAT.md).
 
 ## Comment c'est construit
@@ -14,8 +15,9 @@ Le contrat complet des routes est dans [`../API-CONTRAT.md`](../API-CONTRAT.md).
   automatique sur SQLite (`api/data/dev.sqlite`) pour les tests locaux.
   Les tables sont créées automatiquement au premier appel.
 - **Fichiers** : `index.php` (routage) → `auth.php`, `sync.php`, `friends.php`,
-  `duels.php` (les routes), avec `db.php` (connexion + migrations),
-  `mail.php` (envoi des codes), `helpers.php` (fonctions partagées).
+  `duels.php`, `veillees.php` (les routes), avec `db.php` (connexion +
+  migrations), `mail.php` (envoi des codes), `helpers.php` (fonctions
+  partagées).
 
 ## Installation sur Railway
 
@@ -59,7 +61,30 @@ Si `BREVO_API_KEY` est définie, elle a la priorité sur SMTP.
 > **à ne jamais laisser en production** — vérifier avec `/api/health` que
 > `"mail"` ne vaut pas `"dev"`.
 
-### 3. Vérifier que tout marche
+### 3. La connexion Google (facultative)
+
+Sans elle, tout marche déjà par code e-mail. Pour proposer en plus le bouton
+« Continuer avec Google » :
+
+1. [console.cloud.google.com](https://console.cloud.google.com) → créer un
+   projet (ou en réutiliser un) → **APIs & Services → Credentials →
+   Create credentials → OAuth client ID** → type **Web application**.
+2. Dans **Authorized JavaScript origins**, ajouter l'adresse du site
+   (ex. `https://mon-domaine.up.railway.app`) — et `http://localhost:8080`
+   pour tester en local. Pas de redirect URI à déclarer.
+3. Copier le **Client ID** (se termine par `.apps.googleusercontent.com`)
+   dans une variable Railway :
+
+| Variable | Exemple | Rôle |
+|---|---|---|
+| `GOOGLE_CLIENT_ID` | `1234…abc.apps.googleusercontent.com` | active le bouton Google |
+
+Aucun secret à stocker : le site ne reçoit qu'un **jeton d'identité**, que le
+serveur revérifie auprès de Google. Le bouton apparaît tout seul dès que la
+variable est définie (`GET /api/config` permet de vérifier). Un compte Google
+et un compte e-mail avec la **même adresse** sont **le même compte**.
+
+### 4. Vérifier que tout marche
 
 Ouvrir `https://<mon-domaine>/api/health` :
 

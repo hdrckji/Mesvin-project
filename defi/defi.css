@@ -235,3 +235,70 @@
 .defi-missed.ok .a { color: var(--grow); }
 .defi-missed .m { font-size: .92rem; color: var(--ink-soft); font-weight: 600; margin-top: 2px; }
 .defi-missed:first-child { border-top: 0; padding-top: 2px; margin-top: 4px; }
+
+/* ============================================================================
+   Veillée en direct — grand écran projeté + téléphones des participants.
+   ========================================================================== */
+
+.vl-topline { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.vl-code-mini { font-size: .82rem; font-weight: 700; letter-spacing: .08em; color: var(--ink-soft); }
+
+/* projection : tout est plus grand, lisible du fond de la salle */
+.vl-proj { text-align: center; padding: 26px 20px; }
+.vl-invite { color: var(--ink-soft); margin: 0 0 10px; }
+.vl-code-big {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(3rem, 16vw, 6.5rem); font-weight: 800; letter-spacing: .18em;
+  color: var(--accent-ink); margin: 6px 0 4px;
+}
+.vl-nb { color: var(--ink-soft); margin: 10px 0 0; }
+.vl-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+.vl-chip {
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px;
+  padding: 6px 14px; font-weight: 650; font-size: 1.05rem;
+}
+
+.vl-question { font-family: var(--serif); font-size: clamp(1.25rem, 3.4vw, 2rem); font-weight: 700; margin: 4px 0 16px; }
+.vl-options { display: grid; gap: 10px; text-align: left; }
+@media (min-width: 700px) { .vl-options { grid-template-columns: 1fr 1fr; } }
+.vl-opt {
+  position: relative; display: flex; align-items: center; gap: 12px;
+  border: 1.5px solid var(--line); border-radius: 14px; padding: 14px 16px;
+  font-size: clamp(1rem, 2.4vw, 1.35rem); background: var(--surface);
+}
+.vl-opt.good { border-color: var(--grow); background: var(--grow-soft); color: var(--grow); font-weight: 700; }
+.vl-opt.dim { opacity: .55; }
+.vl-letter {
+  flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2); border: 1px solid var(--line); font-weight: 800;
+}
+.vl-dist { margin-left: auto; display: flex; align-items: center; gap: 8px; min-width: 96px; }
+.vl-dist i { display: block; height: 8px; border-radius: 4px; background: var(--accent); min-width: 2px; flex: 0 1 auto; width: 0; transition: width .6s ease; }
+.vl-dist b { font-size: .95rem; color: var(--ink-soft); }
+
+/* décompte : la barre existante, plus épaisse, avec le chiffre à côté */
+.vl-timer-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.vl-timer-row .defi-progress { flex: 1; height: 10px; margin: 0; }
+.vl-timer-row .defi-progress i { transition: width .5s linear; }
+.vl-count {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-weight: 800; font-size: 1.15rem; min-width: 2ch; text-align: right;
+}
+
+/* podium final */
+.vl-podium { display: flex; justify-content: center; align-items: flex-end; gap: 14px; margin-top: 16px; flex-wrap: wrap; }
+.vl-pod {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px;
+  padding: 14px 18px; min-width: 96px;
+}
+.vl-pod .medal { font-size: 1.8rem; }
+.vl-pod b { font-size: 1.1rem; }
+.vl-pod .pts { color: var(--ink-soft); font-size: .88rem; }
+.vl-pod.r1 { order: 2; padding: 20px 22px; border-color: var(--accent); }
+.vl-pod.r2 { order: 1; }
+.vl-pod.r3 { order: 3; }
+
+/* saisie du code : 4 caractères, grand, espacé */
+.vl-code-field { letter-spacing: .45em; text-transform: uppercase; }

@@ -56,9 +56,11 @@ function db_driver(PDO $pdo): string {
 
 /** Crée les tables si elles n'existent pas encore. */
 function db_migrate(PDO $pdo): void {
-    // Test rapide : si la dernière table existe déjà, tout est en place.
+    // Test rapide : si la table la PLUS RÉCENTE existe déjà, tout est en place.
+    // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
+    // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM duels LIMIT 1');
+        $pdo->query('SELECT 1 FROM veillee_answers LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -121,6 +123,42 @@ function db_migrate(PDO $pdo): void {
                 INDEX idx_duels_challenger (challenger_id),
                 INDEX idx_duels_opponent (opponent_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            'CREATE TABLE IF NOT EXISTS veillees (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                code VARCHAR(8) NOT NULL,
+                host_user_id INT UNSIGNED NOT NULL,
+                statut VARCHAR(10) NOT NULL,
+                questions_json MEDIUMTEXT NOT NULL,
+                current_q INT NOT NULL DEFAULT -1,
+                seconds INT NOT NULL,
+                question_started_at DATETIME NULL,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL,
+                INDEX idx_veillees_code (code)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            'CREATE TABLE IF NOT EXISTS veillee_players (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                veillee_id INT UNSIGNED NOT NULL,
+                player_key CHAR(32) NOT NULL,
+                prenom VARCHAR(40) NOT NULL,
+                score INT NOT NULL DEFAULT 0,
+                joined_at DATETIME NOT NULL,
+                INDEX idx_vplayers_veillee (veillee_id),
+                INDEX idx_vplayers_key (player_key)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            'CREATE TABLE IF NOT EXISTS veillee_answers (
+                veillee_id INT UNSIGNED NOT NULL,
+                q_index INT NOT NULL,
+                player_id INT UNSIGNED NOT NULL,
+                answer INT NOT NULL,
+                correct TINYINT NOT NULL,
+                points INT NOT NULL,
+                answered_at DATETIME NOT NULL,
+                PRIMARY KEY (veillee_id, q_index, player_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
         ];
     } else {
         $ddl = [
@@ -179,6 +217,42 @@ function db_migrate(PDO $pdo): void {
             )',
             'CREATE INDEX IF NOT EXISTS idx_duels_challenger ON duels (challenger_id)',
             'CREATE INDEX IF NOT EXISTS idx_duels_opponent ON duels (opponent_id)',
+
+            'CREATE TABLE IF NOT EXISTS veillees (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT NOT NULL,
+                host_user_id INTEGER NOT NULL,
+                statut TEXT NOT NULL,
+                questions_json TEXT NOT NULL,
+                current_q INTEGER NOT NULL DEFAULT -1,
+                seconds INTEGER NOT NULL,
+                question_started_at TEXT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_veillees_code ON veillees (code)',
+
+            'CREATE TABLE IF NOT EXISTS veillee_players (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                veillee_id INTEGER NOT NULL,
+                player_key TEXT NOT NULL,
+                prenom TEXT NOT NULL,
+                score INTEGER NOT NULL DEFAULT 0,
+                joined_at TEXT NOT NULL
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_vplayers_veillee ON veillee_players (veillee_id)',
+            'CREATE INDEX IF NOT EXISTS idx_vplayers_key ON veillee_players (player_key)',
+
+            'CREATE TABLE IF NOT EXISTS veillee_answers (
+                veillee_id INTEGER NOT NULL,
+                q_index INTEGER NOT NULL,
+                player_id INTEGER NOT NULL,
+                answer INTEGER NOT NULL,
+                correct INTEGER NOT NULL,
+                points INTEGER NOT NULL,
+                answered_at TEXT NOT NULL,
+                PRIMARY KEY (veillee_id, q_index, player_id)
+            )',
         ];
     }
 

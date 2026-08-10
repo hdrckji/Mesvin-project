@@ -6,6 +6,12 @@
    - POST /api/auth/verify       : vérifie le code (10 min, 5 essais max),
                                    crée le compte au premier passage (pseudo
                                    obligatoire), ouvre une session ~90 jours.
+   - POST /api/auth/google       : connexion en un geste avec un compte Google
+                                   (jeton d'identité vérifié côté serveur ;
+                                   actif seulement si GOOGLE_CLIENT_ID est
+                                   configurée). Même compte que par e-mail :
+                                   c'est l'adresse qui fait foi.
+   - GET  /api/config            : configuration publique (client ID Google).
    - GET  /api/me                : utilisateur connecté.
    - POST /api/me/pseudo         : changer de pseudo.
    - POST /api/auth/logout       : invalide le token.
@@ -18,6 +24,16 @@ const CODE_VALIDITY_SECONDS   = 600;          // 10 minutes
 const CODE_MAX_ATTEMPTS       = 5;
 const CODE_MAX_PER_HOUR       = 3;
 const SESSION_LIFETIME_SECONDS = 90 * 86400;  // ~90 jours
+
+/** Ouvre une session (~90 jours) pour cet utilisateur et retourne le token. */
+function open_session(PDO $pdo, array $user): string {
+    $token = bin2hex(random_bytes(32));
+    $st = $pdo->prepare(
+        'INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)'
+    );
+    $st->execute([$token, $user['id'], now_sql(), now_sql_plus(SESSION_LIFETIME_SECONDS)]);
+    return $token;
+}
 
 /** Valide et normalise l'e-mail du corps de requête, ou répond 400. */
 function auth_read_email(array $body): string {
@@ -129,13 +145,113 @@ function handle_auth_verify(PDO $pdo): never {
     $st = $pdo->prepare('DELETE FROM login_codes WHERE email = ?');
     $st->execute([$email]);
 
-    $token = bin2hex(random_bytes(32));
-    $st = $pdo->prepare(
-        'INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)'
-    );
-    $st->execute([$token, $user['id'], now_sql(), now_sql_plus(SESSION_LIFETIME_SECONDS)]);
+    json_out(['token' => open_session($pdo, $user), 'user' => user_payload($user)]);
+}
 
-    json_out(['token' => $token, 'user' => user_payload($user)]);
+/* ---- Connexion Google ------------------------------------------------------ */
+
+/** Client ID OAuth Google (variable d'environnement), ou null si absent. */
+function google_client_id(): ?string {
+    $id = getenv('GOOGLE_CLIENT_ID');
+    if ($id === false) {
+        return null;
+    }
+    $id = trim($id);
+    return $id === '' ? null : $id;
+}
+
+/**
+ * Vérifie un jeton d'identité Google auprès de Google (endpoint tokeninfo :
+ * signature et expiration contrôlées par Google) puis revérifie ici
+ * l'audience, l'émetteur et l'e-mail confirmé. Retourne le payload du jeton.
+ */
+function google_verify_credential(string $credential): array {
+    $ch = curl_init('https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($credential));
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 15,
+    ]);
+    $response = curl_exec($ch);
+    $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+
+    if ($response === false) {
+        json_error('Google est injoignable pour le moment — réessaie dans un instant.', 502);
+    }
+    $info = json_decode((string) $response, true);
+    if ($status !== 200 || !is_array($info)) {
+        json_error('Connexion Google refusée — réessaie.', 401);
+    }
+    if (($info['aud'] ?? null) !== google_client_id()
+        || !in_array((string) ($info['iss'] ?? ''), ['accounts.google.com', 'https://accounts.google.com'], true)
+        || ($info['email_verified'] ?? '') !== 'true'
+        || !filter_var((string) ($info['email'] ?? ''), FILTER_VALIDATE_EMAIL)) {
+        json_error('Connexion Google refusée — réessaie.', 401);
+    }
+    return $info;
+}
+
+/**
+ * Dérive un pseudo présentable depuis le profil Google (prénom, puis nom
+ * complet), en le pliant aux règles de validate_pseudo. Null si rien ne passe.
+ */
+function google_derive_pseudo(array $info): ?string {
+    foreach ([$info['given_name'] ?? null, $info['name'] ?? null] as $candidate) {
+        if (!is_string($candidate)) {
+            continue;
+        }
+        $clean = (string) preg_replace('/[^\p{L}\p{N} \-]+/u', ' ', $candidate);
+        $clean = trim((string) preg_replace('/\s+/', ' ', $clean));
+        $pseudo = validate_pseudo(mb_substr($clean, 0, 20));
+        if ($pseudo !== null) {
+            return $pseudo;
+        }
+    }
+    return null;
+}
+
+/* ---- POST /api/auth/google ------------------------------------------------- */
+
+function handle_auth_google(PDO $pdo): never {
+    if (google_client_id() === null) {
+        json_error("La connexion Google n'est pas configurée sur ce serveur.", 501);
+    }
+    $body = read_json_body();
+    $credential = (string) ($body['credential'] ?? '');
+    if ($credential === '' || strlen($credential) > 4096) {
+        json_error('Jeton Google manquant ou invalide.', 400);
+    }
+
+    $info = google_verify_credential($credential);
+    $email = strtolower((string) $info['email']);
+
+    $st = $pdo->prepare('SELECT * FROM users WHERE email = ?');
+    $st->execute([$email]);
+    $user = $st->fetch();
+
+    if ($user === false) {
+        // Première connexion : pseudo fourni par le client s'il y en a un,
+        // sinon dérivé du prénom Google — l'entrée reste « en un geste »
+        // dans la plupart des cas, et le pseudo se change ensuite dans Moi.
+        $pseudo = validate_pseudo($body['pseudo'] ?? null) ?? google_derive_pseudo($info);
+        if ($pseudo === null) {
+            json_error(
+                'Choisis un pseudo : 2 à 20 caractères (lettres, chiffres, espaces ou tirets).',
+                422,
+                ['needPseudo' => true]
+            );
+        }
+        $st = $pdo->prepare(
+            'INSERT INTO users (email, pseudo, friend_code, created_at, last_seen)
+             VALUES (?, ?, ?, ?, ?)'
+        );
+        $st->execute([$email, $pseudo, generate_friend_code($pdo), now_sql(), now_sql()]);
+        $st = $pdo->prepare('SELECT * FROM users WHERE email = ?');
+        $st->execute([$email]);
+        $user = $st->fetch();
+    }
+
+    json_out(['token' => open_session($pdo, $user), 'user' => user_payload($user)]);
 }
 
 /* ---- GET /api/me ---------------------------------------------------------- */
