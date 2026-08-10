@@ -608,6 +608,7 @@ function renderFill(ex) {
 
 function viewSessionDone() {
   updateStreak();
+  if (window.GrainePierres) GrainePierres.verifier(); // série, jours… une pierre peut se poser
   scheduleSync(); // la progression du jour part vers le serveur (débouncé, silencieux)
   const s = store.streak.count;
   const done = session ? session.done.length : 0;
@@ -682,6 +683,21 @@ function viewMoi() {
         <div class="st-l">jour${daysN > 1 ? 's' : ''} d'activité en tout</div></div>
     </div>`;
 
+  // Pierres du chemin (badges-souvenirs, voir pierres.js) : SEULEMENT les
+  // pierres reçues — jamais de grille grisée de ce qui manquerait.
+  const pierresList = window.GrainePierres ? GrainePierres.lues() : [];
+  const pierresTiles = pierresList.map(p => `<div class="pierre-tile fade">
+      <span class="pi-emoji">${p.emoji}</span>
+      <span class="pi-main"><span class="pi-nom">${esc(p.nom)}</span>
+        <span class="pi-phrase">${esc(p.phrase)}</span>
+        <span class="pi-date">posée le ${esc(p.date)}</span></span>
+    </div>`).join('');
+  const pierresSec = `<div class="section-title">🪨 Pierres du chemin</div>
+    <p class="pierres-quote fade">« Que signifient ces pierres ? » — Josué 4.21</p>
+    ${pierresList.length
+      ? pierresTiles + `<p class="muted me-note center">D'autres pierres se poseront au fil du chemin.</p>`
+      : `<p class="muted me-note center fade">Tes pierres se poseront ici, une à une, au fil du chemin.</p>`}`;
+
   const lireSec = `<div class="section-title">📖 Lecture</div>
     <div class="stat-grid fade">
       ${tile(lire.chapters, `chapitre${lire.chapters > 1 ? 's' : ''} lu${lire.chapters > 1 ? 's' : ''}`)}
@@ -708,7 +724,7 @@ function viewMoi() {
         <span class="hub-sub">Comptes et banque de questions du Défi</span></span>
       <span class="chev">›</span></a>` : '';
 
-  return topbar() + head + account + apparence + memo + assiduite + lireSec + defiSec + friends + admin;
+  return topbar() + head + account + apparence + memo + assiduite + pierresSec + lireSec + defiSec + friends + admin;
 }
 
 /* ---------- Jardin (versets mémorisés) ---------- */
@@ -801,6 +817,7 @@ function viewAbout() {
    Le local reste la base : sans compte ou hors-ligne, rien ne change.
    ========================================================================== */
 const LIRE_KEY = 'graine.lire.v1', DEFI_KEY = 'graine.defi.v1';
+const PIERRES_KEY = 'graine.pierres.v1'; // pierres du chemin (voir pierres.js) — voyagent dans le blob memo
 const SYNC_META_KEY = 'graine.sync.meta';
 
 /* ---------- Fusion PURE des stores (testable : window.GraineSync) ----------
@@ -846,6 +863,17 @@ function mergeMemo(local, server) {
   const scc = Array.isArray(srv.completedCollections) ? srv.completedCollections : [];
   out.completedCollections = Array.from(new Set(lcc.concat(scc)));
   out.activeCollection = out.activeCollection || srv.activeCollection || null;
+  // Pierres du chemin (badges-souvenirs, champ `pierres` du blob memo) :
+  // UNION des deux côtés — une pierre posée ne se retire jamais — et pour
+  // chacune le dayNumber MINIMUM (on garde la date la plus ancienne).
+  const lp = out.pierres && typeof out.pierres === 'object' && !Array.isArray(out.pierres) ? out.pierres : {};
+  const sp = srv.pierres && typeof srv.pierres === 'object' && !Array.isArray(srv.pierres) ? srv.pierres : {};
+  const pierres = {};
+  for (const id of new Set(Object.keys(lp).concat(Object.keys(sp)))) {
+    const j = minN(lp[id], sp[id]);
+    if (j !== undefined) pierres[id] = j;
+  }
+  out.pierres = pierres;
   return out;
 }
 
@@ -978,19 +1006,28 @@ async function syncNow() {
     // 1) pull : l'état du serveur…
     const remote = await GraineAPI.syncGet();
     // 2) …fusionné dans le local, sans jamais perdre de progression…
-    const mergedMemo = mergeMemo(store, remote.memo);
-    if (mergedMemo && !session) { store = normalizeStore(mergedMemo); saveStore(); }
+    // Les pierres du chemin voyagent dans le blob memo (champ `pierres`) mais
+    // vivent localement dans leur propre clé : on les greffe sur une COPIE du
+    // store avant la fusion, puis on les range à part — graine.v3 n'en garde rien.
+    const memoLocal = Object.assign({}, store, { pierres: readLocalBlob(PIERRES_KEY) || {} });
+    const mergedMemo = mergeMemo(memoLocal, remote.memo);
+    if (mergedMemo) {
+      try { localStorage.setItem(PIERRES_KEY, JSON.stringify(mergedMemo.pierres || {})); } catch (e) {}
+      delete mergedMemo.pierres;
+      if (!session) { store = normalizeStore(mergedMemo); saveStore(); }
+    }
     const mergedLire = mergeLire(readLocalBlob(LIRE_KEY), remote.lire);
     if (mergedLire) localStorage.setItem(LIRE_KEY, JSON.stringify(mergedLire));
     const mergedDefi = mergeDefi(readLocalBlob(DEFI_KEY), remote.defi);
     if (mergedDefi) localStorage.setItem(DEFI_KEY, JSON.stringify(mergedDefi));
-    // 3) puis push du résultat fusionné.
+    // 3) puis push du résultat fusionné (le memo emporte les pierres avec lui).
     const blobs = {};
-    if (!session) blobs.memo = store;
+    if (!session) blobs.memo = Object.assign({}, store, { pierres: readLocalBlob(PIERRES_KEY) || {} });
     if (mergedLire) blobs.lire = mergedLire;
     if (mergedDefi) blobs.defi = mergedDefi;
     if (Object.keys(blobs).length) await GraineAPI.syncPut(blobs);
     syncCompletedCollections(); // la fusion peut révéler des collections complètes
+    if (window.GrainePierres) GrainePierres.verifier(); // la progression fusionnée peut mériter une pierre
     syncUi.status = 'ok';
     syncUi.lastAt = new Date().toISOString();
     saveSyncMeta();
@@ -1332,7 +1369,12 @@ function ensureFriends() {
   if (!window.GraineAPI || !GraineAPI.isLoggedIn() || friendsCache !== null || friendsLoading) return;
   friendsLoading = true;
   GraineAPI.friends()
-    .then(f => { friendsCache = Array.isArray(f) ? f : []; })
+    .then(f => {
+      friendsCache = Array.isArray(f) ? f : [];
+      // Au moins un ami relié (peut-être depuis un autre appareil) : la pierre
+      // « Deux valent mieux qu'un » peut se poser.
+      if (friendsCache.length > 0 && window.GrainePierres) { GrainePierres.drapeau('ami'); GrainePierres.verifier(); }
+    })
     .catch(() => { friendsCache = 'error'; })
     .then(() => { friendsLoading = false; renderIfIdle(); });
 }
@@ -1373,6 +1415,8 @@ async function doAddFriend() {
     friendNotice = `Vous voilà amis avec ${pseudo} 🌱`;
     if (Array.isArray(friendsCache) && r && r.friend) friendsCache.push(r.friend);
     else friendsCache = null; // on rechargera la liste
+    // Premier ami relié : la pierre « Deux valent mieux qu'un » se pose.
+    if (window.GrainePierres) { GrainePierres.drapeau('ami'); GrainePierres.verifier(); }
   } catch (e) {
     if (e && e.offline) friendError = 'Pas de connexion — réessaie quand tu seras en ligne.';
     else if (e && e.status === 404) friendError = 'Code inconnu — vérifie-le auprès de ton ami.';
@@ -1473,6 +1517,9 @@ function checkExercise() {
     }
     if (!session.done.includes(card.id)) session.done.push(card.id);
     saveStore();
+    // Une pierre du chemin vient-elle de se poser ? (verset planté, collection
+    // complétée, verset enraciné…) — léger : simple lecture des stores.
+    if (window.GrainePierres) GrainePierres.verifier();
     session.result = 'success'; session.phase = 'result'; render();
   } else {
     ex.errors++; ex.wrong = true; render();
@@ -1503,6 +1550,9 @@ function removeVerse(id) {
 (async function init() {
   el.innerHTML = '<p class="muted center" style="padding:40px">Chargement…</p>';
   markActiveDay(); // ouvrir l'appli compte comme un jour d'activité (une fois par jour)
+  // Les pierres déjà méritées (y compris par les modules Lire et Défi) se
+  // posent dès l'ouverture — jamais deux fois, la clé garde la mémoire.
+  if (window.GrainePierres) GrainePierres.verifier();
   await Promise.all([loadLibrary(), loadCollections()]);
   syncCompletedCollections();
   render();

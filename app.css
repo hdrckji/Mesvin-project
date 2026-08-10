@@ -520,3 +520,61 @@ a.verse-item { text-decoration: none; }
 .friend-row .fr-since { font-size: .82rem; }
 .friend-row .fr-x { background: none; border: 0; color: var(--ink-soft); cursor: pointer; font-size: 1.05rem; padding: 8px; }
 .fr-empty { margin: 12px 0 0; font-size: .9rem; }
+
+/* ============================================================================
+   Les pierres du chemin — badges-souvenirs (Josué 4.21), voir pierres.js
+   ========================================================================== */
+
+/* Bannière de célébration : sobre, une seule à la fois, disparaît d'elle-même. */
+.pierre-toast {
+  position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+  z-index: 60; width: min(440px, calc(100vw - 28px));
+  background: var(--surface); border: 1px solid var(--accent);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 14px 18px; cursor: pointer;
+  animation: pierre-pose .45s ease;
+}
+@keyframes pierre-pose {
+  from { opacity: 0; transform: translateX(-50%) translateY(-14px); }
+  to   { opacity: 1; transform: translateX(-50%); }
+}
+.pierre-toast.hide {
+  opacity: 0; transform: translateX(-50%) translateY(-8px);
+  transition: opacity .4s ease, transform .4s ease;
+}
+.pierre-toast .pt-kicker {
+  font-size: .76rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--accent-ink); margin-bottom: 8px;
+}
+.pierre-toast .pt-body { display: flex; align-items: center; gap: 12px; }
+.pierre-toast .pt-emoji {
+  font-size: 1.8rem; width: 46px; height: 46px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2); border-radius: 14px;
+}
+.pierre-toast .pt-txt { min-width: 0; }
+.pierre-toast .pt-nom { font-family: var(--serif); font-weight: 650; font-size: 1.08rem; color: var(--ink); }
+.pierre-toast .pt-phrase { color: var(--ink-soft); font-size: .88rem; line-height: 1.4; margin-top: 2px; }
+
+/* Médaillons de l'écran Moi : seulement les pierres reçues, jamais de grille grisée. */
+.pierres-quote {
+  text-align: center; font-family: var(--serif);
+  color: var(--ink-soft); font-size: .95rem; margin: 0 4px 12px;
+}
+.pierre-tile {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px; padding: 12px 14px; margin-bottom: 8px;
+}
+.pierre-tile .pi-emoji {
+  font-size: 1.5rem; width: 42px; height: 42px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2); border-radius: 12px;
+}
+.pierre-tile .pi-main { min-width: 0; flex: 1; }
+.pierre-tile .pi-nom { font-family: var(--serif); font-weight: 650; }
+.pierre-tile .pi-phrase { display: block; color: var(--ink-soft); font-size: .88rem; line-height: 1.4; }
+.pierre-tile .pi-date {
+  display: block; font-size: .74rem; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--accent-ink); margin-top: 4px;
+}

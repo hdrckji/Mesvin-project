@@ -231,6 +231,8 @@ function terminer() {
     store.jour = { date: dateISO(), score: vue.score, total: vue.items.length };
   }
   saveStore();
+  // Une pierre du chemin peut se poser (premier défi, sans-faute, 30 défis…).
+  if (window.GrainePierres) GrainePierres.verifier();
   vue.ecran = 'fin';
   render();
 }
@@ -367,6 +369,7 @@ function suivanteMulti() {
 function terminerMulti() {
   store.groupe.relevees++;
   saveStore();
+  if (window.GrainePierres) GrainePierres.verifier(); // au cas où une pierre attendait
   vue = { ecran: 'mfin' };
   render();
 }
@@ -566,6 +569,8 @@ async function envoyerDuel() {
     effacerBrouillon(duel.id);
     store.duelsAmis.relevees++;
     saveStore();
+    // Premier duel relevé : la pierre « Compagnon d'armes » peut se poser.
+    if (window.GrainePierres) GrainePierres.verifier();
     vue = { ecran: 'duelReview', duel: { opponent: duel.opponent, ...resultat, id: duel.id } };
     render();
   } catch (e) {
@@ -1451,6 +1456,17 @@ function vlQuitter(notice) {
   if (vue.ecran === 'veillee') render();
 }
 
+/* En mode animateur, quand l'état du quiz vient de passer à 'done' (mené
+   jusqu'au bout), la pierre « Assemblée réunie » se pose : drapeau + vérif.
+   Appel léger, et le drapeau ne se pose qu'une fois. */
+function vlPierreAnimateur(avant, etat) {
+  if (!window.GrainePierres) return;
+  if (vl && vl.mode === 'host' && etat && etat.statut === 'done' && (!avant || avant.statut !== 'done')) {
+    GrainePierres.drapeau('quizAnime');
+    GrainePierres.verifier();
+  }
+}
+
 /* ---------- Polling & décompte ---------- */
 function vlDemarrerPolling() {
   vlArreterPolling();
@@ -1484,6 +1500,7 @@ async function vlPoll() {
     vl.lastJson = j;
     vl.etat = etat;
     vl.remainingAt = Date.now();
+    vlPierreAnimateur(avant, etat); // quiz d'église mené jusqu'au bout ?
     if (change) render();
     else vlPatch();
     if (vl.mode === 'host') vlAutoReveal();
@@ -1525,11 +1542,13 @@ async function vlAvancer(action) {
   if (vl.busy) return;
   vl.busy = true;
   try {
+    const avant = vl.etat;
     const etat = await GraineAPI.veilleeAdvance(vl.code, action);
     vl.etat = etat;
     vl.lastJson = JSON.stringify(etat);
     vl.remainingAt = Date.now();
     vl.error = null;
+    vlPierreAnimateur(avant, etat); // quiz d'église mené jusqu'au bout ?
   } catch (e) {
     // 409 = transition déjà faite (bouton + auto en même temps) : sans gravité.
     if (!(e && e.status === 409)) vl.error = messageDoux(e);
