@@ -295,7 +295,7 @@ function tabbar() {
   const cur = ['memo', 'study', 'collections'].includes(route.name) ? 'home'
     : ['garden', 'verse', 'account'].includes(route.name) ? 'moi' : route.name;
   const tab = (n, ic, l) => `<button data-tab="${n}" class="${cur === n ? 'active' : ''}"><span class="ic">${ic}</span>${l}</button>`;
-  return `<nav class="tabbar">${tab('home', '🏠', 'Accueil')}${tab('moi', '🌱', 'Moi')}${tab('about', '☖', 'À propos')}</nav>`;
+  return `<nav class="tabbar">${tab('home', '🏠', 'Accueil')}${tab('moi', '👤', 'Moi')}${tab('about', '☖', 'À propos')}</nav>`;
 }
 
 /* ---------- Accueil : hub des trois modules ---------- */
@@ -306,16 +306,16 @@ function viewHome() {
     <h1 class="hero-name">Bible <span class="seed">Horizon</span></h1>
     <p class="hero-tag">Cache la Parole dans ton cœur, un peu chaque jour.</p></div>`;
 
-  // Sous-titre dynamique du module Mémoriser.
+  // Sous-titre dynamique du module Semer : la métaphore du jardin, explicite.
   let memoSub;
-  if (due.length > 0) memoSub = `${due.length} verset${due.length > 1 ? 's' : ''} à travailler aujourd'hui`;
-  else if (nextToLearn()) memoSub = `Apprendre un nouveau verset`;
-  else memoSub = `Rien d'urgent aujourd'hui`;
+  if (due.length > 0) memoSub = `${due.length} verset${due.length > 1 ? 's' : ''} à arroser aujourd'hui`;
+  else if (nextToLearn()) memoSub = `Apprends un verset par cœur, il grandira dans ton jardin`;
+  else memoSub = `Ton jardin se repose — reviens demain`;
 
   const hub = `
     <button class="card hub-card fade" data-tab="memo">
-      <span class="hub-ic">🧠</span>
-      <span class="hub-txt"><span class="hub-title">Mémoriser</span>
+      <span class="hub-ic">🌱</span>
+      <span class="hub-txt"><span class="hub-title">Semer</span>
         <span class="hub-sub">${memoSub}</span></span>
       <span class="chev">›</span></button>
     <a class="card hub-card fade" href="lire/">
@@ -341,8 +341,8 @@ function viewMemo() {
   const obj = activeColl();
 
   const head = `<button class="back-link" data-tab="home">‹ Accueil</button>
-    <h2 style="font-family:var(--serif);margin-bottom:2px">🧠 Mémoriser</h2>
-    <p class="muted" style="margin:0 2px 16px">Des versets appris pour de bon, vérifiés par l'appli, un peu chaque jour.</p>`;
+    <h2 style="font-family:var(--serif);margin-bottom:2px">🌱 Semer</h2>
+    <p class="muted" style="margin:0 2px 16px">Sème un verset dans ton cœur, arrose-le en le révisant — quand tu le sais par cœur, il s'enracine dans ton jardin.</p>`;
 
   // Carte « objectif » (ou invitation discrète), construite ici pour servir
   // aussi bien l'écran vierge que l'écran normal.
@@ -365,25 +365,25 @@ function viewMemo() {
         <div class="step"><span class="si">🌱</span><div><b>Réussi plusieurs fois</b>, chaque verset rejoint ton jardin — et revient avant que tu l'oublies.</div></div>
       </div>
       ${objectiveCard}
-      <button class="btn btn-primary" data-learn="1">Apprendre mes premiers versets</button>
+      <button class="btn btn-primary" data-learn="1">Semer mes premiers versets</button>
       ${obj ? '' : `<button class="linkbtn center" data-collections="1" style="display:block;margin:12px auto 0">🎯 Choisir un objectif (facultatif)</button>`}`;
   }
   let actions = '';
   if (due.length > 0) {
-    actions += `<div class="card action fade"><div class="action-txt"><b>Ta session du jour</b>
-      <span class="muted">${due.length} verset${due.length > 1 ? 's' : ''} à travailler.</span></div>
+    actions += `<div class="card action fade"><div class="action-txt"><b>Arroser mes versets</b>
+      <span class="muted">${due.length} verset${due.length > 1 ? 's' : ''} à revoir pour bien ${due.length > 1 ? 'les' : 'l\''} enraciner.</span></div>
       <button class="btn btn-primary" data-review="1">Commencer</button></div>`;
   }
   if (nextToLearn()) {
-    actions += `<div class="card action fade"><div class="action-txt"><b>Apprendre de nouveaux versets</b>
+    actions += `<div class="card action fade"><div class="action-txt"><b>Semer de nouveaux versets</b>
       <span class="muted">${obj ? `Les versets de « ${esc(obj.name)} » qui restent à découvrir.` : `L'appli t'en propose quelques-uns.`}</span></div>
-      <button class="btn btn-grow" data-learn="1">Apprendre</button></div>`;
+      <button class="btn btn-grow" data-learn="1">Semer</button></div>`;
   } else if (obj) {
     actions += `<p class="muted center fade" style="margin:6px 4px 10px">Tous les versets de « ${esc(obj.name)} » sont en route — continue tes sessions 🌱</p>`;
   } else if (due.length === 0) {
     actions += `<div class="card fade"><p class="center" style="margin:0">🎉 Tu as mémorisé tous les versets proposés !</p></div>`;
   }
-  if (due.length === 0) actions += `<p class="muted center" style="margin:6px 4px 0">Rien à travailler aujourd'hui 🌱</p>`;
+  if (due.length === 0) actions += `<p class="muted center" style="margin:6px 4px 0">Rien à arroser aujourd'hui — ton jardin pousse tout seul 🌱</p>`;
 
   // Objectif (collection choisie) — ou invitation discrète à en choisir un.
   const objective = objectiveCard || `<button class="verse-item objective-link fade" data-collections="1">
@@ -424,7 +424,7 @@ function viewCollections() {
   const clear = store.activeCollection
     ? `<button class="btn btn-ghost btn-block" data-clearcoll="1" style="margin-top:18px">Revenir au parcours général</button>`
     : '';
-  return `<div class="fade"><button class="back-link" data-tab="memo">‹ Mémoriser</button>
+  return `<div class="fade"><button class="back-link" data-tab="memo">‹ Semer</button>
     <h2 style="font-family:var(--serif);margin-bottom:2px">Collections</h2>
     <p class="muted" style="margin:0 2px 16px">Choisis un objectif : le bouton « Apprendre » te servira alors les versets de cette collection. C'est facultatif — sans objectif, le parcours général continue.</p>
     <div class="section-title">Par thème</div>${themes || '<p class="muted">Aucune collection disponible.</p>'}
@@ -473,7 +473,7 @@ function viewStudy() {
       <div class="ref">${esc(v.ref)} <span class="version">· ${esc(LIB_VERSION)}</span></div>
       ${v.contexte ? `<div class="context-box">${esc(v.contexte)}</div>` : ''}
     </div>`).join('');
-  return `<div class="fade"><button class="back-link" data-tab="memo">‹ Mémoriser</button>
+  return `<div class="fade"><button class="back-link" data-tab="memo">‹ Semer</button>
     <h2 style="font-family:var(--serif);margin-bottom:2px">Page d'étude</h2>
     <p class="muted" style="margin:0 2px 14px">${obj ? `Les versets de « ${esc(obj.name)} » — ${n} verset${n > 1 ? 's' : ''}.` : `Tes ${n} prochains versets du parcours.`}</p>
     <div class="study-note fade">Prends le temps de lire et de t'imprégner de ces versets. Quand tu te sens prêt, l'épreuve commence.</div>

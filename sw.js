@@ -3,7 +3,7 @@
    (pratique pendant qu'on fait évoluer l'appli) ; hors-ligne, on retombe sur le
    cache. On pré-cache la coquille pour un premier lancement hors-ligne possible. */
 
-const CACHE = 'graine-v9';
+const CACHE = 'graine-v10';
 const ASSETS = [
   '.', 'index.html', 'app.css', 'app.js', 'api-client.js',
   'data/verses.json', 'data/collections.json', 'icon.svg', 'manifest.webmanifest',
