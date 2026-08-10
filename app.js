@@ -326,7 +326,7 @@ function viewHome() {
     <a class="card hub-card fade" href="defi/">
       <span class="hub-ic">🕯️</span>
       <span class="hub-txt"><span class="hub-title">Sonder</span>
-        <span class="hub-sub">Des questions pour tester ta connaissance de la Bible</span></span>
+        <span class="hub-sub">Des questions pour tester ta connaissance de la Bible, seul ou entre amis</span></span>
       <span class="chev">›</span></a>`;
 
   const foot = total === 0
