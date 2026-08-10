@@ -337,7 +337,7 @@ function viewHome() {
 
   const hero = `<div class="card hero compact fade"><div class="hero-emblem"><img src="icon.svg" alt="" /></div>
     <h1 class="hero-name">Bible <span class="seed">Horizon</span></h1>
-    <p class="hero-tag">Cache la Parole dans ton cœur, un peu chaque jour.</p></div>`;
+    <p class="hero-tag">Fais grandir la Parole dans ton cœur, un peu chaque jour.</p></div>`;
 
   // Sous-titre dynamique du module Semer : la métaphore du jardin, explicite.
   let memoSub;
@@ -782,7 +782,7 @@ function viewAbout() {
     <div class="section-title">Nos principes</div>
     <div class="card">
       <p>🕊️ <b>Gratuit, pour toujours.</b> Aucune fonction payante, aucune publicité.</p>
-      <p>🔒 <b>Rien ne quitte ton appareil.</b> Ta progression reste chez toi ; l'appli fonctionne hors-ligne.</p>
+      <p>🔒 <b>Vie privée d'abord.</b> Tout fonctionne hors-ligne, sans compte. Le compte est facultatif (e-mail + pseudo, rien d'autre) et se supprime en un geste.</p>
       <p>🌱 <b>Encourager, pas culpabiliser.</b> Pas de « retard », pas de reproche.</p>
       <p>📖 <b>Respect du texte.</b> Versets ${esc(LIB_VERSION)} (domaine public).</p></div>
     <p class="muted center" style="margin-top:20px">« La semence, c'est la parole de Dieu. » — Luc 8.11</p>
