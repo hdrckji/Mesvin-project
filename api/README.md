@@ -105,7 +105,7 @@ variable retire le rôle.
 Ouvrir `https://<mon-domaine>/api/health` :
 
 ```json
-{ "ok": true, "db": "mysql", "mail": "brevo" }
+{ "ok": true }  // le détail (db, mail…) s'affiche si on est connecté en admin
 ```
 
 - `db` : `"mysql"` en production (`"sqlite"` = `MYSQL_URL` absente) ;

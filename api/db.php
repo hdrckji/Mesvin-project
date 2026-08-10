@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM quiz_questions LIMIT 1');
+        $pdo->query('SELECT 1 FROM admin_log LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -177,6 +177,23 @@ function db_migrate(PDO $pdo): void {
                 actif TINYINT NOT NULL DEFAULT 1,
                 updated_at DATETIME NOT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Compteurs anti-abus par IP (ex. demandes de code de connexion).
+            'CREATE TABLE IF NOT EXISTS throttle (
+                bucket VARCHAR(120) NOT NULL PRIMARY KEY,
+                n INT NOT NULL DEFAULT 1,
+                created_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Journal des actions d'administration (qui / quoi / quand).
+            'CREATE TABLE IF NOT EXISTS admin_log (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                admin_id INT UNSIGNED NOT NULL,
+                admin_email VARCHAR(255) NOT NULL,
+                action VARCHAR(40) NOT NULL,
+                cible VARCHAR(190) NOT NULL,
+                created_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
         ];
     } else {
         $ddl = [
@@ -284,6 +301,23 @@ function db_migrate(PDO $pdo): void {
                 reference TEXT NOT NULL,
                 actif INTEGER NOT NULL DEFAULT 1,
                 updated_at TEXT NOT NULL
+            )',
+
+            // Compteurs anti-abus par IP (ex. demandes de code de connexion).
+            'CREATE TABLE IF NOT EXISTS throttle (
+                bucket TEXT NOT NULL PRIMARY KEY,
+                n INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL
+            )',
+
+            // Journal des actions d'administration (qui / quoi / quand).
+            'CREATE TABLE IF NOT EXISTS admin_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                admin_id INTEGER NOT NULL,
+                admin_email TEXT NOT NULL,
+                action TEXT NOT NULL,
+                cible TEXT NOT NULL,
+                created_at TEXT NOT NULL
             )',
         ];
     }

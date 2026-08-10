@@ -777,8 +777,10 @@ function viewVerse(id) {
 }
 function viewAbout() {
   return topbar() + `<h2 style="font-family:var(--serif)">À propos</h2>
-    <div class="card"><p><b>Bible Horizon</b> t'aide à faire grandir la Parole dans ton cœur, un peu chaque jour.</p>
-      <p class="muted">Tu reconstitues chaque verset sur l'écran ; l'appli vérifie. Réussi plusieurs fois sur plusieurs jours, il rejoint ton jardin, puis revient juste avant que tu l'oublies.</p></div>
+    <div class="card"><p><b>Bible Horizon</b> t'aide à faire grandir la Parole dans ton cœur, un peu chaque jour — trois chemins qui se complètent :</p>
+      <p>🌱 <b>Semer.</b> Mémorise des versets pas à pas ; l'appli vérifie, puis les fait revenir juste avant que tu ne les oublies. Ton jardin garde la trace de chaque verset planté.</p>
+      <p>📖 <b>Marcher.</b> Un plan de lecture « chemin, pas calendrier » : un évangile, un testament ou toute la Bible — à ton rythme, jamais de retard, jamais de culpabilité.</p>
+      <p>🕯️ <b>Sonder.</b> Des questions sur les récits bibliques : seul, à plusieurs sur un appareil, en duel avec un ami, ou en veillée sur grand écran. Chaque réponse ramène vers le texte.</p></div>
     <div class="section-title">Nos principes</div>
     <div class="card">
       <p>🕊️ <b>Gratuit, pour toujours.</b> Aucune fonction payante, aucune publicité.</p>

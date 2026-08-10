@@ -37,24 +37,22 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $path = rtrim($path, '/');
 
-/* ---- GET /api/health : état de la base et du courrier ---------------------- */
+/* ---- GET /api/health : état du service ---------------------------------------
+   Public mais DISCRET : les anonymes ne voient que ok true/false ; le détail
+   (pilote de base, mode e-mail, dernière erreur d'envoi…) est réservé aux
+   admins — il renseignerait inutilement un curieux sur notre infrastructure.
+   Le diagnostic complet des pannes reste dans les logs Railway. */
 if ($path === '/api/health' && $method === 'GET') {
-    $mysqlUrl = getenv('MYSQL_URL');
-    $attempted = ($mysqlUrl !== false && $mysqlUrl !== '') ? 'mysql' : 'sqlite';
     try {
         $pdo = db();
         $pdo->query('SELECT 1');
     } catch (Throwable $e) {
         error_log('API health : base injoignable — ' . $e->getMessage());
-        // Diagnostic sans secret : pilote tenté + nature de l'erreur (les
-        // messages PDO ne contiennent pas le mot de passe ; coupé à 160
-        // caractères par prudence). Réservé à cette route de contrôle.
-        json_out([
-            'ok'    => false,
-            'error' => 'Base de données injoignable.',
-            'db'    => $attempted,
-            'hint'  => mb_substr($e->getMessage(), 0, 160),
-        ], 500);
+        json_out(['ok' => false, 'error' => 'Base de données injoignable.'], 500);
+    }
+    $user = optional_user($pdo);
+    if ($user === null || !is_admin($user)) {
+        json_out(['ok' => true]);
     }
     json_out([
         'ok'   => true,
@@ -114,6 +112,7 @@ if ($path === '/api/questions' && $method === 'GET') handle_questions_get($pdo);
 
 /* ---- Administration (ADMIN_EMAILS seulement) ----------------------------------- */
 if ($path === '/api/admin/users' && $method === 'GET') handle_admin_users($pdo);
+if ($path === '/api/admin/log'   && $method === 'GET') handle_admin_log_get($pdo);
 if (preg_match('#^/api/admin/users/([0-9]+)$#', $path, $m) && $method === 'DELETE') {
     handle_admin_user_delete($pdo, (int) $m[1]);
 }

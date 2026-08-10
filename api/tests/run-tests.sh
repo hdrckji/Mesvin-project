@@ -62,11 +62,10 @@ check "serveur de test démarré" oui "$UP"
 [ "$UP" = oui ] || { echo "Journal du serveur :"; cat "$TMP/server.log"; exit 1; }
 
 # ---------------------------------------------------------------------------
-say "Santé"
+say "Santé (anonyme : réponse minimale, le détail est réservé aux admins)"
 check "GET /api/health → 200"           200     "$(api GET /api/health)"
 check "health : ok"                     true    "$(jval .ok)"
-check "health : base sqlite (repli)"    sqlite  "$(jval .db)"
-check "health : mail en mode dev"       dev     "$(jval .mail)"
+check "health anonyme : pas de détail"  null    "$(jval .db)"
 
 say "Statique toujours servi à l'identique"
 check "GET / → 200"                     200 "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/")"
@@ -391,6 +390,25 @@ check "pseudo conservé"                 Alice "$(api GET /api/me "$TOKEN1B" > /
 check "plus d'amis"                     0 "$(api GET /api/friends "$TOKEN1B" > /dev/null; jval '.friends | length')"
 check "plus de duels"                   0 "$(api GET /api/duels "$TOKEN1B" > /dev/null; jval '.duels | length')"
 check "la synchro de u1 est intacte"    3 "$(api GET /api/sync "$TOKEN1B" > /dev/null; jval .memo.streak)"
+
+# ---------------------------------------------------------------------------
+say "Santé détaillée et journal (admin seulement)"
+check "health admin : db sqlite"        sqlite "$(api GET /api/health "$TOKEN1B" > /dev/null; jval .db)"
+check "health admin : mail dev"         dev    "$(jval .mail)"
+check "journal sans token → 401"        401    "$(api GET /api/admin/log)"
+check "journal admin → 200"             200    "$(api GET /api/admin/log "$TOKEN1B")"
+check "au moins une action tracée"      true   "$(jval '.log | length > 0')"
+check "les actions portent leur auteur" true   "$(jval '[.log[] | has("admin") and has("action") and has("cible")] | all')"
+
+# ---------------------------------------------------------------------------
+say "Plafond par IP sur les demandes de code (30/heure)"
+LAST=000
+for i in $(seq 1 40); do
+  LAST="$(api POST /api/auth/request-code '' "{\"email\":\"spam$i@example.org\"}")"
+  [ "$LAST" = 429 ] && break
+done
+check "la rafale finit par un 429"      429 "$LAST"
+check "message doux sur le réseau"      "Trop de demandes depuis ce réseau — réessaie dans une heure." "$(jval .error)"
 
 # ---------------------------------------------------------------------------
 say "Divers"

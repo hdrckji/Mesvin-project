@@ -15,6 +15,18 @@
 - Le local reste la base : l'appli fonctionne sans compte ; le serveur ne fait
   que synchroniser et relier.
 
+## Santé & anti-abus
+
+- `GET /api/health` : `{ "ok": true }` pour tout le monde ; le **détail**
+  (pilote de base, mode e-mail, dernière erreur d'envoi, drapeau demo) n'est
+  renvoyé qu'aux **admins** authentifiés. En panne de base : `{ "ok": false }`.
+- `POST /api/auth/request-code` est plafonné **par e-mail** (3/heure) ET
+  **par adresse IP** (30/heure, table `throttle`) → 429 au-delà.
+- Chaque action d'administration est tracée (table `admin_log`) et
+  consultable via `GET /api/admin/log` (admins, 100 dernières entrées).
+- Les en-têtes de sécurité (CSP, nosniff, frame-ancestors, HSTS…) sont posés
+  par le Caddyfile sur toutes les réponses.
+
 ## Authentification
 
 ### POST /api/auth/request-code
@@ -203,7 +215,7 @@ Retire la surcharge : la version du fichier redevient active (annule une
 - PHP 8 + PDO. `MYSQL_URL` (Railway) ; **repli SQLite** (`api/data/dev.sqlite`)
   si absent → tests locaux possibles avec `php -S`.
 - Migrations auto au premier appel (CREATE TABLE IF NOT EXISTS).
-- Tables : `users`, `login_codes`, `sessions`, `sync_blobs`, `friendships`,
+- Tables : `users`, `login_codes`, `sessions`, `sync_blobs`, `friendships`, `throttle`, `admin_log`,
   `duels`, `veillees`, `veillee_players`, `veillee_answers`, `quiz_questions`.
 - Rôle admin : `ADMIN_EMAILS` (adresses séparées par des virgules, casse
   ignorée) — pas de colonne en base, le rôle se retire en éditant la variable.

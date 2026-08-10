@@ -27,6 +27,8 @@ const SESSION_LIFETIME_SECONDS = 90 * 86400;  // ~90 jours
 
 /** Ouvre une session (~90 jours) pour cet utilisateur et retourne le token. */
 function open_session(PDO $pdo, array $user): string {
+    // Ménage opportuniste : les sessions expirées ne servent plus à rien.
+    $pdo->prepare('DELETE FROM sessions WHERE expires_at < ?')->execute([now_sql()]);
     $token = bin2hex(random_bytes(32));
     $st = $pdo->prepare(
         'INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)'
@@ -48,6 +50,12 @@ function auth_read_email(array $body): string {
 
 function handle_auth_request_code(PDO $pdo): never {
     $email = auth_read_email(read_json_body());
+
+    // Plafond PAR IP en plus de la limite par e-mail : sans lui, on pourrait
+    // faire envoyer des codes à des centaines d'adresses différentes (spam
+    // via notre expéditeur, réputation du domaine en jeu). 30/heure laisse
+    // de la marge à un groupe entier derrière la même connexion.
+    throttle_or_429($pdo, 'code', 30);
 
     // Ménage : les codes de plus de 2 h ne servent plus à rien
     // (ni à se connecter, ni à compter dans la limite horaire).

@@ -109,6 +109,73 @@ function is_admin(array $user): bool {
     return in_array(strtolower((string) ($user['email'] ?? '')), $admins, true);
 }
 
+/**
+ * L'utilisateur connecté si un token valable est présent, sinon null —
+ * contrairement à require_user, ne répond jamais 401 (routes publiques qui
+ * en disent simplement plus aux personnes identifiées, ex. /api/health).
+ */
+function optional_user(PDO $pdo): ?array {
+    $token = bearer_token();
+    if ($token === null) {
+        return null;
+    }
+    $st = $pdo->prepare(
+        'SELECT u.* FROM sessions s
+         JOIN users u ON u.id = s.user_id
+         WHERE s.token = ? AND s.expires_at > ?'
+    );
+    $st->execute([$token, now_sql()]);
+    $user = $st->fetch();
+    return $user === false ? null : $user;
+}
+
+/**
+ * Adresse IP du client. Derrière le proxy de Railway, REMOTE_ADDR est celle
+ * du proxy : on lit d'abord X-Forwarded-For (première adresse de la chaîne).
+ * Sert uniquement aux plafonds anti-abus — jamais à l'authentification.
+ */
+function client_ip(): string {
+    $xff = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+    if ($xff !== '') {
+        $first = trim(explode(',', $xff)[0]);
+        if ($first !== '') {
+            return substr($first, 0, 45);
+        }
+    }
+    return substr((string) ($_SERVER['REMOTE_ADDR'] ?? 'inconnue'), 0, 45);
+}
+
+/**
+ * Plafond horaire par IP : au-delà de $maxPerHour appels pour ce $scope
+ * dans l'heure en cours → 429. Compteurs en base (table throttle), balayés
+ * au passage quand ils ont plus de deux heures.
+ */
+function throttle_or_429(PDO $pdo, string $scope, int $maxPerHour): void {
+    $pdo->prepare('DELETE FROM throttle WHERE created_at < ?')->execute([now_sql_plus(-7200)]);
+
+    $bucket = $scope . '|' . client_ip() . '|' . gmdate('YmdH');
+    $st = $pdo->prepare('SELECT n FROM throttle WHERE bucket = ?');
+    $st->execute([$bucket]);
+    $row = $st->fetch();
+    if ($row === false) {
+        $pdo->prepare('INSERT INTO throttle (bucket, n, created_at) VALUES (?, 1, ?)')
+            ->execute([$bucket, now_sql()]);
+        return;
+    }
+    if ((int) $row['n'] >= $maxPerHour) {
+        json_error('Trop de demandes depuis ce réseau — réessaie dans une heure.', 429);
+    }
+    $pdo->prepare('UPDATE throttle SET n = n + 1 WHERE bucket = ?')->execute([$bucket]);
+}
+
+/** Trace une action d'administration (journal consultable via /api/admin/log). */
+function admin_log(PDO $pdo, array $admin, string $action, string $cible): void {
+    $st = $pdo->prepare(
+        'INSERT INTO admin_log (admin_id, admin_email, action, cible, created_at) VALUES (?, ?, ?, ?, ?)'
+    );
+    $st->execute([(int) $admin['id'], $admin['email'], $action, mb_substr($cible, 0, 190), now_sql()]);
+}
+
 /** Représentation publique d'un utilisateur (jamais l'id interne). */
 function user_payload(array $user): array {
     return [

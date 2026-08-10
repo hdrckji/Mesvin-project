@@ -128,13 +128,14 @@ function handle_admin_user_delete(PDO $pdo, int $id): never {
         json_error('Compte introuvable.', 404);
     }
     delete_user_completely($pdo, $user);
+    admin_log($pdo, $admin, 'compte.suppression', $user['email'] . ' (' . $user['pseudo'] . ')');
     json_out(['ok' => true]);
 }
 
 /* ---- POST /api/admin/questions — créer ou modifier une question --------------- */
 
 function handle_admin_question_save(PDO $pdo): never {
-    require_admin($pdo);
+    $admin = require_admin($pdo);
     $body = read_json_body();
     $bank = quiz_file_bank();
 
@@ -205,6 +206,7 @@ function handle_admin_question_save(PDO $pdo): never {
             json_encode($clean, JSON_UNESCAPED_UNICODE), $bonne, $reference, now_sql()]);
     }
 
+    admin_log($pdo, $admin, 'question.enregistrement', $id . ' — ' . $question);
     json_out(['question' => [
         'id'        => $id,
         'categorie' => $categorie,
@@ -219,7 +221,7 @@ function handle_admin_question_save(PDO $pdo): never {
 /* ---- DELETE /api/admin/questions/{id} — désactiver ou supprimer --------------- */
 
 function handle_admin_question_delete(PDO $pdo, string $id): never {
-    require_admin($pdo);
+    $admin = require_admin($pdo);
     $st = $pdo->prepare('SELECT * FROM quiz_questions WHERE id = ?');
     $st->execute([$id]);
     $row = $st->fetch();
@@ -255,13 +257,14 @@ function handle_admin_question_delete(PDO $pdo, string $id): never {
         // Ajout (adm-…) : la ligne disparaît pour de bon.
         $pdo->prepare('DELETE FROM quiz_questions WHERE id = ?')->execute([$id]);
     }
+    admin_log($pdo, $admin, $fileQ !== null ? 'question.desactivation' : 'question.suppression', $id);
     json_out(['ok' => true]);
 }
 
 /* ---- POST /api/admin/questions/{id}/restore — retirer la surcharge ------------ */
 
 function handle_admin_question_restore(PDO $pdo, string $id): never {
-    require_admin($pdo);
+    $admin = require_admin($pdo);
     $st = $pdo->prepare('SELECT 1 FROM quiz_questions WHERE id = ?');
     $st->execute([$id]);
     if ($st->fetch() === false
@@ -269,5 +272,23 @@ function handle_admin_question_restore(PDO $pdo, string $id): never {
         json_error('Aucune surcharge à retirer pour cette question.', 404);
     }
     $pdo->prepare('DELETE FROM quiz_questions WHERE id = ?')->execute([$id]);
+    admin_log($pdo, $admin, 'question.retablissement', $id);
     json_out(['ok' => true]);
+}
+
+/* ---- GET /api/admin/log — journal des actions d'administration ----------------- */
+
+function handle_admin_log_get(PDO $pdo): never {
+    require_admin($pdo);
+    $st = $pdo->query('SELECT * FROM admin_log ORDER BY id DESC LIMIT 100');
+    $entries = [];
+    foreach ($st->fetchAll() as $row) {
+        $entries[] = [
+            'admin'     => $row['admin_email'],
+            'action'    => $row['action'],
+            'cible'     => $row['cible'],
+            'createdAt' => sql_to_iso($row['created_at']),
+        ];
+    }
+    json_out(['log' => $entries]);
 }
