@@ -25,7 +25,7 @@ Trois modules, un même socle (design, hors-ligne, rien ne quitte l'appareil) :
 Plan de lecture **« chemin, pas calendrier »** : aucune date, aucun « retard » possible.
 On avance quand on lit ; le chemin attend, simplement. Deux chemins pour commencer :
 l'Évangile de **Marc** (16 ch.) et l'Évangile de **Jean** (21 ch.), texte Segond 1910 intégré.
-Estimation douce et facultative de l'horizon (« à raison de 10 min par jour… »),
+Estimation douce et facultative de l'horizon (« à raison de 15 min par jour… »),
 célébration sobre en fin de livre.
 
 ### 🕯️ Défi (`defi/`)

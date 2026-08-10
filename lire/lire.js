@@ -245,7 +245,9 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
                                                    // partagée entre les chemins
      plans: [ { id, nom, objectif, seq: [livreId…], minutes } ]
    }
-   `minutes` : 5/10/15, ou 0 = « avancer sans estimation », par chemin.
+   `minutes` : 5/15/30, ou 0 = « avancer sans estimation », par chemin.
+   (Un « 10 min » enregistré du temps des anciens choix 5/10/15 est rapproché
+   de 15 au chargement — rien d'autre ne bouge, l'estimation reste juste.)
 
    Ancien format (v1) : { active: 'marc'|'jean'|null, minutes, plans: { marc:
    { read: [...] }, jean: { read: [...] } } } → les tableaux `read` deviennent
@@ -254,12 +256,17 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 function freshStore() { return { v: 2, active: null, books: {}, plans: [] }; }
 const genId = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
+/* Les rythmes proposés sont passés de 5/10/15 à 5/15/30 : un « 10 min »
+   choisi autrefois est rapproché de 15 — sans reproche, sans rien perdre. */
+function normMinutes(m) { return m === 10 ? 15 : m; }
+
 function migrate(raw) {
   if (!raw || typeof raw !== 'object') return freshStore();
   if (raw.v === 2) {
     // hygiène minimale
     if (!raw.books || typeof raw.books !== 'object') raw.books = {};
     if (!Array.isArray(raw.plans)) raw.plans = [];
+    raw.plans.forEach(p => { if (p) p.minutes = normMinutes(p.minutes); });
     return raw;
   }
   // ---- ancien format ----
@@ -274,7 +281,7 @@ function migrate(raw) {
     const plan = {
       id: genId(), nom: titreLivre(raw.active), objectif: null,
       seq: [raw.active],
-      minutes: (typeof raw.minutes === 'number') ? raw.minutes : null
+      minutes: (typeof raw.minutes === 'number') ? normMinutes(raw.minutes) : null
     };
     s.plans.push(plan);
     s.active = plan.id;
@@ -437,6 +444,7 @@ function viewCfgWhere() {
     <h2 class="cfg-q fade">Où veux-tu marcher ?</h2>
     ${opt('NT', '✝️ Le Nouveau Testament', "La vie de Jésus, la naissance de l'Église, les lettres de Paul.")}
     ${opt('AT', "📜 L'Ancien Testament", 'Les origines, la grande libération, les psaumes, la sagesse.')}
+    ${opt('BIBLE', '📚 Toute la Bible', "Les 66 livres, de la Genèse à l'Apocalypse — 1&nbsp;189 chapitres, un pas à la fois.")}
     ${opt('LIVRE', '📖 Un livre précis', 'Tu sais déjà lequel — choisis-le dans la liste.')}
     ${first
       ? `<p class="muted center" style="font-size:.85rem;margin-top:10px">Texte : Louis Segond 1910 · rien ne quitte ton téléphone</p>`
@@ -472,7 +480,7 @@ function viewCfgTime() {
     <h2 class="cfg-q fade">Combien de temps peux-tu donner par jour ?</h2>
     <div class="card fade">
       <p class="muted" style="margin:0 0 14px">Cela sert seulement à te donner une idée de l'horizon — <b>jamais</b> à te mettre en retard. Rien ne t'y oblige.</p>
-      <div class="pill-row" style="justify-content:center">${pill(5)}${pill(10)}${pill(15)}</div>
+      <div class="pill-row" style="justify-content:center">${pill(5)}${pill(15)}${pill(30)}</div>
       <button class="btn btn-ghost btn-block" data-min="0" style="margin-top:14px">Je préfère avancer sans estimation</button>
     </div>
     <button class="linklike" data-cfg-back="${draft.zone === 'LIVRE' ? 'cfgBook' : 'cfgWhere'}">‹ Revenir en arrière</button>`;
@@ -487,6 +495,9 @@ function goalsFor(draft) {
       pourquoi: esc(b.contexte)
     }];
   }
+  /* « Toute la Bible » choisie dès le premier écran : l'objectif est déjà
+     tout trouvé — même mécanisme que les autres chemins, une seule carte. */
+  if (draft.zone === 'BIBLE') return OBJECTIFS.filter(o => o.zone === '*');
   /* « Toute la Bible » (zone '*') est proposée quel que soit le choix AT/NT,
      mise en avant en tête de liste. */
   return OBJECTIFS.filter(o => o.zone === '*')
