@@ -113,6 +113,14 @@
     /* ---- questions du Défi (banque fusionnée, publique) ---- */
     async questions() { return call('GET', '/api/questions'); },
 
+    /* ---- notifications « le verset offert » (compte facultatif) ---- */
+    // La clé publique VAPID, générée par le serveur au premier appel.
+    async pushKey() { return call('GET', '/api/push/cle'); },
+    // subscription : le PushSubscription.toJSON() du navigateur ;
+    // heure : 0-23 ; tz : new Date().getTimezoneOffset() (minutes).
+    async pushSubscribe(subscription, heure, tz) { return call('POST', '/api/push/subscribe', { subscription, heure, tz }); },
+    async pushUnsubscribe(endpoint) { return call('POST', '/api/push/unsubscribe', { endpoint }); },
+
     /* ---- administration (adresses listées dans ADMIN_EMAILS) ---- */
     async adminUsers() { return (await call('GET', '/api/admin/users')).users; },
     async adminDeleteUser(id) { return call('DELETE', '/api/admin/users/' + id); },

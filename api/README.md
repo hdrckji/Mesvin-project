@@ -17,9 +17,11 @@ Le contrat complet des routes est dans [`../API-CONTRAT.md`](../API-CONTRAT.md).
   automatique sur SQLite (`api/data/dev.sqlite`) pour les tests locaux.
   Les tables sont créées automatiquement au premier appel.
 - **Fichiers** : `index.php` (routage) → `auth.php`, `sync.php`, `friends.php`,
-  `groupes.php`, `duels.php`, `veillees.php`, `admin.php` (les routes), avec `db.php`
-  (connexion + migrations), `mail.php` (envoi des codes), `helpers.php`
-  (fonctions partagées).
+  `groupes.php`, `duels.php`, `veillees.php`, `admin.php`, `push.php` (les routes),
+  avec `db.php` (connexion + migrations), `mail.php` (envoi des codes),
+  `helpers.php` (fonctions partagées). `push.php` embarque la crypto Web Push
+  complète (RFC 8291 + VAPID RFC 8292) en PHP pur — validée à l'octet près
+  contre l'annexe A du RFC 8291 par `tests/push-crypto-test.php`.
 
 ## Installation sur Railway
 
@@ -102,7 +104,40 @@ et tout le monde (Défi, duels, veillées) tire dans la banque fusionnée servie
 par `GET /api/questions`. Pas de colonne en base : retirer une adresse de la
 variable retire le rôle.
 
-### 5. Vérifier que tout marche
+### 5. Le cron des notifications (« le verset offert »)
+
+Les notifications push quotidiennes n'exigent **aucune variable** : les clés
+VAPID et la clé secrète du cron sont générées automatiquement au premier
+besoin et rangées en base (table `vapid`). Il ne reste qu'à faire appeler
+cette URL **une fois par heure** (c'est elle qui repère, à chaque passage,
+les abonnés dont c'est l'heure locale) :
+
+```
+https://<mon-domaine>/api/cron/notify?key=<CRON_KEY>
+```
+
+**Où trouver la clé ?** Se connecter dans l'appli avec un compte admin, puis
+ouvrir `https://<mon-domaine>/api/health` : le bloc `push` contient
+`cronKey` et surtout `cronUrl`, l'URL complète prête à copier.
+
+**Comment l'appeler toutes les heures ?** Deux options :
+
+- **Service cron dans Railway** : dans le projet, **+ New → Empty Service**,
+  y définir un *Cron Schedule* `0 * * * *` (Settings → Cron Schedule) et une
+  image minimale qui lance :
+  `curl -fsS "https://<mon-domaine>/api/cron/notify?key=<CRON_KEY>"`
+  (par exemple l'image `curlimages/curl` avec cette commande en Start Command).
+- **Pinger externe** (le plus simple) : un compte gratuit chez
+  [cron-job.org](https://cron-job.org) (ou UptimeRobot et semblables), une
+  tâche « toutes les heures » sur l'URL ci-dessus. Rien à déployer.
+
+La route est **idempotente** (chaque abonné reçoit au plus un verset par jour,
+dans son fuseau — le jour est marqué avant l'envoi) : un appel en double ou
+un cron trop zélé ne spamme personne. Clé fausse → 403. La réponse
+`{ "ok": true, "envoyes": n, "supprimes": m }` compte les versets offerts et
+les abonnements morts retirés (404/410 du service push, ou 5 échecs de suite).
+
+### 6. Vérifier que tout marche
 
 Ouvrir `https://<mon-domaine>/api/health` :
 

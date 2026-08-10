@@ -26,6 +26,7 @@ require __DIR__ . '/groupes.php';
 require __DIR__ . '/duels.php';
 require __DIR__ . '/veillees.php';
 require __DIR__ . '/admin.php';
+require __DIR__ . '/push.php';
 
 set_exception_handler(function (Throwable $e): void {
     error_log(sprintf('API : %s — %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
@@ -55,6 +56,11 @@ if ($path === '/api/health' && $method === 'GET') {
     if ($user === null || !is_admin($user)) {
         json_out(['ok' => true]);
     }
+    // Notifications push : la clé du cron est générée ici au premier regard
+    // d'un admin (avec les clés VAPID), et l'URL à copier dans le service de
+    // cron est servie toute prête — voir api/README.md, section cron.
+    $pushCfg = push_config($pdo, true);
+    $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
     json_out([
         'ok'   => true,
         'db'   => db_driver($pdo),
@@ -68,12 +74,27 @@ if ($path === '/api/health' && $method === 'GET') {
         // Diagnostic de déploiement : la page de démonstration de l'image de
         // base est-elle encore présente à la racine web ? (doit être false)
         'demo' => file_exists(dirname(__DIR__) . '/index.php'),
+        'push' => [
+            'abonnements' => (int) $pdo->query('SELECT COUNT(*) FROM push_abonnements')->fetchColumn(),
+            'cronKey'     => $pushCfg === null ? null : $pushCfg['cron_key'],
+            'cronUrl'     => $pushCfg === null ? null
+                : 'https://' . $host . '/api/cron/notify?key=' . $pushCfg['cron_key'],
+        ],
     ]);
 }
 
-/* ---- GET /api/config : configuration publique (sans base de données) -------- */
+/* ---- GET /api/config : configuration publique -------------------------------- */
 if ($path === '/api/config' && $method === 'GET') {
-    json_out(['googleClientId' => google_client_id()]);
+    // vapidPublicKey : null tant que personne n'a activé les notifications
+    // (la clé naît à la première activation, via GET /api/push/cle). La config
+    // reste utile même en panne de base : la clé retombe alors sur null.
+    $vapidPublicKey = null;
+    try {
+        $vapidPublicKey = push_public_key(db());
+    } catch (Throwable $e) {
+        // Base indisponible : le reste de la configuration se sert quand même.
+    }
+    json_out(['googleClientId' => google_client_id(), 'vapidPublicKey' => $vapidPublicKey]);
 }
 
 $pdo = db();
@@ -125,6 +146,12 @@ if (preg_match('#^/api/duels/([0-9]+)/result$#', $path, $m) && $method === 'POST
 
 /* ---- Questions du Défi (banque fusionnée, publique) ---------------------------- */
 if ($path === '/api/questions' && $method === 'GET') handle_questions_get($pdo);
+
+/* ---- Notifications — « le verset offert » (voir push.php) ----------------------- */
+if ($path === '/api/push/cle'         && $method === 'GET')  handle_push_key($pdo);
+if ($path === '/api/push/subscribe'   && $method === 'POST') handle_push_subscribe($pdo);
+if ($path === '/api/push/unsubscribe' && $method === 'POST') handle_push_unsubscribe($pdo);
+if ($path === '/api/cron/notify'      && $method === 'GET')  handle_cron_notify($pdo);
 
 /* ---- Administration (ADMIN_EMAILS seulement) ----------------------------------- */
 if ($path === '/api/admin/users' && $method === 'GET') handle_admin_users($pdo);

@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM groupe_membres LIMIT 1');
+        $pdo->query('SELECT 1 FROM push_abonnements LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -220,6 +220,42 @@ function db_migrate(PDO $pdo): void {
                 PRIMARY KEY (groupe_id, user_id),
                 INDEX idx_gmembres_user (user_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Configuration des notifications push (« le verset offert ») :
+            // UNE rangée (id = 1), auto-générée au premier besoin — clés VAPID
+            // (privée PEM + publique brute base64url), sujet de contact et clé
+            // secrète du cron. Aucune variable d'environnement à configurer.
+            'CREATE TABLE IF NOT EXISTS vapid (
+                id TINYINT NOT NULL PRIMARY KEY,
+                private_pem TEXT NOT NULL,
+                public_b64u VARCHAR(90) NOT NULL,
+                subject VARCHAR(120) NOT NULL,
+                cron_key CHAR(64) NOT NULL,
+                created_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Abonnements push : un par navigateur (endpoint). Les endpoints
+            // dépassent souvent 255 caractères → TEXT, avec un haché SHA-256
+            // (endpoint_hash) pour porter la contrainte UNIQUE, MySQL
+            // ne sachant pas indexer un TEXT entier. user_id NULL = abonnement
+            // anonyme (rotation générique). tz_offset : minutes, même signe
+            // que getTimezoneOffset() côté JS (UTC+2 → -120). last_sent_day :
+            // dernier jour servi, dans le fuseau de chaque abonné (posé AVANT
+            // chaque envoi : idempotence du cron).
+            'CREATE TABLE IF NOT EXISTS push_abonnements (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                endpoint TEXT NOT NULL,
+                endpoint_hash CHAR(64) NOT NULL UNIQUE,
+                p256dh VARCHAR(100) NOT NULL,
+                auth VARCHAR(30) NOT NULL,
+                user_id INT UNSIGNED NULL,
+                heure TINYINT NOT NULL DEFAULT 8,
+                tz_offset SMALLINT NOT NULL DEFAULT 0,
+                last_sent_day VARCHAR(10) NULL,
+                echecs TINYINT NOT NULL DEFAULT 0,
+                created_at DATETIME NOT NULL,
+                INDEX idx_push_user (user_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
         ];
     } else {
         $ddl = [
@@ -369,6 +405,33 @@ function db_migrate(PDO $pdo): void {
                 PRIMARY KEY (groupe_id, user_id)
             )',
             'CREATE INDEX IF NOT EXISTS idx_gmembres_user ON groupe_membres (user_id)',
+
+            // Configuration des notifications push — voir le commentaire du
+            // dialecte MySQL ci-dessus (une rangée, id = 1, auto-générée).
+            'CREATE TABLE IF NOT EXISTS vapid (
+                id INTEGER NOT NULL PRIMARY KEY,
+                private_pem TEXT NOT NULL,
+                public_b64u TEXT NOT NULL,
+                subject TEXT NOT NULL,
+                cron_key TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )',
+
+            // Abonnements push — voir le commentaire du dialecte MySQL.
+            'CREATE TABLE IF NOT EXISTS push_abonnements (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                endpoint TEXT NOT NULL,
+                endpoint_hash TEXT NOT NULL UNIQUE,
+                p256dh TEXT NOT NULL,
+                auth TEXT NOT NULL,
+                user_id INTEGER NULL,
+                heure INTEGER NOT NULL DEFAULT 8,
+                tz_offset INTEGER NOT NULL DEFAULT 0,
+                last_sent_day TEXT NULL,
+                echecs INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_push_user ON push_abonnements (user_id)',
         ];
     }
 

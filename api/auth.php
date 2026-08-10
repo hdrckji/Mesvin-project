@@ -305,6 +305,12 @@ function handle_auth_logout(PDO $pdo): never {
  * est responsable, le groupe est supprimé s'il y était seul, sinon le membre
  * restant le plus ancien est promu responsable (groupes.responsable_id ET son
  * role dans groupe_membres) — l'assemblée ne reste jamais sans berger.
+ *
+ * Notifications push : les abonnements de l'appareil sont DÉTACHÉS du compte
+ * (user_id → NULL), pas supprimés — l'utilisateur a activé « le verset
+ * offert » sur son appareil indépendamment de son compte ; supprimer le
+ * compte ne retire pas ce choix, l'appareil reçoit désormais la rotation
+ * générique. Se désabonner reste possible à tout moment depuis l'écran Moi.
  */
 function delete_user_completely(PDO $pdo, array $user): void {
     $id = $user['id'];
@@ -312,6 +318,8 @@ function delete_user_completely(PDO $pdo, array $user): void {
     $pdo->beginTransaction();
     try {
         $st = $pdo->prepare('DELETE FROM sync_blobs WHERE user_id = ?');
+        $st->execute([$id]);
+        $st = $pdo->prepare('UPDATE push_abonnements SET user_id = NULL WHERE user_id = ?');
         $st->execute([$id]);
         $st = $pdo->prepare('DELETE FROM friendships WHERE user_a = ? OR user_b = ?');
         $st->execute([$id, $id]);
