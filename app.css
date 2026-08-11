@@ -401,8 +401,13 @@ a.verse-item { text-decoration: none; }
    Refonte : accueil hub (3 modules à égalité) + apprentissage par série
    ========================================================================== */
 
-/* hero de marque, version compacte (l'accueil est devenu un hub) */
-.card.hero.compact { padding: 18px 20px 20px; }
+/* hero de marque, version compacte (l'accueil est devenu un hub).
+   Pas de fond/bordure/ombre : à la différence des cartes de module
+   juste en dessous, il ne se touche pas — c'est un en-tête, pas un bouton. */
+.card.hero.compact {
+  padding: 18px 20px 12px; margin-bottom: 4px;
+  background: none; border: 0; box-shadow: none;
+}
 .card.hero.compact .hero-emblem img { width: 46px; height: 46px; }
 .card.hero.compact .hero-name { font-size: 1.4rem; margin: 8px 0 4px; }
 .card.hero.compact .hero-tag { font-size: .95rem; }
