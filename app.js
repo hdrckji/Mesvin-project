@@ -28,27 +28,8 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
 function shuffle(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; }
 
-/* ---------- Icônes en traits (remplacent progressivement les emoji) ----------
-   Cohérentes (viewBox 20x20, stroke-width 1.5, currentColor) : rendu identique
-   sur tout appareil, contrairement aux emoji qui varient selon l'OS. Volontairement
-   PAS utilisées pour les 17 pierres du chemin (badges-souvenirs) : leur variété
-   colorée fait leur charme, un jeu de traits uniforme les banaliserait. */
-const ICON_PATHS = {
-  apparence: '<circle cx="10" cy="10" r="7.25"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5Z" fill="currentColor" stroke="none"/>',
-  memorisation: '<path d="M10 17V10"/><path d="M10 10C10 6.5 7 5 4 5c0 3.5 2.5 6 6 5Z"/><path d="M10 10c0-4 3-5.5 6-5.5 0 3.5-2.5 6-6 5.5Z"/>',
-  assiduite: '<rect x="3" y="4.5" width="14" height="12.5" rx="2.2"/><path d="M3 8.5h14"/><path d="M6.5 2.5v3M13.5 2.5v3"/><path d="M7 12.2l1.8 1.8L13 10.2"/>',
-  pierres: '<ellipse cx="10" cy="15.3" rx="6.5" ry="2"/><ellipse cx="10" cy="10.7" rx="4.6" ry="1.7"/><ellipse cx="10" cy="6.8" rx="2.8" ry="1.4"/>',
-  lecture: '<path d="M10 5.2C8.3 3.9 6 3.4 3.2 3.8v11.2c2.8-.4 5.1.1 6.8 1.4 1.7-1.3 4-1.8 6.8-1.4V3.8c-2.8-.4-5.1.1-6.8 1.4Z"/><path d="M10 5.2v11.2"/>',
-  defi: '<path d="M10 17c-3 0-5-2-5-4.6 0-2 1.2-3 1.9-4.6.4 1 1.1 1.6 1.7 1.6-.3-2.6.6-4.7 2.6-6.4-.4 2 .1 3.4 1.5 4.6 1.5 1.3 2.3 2.8 2.3 4.8 0 2.6-2 4.6-5 4.6Z"/>',
-  accueil: '<path d="M3.2 9.5 10 4l6.8 5.5"/><path d="M5 8.5V16h10V8.5"/><path d="M8.3 16v-4h3.4v4"/>',
-  moi: '<circle cx="10" cy="6.7" r="3"/><path d="M3.8 16.5c.7-3.6 3.4-5.5 6.2-5.5s5.5 1.9 6.2 5.5"/>',
-  apropos: '<circle cx="10" cy="10" r="7.25"/><line x1="10" y1="9.2" x2="10" y2="14"/><circle cx="10" cy="6.1" r="1" fill="currentColor" stroke="none"/>',
-};
-const icon = (name, size) => {
-  const p = ICON_PATHS[name]; if (!p) return '';
-  size = size || 15;
-  return `<svg class="ic-svg" viewBox="0 0 20 20" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
-};
+/* Le jeu d'icônes en traits (fonction icon(nom, taille)) vient d'icons.js,
+   chargé avant ce script — partagé avec les modules Lire, Défi et Admin. */
 
 /* ---------- Stockage ---------- */
 function loadStore() {
@@ -223,7 +204,7 @@ function moiPushCard() {
   } else {
     corps = desc + `<button class="btn btn-primary" data-push-on="1" ${pushBusy ? 'disabled' : ''} style="margin-top:12px">${pushBusy ? 'Activation…' : 'Activer'}</button>`;
   }
-  return `<div class="section-title">🔔 Le verset offert</div>
+  return `<div class="section-title">${icon('cloche')} Le verset offert</div>
     <div class="card fade">${corps}
       ${pushError ? `<p class="field-error">${esc(pushError)}</p>` : ''}
       ${pushNotice ? `<p class="field-ok">${esc(pushNotice)}</p>` : ''}
@@ -254,7 +235,7 @@ function bookCollections() {
   }
   const out = [];
   for (const [book, ids] of byBook) {
-    if (ids.length >= BOOK_COLLECTION_MIN) out.push({ id: 'livre:' + book, name: book, emoji: '📖', desc: '', verses: ids });
+    if (ids.length >= BOOK_COLLECTION_MIN) out.push({ id: 'livre:' + book, name: book, emoji: '', desc: '', verses: ids });
   }
   return out;
 }
@@ -361,11 +342,11 @@ function schedule(card, quality) {
   card.due = t + card.interval;
 }
 function stageOf(card) {
-  if (card.interval <= 3) return { icon: '🌱', label: 'Germe' };
-  if (card.interval <= 13) return { icon: '🌿', label: 'Pousse' };
-  if (card.interval <= 44) return { icon: '🪴', label: 'Plante' };
-  if (card.interval <= 119) return { icon: '🌳', label: 'Arbre' };
-  return { icon: '🌲', label: 'Enraciné' };
+  if (card.interval <= 3) return { iconName: 'germe', label: 'Germe' };
+  if (card.interval <= 13) return { iconName: 'pousse', label: 'Pousse' };
+  if (card.interval <= 44) return { iconName: 'plante', label: 'Plante' };
+  if (card.interval <= 119) return { iconName: 'arbre', label: 'Arbre' };
+  return { iconName: 'enracine', label: 'Enraciné' };
 }
 const masteredCards = () => Object.values(store.cards).filter(isMastered);
 const learningCards = () => Object.values(store.cards).filter(c => !isMastered(c));
@@ -471,13 +452,13 @@ function render() {
 }
 function topbar(withAccount) {
   const s = store.streak.count;
-  const flame = s > 0 ? `<span class="streak">🔥 ${s} jour${s > 1 ? 's' : ''}</span>` : '';
+  const flame = s > 0 ? `<span class="streak">${icon('defi', 14)} ${s} jour${s > 1 ? 's' : ''}</span>` : '';
   // Sur l'accueil : l'entrée compte est visible d'emblée, en haut à droite.
   let account = '';
   if (withAccount) {
     const u = window.GraineAPI ? GraineAPI.user() : null;
     account = u
-      ? `<button class="acc-chip" data-accchip="1" title="Mon compte">☁️ ${esc(u.pseudo)}</button>`
+      ? `<button class="acc-chip" data-accchip="1" title="Mon compte">${icon('nuage', 14)} ${esc(u.pseudo)}</button>`
       : `<button class="acc-chip connect" data-accchip="1">Se connecter</button>`;
   }
   return `<div class="topbar"><div class="brand"><img class="logo" src="icon.svg" alt="" />
@@ -534,7 +515,7 @@ function viewMemo() {
   const obj = activeColl();
 
   const head = `<button class="back-link" data-tab="home">‹ Accueil</button>
-    <h2 style="font-family:var(--serif);margin-bottom:2px">🌱 Semer</h2>
+    <h2 style="font-family:var(--serif);margin-bottom:2px">${icon('memorisation', 19)} Semer</h2>
     <p class="muted" style="margin:0 2px 16px">Sème un verset dans ton cœur, arrose-le en le révisant — quand tu le sais par cœur, il s'enracine dans ton jardin.</p>`;
 
   // Carte « objectif » (ou invitation discrète), construite ici pour servir
@@ -544,7 +525,7 @@ function viewMemo() {
     const { m, total: ct } = collProgress(obj);
     const pct = ct ? Math.round(m / ct * 100) : 0;
     objectiveCard = `<div class="card objective fade"><div class="obj-head">
-        <b>🎯 Objectif : ${esc(obj.name)}</b>
+        <b>${icon('cible', 15)} Objectif : ${esc(obj.name)}</b>
         <button class="linkbtn" data-collections="1">Changer</button></div>
       <div class="coll-meter"><span class="gauge"><i style="width:${pct}%"></i></span>
         <span class="coll-count">${m}/${ct} mémorisé${m > 1 ? 's' : ''}</span></div></div>`;
@@ -553,13 +534,13 @@ function viewMemo() {
   if (total === 0) {
     return topbar() + head + `
       <div class="steps fade">
-        <div class="step"><span class="si">📖</span><div><b>L'appli te propose quelques versets à étudier.</b><br><span class="muted">Tu n'as pas à choisir.</span></div></div>
-        <div class="step"><span class="si">✍️</span><div><b>Tu les reconstitues sur l'écran, de mémoire</b> — l'appli vérifie que c'est juste.</div></div>
-        <div class="step"><span class="si">🌱</span><div><b>Réussi plusieurs fois</b>, chaque verset rejoint ton jardin — et revient avant que tu l'oublies.</div></div>
+        <div class="step"><span class="si">${icon('lecture', 22)}</span><div><b>L'appli te propose quelques versets à étudier.</b><br><span class="muted">Tu n'as pas à choisir.</span></div></div>
+        <div class="step"><span class="si">${icon('stylo', 22)}</span><div><b>Tu les reconstitues sur l'écran, de mémoire</b> — l'appli vérifie que c'est juste.</div></div>
+        <div class="step"><span class="si">${icon('memorisation', 22)}</span><div><b>Réussi plusieurs fois</b>, chaque verset rejoint ton jardin — et revient avant que tu l'oublies.</div></div>
       </div>
       ${objectiveCard}
       <button class="btn btn-primary" data-learn="1">Semer mes premiers versets</button>
-      ${obj ? '' : `<button class="linkbtn center" data-collections="1" style="display:block;margin:12px auto 0">🎯 Choisir un objectif (facultatif)</button>`}`;
+      ${obj ? '' : `<button class="linkbtn center" data-collections="1" style="display:block;margin:12px auto 0">${icon('cible', 14)} Choisir un objectif (facultatif)</button>`}`;
   }
   let actions = '';
   if (due.length > 0) {
@@ -580,15 +561,15 @@ function viewMemo() {
 
   // Objectif (collection choisie) — ou invitation discrète à en choisir un.
   const objective = objectiveCard || `<button class="verse-item objective-link fade" data-collections="1">
-      <span class="stage">🎯</span><span class="vi-main"><span class="vi-ref">Choisir un objectif</span><br>
+      <span class="stage">${icon('cible', 20)}</span><span class="vi-main"><span class="vi-ref">Choisir un objectif</span><br>
       <span class="vi-text">Facultatif — une collection de versets par thème ou par livre.</span></span><span class="chev">›</span></button>`;
 
   let progress = '';
   if (learnN > 0) progress += `<button class="verse-item fade" data-review="1">
-      <span class="stage">🌱</span><span class="vi-main"><span class="vi-ref">En apprentissage</span><br>
+      <span class="stage">${icon('germe', 20)}</span><span class="vi-main"><span class="vi-ref">En apprentissage</span><br>
       <span class="vi-text">${learnN} verset${learnN > 1 ? 's' : ''} en cours de mémorisation</span></span><span class="chev">›</span></button>`;
   progress += `<button class="verse-item gardenlink fade" data-tab="garden">
-      <span class="stage">🌳</span><span class="vi-main"><span class="vi-ref">Mon jardin</span><br>
+      <span class="stage">${icon('arbre', 20)}</span><span class="vi-main"><span class="vi-ref">Mon jardin</span><br>
       <span class="vi-text">${gardenN} verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}</span></span><span class="chev">›</span></button>`;
 
   return topbar() + head + actions + objective + progress;
@@ -602,7 +583,7 @@ function viewCollections() {
     const active = store.activeCollection === c.id;
     const pct = total ? Math.round(m / total * 100) : 0;
     return `<button class="verse-item coll-item${complete ? ' complete' : ''}" data-selectcoll="${esc(c.id)}">
-      <span class="stage">${complete ? '🏅' : c.emoji || '📖'}</span>
+      <span class="stage">${complete ? icon('medaille', 20) : c.emoji || icon('lecture', 20)}</span>
       <span class="vi-main">
         <span class="vi-ref">${esc(c.name)}</span>
         ${active ? '<span class="mini-badge">objectif actif</span>' : ''}
@@ -714,12 +695,12 @@ function viewSession() {
   if (session.phase === 'result') {
     const ok = session.result === 'success';
     body = `<div class="exresult ${ok ? 'ok' : 'ko'} fade">
-        <div class="exres-icon">${ok ? '✅' : '💐'}</div>
+        <div class="exres-icon">${icon(ok ? 'coche' : 'fleur', 34)}</div>
         <div class="exres-title">${ok ? (ex.hinted ? 'Juste ! (avec un coup d\'œil)' : 'Juste, de mémoire !') : 'Pas grave — on le reverra'}</div>
       </div>
       <div class="verse small" style="margin-top:8px">« ${esc(card.text)} »</div>
       <div class="ref">${esc(card.ref)}</div>
-      ${ok && isMastered(card) && session.mastered.includes(card.id) ? '<p class="center" style="color:var(--grow);font-weight:650;margin-top:12px">🌱 Planté dans ton jardin !</p>' : ''}
+      ${ok && isMastered(card) && session.mastered.includes(card.id) ? `<p class="center" style="color:var(--grow);font-weight:650;margin-top:12px">${icon('germe', 15)} Planté dans ton jardin !</p>` : ''}
       <button class="btn btn-grow btn-block" data-snext="1" style="margin-top:16px">Continuer</button>`;
   } else { // exercise
     const label = ex.type === 'scramble' ? 'Remets les mots dans l\'ordre' : 'Complète les mots manquants';
@@ -729,13 +710,13 @@ function viewSession() {
       (ex.wrong ? `<p class="ex-wrong fade">Pas tout à fait — corrige les mots en rouge, puis revérifie.</p>` : '') +
       `<button class="btn btn-primary" data-check="1" ${exComplete(ex) ? '' : 'disabled'} style="margin-top:14px">Vérifier</button>
        <div class="ex-tools">
-         <button class="linkbtn" data-hint="1">👁 Revoir le verset</button>
+         <button class="linkbtn" data-hint="1">${icon('oeil', 14)} Revoir le verset</button>
          <button class="linkbtn" data-giveup="1">Voir la réponse</button>
        </div>`;
   }
 
   return `<div class="fade">
-    <button class="back-link" data-tab="memo">✕ Quitter</button>
+    <button class="back-link" data-tab="memo">${icon('croix', 13)} Quitter</button>
     <div class="progress-dots">${dots}</div>
     <div class="exercise-label">${badge} · verset ${session.idx + 1} / ${session.queue.length}</div>
     <div class="card">${body}</div>
@@ -796,7 +777,7 @@ function viewSessionDone() {
   }
 
   return `<div class="done-screen fade">
-    <div class="seal">${mastered > 0 ? '🌱' : '🌿'}</div>
+    <div class="seal">${icon(mastered > 0 ? 'germe' : 'pousse', 42)}</div>
     <h2 style="font-family:var(--serif);margin:10px 0">C'est fait pour aujourd'hui</h2>
     <p class="muted">${done} verset${done > 1 ? 's' : ''} travaillé${done > 1 ? 's' : ''}${mastered > 0 ? ` · ${mastered} planté${mastered > 1 ? 's' : ''} 🌱` : ''} · série de ${s} jour${s > 1 ? 's' : ''} 🔥</p>
     <button class="btn btn-primary" data-tab="home" style="margin-top:20px">Revenir à l'accueil</button>
@@ -813,7 +794,7 @@ function viewMoi() {
   const lire = lireStats(), defi = defiStats();
   const tile = (n, l) => `<div class="stat-tile"><div class="st-n">${n}</div><div class="st-l">${l}</div></div>`;
 
-  const head = `<div class="card me-head fade"><div class="me-emoji">🌱</div>
+  const head = `<div class="card me-head fade"><div class="me-emoji">${icon('memorisation', 30)}</div>
     <h2>Bienvenue chez toi</h2>
     <p class="muted">${user
       ? `Ton chemin avec la Parole, en un coup d'œil — sauvegardé sur ton compte.`
@@ -826,7 +807,7 @@ function viewMoi() {
   const tpill = (v, l) => `<button class="pill ${theme === v ? 'on' : ''}" data-theme-pick="${v}">${l}</button>`;
   const apparence = `<div class="section-title">${icon('apparence')} Apparence</div>
     <div class="card fade">
-      <div class="pill-row">${tpill('auto', 'Auto')}${tpill('clair', '☀️ Clair')}${tpill('sombre', '🌙 Sombre')}${tpill('sepia', '📜 Sépia')}</div>
+      <div class="pill-row">${tpill('auto', 'Auto')}${tpill('clair', icon('soleil', 14) + ' Clair')}${tpill('sombre', icon('lune', 14) + ' Sombre')}${tpill('sepia', icon('parchemin', 14) + ' Sépia')}</div>
       <p class="muted" style="font-size:.85rem;margin:12px 2px 0">« Auto » suit le réglage clair/sombre de ton appareil. Ton choix vaut pour toute l'appli.</p>
     </div>`;
 
@@ -888,7 +869,7 @@ function viewMoi() {
   // les comptes dont l'e-mail figure dans ADMIN_EMAILS (champ isAdmin du
   // payload utilisateur ; le serveur revérifie de toute façon à chaque route).
   const admin = user && user.isAdmin ? `<a class="card hub-card fade" href="admin/" style="margin-top:14px">
-      <span class="hub-ic">🔧</span>
+      <span class="hub-ic">${icon('outil', 26)}</span>
       <span class="hub-txt"><span class="hub-title">Administration</span>
         <span class="hub-sub">Comptes et banque de questions du Défi</span></span>
       <span class="chev">›</span></a>` : '';
@@ -900,7 +881,7 @@ function viewMoi() {
 let gardenView = 'list'; // 'list' | 'coll' — préférence d'affichage, non persistée
 function gardenItem(c) {
   const st = stageOf(c), badge = c.due <= todayNum() ? '<span class="badge-due">à revoir</span>' : '';
-  return `<button class="verse-item" data-verse="${esc(c.id)}"><span class="stage" title="${st.label}">${st.icon}</span>
+  return `<button class="verse-item" data-verse="${esc(c.id)}"><span class="stage" title="${st.label}">${icon(st.iconName, 20)}</span>
     <span class="vi-main"><span class="vi-ref">${esc(c.ref)}</span><br><span class="vi-text">${esc(c.text)}</span></span>${badge}</button>`;
 }
 function viewGarden() {
@@ -926,7 +907,7 @@ function viewGarden() {
       const own = cards.filter(c => col.verses.includes(c.id) && !seen.has(c.id));
       own.forEach(c => seen.add(c.id));
       if (!own.length) return '';
-      return `<div class="section-title">🏅 ${esc(col.name)}</div>` + own.map(gardenItem).join('');
+      return `<div class="section-title">${icon('medaille')} ${esc(col.name)}</div>` + own.map(gardenItem).join('');
     }).join('');
     const rest = cards.filter(c => !seen.has(c.id));
     if (rest.length) list += `<div class="section-title">Autres versets</div>` + rest.map(gardenItem).join('');
@@ -935,7 +916,7 @@ function viewGarden() {
   }
   const learn = learningCards();
   const learnList = learn.length ? `<div class="section-title">En apprentissage</div>` + learn.map(c =>
-    `<div class="verse-item"><span class="stage">🌰</span><span class="vi-main"><span class="vi-ref">${esc(c.ref)}</span><br>
+    `<div class="verse-item"><span class="stage">${icon('grainePosee', 20)}</span><span class="vi-main"><span class="vi-ref">${esc(c.ref)}</span><br>
       <span class="vi-text">${c.validations}/${MASTERY} réussites · ${esc(c.text)}</span></span></div>`).join('') : '';
 
   return topbar() + `<button class="back-link" data-tab="moi">‹ Moi</button>
@@ -954,7 +935,7 @@ function viewVerse(id) {
     <div class="card hero"><div class="verse">« ${esc(c.text)} »</div>
       <div class="ref">${esc(c.ref)} <span class="version">· ${esc(LIB_VERSION)}</span></div></div>
     <div class="card"><div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:1.8rem">${st.icon}</span>
+        <span>${icon(st.iconName, 28)}</span>
         <div><b>${st.label}</b><br><span class="muted" style="font-size:.9rem">${when}</span></div></div>
       ${vctx}
       ${ctx ? `<div class="context-box"><b>Contexte — ${esc(book)}.</b> ${esc(ctx)}</div>` : ''}</div>
@@ -963,18 +944,18 @@ function viewVerse(id) {
 function viewAbout() {
   return topbar() + `<h2 style="font-family:var(--serif)">À propos</h2>
     <div class="card"><p><b>Bible Horizon</b> t'aide à faire grandir la Parole dans ton cœur, un peu chaque jour — trois chemins qui se complètent :</p>
-      <p>🌱 <b>Semer.</b> Mémorise des versets pas à pas ; l'appli vérifie, puis les fait revenir juste avant que tu ne les oublies. Ton jardin garde la trace de chaque verset planté.</p>
-      <p>📖 <b>Marcher.</b> Un plan de lecture « chemin, pas calendrier » : un évangile, un testament ou toute la Bible — à ton rythme, jamais de retard, jamais de culpabilité.</p>
-      <p>🕯️ <b>Sonder.</b> Des questions sur les récits bibliques : seul, à plusieurs sur un appareil, en duel avec un ami, ou en veillée sur grand écran. Chaque réponse ramène vers le texte.</p></div>
+      <p>${icon('memorisation', 16)} <b>Semer.</b> Mémorise des versets pas à pas ; l'appli vérifie, puis les fait revenir juste avant que tu ne les oublies. Ton jardin garde la trace de chaque verset planté.</p>
+      <p>${icon('lecture', 16)} <b>Marcher.</b> Un plan de lecture « chemin, pas calendrier » : un évangile, un testament ou toute la Bible — à ton rythme, jamais de retard, jamais de culpabilité.</p>
+      <p>${icon('defi', 16)} <b>Sonder.</b> Des questions sur les récits bibliques : seul, à plusieurs sur un appareil, en duel avec un ami, ou en veillée sur grand écran. Chaque réponse ramène vers le texte.</p></div>
     <div class="section-title">Nos principes</div>
     <div class="card">
-      <p>🕊️ <b>Gratuit, pour toujours.</b> Aucune fonction payante, aucune publicité.</p>
-      <p>🔒 <b>Vie privée d'abord.</b> Tout fonctionne hors-ligne, sans compte. Le compte est facultatif (e-mail + pseudo, rien d'autre) et se supprime en un geste.</p>
-      <p>🌱 <b>Encourager, pas culpabiliser.</b> Pas de « retard », pas de reproche.</p>
-      <p>📖 <b>Respect du texte.</b> Versets ${esc(LIB_VERSION)} (domaine public).</p></div>
+      <p>${icon('colombe', 16)} <b>Gratuit, pour toujours.</b> Aucune fonction payante, aucune publicité.</p>
+      <p>${icon('cadenas', 16)} <b>Vie privée d'abord.</b> Tout fonctionne hors-ligne, sans compte. Le compte est facultatif (e-mail + pseudo, rien d'autre) et se supprime en un geste.</p>
+      <p>${icon('memorisation', 16)} <b>Encourager, pas culpabiliser.</b> Pas de « retard », pas de reproche.</p>
+      <p>${icon('lecture', 16)} <b>Respect du texte.</b> Versets ${esc(LIB_VERSION)} (domaine public).</p></div>
     <div class="section-title">Pour les églises</div>
     <div class="card">
-      <p>⛪ <b>Pasteur, responsable d'église ou de jeunesse ?</b> Tu aimerais utiliser Bible Horizon avec ton assemblée — quiz sur grand écran, groupes, suivi ? Écris-nous : on regardera ensemble comment l'adapter au mieux à tes besoins.</p>
+      <p>${icon('eglise', 16)} <b>Pasteur, responsable d'église ou de jeunesse ?</b> Tu aimerais utiliser Bible Horizon avec ton assemblée — quiz sur grand écran, groupes, suivi ? Écris-nous : on regardera ensemble comment l'adapter au mieux à tes besoins.</p>
       <p class="center" style="margin-top:12px"><a class="btn btn-soft" href="mailto:contact@biblehorizon.fr?subject=Bible%20Horizon%20pour%20mon%20%C3%A9glise">contact@biblehorizon.fr</a></p>
     </div>
     <p class="muted center" style="margin-top:20px">« La semence, c'est la parole de Dieu. » — Luc 8.11</p>
@@ -1313,7 +1294,7 @@ function viewAccount() {
   const back = `<button class="back-link" data-tab="moi">‹ Moi</button>`;
   if (auth.step === 'email') {
     return `<div class="fade">${back}
-      <h2 style="font-family:var(--serif);margin-bottom:2px">☁️ Ton compte</h2>
+      <h2 style="font-family:var(--serif);margin-bottom:2px">${icon('nuage', 19)} Ton compte</h2>
       <p class="muted" style="margin:0 2px 14px">Gratuit et facultatif : sauvegarde ta progression, retrouve-la partout, défie tes amis. On te demande un e-mail et un pseudo — rien d'autre, jamais ton vrai nom.</p>
       <div class="card">
         <form data-authstep="email" novalidate>
@@ -1333,7 +1314,7 @@ function viewAccount() {
   }
   if (auth.step === 'code') {
     return `<div class="fade">${back}
-      <h2 style="font-family:var(--serif);margin-bottom:2px">📬 Ton code</h2>
+      <h2 style="font-family:var(--serif);margin-bottom:2px">${icon('enveloppe', 19)} Ton code</h2>
       <p class="muted" style="margin:0 2px 14px">Un code à 6 chiffres a été envoyé à <b>${esc(auth.email)}</b>.</p>
       <div class="card">
         <form data-authstep="code">
@@ -1351,7 +1332,7 @@ function viewAccount() {
   }
   if (auth.step === 'pseudo') {
     return `<div class="fade">${back}
-      <h2 style="font-family:var(--serif);margin-bottom:2px">🌱 Ton pseudo</h2>
+      <h2 style="font-family:var(--serif);margin-bottom:2px">${icon('moi', 19)} Ton pseudo</h2>
       <p class="muted" style="margin:0 2px 14px">Première connexion : choisis le nom que tes amis verront.</p>
       <div class="card">
         <form data-authstep="pseudo">
@@ -1433,9 +1414,9 @@ async function authResend() {
 function moiInviteCard() {
   return `<div class="card account-card fade">
     ${accountNotice ? `<p class="field-ok" style="margin:0 0 10px">${esc(accountNotice)}</p>` : ''}
-    <div class="acc-head"><span class="acc-ic">☁️</span><b>Synchronise et retrouve tes amis</b></div>
+    <div class="acc-head"><span class="acc-ic">${icon('nuage', 22)}</span><b>Synchronise et retrouve tes amis</b></div>
     <p class="muted">Sauvegarde ta progression, retrouve-la sur tous tes appareils, défie tes amis.</p>
-    <p class="muted acc-privacy">🔒 Facultatif et gratuit. E-mail + pseudo, rien d'autre — jamais ton vrai nom.</p>
+    <p class="muted acc-privacy">${icon('cadenas', 13)} Facultatif et gratuit. E-mail + pseudo, rien d'autre — jamais ton vrai nom.</p>
     <button class="btn btn-primary" data-account="1" style="margin-top:12px">Créer mon compte / Me connecter</button>
   </div>`;
 }
@@ -1456,7 +1437,7 @@ function moiAccountCard(u) {
       </div>`;
   }
   return `<div class="card account-card fade">
-    <div class="acc-user"><span class="acc-ic">☁️</span>
+    <div class="acc-user"><span class="acc-ic">${icon('nuage', 22)}</span>
       <div class="acc-id"><b>${esc(u.pseudo)}</b><br><span class="muted acc-mail">${esc(u.email)}</span></div></div>
     <div class="friend-code-row">
       <div><div class="fc-label">Code ami</div><div class="friend-code" id="friendCode">${esc(u.friendCode)}</div></div>
@@ -1553,11 +1534,11 @@ function moiFriendsSection(u) {
   else if (friendsCache === 'error') list = `<p class="muted fr-empty">Ta liste d'amis apparaîtra dès que tu seras en ligne.</p>`;
   else if (!friendsCache.length) list = `<p class="muted fr-empty">Pas encore d'ami — échangez vos codes pour vous retrouver.</p>`;
   else list = friendsCache.map(f => `<div class="friend-row">
-      <span class="fr-avatar">🌿</span>
+      <span class="fr-avatar">${icon('moi', 18)}</span>
       <span class="fr-main"><b>${esc(f.pseudo)}</b><br><span class="muted fr-since">${esc(sinceText(f.since))}</span></span>
-      <button class="fr-x" data-unfriend="${esc(f.friendCode)}" data-pseudo="${esc(f.pseudo)}" title="Retirer cet ami" aria-label="Retirer ${esc(f.pseudo)}">✕</button>
+      <button class="fr-x" data-unfriend="${esc(f.friendCode)}" data-pseudo="${esc(f.pseudo)}" title="Retirer cet ami" aria-label="Retirer ${esc(f.pseudo)}">${icon('croix', 13)}</button>
     </div>`).join('');
-  return `<div class="section-title">🤝 Amis</div>
+  return `<div class="section-title">${icon('amis')} Amis</div>
     <div class="card friends-card fade">
       <p style="margin:0 0 10px">Ton code ami : <span class="friend-code inline">${esc(u.friendCode)}</span></p>
       <form data-addfriendform="1" class="add-friend-row">

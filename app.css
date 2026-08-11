@@ -124,6 +124,11 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.01em; margin: 0; }
 .muted { color: var(--ink-soft); }
 .center { text-align: center; }
 
+/* Icônes en traits (icon(), voir icons.js) : réglage fin par défaut quand
+   elles sont posées directement dans du texte (titres, boutons, listes),
+   sans conteneur flex dédié. */
+.ic-svg { vertical-align: -3px; flex-shrink: 0; }
+
 /* ---------- En-tête ---------- */
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
@@ -132,6 +137,7 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.01em; margin: 0; }
 .topbar .brand { display: flex; align-items: center; gap: 10px; }
 .topbar .brand .logo { width: 34px; height: 34px; }
 .streak {
+  display: inline-flex; align-items: center; gap: 4px;
   font-size: .95rem; font-weight: 600; color: var(--accent-ink);
   background: var(--surface); border: 1px solid var(--line);
   padding: 6px 12px; border-radius: 12px; white-space: nowrap;
@@ -139,12 +145,14 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.01em; margin: 0; }
 .top-right { display: flex; align-items: center; gap: 8px; }
 /* entrée compte de l'accueil : pseudo si connecté, « Se connecter » sinon */
 .acc-chip {
+  display: inline-flex; align-items: center; gap: 4px;
   font: inherit; font-size: .92rem; font-weight: 650; cursor: pointer;
   color: var(--ink); background: var(--surface); border: 1px solid var(--line);
   padding: 6px 12px; border-radius: 12px; white-space: nowrap;
   max-width: 40vw; overflow: hidden; text-overflow: ellipsis;
   -webkit-tap-highlight-color: transparent;
 }
+.acc-chip svg { flex-shrink: 0; }
 .acc-chip.connect { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
 
 /* ---------- Cartes ---------- */
@@ -355,9 +363,10 @@ label.lbl { display: block; font-weight: 600; margin: 14px 2px 6px; font-size: .
 
 /* résultat d'exercice */
 .exresult { text-align: center; padding: 10px 0 4px; }
-.exresult .exres-icon { font-size: 2.4rem; }
 .exresult .exres-title { font-family: var(--serif); font-size: 1.2rem; font-weight: 650; margin-top: 6px; }
+.exresult.ok .exres-icon { color: var(--grow); }
 .exresult.ok .exres-title { color: var(--grow); }
+.exresult.ko .exres-icon { color: var(--accent-ink); }
 .exresult.ko .exres-title { color: var(--accent-ink); }
 .ex-wrong { text-align: center; color: var(--danger); font-size: .92rem; margin: 10px 0 0; }
 
