@@ -15,7 +15,7 @@ RUN rm -rf /app/public && mkdir -p /app/public
 
 # Fichiers statiques de l'application (inchangés par rapport à la version Caddy).
 WORKDIR /app/public
-COPY index.html app.css app.js api-client.js sw.js manifest.webmanifest icon.svg ./
+COPY index.html app.css app.js icons.js pierres.js api-client.js sw.js manifest.webmanifest icon.svg ./
 COPY data/ ./data/
 COPY lire/ ./lire/
 COPY defi/ ./defi/
