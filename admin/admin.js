@@ -176,11 +176,24 @@ async function supprimerCompte(id, pseudo, email) {
 
 /* ---------- Système : état du serveur et adresse du cron ---------- */
 
+/* L'état du serveur, même si api-client.js est encore une vieille version en
+   cache (mise à jour en cours de déploiement) : repli sur un appel direct. */
+async function chargerSante() {
+  if (GraineAPI.health) return GraineAPI.health();
+  let session = null;
+  try { session = JSON.parse(localStorage.getItem('graine.session') || 'null'); } catch (e) {}
+  const r = await fetch('../api/health', {
+    headers: session && session.token ? { Authorization: 'Bearer ' + session.token } : {}
+  });
+  if (!r.ok) throw new Error('Le serveur a répondu ' + r.status + '.');
+  return r.json();
+}
+
 async function ouvrirSysteme() {
   onglet = 'systeme';
   sys = null; sysErreur = null;
   render();
-  try { sys = await GraineAPI.health(); }
+  try { sys = await chargerSante(); }
   catch (e) { sysErreur = messageDoux(e); }
   render();
 }
