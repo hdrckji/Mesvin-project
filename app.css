@@ -134,14 +134,14 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.01em; margin: 0; }
 .streak {
   font-size: .95rem; font-weight: 600; color: var(--accent-ink);
   background: var(--surface); border: 1px solid var(--line);
-  padding: 6px 12px; border-radius: 999px; white-space: nowrap;
+  padding: 6px 12px; border-radius: 12px; white-space: nowrap;
 }
 .top-right { display: flex; align-items: center; gap: 8px; }
 /* entrée compte de l'accueil : pseudo si connecté, « Se connecter » sinon */
 .acc-chip {
   font: inherit; font-size: .92rem; font-weight: 650; cursor: pointer;
   color: var(--ink); background: var(--surface); border: 1px solid var(--line);
-  padding: 6px 12px; border-radius: 999px; white-space: nowrap;
+  padding: 6px 12px; border-radius: 12px; white-space: nowrap;
   max-width: 40vw; overflow: hidden; text-overflow: ellipsis;
   -webkit-tap-highlight-color: transparent;
 }
@@ -295,7 +295,7 @@ label.lbl { display: block; font-weight: 600; margin: 14px 2px 6px; font-size: .
 .pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .pill {
   border: 1px solid var(--line); background: var(--surface); color: var(--ink);
-  border-radius: 999px; padding: 8px 14px; font: inherit; cursor: pointer;
+  border-radius: 12px; padding: 8px 14px; font: inherit; cursor: pointer;
 }
 .pill.on { background: var(--grow); color: var(--on-grow); border-color: var(--grow); }
 .back-link { background: none; border: 0; color: var(--ink-soft); font: inherit;
