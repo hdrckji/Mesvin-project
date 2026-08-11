@@ -215,6 +215,75 @@ adhésions sont retirées ; pour chaque groupe dont il était responsable, le
 groupe est supprimé s'il y était seul, sinon le **membre restant le plus
 ancien** est promu responsable — l'assemblée ne reste jamais sans berger.
 
+## La page de l'église : annonces, rendez-vous, services (fondations — aucune interface)
+
+Chaque groupe-église a sa « page », trois blocs : les **annonces** du
+responsable (épinglables en tête), les **rendez-vous réguliers** de
+l'assemblée (« Culte, dimanche 10:30 ») et les **services** ponctuels
+(« Nettoyage de la salle, samedi »). L'esprit maison : le responsable
+**nourrit**, il ne surveille pas ; le service est **volontaire** — on lève
+la main, on n'est pas réquisitionné.
+
+**Lecture** pour tout **membre** du groupe, **écriture** pour le
+**responsable** seul — sauf l'inscription aux services, ouverte à tout
+membre. 403 sinon, 404 groupe inconnu. Les pseudos des inscrits sont
+visibles des membres — **jamais les e-mails**.
+
+### GET /api/groupes/{code}/page
+Tout d'un coup (membres seulement) :
+→ `{ "annonces": [ { "id", "titre", "texte", "epingle", "date": "ISO" } ],
+"rdv": [ { "id", "libelle", "jour": 0–6 (0 = dimanche), "heure": "HH:MM", "lieu"|null } ],
+"services": [ { "id", "titre", "date": "AAAA-MM-JJ", "details"|null, "places",
+"inscrits": [pseudos], "jeSuisInscrit": true|false } ] }`
+- annonces : les épinglées d'abord, puis les plus récentes — 50 au plus ;
+- rdv : triés par jour puis heure (puis `ordre`, champ d'affichage facultatif) ;
+- services : **à venir seulement** (aujourd'hui compris), triés par date ;
+  `inscrits` dans l'ordre des mains levées ;
+- ménage opportuniste à chaque lecture : les services passés depuis plus de
+  **90 jours** sont supprimés, inscriptions comprises.
+
+### POST /api/groupes/{code}/annonces
+**Responsable seulement.** Corps : `{ "id"?, "titre" (1–80), "texte" (1–2000),
+"epingle"? (défaut false) }` — sans `id` → création (201 ; plafond **100**
+annonces par groupe → 400), avec `id` → modification (200 ; 404 si l'annonce
+n'est pas de ce groupe). → `{ "annonce": { … } }`
+
+### DELETE /api/groupes/{code}/annonces/{id}
+**Responsable seulement.** → `{ "ok": true }` — 404 si inconnue dans ce groupe.
+
+### POST /api/groupes/{code}/rdv
+**Responsable seulement.** Corps : `{ "id"?, "libelle" (1–80), "jour" (0–6,
+0 = dimanche), "heure" ("HH:MM"), "lieu"? (0–80), "ordre"? (0–999, défaut 0) }`
+— création (201 ; plafond **30** par groupe → 400) ou modification (200).
+→ `{ "rdv": { … } }`
+
+### DELETE /api/groupes/{code}/rdv/{id}
+**Responsable seulement.** → `{ "ok": true }` — 404 si inconnu dans ce groupe.
+
+### POST /api/groupes/{code}/services
+**Responsable seulement.** Corps : `{ "id"?, "titre" (1–80), "date"
+("AAAA-MM-JJ", jour valide et non passé), "details"? (0–500), "places" (1–50) }`
+— création (201 ; plafond **100** services à venir par groupe → 400) ou
+modification (200 ; on ne réduit jamais `places` sous le nombre de mains déjà
+levées → 400). → `{ "service": { … } }`
+
+### DELETE /api/groupes/{code}/services/{id}
+**Responsable seulement** : supprime le service **avec ses inscriptions**.
+→ `{ "ok": true }` — 404 si inconnu dans ce groupe.
+
+### POST /api/groupes/{code}/services/{id}/inscription
+**Tout membre** lève la main. → `{ "service": { … } }` — 409 si déjà inscrit
+ou si le service est complet (`places` atteint), 400 si la date est passée.
+
+### DELETE /api/groupes/{code}/services/{id}/inscription
+**Tout membre** se retire librement. → `{ "service": { … } }` — 404 s'il
+n'était pas inscrit.
+
+À la **suppression du groupe** (route DELETE, responsable dernier membre qui
+part, suppression de compte), toute la page part avec lui : annonces,
+rendez-vous, services et inscriptions. À la **suppression d'un compte**, ses
+inscriptions aux services sont retirées — une place se libère, simplement.
+
 ## Notifications — le verset offert
 
 Chaque jour, à l'heure choisie, une notification push **offre** un verset
@@ -330,7 +399,8 @@ Retire la surcharge : la version du fichier redevient active (annule une
 - Migrations auto au premier appel (CREATE TABLE IF NOT EXISTS).
 - Tables : `users`, `login_codes`, `sessions`, `sync_blobs`, `friendships`, `throttle`, `admin_log`,
   `duels`, `veillees`, `veillee_players`, `veillee_answers`, `quiz_questions`,
-  `groupes`, `groupe_membres`, `vapid`, `push_abonnements`.
+  `groupes`, `groupe_membres`, `groupe_annonces`, `groupe_rdv`,
+  `groupe_services`, `groupe_service_inscriptions`, `vapid`, `push_abonnements`.
 - Rôle admin : `ADMIN_EMAILS` (adresses séparées par des virgules, casse
   ignorée) — pas de colonne en base, le rôle se retire en éditant la variable.
 - E-mail : SMTP via env (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`,

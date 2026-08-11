@@ -5,6 +5,8 @@ comptes par code e-mail **ou compte Google**, synchronisation, amis par code,
 duels asynchrones et **veillées en direct** (grand écran + téléphones).
 Les fondations serveur des **groupes d'église** (code `GRP-XXXXX`, verset de
 la semaine poussé par le responsable) sont posées — encore aucune interface.
+La **page de l'église** aussi (`groupes-page.php`) : annonces épinglables,
+rendez-vous réguliers et services volontaires où chaque membre lève la main.
 Le contrat complet des routes est dans [`../API-CONTRAT.md`](../API-CONTRAT.md).
 
 ## Comment c'est construit
@@ -17,7 +19,7 @@ Le contrat complet des routes est dans [`../API-CONTRAT.md`](../API-CONTRAT.md).
   automatique sur SQLite (`api/data/dev.sqlite`) pour les tests locaux.
   Les tables sont créées automatiquement au premier appel.
 - **Fichiers** : `index.php` (routage) → `auth.php`, `sync.php`, `friends.php`,
-  `groupes.php`, `duels.php`, `veillees.php`, `admin.php`, `push.php` (les routes),
+  `groupes.php`, `groupes-page.php`, `duels.php`, `veillees.php`, `admin.php`, `push.php` (les routes),
   avec `db.php` (connexion + migrations), `mail.php` (envoi des codes),
   `helpers.php` (fonctions partagées). `push.php` embarque la crypto Web Push
   complète (RFC 8291 + VAPID RFC 8292) en PHP pur — validée à l'octet près

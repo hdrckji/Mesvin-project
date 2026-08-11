@@ -349,6 +349,155 @@ check "u3 rejoint → 200"                200 "$(api POST /api/groupes/rejoindre
 check "→ 2 membres"                     2   "$(jval .groupe.nbMembres)"
 
 # ---------------------------------------------------------------------------
+# La page de l'église (fondations serveur — aucune interface encore).
+# Toujours aucun appel request-code : TOKEN1/TOKEN2/TOKEN3 suffisent.
+# Regards directs dans la base SQLite (aussi utilisés plus bas, Notifications).
+sqlval()  { php -r '$p = new PDO("sqlite:" . $argv[1]); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
+sqlexec() { php -r '$p = new PDO("sqlite:" . $argv[1]); $p->exec($argv[2]);' "$ROOT/api/data/dev.sqlite" "$1"; }
+
+say "La page de l'église — vide au départ, réservée aux membres"
+api POST /api/groupes "$TOKEN1" '{"nom":"Assemblée du Chemin"}' > /dev/null
+PGCODE="$(jval .groupe.code)"
+api POST /api/groupes/rejoindre "$TOKEN3" "{\"code\":\"$PGCODE\"}" > /dev/null
+check "GET page sans token → 401"       401 "$(api GET "/api/groupes/$PGCODE/page")"
+check "GET page non-membre (u2) → 403"  403 "$(api GET "/api/groupes/$PGCODE/page" "$TOKEN2")"
+check "GET page groupe inconnu → 404"   404 "$(api GET /api/groupes/GRP-00000/page "$TOKEN1")"
+check "GET page membre (u3) → 200"      200 "$(api GET "/api/groupes/$PGCODE/page" "$TOKEN3")"
+check "aucune annonce"                  0   "$(jval '.annonces | length')"
+check "aucun rendez-vous"               0   "$(jval '.rdv | length')"
+check "aucun service"                   0   "$(jval '.services | length')"
+
+say "Page — annonces : le responsable nourrit"
+check "u3 (membre) publie → 403"        403 "$(api POST "/api/groupes/$PGCODE/annonces" "$TOKEN3" '{"titre":"Essai","texte":"Coucou"}')"
+check "titre vide → 400"                400 "$(api POST "/api/groupes/$PGCODE/annonces" "$TOKEN1" '{"titre":"  ","texte":"Bonjour"}')"
+check "titre de 81 caractères → 400"    400 "$(api POST "/api/groupes/$PGCODE/annonces" "$TOKEN1" "{\"titre\":\"$(php -r 'echo str_repeat("a", 81);')\",\"texte\":\"Bonjour\"}")"
+check "texte de 2001 caractères → 400"  400 "$(api POST "/api/groupes/$PGCODE/annonces" "$TOKEN1" "{\"titre\":\"Titre\",\"texte\":\"$(php -r 'echo str_repeat("a", 2001);')\"}")"
+check "création → 201"                  201 "$(api POST "/api/groupes/$PGCODE/annonces" "$TOKEN1" '{"titre":"Bienvenue","texte":"Soyez les bienvenus dans notre assemblée."}')"
+AN1="$(jval .annonce.id)"
+check "→ epingle false par défaut"      false "$(jval .annonce.epingle)"
+check "→ date en ISO"                   Z   "$(jval .annonce.date | tail -c 2)"
+check "création épinglée → 201"         201 "$(api POST "/api/groupes/$PGCODE/annonces" "$TOKEN1" '{"titre":"Semaine de prière","texte":"Du lundi au vendredi à 6 h.","epingle":true}')"
+AN2="$(jval .annonce.id)"
+api GET "/api/groupes/$PGCODE/page" "$TOKEN3" > /dev/null
+check "2 annonces sur la page"          2   "$(jval '.annonces | length')"
+check "l'épinglée passe en tête"        "$AN2" "$(jval '.annonces[0].id')"
+check "modification → 200"              200 "$(api POST "/api/groupes/$PGCODE/annonces" "$TOKEN1" "{\"id\":$AN1,\"titre\":\"Bienvenue à tous\",\"texte\":\"Texte mis à jour.\"}")"
+check "→ titre mis à jour"              "Bienvenue à tous" "$(jval .annonce.titre)"
+check "modification d'un id inconnu → 404" 404 "$(api POST "/api/groupes/$PGCODE/annonces" "$TOKEN1" '{"id":999999,"titre":"X","texte":"Y"}')"
+check "suppression par u3 → 403"        403 "$(api DELETE "/api/groupes/$PGCODE/annonces/$AN2" "$TOKEN3")"
+check "suppression → 200"               200 "$(api DELETE "/api/groupes/$PGCODE/annonces/$AN2" "$TOKEN1")"
+check "suppression rejouée → 404"       404 "$(api DELETE "/api/groupes/$PGCODE/annonces/$AN2" "$TOKEN1")"
+
+say "Page — les rendez-vous réguliers de l'assemblée"
+check "u3 (membre) ajoute → 403"        403 "$(api POST "/api/groupes/$PGCODE/rdv" "$TOKEN3" '{"libelle":"Culte","jour":0,"heure":"10:30"}')"
+check "jour 7 → 400"                    400 "$(api POST "/api/groupes/$PGCODE/rdv" "$TOKEN1" '{"libelle":"Culte","jour":7,"heure":"10:30"}')"
+check "jour absent → 400"               400 "$(api POST "/api/groupes/$PGCODE/rdv" "$TOKEN1" '{"libelle":"Culte","heure":"10:30"}')"
+check "heure 25:00 → 400"               400 "$(api POST "/api/groupes/$PGCODE/rdv" "$TOKEN1" '{"libelle":"Culte","jour":0,"heure":"25:00"}')"
+check "heure 9h30 → 400"                400 "$(api POST "/api/groupes/$PGCODE/rdv" "$TOKEN1" '{"libelle":"Culte","jour":0,"heure":"9h30"}')"
+check "création Culte (dim. 10:30) → 201" 201 "$(api POST "/api/groupes/$PGCODE/rdv" "$TOKEN1" '{"libelle":"Culte","jour":0,"heure":"10:30"}')"
+RDV1="$(jval .rdv.id)"
+check "→ lieu null si non fourni"       null "$(jval .rdv.lieu)"
+check "création Prière (mer. 19:00) → 201" 201 "$(api POST "/api/groupes/$PGCODE/rdv" "$TOKEN1" '{"libelle":"Prière","jour":3,"heure":"19:00","lieu":"Salle du haut"}')"
+check "création Accueil (dim. 09:45) → 201" 201 "$(api POST "/api/groupes/$PGCODE/rdv" "$TOKEN1" '{"libelle":"Accueil","jour":0,"heure":"09:45"}')"
+api GET "/api/groupes/$PGCODE/page" "$TOKEN3" > /dev/null
+check "3 rendez-vous sur la page"       3   "$(jval '.rdv | length')"
+check "tri par jour puis heure"         "0 09:45,0 10:30,3 19:00" "$(jval '[.rdv[] | "\(.jour) \(.heure)"] | join(",")')"
+check "modification (le culte passe à 10:00) → 200" 200 "$(api POST "/api/groupes/$PGCODE/rdv" "$TOKEN1" "{\"id\":$RDV1,\"libelle\":\"Culte\",\"jour\":0,\"heure\":\"10:00\"}")"
+check "suppression par u3 → 403"        403 "$(api DELETE "/api/groupes/$PGCODE/rdv/$RDV1" "$TOKEN3")"
+check "suppression → 200"               200 "$(api DELETE "/api/groupes/$PGCODE/rdv/$RDV1" "$TOKEN1")"
+api GET "/api/groupes/$PGCODE/page" "$TOKEN1" > /dev/null
+check "2 rendez-vous restants"          2   "$(jval '.rdv | length')"
+
+say "Page — services : on lève la main, on n'est pas réquisitionné"
+DEMAIN="$(php -r 'echo gmdate("Y-m-d", time() + 86400);')"
+check "u3 (membre) crée → 403"          403 "$(api POST "/api/groupes/$PGCODE/services" "$TOKEN3" "{\"titre\":\"Essai\",\"date\":\"$DEMAIN\",\"places\":2}")"
+check "date passée → 400"               400 "$(api POST "/api/groupes/$PGCODE/services" "$TOKEN1" '{"titre":"Nettoyage","date":"2020-01-01","places":2}')"
+check "date impossible (30 février) → 400" 400 "$(api POST "/api/groupes/$PGCODE/services" "$TOKEN1" '{"titre":"Nettoyage","date":"2026-02-30","places":2}')"
+check "date mal formée → 400"           400 "$(api POST "/api/groupes/$PGCODE/services" "$TOKEN1" '{"titre":"Nettoyage","date":"demain","places":2}')"
+check "places 0 → 400"                  400 "$(api POST "/api/groupes/$PGCODE/services" "$TOKEN1" "{\"titre\":\"Nettoyage\",\"date\":\"$DEMAIN\",\"places\":0}")"
+check "places 51 → 400"                 400 "$(api POST "/api/groupes/$PGCODE/services" "$TOKEN1" "{\"titre\":\"Nettoyage\",\"date\":\"$DEMAIN\",\"places\":51}")"
+check "création (1 place) → 201"        201 "$(api POST "/api/groupes/$PGCODE/services" "$TOKEN1" "{\"titre\":\"Nettoyage de la salle\",\"date\":\"$DEMAIN\",\"places\":1,\"details\":\"Après le culte\"}")"
+SRV1="$(jval .service.id)"
+check "→ personne d'inscrit au départ"  0   "$(jval '.service.inscrits | length')"
+api GET "/api/groupes/$PGCODE/page" "$TOKEN3" > /dev/null
+check "u3 voit le service, pas inscrit" false "$(jval '.services[0].jeSuisInscrit')"
+check "u3 lève la main → 200"           200 "$(api POST "/api/groupes/$PGCODE/services/$SRV1/inscription" "$TOKEN3")"
+check "u2 (non-membre) s'inscrit → 403" 403 "$(api POST "/api/groupes/$PGCODE/services/$SRV1/inscription" "$TOKEN2")"
+check "u3 se réinscrit → 409"           409 "$(api POST "/api/groupes/$PGCODE/services/$SRV1/inscription" "$TOKEN3")"
+check "u1 : service complet → 409"      409 "$(api POST "/api/groupes/$PGCODE/services/$SRV1/inscription" "$TOKEN1")"
+check "service inconnu → 404"           404 "$(api POST "/api/groupes/$PGCODE/services/999999/inscription" "$TOKEN1")"
+api GET "/api/groupes/$PGCODE/page" "$TOKEN3" > /dev/null
+check "Chloé visible dans les inscrits" "Chloé" "$(jval '.services[0].inscrits[0]')"
+check "jeSuisInscrit pour u3"           true "$(jval '.services[0].jeSuisInscrit')"
+check "jamais d'e-mail sur la page"     false "$(jval 'tostring | contains("@")')"
+check "u3 se retire → 200"              200 "$(api DELETE "/api/groupes/$PGCODE/services/$SRV1/inscription" "$TOKEN3")"
+check "u3 se retire à nouveau → 404"    404 "$(api DELETE "/api/groupes/$PGCODE/services/$SRV1/inscription" "$TOKEN3")"
+check "place libérée : u1 s'inscrit → 200" 200 "$(api POST "/api/groupes/$PGCODE/services/$SRV1/inscription" "$TOKEN1")"
+
+say "Page — retoucher puis supprimer un service (les inscriptions partent avec)"
+APRES="$(php -r 'echo gmdate("Y-m-d", time() + 3 * 86400);')"
+check "modification (repoussé, 2 places) → 200" 200 "$(api POST "/api/groupes/$PGCODE/services" "$TOKEN1" "{\"id\":$SRV1,\"titre\":\"Nettoyage de la salle\",\"date\":\"$APRES\",\"places\":2}")"
+check "→ u1 toujours inscrit"           true "$(jval .service.jeSuisInscrit)"
+check "u3 prend la 2e place → 200"      200 "$(api POST "/api/groupes/$PGCODE/services/$SRV1/inscription" "$TOKEN3")"
+check "réduire à 1 place sous les 2 mains levées → 400" 400 "$(api POST "/api/groupes/$PGCODE/services" "$TOKEN1" "{\"id\":$SRV1,\"titre\":\"Nettoyage de la salle\",\"date\":\"$APRES\",\"places\":1}")"
+check "suppression par u3 → 403"        403 "$(api DELETE "/api/groupes/$PGCODE/services/$SRV1" "$TOKEN3")"
+check "suppression → 200"               200 "$(api DELETE "/api/groupes/$PGCODE/services/$SRV1" "$TOKEN1")"
+check "ses inscriptions sont parties"   0   "$(sqlval "SELECT COUNT(*) FROM groupe_service_inscriptions WHERE service_id = $SRV1")"
+api GET "/api/groupes/$PGCODE/page" "$TOKEN1" > /dev/null
+check "plus aucun service sur la page"  0   "$(jval '.services | length')"
+
+say "Page — ménage : les services passés depuis plus de 90 jours sont balayés"
+PGID="$(sqlval "SELECT id FROM groupes WHERE code = '$PGCODE'")"
+HIER="$(php -r 'echo gmdate("Y-m-d", time() - 86400);')"
+JADIS="$(php -r 'echo gmdate("Y-m-d", time() - 100 * 86400);')"
+sqlexec "INSERT INTO groupe_services (groupe_id, titre, date_service, details, places, created_at) VALUES ($PGID, 'Hier', '$HIER', NULL, 2, '2000-01-01 00:00:00'), ($PGID, 'Jadis', '$JADIS', NULL, 2, '2000-01-01 00:00:00')"
+JADIS_ID="$(sqlval "SELECT id FROM groupe_services WHERE titre = 'Jadis'")"
+sqlexec "INSERT INTO groupe_service_inscriptions (service_id, user_id, created_at) VALUES ($JADIS_ID, 1, '2000-01-01 00:00:00')"
+api GET "/api/groupes/$PGCODE/page" "$TOKEN1" > /dev/null
+check "les services passés ne s'affichent pas" 0 "$(jval '.services | length')"
+check "plus de 90 jours : balayé"       0   "$(sqlval "SELECT COUNT(*) FROM groupe_services WHERE id = $JADIS_ID")"
+check "… et ses inscriptions avec lui"  0   "$(sqlval "SELECT COUNT(*) FROM groupe_service_inscriptions WHERE service_id = $JADIS_ID")"
+check "moins de 90 jours : conservé"    1   "$(sqlval "SELECT COUNT(*) FROM groupe_services WHERE date_service = '$HIER'")"
+
+say "Page — plafonds par groupe (remplissage direct en base pour rester sobre)"
+VALS=""
+for i in $(seq 1 99); do VALS="$VALS,($PGID,'Remplissage $i','texte',0,'2000-01-01 00:00:00','2000-01-01 00:00:00')"; done
+sqlexec "INSERT INTO groupe_annonces (groupe_id, titre, texte, epingle, created_at, updated_at) VALUES ${VALS#,}"
+check "la 101e annonce → 400"           400 "$(api POST "/api/groupes/$PGCODE/annonces" "$TOKEN1" '{"titre":"De trop","texte":"Une de trop."}')"
+api GET "/api/groupes/$PGCODE/page" "$TOKEN1" > /dev/null
+check "la page s'arrête à 50 annonces"  50  "$(jval '.annonces | length')"
+sqlexec "DELETE FROM groupe_annonces WHERE titre LIKE 'Remplissage %'"
+VALS=""
+for i in $(seq 1 28); do VALS="$VALS,($PGID,'Remplissage $i',1,'12:00',NULL,0)"; done
+sqlexec "INSERT INTO groupe_rdv (groupe_id, libelle, jour, heure, lieu, ordre) VALUES ${VALS#,}"
+check "le 31e rendez-vous → 400"        400 "$(api POST "/api/groupes/$PGCODE/rdv" "$TOKEN1" '{"libelle":"De trop","jour":1,"heure":"12:00"}')"
+sqlexec "DELETE FROM groupe_rdv WHERE libelle LIKE 'Remplissage %'"
+VALS=""
+for i in $(seq 1 100); do VALS="$VALS,($PGID,'Remplissage $i','$DEMAIN',NULL,2,'2000-01-01 00:00:00')"; done
+sqlexec "INSERT INTO groupe_services (groupe_id, titre, date_service, details, places, created_at) VALUES ${VALS#,}"
+check "le 101e service à venir → 400"   400 "$(api POST "/api/groupes/$PGCODE/services" "$TOKEN1" "{\"titre\":\"De trop\",\"date\":\"$DEMAIN\",\"places\":2}")"
+sqlexec "DELETE FROM groupe_services WHERE titre LIKE 'Remplissage %'"
+
+say "Page — la suppression du groupe emporte toute la page"
+api POST "/api/groupes/$PGCODE/services" "$TOKEN1" "{\"titre\":\"Dernier service\",\"date\":\"$DEMAIN\",\"places\":2}" > /dev/null
+SRV2="$(jval .service.id)"
+api POST "/api/groupes/$PGCODE/services/$SRV2/inscription" "$TOKEN3" > /dev/null
+check "suppression du groupe → 200"     200 "$(api DELETE "/api/groupes/$PGCODE" "$TOKEN1")"
+check "la page a disparu → 404"         404 "$(api GET "/api/groupes/$PGCODE/page" "$TOKEN1")"
+check "annonces purgées"                0   "$(sqlval "SELECT COUNT(*) FROM groupe_annonces WHERE groupe_id = $PGID")"
+check "rendez-vous purgés"              0   "$(sqlval "SELECT COUNT(*) FROM groupe_rdv WHERE groupe_id = $PGID")"
+check "services purgés"                 0   "$(sqlval "SELECT COUNT(*) FROM groupe_services WHERE groupe_id = $PGID")"
+check "inscriptions purgées"            0   "$(sqlval "SELECT COUNT(*) FROM groupe_service_inscriptions WHERE service_id = $SRV2")"
+
+say "Page — un service chez Benoît (pour la suppression de son compte, plus bas)"
+DANS5J="$(php -r 'echo gmdate("Y-m-d", time() + 5 * 86400);')"
+check "u2 crée un service → 201"        201 "$(api POST "/api/groupes/$G2CODE/services" "$TOKEN2" "{\"titre\":\"Sonorisation\",\"date\":\"$DANS5J\",\"places\":3}")"
+G2SRV="$(jval .service.id)"
+check "u2 lève la main → 200"           200 "$(api POST "/api/groupes/$G2CODE/services/$G2SRV/inscription" "$TOKEN2")"
+check "u3 lève la main → 200"           200 "$(api POST "/api/groupes/$G2CODE/services/$G2SRV/inscription" "$TOKEN3")"
+check "2 mains levées"                  2   "$(sqlval "SELECT COUNT(*) FROM groupe_service_inscriptions WHERE service_id = $G2SRV")"
+
+# ---------------------------------------------------------------------------
 say "Administration — rôle admin (ADMIN_EMAILS=alice@example.org)"
 api GET /api/me "$TOKEN1" > /dev/null
 check "me alice : isAdmin true"         true  "$(jval .user.isAdmin)"
@@ -454,8 +603,7 @@ check "per-01 toujours version fichier" "$P01_FICHIER" \
 # Notifications — « le verset offert ». Les clés du vecteur RFC 8291 servent
 # d'abonnement plausible ; l'endpoint https://exemple.invalide est injoignable
 # (aucun envoi réel ici) : c'est la gestion d'échec qui est testée.
-sqlval()  { php -r '$p = new PDO("sqlite:" . $argv[1]); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
-sqlexec() { php -r '$p = new PDO("sqlite:" . $argv[1]); $p->exec($argv[2]);' "$ROOT/api/data/dev.sqlite" "$1"; }
+# (sqlval/sqlexec sont définies plus haut, section « La page de l'église »)
 
 say "Notifications — clé VAPID auto-générée"
 check "config : vapidPublicKey null avant toute activation" null "$(api GET /api/config > /dev/null; jval .vapidPublicKey)"
@@ -542,6 +690,13 @@ check "1 membre restant"                1 "$(jval ".groupes[] | select(.code == 
 api GET "/api/groupes/$G2CODE" "$TOKEN3" > /dev/null
 check "détail : Chloé responsable"      responsable "$(jval '.groupe.membres[] | select(.pseudo == "Chloé") | .role')"
 check "u3 peut poser le verset → 200"   200 "$(api POST "/api/groupes/$G2CODE/verset" "$TOKEN3" '{"reference":"Psaume 23.1","texte":"L’Éternel est mon berger : je ne manquerai de rien."}')"
+
+say "Page — la suppression du compte de u2 a retiré sa main levée, pas celle de Chloé"
+api GET "/api/groupes/$G2CODE/page" "$TOKEN3" > /dev/null
+check "le service de Benoît demeure"    1   "$(jval '.services | length')"
+check "une seule main levée désormais"  1   "$(jval '.services[0].inscrits | length')"
+check "Chloé reste inscrite"            "Chloé" "$(jval '.services[0].inscrits[0]')"
+check "en base : la seule inscription est celle de Chloé" 1 "$(sqlval "SELECT COUNT(*) FROM groupe_service_inscriptions WHERE service_id = $G2SRV")"
 
 say "u1 se reconnecte : l'ami supprimé et ses duels ont disparu"
 api POST /api/auth/request-code '' '{"email":"alice@example.org"}' > /dev/null
