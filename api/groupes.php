@@ -278,16 +278,27 @@ function handle_groupes_leave(PDO $pdo, string $rawCode): never {
  * (delete_user_completely, auth.php).
  */
 function groupe_delete_completely(PDO $pdo, int $groupeId): void {
-    groupe_quiz_purge($pdo, $groupeId);
-    $pdo->prepare(
-        'DELETE FROM groupe_service_inscriptions
-         WHERE service_id IN (SELECT id FROM groupe_services WHERE groupe_id = ?)'
-    )->execute([$groupeId]);
-    $pdo->prepare('DELETE FROM groupe_services WHERE groupe_id = ?')->execute([$groupeId]);
-    $pdo->prepare('DELETE FROM groupe_rdv WHERE groupe_id = ?')->execute([$groupeId]);
-    $pdo->prepare('DELETE FROM groupe_annonces WHERE groupe_id = ?')->execute([$groupeId]);
-    $pdo->prepare('DELETE FROM groupe_membres WHERE groupe_id = ?')->execute([$groupeId]);
-    $pdo->prepare('DELETE FROM groupes WHERE id = ?')->execute([$groupeId]);
+    // Tout ou rien : une dizaine de tables sont touchées — un échec en cours
+    // de route ne doit pas laisser de miettes rattachées à un groupe disparu.
+    // (delete_user_completely appelle déjà sous transaction : on ne rouvre pas.)
+    $ownTx = !$pdo->inTransaction();
+    if ($ownTx) $pdo->beginTransaction();
+    try {
+        groupe_quiz_purge($pdo, $groupeId);
+        $pdo->prepare(
+            'DELETE FROM groupe_service_inscriptions
+             WHERE service_id IN (SELECT id FROM groupe_services WHERE groupe_id = ?)'
+        )->execute([$groupeId]);
+        $pdo->prepare('DELETE FROM groupe_services WHERE groupe_id = ?')->execute([$groupeId]);
+        $pdo->prepare('DELETE FROM groupe_rdv WHERE groupe_id = ?')->execute([$groupeId]);
+        $pdo->prepare('DELETE FROM groupe_annonces WHERE groupe_id = ?')->execute([$groupeId]);
+        $pdo->prepare('DELETE FROM groupe_membres WHERE groupe_id = ?')->execute([$groupeId]);
+        $pdo->prepare('DELETE FROM groupes WHERE id = ?')->execute([$groupeId]);
+        if ($ownTx) $pdo->commit();
+    } catch (Throwable $e) {
+        if ($ownTx) $pdo->rollBack();
+        throw $e;
+    }
 }
 
 function handle_groupes_delete(PDO $pdo, string $rawCode): never {

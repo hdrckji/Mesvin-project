@@ -340,18 +340,28 @@ function handle_veillees_create(PDO $pdo): never {
         'INSERT INTO veillees (code, host_user_id, statut, questions_json, current_q, seconds, created_at, updated_at)
          VALUES (?, ?, ?, ?, -1, ?, ?, ?)'
     );
-    $st->execute([
-        $code,
-        $user['id'],
-        'lobby',
-        json_encode($questions, JSON_UNESCAPED_UNICODE),
-        $seconds,
-        now_sql(),
-        now_sql(),
-    ]);
-    if ($groupeLie !== null) {
-        $pdo->prepare('INSERT INTO veillee_groupes (veillee_id, groupe_id) VALUES (?, ?)')
-            ->execute([(int) $pdo->lastInsertId(), (int) $groupeLie['id']]);
+    // La salle et son lien église naissent ensemble ou pas du tout : sans
+    // transaction, un échec du second INSERT laisserait une veillée « fantôme »
+    // que l'animateur croirait liée à son groupe.
+    $pdo->beginTransaction();
+    try {
+        $st->execute([
+            $code,
+            $user['id'],
+            'lobby',
+            json_encode($questions, JSON_UNESCAPED_UNICODE),
+            $seconds,
+            now_sql(),
+            now_sql(),
+        ]);
+        if ($groupeLie !== null) {
+            $pdo->prepare('INSERT INTO veillee_groupes (veillee_id, groupe_id) VALUES (?, ?)')
+                ->execute([(int) $pdo->lastInsertId(), (int) $groupeLie['id']]);
+        }
+        $pdo->commit();
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        throw $e;
     }
 
     $v = veillee_load($pdo, $code);
@@ -447,18 +457,27 @@ function handle_veillees_answer(PDO $pdo, string $code): never {
         ? VEILLEE_POINTS_BASE + (int) round(VEILLEE_POINTS_SPEED * $remaining / max(1, (int) $v['seconds']))
         : 0;
 
+    // Réponse et points dans la même transaction : le score de
+    // veillee_players est un cumul jamais recalculé — sans ça, un échec entre
+    // les deux écritures ferait diverger le classement du bilan pour de bon.
+    $pdo->beginTransaction();
     try {
         $st = $pdo->prepare(
             'INSERT INTO veillee_answers (veillee_id, q_index, player_id, answer, correct, points, answered_at)
              VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
         $st->execute([(int) $v['id'], $qIndex, (int) $me['id'], $answer, $correct ? 1 : 0, $points, now_sql()]);
+        $pdo->prepare('UPDATE veillee_players SET score = score + ? WHERE id = ?')
+            ->execute([$points, (int) $me['id']]);
+        $pdo->commit();
     } catch (PDOException $e) {
+        $pdo->rollBack();
         // Clé primaire (veillee, question, joueur) : un doublon = déjà répondu.
-        json_error('Tu as déjà répondu à cette question.', 409);
+        if (($e->getCode() ?: '') === '23000' || str_contains($e->getMessage(), 'UNIQUE')) {
+            json_error('Tu as déjà répondu à cette question.', 409);
+        }
+        throw $e;
     }
-    $pdo->prepare('UPDATE veillee_players SET score = score + ? WHERE id = ?')
-        ->execute([$points, (int) $me['id']]);
 
     json_out(['ok' => true]);
 }

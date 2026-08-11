@@ -268,10 +268,19 @@ function normMinutes(m) { return m === 10 ? 15 : m; }
 function migrate(raw) {
   if (!raw || typeof raw !== 'object') return freshStore();
   if (raw.v === 2) {
-    // hygiène minimale
+    // hygiène minimale — et surtout : ne JAMAIS garder un livre inconnu.
+    // Un id venu d'un autre appareil (version plus récente, blob abîmé)
+    // planterait planTotals/bookState en écran blanc à chaque visite.
     if (!raw.books || typeof raw.books !== 'object') raw.books = {};
+    Object.keys(raw.books).forEach(id => { if (!BOOKS[id]) delete raw.books[id]; });
     if (!Array.isArray(raw.plans)) raw.plans = [];
-    raw.plans.forEach(p => { if (p) p.minutes = normMinutes(p.minutes); });
+    raw.plans = raw.plans.filter(p => p && Array.isArray(p.seq));
+    raw.plans.forEach(p => {
+      p.seq = p.seq.filter(id => BOOKS[id]);
+      p.minutes = normMinutes(p.minutes);
+    });
+    raw.plans = raw.plans.filter(p => p.seq.length > 0);
+    if (raw.active && !raw.plans.some(p => p.id === raw.active)) raw.active = null;
     return raw;
   }
   // ---- ancien format ----
@@ -418,7 +427,7 @@ function render() {
 function header() {
   return `<div class="topbar">
     <a class="back-link" href="../index.html" style="margin:0;text-decoration:none">‹ Accueil</a>
-    <div class="brand"><span class="app-title"><span class="seed">Graine</span> de Parole · Lire</span></div>
+    <div class="brand"><span class="app-title">Bible <span class="seed">Horizon</span> · Lire</span></div>
   </div>`;
 }
 

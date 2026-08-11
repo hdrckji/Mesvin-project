@@ -123,9 +123,14 @@ function service_payload(PDO $pdo, array $s, int $userId): array {
          ORDER BY i.created_at ASC, u.pseudo ASC'
     );
     $st->execute([(int) $s['id']]);
+    return service_payload_avec($s, $st->fetchAll(), $userId);
+}
+
+/** Même représentation, à partir d'inscriptions déjà chargées (page entière). */
+function service_payload_avec(array $s, array $rows, int $userId): array {
     $inscrits = [];
     $jeSuisInscrit = false;
-    foreach ($st->fetchAll() as $row) {
+    foreach ($rows as $row) {
         $inscrits[] = $row['pseudo'];
         if ((int) $row['user_id'] === $userId) {
             $jeSuisInscrit = true;
@@ -198,9 +203,29 @@ function handle_groupe_page(PDO $pdo, string $rawCode): never {
          ORDER BY date_service ASC, id ASC'
     );
     $st->execute([$groupeId, gmdate('Y-m-d')]);
+    $rows = $st->fetchAll();
+
+    // Toutes les inscriptions de ces services en UNE requête (au lieu d'une
+    // par service — jusqu'à 100 sur une page bien remplie).
+    $parService = [];
+    if ($rows !== []) {
+        $ids = array_map(static fn (array $r): int => (int) $r['id'], $rows);
+        $marques = implode(',', array_fill(0, count($ids), '?'));
+        $st = $pdo->prepare(
+            'SELECT i.service_id, u.pseudo, i.user_id
+             FROM groupe_service_inscriptions i
+             JOIN users u ON u.id = i.user_id
+             WHERE i.service_id IN (' . $marques . ')
+             ORDER BY i.created_at ASC, u.pseudo ASC'
+        );
+        $st->execute($ids);
+        foreach ($st->fetchAll() as $ins) {
+            $parService[(int) $ins['service_id']][] = $ins;
+        }
+    }
     $services = [];
-    foreach ($st->fetchAll() as $row) {
-        $services[] = service_payload($pdo, $row, (int) $user['id']);
+    foreach ($rows as $row) {
+        $services[] = service_payload_avec($row, $parService[(int) $row['id']] ?? [], (int) $user['id']);
     }
 
     json_out(['annonces' => $annonces, 'rdv' => $rdv, 'services' => $services]);

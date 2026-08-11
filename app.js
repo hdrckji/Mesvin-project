@@ -570,9 +570,19 @@ function viewMemo() {
       <span class="vi-text">Facultatif — une collection de versets par thème ou par livre.</span></span><span class="chev">›</span></button>`;
 
   let progress = '';
-  if (learnN > 0) progress += `<button class="verse-item fade" data-review="1">
+  if (learnN > 0 && due.length > 0) {
+    progress += `<button class="verse-item fade" data-review="1">
       <span class="stage">${icon('germe', 20)}</span><span class="vi-main"><span class="vi-ref">En apprentissage</span><br>
       <span class="vi-text">${learnN} verset${learnN > 1 ? 's' : ''} en cours de mémorisation</span></span><span class="chev">›</span></button>`;
+  } else if (learnN > 0) {
+    // Rien à revoir aujourd'hui : la ligne informe au lieu d'un tap muet
+    // qui re-rendait le même écran sans aucun retour.
+    const dans = Math.min.apply(null, learningCards().map(c => c.due)) - todayNum();
+    const quand = dans <= 1 ? 'demain' : `dans ${dans} jours`;
+    progress += `<div class="verse-item fade" style="cursor:default">
+      <span class="stage">${icon('germe', 20)}</span><span class="vi-main"><span class="vi-ref">En apprentissage</span><br>
+      <span class="vi-text">${learnN} verset${learnN > 1 ? 's' : ''} en route — à revoir ${quand}</span></span></div>`;
+  }
   progress += `<button class="verse-item gardenlink fade" data-tab="garden">
       <span class="stage">${icon('arbre', 20)}</span><span class="vi-main"><span class="vi-ref">Mon jardin</span><br>
       <span class="vi-text">${gardenN} verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}</span></span><span class="chev">›</span></button>`;
@@ -951,7 +961,7 @@ function viewAbout() {
     <div class="card"><p><b>Bible Horizon</b> t'aide à faire grandir la Parole dans ton cœur, un peu chaque jour — trois chemins qui se complètent :</p>
       <p>${icon('memorisation', 16)} <b>Semer.</b> Mémorise des versets pas à pas ; l'appli vérifie, puis les fait revenir juste avant que tu ne les oublies. Ton jardin garde la trace de chaque verset planté.</p>
       <p>${icon('lecture', 16)} <b>Marcher.</b> Un plan de lecture « chemin, pas calendrier » : un évangile, un testament ou toute la Bible — à ton rythme, jamais de retard, jamais de culpabilité.</p>
-      <p>${icon('defi', 16)} <b>Sonder.</b> Des questions sur les récits bibliques : seul, à plusieurs sur un appareil, en duel avec un ami, ou en veillée sur grand écran. Chaque réponse ramène vers le texte.</p></div>
+      <p>${icon('defi', 16)} <b>Sonder.</b> Des questions sur les récits bibliques : seul, à plusieurs sur un appareil, en duel avec un ami, ou en direct dans ton église, sur grand écran. Chaque réponse ramène vers le texte.</p></div>
     <div class="section-title">Nos principes</div>
     <div class="card">
       <p>${icon('colombe', 16)} <b>Gratuit, pour toujours.</b> Aucune fonction payante, aucune publicité.</p>
@@ -974,6 +984,7 @@ function viewAbout() {
 const LIRE_KEY = 'graine.lire.v1', DEFI_KEY = 'graine.defi.v1';
 const PIERRES_KEY = 'graine.pierres.v1'; // pierres du chemin (voir pierres.js) — voyagent dans le blob memo
 const SYNC_META_KEY = 'graine.sync.meta';
+const EXPIRED_KEY = 'graine.session.expiree'; // « ta session a expiré » à montrer sur Moi
 
 /* ---------- Fusion PURE des stores (testable : window.GraineSync) ----------
    Règle d'or : ne JAMAIS perdre de progression. En cas de doute, on garde le
@@ -1053,7 +1064,12 @@ function lireMigrate(raw) {
   const b = deepCopy(raw);
   if (b.v === 2) {
     if (!b.books || typeof b.books !== 'object' || Array.isArray(b.books)) b.books = {};
-    b.plans = Array.isArray(b.plans) ? b.plans.filter(p => p && typeof p === 'object') : [];
+    // Un chemin sans séquence exploitable est écarté : lire.js filtrera en
+    // plus les ids de livres inconnus (le catalogue vit là-bas).
+    b.plans = Array.isArray(b.plans)
+      ? b.plans.filter(p => p && typeof p === 'object' && Array.isArray(p.seq)
+          && p.seq.length > 0 && p.seq.every(id => typeof id === 'string'))
+      : [];
     b.plans.forEach(p => { p.minutes = lireNormMinutes(p.minutes); });
     if (typeof b.active !== 'string') b.active = null;
     return b;
@@ -1186,10 +1202,19 @@ async function syncNow() {
     syncUi.status = 'ok';
     syncUi.lastAt = new Date().toISOString();
     saveSyncMeta();
+    try { localStorage.removeItem(EXPIRED_KEY); } catch (err) {} // la session marche : plus rien à signaler
     if (friendsCache === 'error') friendsCache = null; // on est en ligne : on retentera la liste d'amis
   } catch (e) {
-    // Hors-ligne ou erreur : AUCUN message intrusif — on réessaiera.
-    syncUi.status = (e && e.offline) ? 'offline' : 'error';
+    if (e && e.status === 401) {
+      // Session expirée : api-client a déjà effacé la session locale. Sans
+      // trace, l'utilisateur croirait sa progression encore sauvegardée —
+      // on pose un petit mot doux, affiché sur l'écran Moi.
+      try { localStorage.setItem(EXPIRED_KEY, '1'); } catch (err) {}
+      syncUi.status = 'idle';
+    } else {
+      // Hors-ligne ou erreur : AUCUN message intrusif — on réessaiera.
+      syncUi.status = (e && e.offline) ? 'offline' : 'error';
+    }
   }
   syncRunning = false;
   renderIfIdle();
@@ -1417,7 +1442,10 @@ async function authResend() {
 
 /* ---------- Carte compte dans Moi ---------- */
 function moiInviteCard() {
+  let expiree = false;
+  try { expiree = localStorage.getItem(EXPIRED_KEY) === '1'; } catch (e) {}
   return `<div class="card account-card fade">
+    ${expiree ? `<p class="field-ok" style="margin:0 0 10px">Ta session a expiré — reconnecte-toi pour reprendre la sauvegarde. Tes données restent sur cet appareil.</p>` : ''}
     ${accountNotice ? `<p class="field-ok" style="margin:0 0 10px">${esc(accountNotice)}</p>` : ''}
     <div class="acc-head"><span class="acc-ic">${icon('nuage', 22)}</span><b>Synchronise et retrouve tes amis</b></div>
     <p class="muted">Sauvegarde ta progression, retrouve-la sur tous tes appareils, défie tes amis.</p>
@@ -1460,7 +1488,7 @@ async function doLogout() {
   await GraineAPI.logout(); // même hors-ligne, la session locale est effacée
   pseudoEdit = null; friendsCache = null; friendField = ''; friendError = friendNotice = null;
   syncUi = { status: 'idle', lastAt: null };
-  try { localStorage.removeItem(SYNC_META_KEY); } catch (e) {}
+  try { localStorage.removeItem(SYNC_META_KEY); localStorage.removeItem(EXPIRED_KEY); } catch (e) {}
   accountNotice = 'Tu es déconnecté. Tes données locales sont intactes.';
   render();
 }
