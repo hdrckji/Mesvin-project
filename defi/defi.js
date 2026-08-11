@@ -670,7 +670,7 @@ function renderAccueil() {
     <p class="defi-lead" style="margin:0 4px 16px">Des questions sur les récits de la Bible, et pour chacune la référence pour retourner au texte.</p>
 
     <button class="card hub-card" id="btn-seul">
-      <span class="hub-ic">🌱</span>
+      <span class="hub-ic">${icon('seul', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Seul</span>
         <span class="hub-sub">Défi du jour, défi libre, et ton chemin personnel.</span>
@@ -679,7 +679,7 @@ function renderAccueil() {
     </button>
 
     <button class="card hub-card" id="btn-plusieurs">
-      <span class="hub-ic">🕯️</span>
+      <span class="hub-ic">${icon('groupe', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">À plusieurs, ici</span>
         <span class="hub-sub">Sur un même appareil, en famille ou en groupe : compétitif ou coopératif.${g.relevees > 0 ? ` <b class="grp-count">${g.relevees} épreuve${g.relevees > 1 ? 's' : ''} relevée${g.relevees > 1 ? 's' : ''} ensemble</b>` : ''}</span>
@@ -688,7 +688,7 @@ function renderAccueil() {
     </button>
 
     <button class="card hub-card" id="btn-ami">
-      <span class="hub-ic">⚔️</span>
+      <span class="hub-ic">${icon('epees', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Défier un ami</span>
         <span class="hub-sub">À distance : mêmes questions pour vous deux, chacun quand il veut.<span id="duel-attente"></span></span>
@@ -697,7 +697,7 @@ function renderAccueil() {
     </button>
 
     <button class="card hub-card" id="btn-veillee">
-      <span class="hub-ic">🔥</span>
+      <span class="hub-ic">${icon('ecranDirect', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Quiz dans ton église</span>
         <span class="hub-sub">En direct : un grand écran pour tous, chacun répond sur son téléphone.</span>
@@ -1664,7 +1664,7 @@ function renderVeilleeMenu() {
 
     ${reprise ? `
     <button class="card hub-card" id="btn-vl-reprendre">
-      <span class="hub-ic">↩️</span>
+      <span class="hub-ic">${icon('reprendre', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Reprendre</span>
         <span class="hub-sub">${reprise.host ? `Tu animais le quiz <b>${esc(reprise.code)}</b>.` : `Tu étais <b>${esc(reprise.prenom || '')}</b> dans le quiz <b>${esc(reprise.code)}</b>.`}</span>
@@ -1673,7 +1673,7 @@ function renderVeilleeMenu() {
     </button>` : ''}
 
     <button class="card hub-card" id="btn-vl-rejoindre">
-      <span class="hub-ic">🙋</span>
+      <span class="hub-ic">${icon('rejoindre', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Rejoindre</span>
         <span class="hub-sub">Avec le code affiché sur le grand écran — prénom suffit, aucun compte.</span>
@@ -1682,7 +1682,7 @@ function renderVeilleeMenu() {
     </button>
 
     <button class="card hub-card" id="btn-vl-animer">
-      <span class="hub-ic">🎤</span>
+      <span class="hub-ic">${icon('microphone', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Animer</span>
         <span class="hub-sub">Crée le quiz et projette cet écran — pour toute l'assemblée.</span>
@@ -1708,7 +1708,7 @@ function renderVeilleeCompte() {
   <div class="fade">
     <button class="back-link" id="btn-vl-retour">‹ Quiz</button>
     <div class="card" style="text-align:center;padding:26px 18px">
-      <div style="font-size:2.2rem">🎤</div>
+      <div>${icon('microphone', 34)}</div>
       <h2 style="font-family:var(--serif);margin:10px 0 6px">Animer demande un compte</h2>
       <p class="defi-lead">C'est gratuit et rapide — il garde ton quiz à toi seul aux commandes. Les participants, eux, n'en ont pas besoin.</p>
       <p class="defi-lead">Ouvre l'appli principale, onglet <b>Moi</b>, puis « Créer mon compte / Me connecter » (par e-mail ou avec Google), et reviens ici.</p>
@@ -1933,7 +1933,7 @@ function renderVeilleePlayer() {
   if (e.statut === 'lobby') {
     corps = `
     <div class="card center" style="padding:30px 18px">
-      <div style="font-size:2.2rem">🔥</div>
+      <div>${icon('defi', 34)}</div>
       <h2 style="font-family:var(--serif);margin:10px 0 6px">Tu y es, ${esc(vl.prenom)} !</h2>
       <p class="defi-lead" style="margin:0">Regarde le grand écran — l'animateur va lancer le quiz.</p>
       <p class="muted" style="margin-top:10px">${e.nPlayers} participant${e.nPlayers > 1 ? 's' : ''} · ${e.qTotal} questions</p>
@@ -1942,7 +1942,7 @@ function renderVeilleePlayer() {
     corps = dejaRepondu ? `
     ${vlTimerHTML()}
     <div class="card center" style="padding:30px 18px">
-      <div style="font-size:2.2rem">✅</div>
+      <div style="color:var(--grow)">${icon('coche', 34)}</div>
       <h2 style="font-family:var(--serif);margin:10px 0 6px">C'est noté !</h2>
       <p class="defi-lead" style="margin:0">Regarde le grand écran — la réponse arrive.</p>
     </div>` : `
@@ -1958,7 +1958,7 @@ function renderVeilleePlayer() {
     const juste = me.answered && me.correct;
     corps = `
     <div class="card center" style="padding:26px 18px">
-      <div style="font-size:2.2rem">${me.answered ? (juste ? '🌾' : '🌱') : '⏳'}</div>
+      <div style="${juste ? 'color:var(--grow)' : ''}">${icon(me.answered ? (juste ? 'epi' : 'germe') : 'sablier', 34)}</div>
       <h2 style="font-family:var(--serif);margin:10px 0 6px">${me.answered ? (juste ? `Bonne réponse ! +${me.points} points` : 'Pas cette fois…') : 'Temps écoulé'}</h2>
       ${!juste && e.question ? `<p class="defi-lead" style="margin:0 0 6px">La bonne réponse : <b>${esc(e.question.options[e.question.bonne])}</b></p>` : ''}
       ${e.question ? `<p class="defi-ref-line" style="justify-content:center"><span class="arrow">→</span>${esc(e.question.reference)}</p>` : ''}

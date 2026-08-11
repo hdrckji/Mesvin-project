@@ -176,7 +176,7 @@ function renderRefus() {
   el.innerHTML = `
   <div class="fade">
     <div class="card center" style="padding:34px 20px">
-      <div style="font-size:2rem">🔒</div>
+      <div>${icon('cadenas', 30)}</div>
       <h2 style="font-family:var(--serif);margin:10px 0 6px">Réservé à l'administration</h2>
       <p class="muted" style="margin:0">Cette page est réservée à l'équipe qui prend soin de l'appli.</p>
       <a class="btn btn-ghost" href="../" style="margin-top:18px;text-decoration:none">Revenir à l'accueil</a>
@@ -193,7 +193,7 @@ function render() {
     <button class="back-link" id="btn-retour">‹ Accueil</button>
     <div class="topbar">
       <div class="brand">
-        <h1 class="app-title">🔧 Administration <span class="seed">•</span> <span class="muted">Bible Horizon</span></h1>
+        <h1 class="app-title">${icon('outil', 17)} Administration <span class="seed">•</span> <span class="muted">Bible Horizon</span></h1>
       </div>
     </div>
     <div class="pill-row" style="margin-bottom:16px">
@@ -363,7 +363,7 @@ function htmlUsers() {
       <td>${esc(dateCourte(u.createdAt))}</td>
       <td>${esc(dateCourte(u.lastSeen))}</td>
       <td><button class="fr-x" data-suppr="${u.id}" data-pseudo="${esc(u.pseudo)}" data-email="${esc(u.email)}"
-        title="Supprimer ce compte" aria-label="Supprimer le compte de ${esc(u.pseudo)}">✕</button></td>
+        title="Supprimer ce compte" aria-label="Supprimer le compte de ${esc(u.pseudo)}">${icon('croix', 13)}</button></td>
     </tr>`).join('');
   return `
     <div class="section-title">Comptes (${uListe.length})</div>

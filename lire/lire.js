@@ -442,10 +442,10 @@ function viewCfgWhere() {
   return header() + intro + `
     <div class="cfg-step fade"><span class="cfg-dot on"></span><span class="cfg-dot"></span><span class="cfg-dot"></span></div>
     <h2 class="cfg-q fade">Où veux-tu marcher ?</h2>
-    ${opt('NT', '✝️ Le Nouveau Testament', "La vie de Jésus, la naissance de l'Église, les lettres de Paul.")}
-    ${opt('AT', "📜 L'Ancien Testament", 'Les origines, la grande libération, les psaumes, la sagesse.')}
-    ${opt('BIBLE', '📚 Toute la Bible', "Les 66 livres, de la Genèse à l'Apocalypse — 1&nbsp;189 chapitres, un pas à la fois.")}
-    ${opt('LIVRE', '📖 Un livre précis', 'Tu sais déjà lequel — choisis-le dans la liste.')}
+    ${opt('NT', icon('croixNt', 17) + ' Le Nouveau Testament', "La vie de Jésus, la naissance de l'Église, les lettres de Paul.")}
+    ${opt('AT', icon('parchemin', 17) + " L'Ancien Testament", 'Les origines, la grande libération, les psaumes, la sagesse.')}
+    ${opt('BIBLE', icon('bibliotheque', 17) + ' Toute la Bible', "Les 66 livres, de la Genèse à l'Apocalypse — 1&nbsp;189 chapitres, un pas à la fois.")}
+    ${opt('LIVRE', icon('lecture', 17) + ' Un livre précis', 'Tu sais déjà lequel — choisis-le dans la liste.')}
     ${first
       ? `<p class="muted center" style="font-size:.85rem;margin-top:10px">Texte : Louis Segond 1910 · rien ne quitte ton téléphone</p>`
       : `<button class="linklike" data-back-home="1">‹ Revenir à mon chemin</button>`}`;
@@ -571,7 +571,7 @@ function viewHome() {
       <p class="hello">${esc(plan.nom)}</p>
       <h1 style="font-family:var(--serif);font-size:1.5rem;margin:6px 0 8px">${lu === 0 ? 'Bienvenue sur le chemin' : 'Reprends là où tu t’es arrêté'}</h1>
       <p class="muted" style="margin:0 0 18px">${sub}</p>
-      <button class="btn btn-primary" data-read="${next.livre}:${next.ch}" style="font-size:1.15rem;padding:16px 20px">📖 Lire ${esc(label)}</button>
+      <button class="btn btn-primary" data-read="${next.livre}:${next.ch}" style="font-size:1.15rem;padding:16px 20px">${icon('lecture', 18)} Lire ${esc(label)}</button>
     </div>`;
   }
 
@@ -589,11 +589,11 @@ function viewHome() {
     const path = isOpen ? `<div class="path">` + bookState(id).read.map((r, i) => {
       const isNext = next && next.livre === id && next.ch === i;
       const cls = r ? 'read' : (isNext ? 'next' : '');
-      return `<button class="mile ${cls}" data-read="${id}:${i}" title="${esc((B.chapLabel || B.nom) + ' ' + (i + 1))}">${r ? '✓' : i + 1}</button>`;
+      return `<button class="mile ${cls}" data-read="${id}:${i}" title="${esc((B.chapLabel || B.nom) + ' ' + (i + 1))}">${r ? icon('coche', 13) : i + 1}</button>`;
     }).join('') + `</div>` : '';
     return `<div class="book-row${isOpen ? ' open' : ''}">
       <button class="book-head" data-expand="${id}">
-        <span class="book-head-name">${fini ? '✓ ' : ''}${esc(B.nom)}</span>
+        <span class="book-head-name">${fini ? icon('coche', 15) + ' ' : ''}${esc(B.nom)}</span>
         <span class="book-head-count${n > 0 ? ' grow' : ''}">${n} / ${B.nb}</span>
       </button>
       <div class="gauge mini"><i style="width:${Math.round(n / B.nb * 100)}%"></i></div>
@@ -619,7 +619,7 @@ function viewHome() {
 
   const gauge = `<div class="card fade">
     <div class="gauge-label"><span><b>${lu}</b> / ${nb} chapitres lus</span>
-      ${lu > 0 ? `<span style="color:var(--grow);font-weight:650">🌱</span>` : ''}</div>
+      ${lu > 0 ? `<span style="color:var(--grow)">${icon('germe', 16)}</span>` : ''}</div>
     <div class="gauge"><i style="width:${Math.round(lu / nb * 100)}%"></i></div>
     ${multi ? `<div class="book-rows">${bookRows}</div>`
             : `<div class="book-rows single">${bookRows}</div>`}
@@ -664,7 +664,7 @@ function viewRead(p) {
   const isRead = st.read[ci];
 
   const finish = isRead
-    ? `<p class="already-read">Chapitre déjà lu 🌱</p>` +
+    ? `<p class="already-read">${icon('germe', 15)} Chapitre déjà lu</p>` +
       (ci + 1 < B.nb ? `<button class="btn btn-soft btn-block" data-read="${p.livre}:${ci + 1}">Chapitre suivant ›</button>` : '')
     : `<button class="btn btn-primary" data-finish="${p.livre}:${ci}">J'ai terminé ce chapitre</button>`;
 
@@ -702,7 +702,7 @@ function viewChapterDone(p) {
     : `<p style="font-weight:650;color:var(--grow);margin:14px 0 0">Tu as déjà lu ${n} chapitre${n > 1 ? 's' : ''} sur ${B.nb} 🌱</p>
        <div class="gauge" style="margin-top:14px"><i style="width:${Math.round(n / B.nb * 100)}%"></i></div>`;
   return header() + `<div class="celebrate card fade">
-      <div class="seal">🌱</div>
+      <div class="seal">${icon('germe', 42)}</div>
       <h2>${esc(nomCh)}, c'est lu</h2>
       <p class="muted">${mot}</p>
       ${planLine}
