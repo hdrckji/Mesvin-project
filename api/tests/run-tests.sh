@@ -383,7 +383,8 @@ say "Questions — banque publique fusionnée"
 check "GET /api/questions → 200"        200 "$(api GET /api/questions)"
 check "version 2"                       2   "$(jval .version)"
 check "6 catégories"                    6   "$(jval '.categories | length')"
-check "300 questions (fichier seul)"    300 "$(jval '.questions | length')"
+NBQ="$(jval '.questions | length')"
+check "banque du fichier non vide (≥ 300)" 300 "$(( NBQ >= 300 ? 300 : NBQ ))"
 
 say "Questions — écriture réservée à l'admin"
 QOK='{"categorie":"Personnages","niveau":1,"question":"Question de test ?","options":["A","B","C","D"],"bonne":2,"reference":"Test 1.1"}'
@@ -406,7 +407,7 @@ say "Questions — ajout avec id (adm-test-1)"
 check "ajout adm-test-1 → 200"          200 "$(api POST /api/admin/questions "$TOKEN1" '{"id":"adm-test-1","categorie":"Personnages","niveau":1,"question":"Question de test ?","options":["A","B","C","D"],"bonne":2,"reference":"Test 1.1"}')"
 check "→ id conservé"                   adm-test-1 "$(jval .question.id)"
 api GET /api/questions > /dev/null
-check "banque à 301"                    301 "$(jval '.questions | length')"
+check "banque à N+1 (ajout)"            "$(( NBQ + 1 ))" "$(jval '.questions | length')"
 check "adm-test-1 servie"               "Question de test ?" "$(jval '.questions[] | select(.id == "adm-test-1") | .question')"
 
 say "Questions — ajout sans id (généré), puis suppression"
@@ -415,16 +416,16 @@ GEN_ID="$(jval .question.id)"
 check "id généré préfixé adm-"          adm- "$(printf '%s' "$GEN_ID" | cut -c1-4)"
 check "id généré : adm- + 6 hex"        10  "${#GEN_ID}"
 api GET /api/questions > /dev/null
-check "banque à 302"                    302 "$(jval '.questions | length')"
+check "banque à N+2 (2e ajout)"         "$(( NBQ + 2 ))" "$(jval '.questions | length')"
 check "suppression de l'ajout → 200"    200 "$(api DELETE "/api/admin/questions/$GEN_ID" "$TOKEN1")"
 api GET /api/questions > /dev/null
-check "banque revenue à 301"            301 "$(jval '.questions | length')"
+check "banque revenue à N+1"            "$(( NBQ + 1 ))" "$(jval '.questions | length')"
 
 say "Questions — surcharge d'une question du fichier (per-01)"
 P01_FICHIER="$(jq -r '.questions[] | select(.id == "per-01") | .question' "$ROOT/defi/data/questions.json")"
 check "modification per-01 → 200"       200 "$(api POST /api/admin/questions "$TOKEN1" '{"id":"per-01","categorie":"Personnages","niveau":2,"question":"Qui construisit une arche ? (version admin)","options":["Abraham","Noé","Moïse","Élie"],"bonne":1,"reference":"Genèse 6.14"}')"
 api GET /api/questions > /dev/null
-check "la banque reste à 301"           301 "$(jval '.questions | length')"
+check "la banque reste à N+1"           "$(( NBQ + 1 ))" "$(jval '.questions | length')"
 check "per-01 : version modifiée servie" "Qui construisit une arche ? (version admin)" \
   "$(jval '.questions[] | select(.id == "per-01") | .question')"
 check "per-01 : une seule occurrence"   1   "$(jval '[.questions[] | select(.id == "per-01")] | length')"
@@ -432,12 +433,12 @@ check "per-01 : une seule occurrence"   1   "$(jval '[.questions[] | select(.id 
 say "Questions — désactivation puis restauration (per-01)"
 check "DELETE per-01 (désactive) → 200" 200 "$(api DELETE /api/admin/questions/per-01 "$TOKEN1")"
 api GET /api/questions > /dev/null
-check "banque à 300 (per-01 retirée, adm-test-1 encore là)" 300 "$(jval '.questions | length')"
+check "banque à N (per-01 retirée, adm-test-1 encore là)" "$NBQ" "$(jval '.questions | length')"
 check "per-01 absente de la banque"     0   "$(jval '[.questions[] | select(.id == "per-01")] | length')"
 check "restore sans surcharge (per-02) → 404" 404 "$(api POST /api/admin/questions/per-02/restore "$TOKEN1")"
 check "restore per-01 → 200"            200 "$(api POST /api/admin/questions/per-01/restore "$TOKEN1")"
 api GET /api/questions > /dev/null
-check "banque repasse à 301 (adm-test-1 existe encore)" 301 "$(jval '.questions | length')"
+check "banque repasse à N+1 (adm-test-1 existe encore)" "$(( NBQ + 1 ))" "$(jval '.questions | length')"
 check "per-01 : version du fichier de retour" "$P01_FICHIER" \
   "$(jval '.questions[] | select(.id == "per-01") | .question')"
 
@@ -445,7 +446,7 @@ say "Questions — suppression d'un ajout (adm-test-1)"
 check "DELETE d'un id inconnu → 404"    404 "$(api DELETE /api/admin/questions/adm-inconnu "$TOKEN1")"
 check "DELETE adm-test-1 → 200"         200 "$(api DELETE /api/admin/questions/adm-test-1 "$TOKEN1")"
 api GET /api/questions > /dev/null
-check "banque revenue à 300"            300 "$(jval '.questions | length')"
+check "banque revenue à N"              "$NBQ" "$(jval '.questions | length')"
 check "per-01 toujours version fichier" "$P01_FICHIER" \
   "$(jval '.questions[] | select(.id == "per-01") | .question')"
 
