@@ -120,7 +120,9 @@ body {
 /* ---------- Typo & titres ---------- */
 h1, h2, h3 { font-weight: 650; letter-spacing: -.01em; margin: 0; }
 .app-title { font-family: var(--serif); font-size: 1.2rem; color: var(--ink); }
-.app-title .seed { color: var(--grow); }
+/* « Horizon » (et les puces de titre) : or de la marque, lisible dans les
+   quatre thèmes via --accent-ink (l'or d'encre, pensé pour le texte). */
+.app-title .seed { color: var(--accent-ink); }
 .muted { color: var(--ink-soft); }
 .center { text-align: center; }
 
@@ -333,7 +335,7 @@ label.lbl { display: block; font-weight: 600; margin: 14px 2px 6px; font-size: .
 .card.hero { text-align: center; }
 .hero-emblem img { width: 62px; height: 62px; }
 .hero-name { font-family: var(--serif); font-size: 1.7rem; margin: 12px 0 6px; letter-spacing: -.01em; }
-.hero-name .seed { color: var(--grow); }
+.hero-name .seed { color: var(--accent-ink); }
 .hero-tag { font-family: var(--serif); color: var(--ink-soft); font-size: 1.05rem; margin: 0; }
 
 /* étapes « comment ça marche » */
