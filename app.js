@@ -28,6 +28,20 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
 function shuffle(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; }
 
+/* ---------- Icônes de section (essai — écran Moi uniquement) ----------
+   Traits fins, cohérents (viewBox 20x20, stroke-width 1.5, currentColor) au
+   lieu d'emoji : rendu identique sur tout appareil, calé sur --ink-soft.
+   Si l'essai ne convainc pas, il suffit de revenir aux emoji d'origine. */
+const ICONS = {
+  apparence: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.25"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5Z" fill="currentColor" stroke="none"/></svg>',
+  memorisation: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17V10"/><path d="M10 10C10 6.5 7 5 4 5c0 3.5 2.5 6 6 5Z"/><path d="M10 10c0-4 3-5.5 6-5.5 0 3.5-2.5 6-6 5.5Z"/></svg>',
+  assiduite: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="14" height="12.5" rx="2.2"/><path d="M3 8.5h14"/><path d="M6.5 2.5v3M13.5 2.5v3"/><path d="M7 12.2l1.8 1.8L13 10.2"/></svg>',
+  pierres: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="10" cy="15.3" rx="6.5" ry="2"/><ellipse cx="10" cy="10.7" rx="4.6" ry="1.7"/><ellipse cx="10" cy="6.8" rx="2.8" ry="1.4"/></svg>',
+  lecture: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5.2C8.3 3.9 6 3.4 3.2 3.8v11.2c2.8-.4 5.1.1 6.8 1.4 1.7-1.3 4-1.8 6.8-1.4V3.8c-2.8-.4-5.1.1-6.8 1.4Z"/><path d="M10 5.2v11.2"/></svg>',
+  defi: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17c-3 0-5-2-5-4.6 0-2 1.2-3 1.9-4.6.4 1 1.1 1.6 1.7 1.6-.3-2.6.6-4.7 2.6-6.4-.4 2 .1 3.4 1.5 4.6 1.5 1.3 2.3 2.8 2.3 4.8 0 2.6-2 4.6-5 4.6Z"/></svg>',
+};
+const icon = name => ICONS[name] || '';
+
 /* ---------- Stockage ---------- */
 function loadStore() {
   let s = null;
@@ -802,7 +816,7 @@ function viewMoi() {
   // Apparence : quatre pastilles, le choix s'applique immédiatement.
   const theme = themeChoice();
   const tpill = (v, l) => `<button class="pill ${theme === v ? 'on' : ''}" data-theme-pick="${v}">${l}</button>`;
-  const apparence = `<div class="section-title">🎨 Apparence</div>
+  const apparence = `<div class="section-title">${icon('apparence')} Apparence</div>
     <div class="card fade">
       <div class="pill-row">${tpill('auto', 'Auto')}${tpill('clair', '☀️ Clair')}${tpill('sombre', '🌙 Sombre')}${tpill('sepia', '📜 Sépia')}</div>
       <p class="muted" style="font-size:.85rem;margin:12px 2px 0">« Auto » suit le réglage clair/sombre de ton appareil. Ton choix vaut pour toute l'appli.</p>
@@ -811,7 +825,7 @@ function viewMoi() {
   // « Le verset offert » — notifications quotidiennes, sur le même modèle.
   const pousse = moiPushCard();
 
-  const memo = `<div class="section-title">🧠 Mémorisation</div>
+  const memo = `<div class="section-title">${icon('memorisation')} Mémorisation</div>
     <div class="stat-grid fade">
       ${tile(gardenN, `verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}`)}
       ${tile(learnN, 'en apprentissage')}
@@ -821,7 +835,7 @@ function viewMoi() {
         <div class="st-l">collection${completedN > 1 ? 's' : ''} complétée${completedN > 1 ? 's' : ''}</div></div>
     </div>`;
 
-  const assiduite = `<div class="section-title">📆 Assiduité</div>
+  const assiduite = `<div class="section-title">${icon('assiduite')} Assiduité</div>
     <div class="stat-grid fade">
       <div class="stat-tile wide"><div class="st-n">${daysN}</div>
         <div class="st-l">jour${daysN > 1 ? 's' : ''} d'activité en tout</div></div>
@@ -836,7 +850,7 @@ function viewMoi() {
         <span class="pi-phrase">${esc(p.phrase)}</span>
         <span class="pi-date">posée le ${esc(p.date)}</span></span>
     </div>`).join('');
-  const pierresSec = `<div class="section-title">🪨 Pierres du chemin</div>
+  const pierresSec = `<div class="section-title">${icon('pierres')} Pierres du chemin</div>
     <p class="muted me-note fade">Des badges-souvenirs qui marquent un pas réel du chemin — premier
       verset planté, premier chapitre lu, premier défi relevé… Une pierre se pose une seule fois,
       et ne se retire jamais.</p>
@@ -845,14 +859,14 @@ function viewMoi() {
       ? pierresTiles + `<p class="muted me-note center">D'autres pierres se poseront au fil du chemin.</p>`
       : `<p class="muted me-note center fade">Tes pierres se poseront ici, une à une, au fil du chemin.</p>`}`;
 
-  const lireSec = `<div class="section-title">📖 Lecture</div>
+  const lireSec = `<div class="section-title">${icon('lecture')} Lecture</div>
     <div class="stat-grid fade">
       ${tile(lire.chapters, `chapitre${lire.chapters > 1 ? 's' : ''} lu${lire.chapters > 1 ? 's' : ''}`)}
       ${tile(lire.books, `livre${lire.books > 1 ? 's' : ''} terminé${lire.books > 1 ? 's' : ''}`)}
     </div>
     ${lire.chapters === 0 ? `<p class="muted me-note">Pas encore commencé — le module Lire t'attend, à ton rythme.</p>` : ''}`;
 
-  const defiSec = `<div class="section-title">🕯️ Défi</div>
+  const defiSec = `<div class="section-title">${icon('defi')} Défi</div>
     <div class="stat-grid fade">
       ${tile(defi.defis, `défi${defi.defis > 1 ? 's' : ''} relevé${defi.defis > 1 ? 's' : ''}`)}
       ${tile(defi.bestScore === null ? '—' : defi.bestScore, defi.bestScoreLabel.toLowerCase())}
