@@ -80,6 +80,11 @@
 	@assets path *.css *.js *.svg *.json
 	header @assets Cache-Control "no-cache"
 
+	# Les icônes PNG (installation, notifications) ne bougent pratiquement
+	# jamais : une semaine de cache — en cas de refonte, on renommera.
+	@icones path /icon-*.png
+	header @icones Cache-Control "public, max-age=604800"
+
 	# Exception : la Bible ne change pas. Les 66 livres de /lire/data/ peuvent
 	# vivre une journée en cache navigateur (et servir la copie périmée pendant
 	# qu'une revalidation se fait en arrière-plan) sans risque d'écran mélangé —

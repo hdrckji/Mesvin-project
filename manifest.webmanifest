@@ -2,14 +2,17 @@
   "name": "Bible Horizon — la Parole, un peu chaque jour",
   "short_name": "Horizon",
   "description": "Mémorise des versets, lis la Bible à ton rythme et relève des défis bibliques — seul ou avec tes amis.",
+  "id": "./",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#f7f3ea",
   "theme_color": "#f7f3ea",
   "lang": "fr",
   "icons": [
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }

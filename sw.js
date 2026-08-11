@@ -11,6 +11,7 @@ const CACHE = 'graine-v22';
 const SHELL = [
   '.', 'index.html', 'app.css', 'app.js', 'icons.js', 'api-client.js', 'pierres.js',
   'data/verses.json', 'data/collections.json', 'icon.svg', 'manifest.webmanifest',
+  'icon-180.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png',
   'lire/', 'lire/index.html', 'lire/lire.css', 'lire/lire.js',
   'defi/', 'defi/index.html', 'defi/defi.css', 'defi/defi.js',
   'defi/data/questions.json'
@@ -100,8 +101,9 @@ self.addEventListener('push', e => {
   try { data = e.data ? e.data.json() : {}; } catch (err) { /* payload illisible : valeurs sûres */ }
   e.waitUntil(self.registration.showNotification(data.title || '🌱 Un verset pour toi', {
     body: data.body || '',
-    icon: 'icon.svg',
-    badge: 'icon.svg',
+    // PNG obligatoire : Android n'affiche pas les icônes SVG de notification.
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
     tag: 'verset-offert',
     data: { url: data.url || '/' }
   }));
