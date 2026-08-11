@@ -99,21 +99,42 @@ let store = loadStore();
 let BANQUE = [];      // toutes les questions
 let CATEGORIES = [];  // ordre d'affichage des catégories
 
-async function chargerBanque() {
-  // La banque « vivante » du serveur d'abord (elle inclut les retouches de
-  // l'administration) ; en cas d'échec — hors-ligne, serveur indisponible —
-  // repli silencieux sur le fichier embarqué (et pré-caché) du module.
-  // La page vit dans /defi/, l'API à la racine : d'où le chemin ../api.
-  let d = null;
-  try {
-    const r = await fetch('../api/questions', { cache: 'no-cache' });
-    if (r.ok) d = await r.json();
-  } catch (e) { /* pas de réseau : le fichier local suffit */ }
-  if (!d || !Array.isArray(d.questions) || d.questions.length === 0) {
-    d = await (await fetch('data/questions.json', { cache: 'no-cache' })).json();
-  }
+const BANQUE_KEY = 'graine.defi.banque.v1'; // copie locale de la banque (~150 Ko)
+
+function appliquerBanque(d) {
   BANQUE = d.questions || [];
   CATEGORIES = d.categories || [...new Set(BANQUE.map(q => q.categorie))];
+}
+async function telechargerBanque() {
+  // La banque « vivante » du serveur (elle inclut les retouches de
+  // l'administration). La page vit dans /defi/, l'API à la racine : ../api.
+  try {
+    const r = await fetch('../api/questions', { cache: 'no-cache' });
+    if (r.ok) {
+      const d = await r.json();
+      if (d && Array.isArray(d.questions) && d.questions.length > 0) return d;
+    }
+  } catch (e) { /* pas de réseau : la copie locale suffit */ }
+  return null;
+}
+async function chargerBanque() {
+  // La copie mémorisée sur l'appareil d'abord : le module s'ouvre sans
+  // attendre le re-téléchargement des 600 questions (~150 Ko à chaque
+  // visite, sinon). Le serveur est consulté en arrière-plan et sa version
+  // remplace la copie pour la PROCHAINE ouverture — jamais en pleine partie,
+  // le tirage du jour ne doit pas changer sous les pieds du joueur.
+  const locale = lireJSON(BANQUE_KEY);
+  if (locale && Array.isArray(locale.questions) && locale.questions.length > 0) {
+    appliquerBanque(locale);
+    telechargerBanque().then(d => { if (d) ecrireJSON(BANQUE_KEY, d); }).catch(() => {});
+    return;
+  }
+  // Première visite (ou copie absente) : le serveur, sinon le fichier
+  // embarqué (et pré-caché) du module — repli silencieux.
+  let d = await telechargerBanque();
+  if (d) ecrireJSON(BANQUE_KEY, d);
+  else d = await (await fetch('data/questions.json', { cache: 'no-cache' })).json();
+  appliquerBanque(d);
 }
 
 /* ---------- Sélection des questions ---------- */

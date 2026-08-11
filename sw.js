@@ -1,15 +1,23 @@
 /* Service worker de Bible Horizon.
-   Stratégie « réseau d'abord » : en ligne, on sert toujours la dernière version
-   (pratique pendant qu'on fait évoluer l'appli) ; hors-ligne, on retombe sur le
-   cache. On pré-cache la coquille pour un premier lancement hors-ligne possible. */
+   Stratégie « réseau d'abord, mais pas à n'importe quel prix » : en ligne, on
+   sert la dernière version ; si le réseau traîne plus de 3 s ou échoue, on
+   sert la copie locale — l'app entière est pré-cachée, personne ne doit fixer
+   un écran blanc avec deux barres de réseau. La coquille est pré-cachée en
+   bloc (tout ou rien) ; la Bible complète suit en best-effort : un livre qui
+   rate ne prive pas du hors-ligne de base, il se rattrapera à l'usage. */
 
-const CACHE = 'graine-v21';
-const ASSETS = [
+const CACHE = 'graine-v22';
+// La coquille : le minimum pour que l'appli s'ouvre et vive hors-ligne.
+const SHELL = [
   '.', 'index.html', 'app.css', 'app.js', 'icons.js', 'api-client.js', 'pierres.js',
   'data/verses.json', 'data/collections.json', 'icon.svg', 'manifest.webmanifest',
-  // Module « Lire » — la Bible complète (66 livres, ~4,4 Mo) est pré-cachée
-  // pour un hors-ligne total ; à l'écran, chaque livre reste chargé à la demande.
   'lire/', 'lire/index.html', 'lire/lire.css', 'lire/lire.js',
+  'defi/', 'defi/index.html', 'defi/defi.css', 'defi/defi.js',
+  'defi/data/questions.json'
+];
+// La Bible complète (66 livres, ~4,4 Mo) — pré-cachée en arrière-plan pour un
+// hors-ligne total ; à l'écran, chaque livre reste chargé à la demande.
+const BIBLE = [
   'lire/data/1chroniques.json', 'lire/data/1corinthiens.json', 'lire/data/1jean.json', 'lire/data/1pierre.json',
   'lire/data/1rois.json', 'lire/data/1samuel.json', 'lire/data/1thessaloniciens.json', 'lire/data/1timothee.json',
   'lire/data/2chroniques.json', 'lire/data/2corinthiens.json', 'lire/data/2jean.json', 'lire/data/2pierre.json',
@@ -26,14 +34,19 @@ const ASSETS = [
   'lire/data/michee.json', 'lire/data/nahum.json', 'lire/data/nehemie.json', 'lire/data/nombres.json',
   'lire/data/osee.json', 'lire/data/philemon.json', 'lire/data/philippiens.json', 'lire/data/proverbes.json',
   'lire/data/psaumes.json', 'lire/data/romains.json', 'lire/data/ruth.json', 'lire/data/sophonie.json',
-  'lire/data/tite.json', 'lire/data/zacharie.json',
-  // Module « Défi »
-  'defi/', 'defi/index.html', 'defi/defi.css', 'defi/defi.js',
-  'defi/data/questions.json'
+  'lire/data/tite.json', 'lire/data/zacharie.json'
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE)
+      // Coquille : atomique — si elle rate, on réessaiera une autre fois.
+      .then(c => c.addAll(SHELL)
+        // Bible : chaque livre pour lui-même — sur un réseau fragile, en
+        // garder 60 sur 66 vaut infiniment mieux que tout perdre.
+        .then(() => Promise.allSettled(BIBLE.map(u => c.add(u)))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {
@@ -43,18 +56,38 @@ self.addEventListener('activate', e => {
   );
 });
 
+const RESEAU_PATIENCE_MS = 3000; // au-delà, la copie locale prend le relais
+
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  // Autres origines (bouton Google…) : on ne s'en mêle pas — les réponses
+  // opaques gonflent le quota et n'ont rien à faire dans notre cache.
+  if (url.origin !== location.origin) return;
   // L'API n'est JAMAIS mise en cache ni servie depuis le cache : données
   // privées et toujours fraîches ; hors-ligne, l'appli gère l'échec elle-même.
-  if (new URL(e.request.url).pathname.includes('/api/')) return;
-  e.respondWith(
-    fetch(e.request).then(res => {
-      const copy = res.clone();
-      caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+  if (url.pathname.includes('/api/')) return;
+  e.respondWith((async () => {
+    const enCache = await caches.match(e.request);
+    const reseau = fetch(e.request).then(res => {
+      // Seules les réponses SAINES entrent au cache : une 404/500 passagère
+      // ne doit jamais remplacer une bonne copie ni être servie hors-ligne.
+      if (res && res.ok) {
+        const copy = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+      }
       return res;
-    }).catch(() => caches.match(e.request).then(hit => hit || caches.match('index.html')))
-  );
+    });
+    if (!enCache) {
+      return reseau.catch(() => caches.match('index.html'));
+    }
+    // Copie locale disponible : le réseau a RESEAU_PATIENCE_MS pour faire
+    // mieux, sinon on sert le local — un réseau à deux barres ne doit jamais
+    // se traduire par un écran blanc alors que tout est déjà sur l'appareil.
+    const chrono = new Promise(resolve => setTimeout(() => resolve(null), RESEAU_PATIENCE_MS));
+    const res = await Promise.race([reseau.catch(() => null), chrono]);
+    return (res && res.ok) ? res : enCache;
+  })());
 });
 
 /* ---- « Le verset offert » : notifications push ----

@@ -80,6 +80,14 @@
 	@assets path *.css *.js *.svg *.json
 	header @assets Cache-Control "no-cache"
 
+	# Exception : la Bible ne change pas. Les 66 livres de /lire/data/ peuvent
+	# vivre une journée en cache navigateur (et servir la copie périmée pendant
+	# qu'une revalidation se fait en arrière-plan) sans risque d'écran mélangé —
+	# 66 revalidations économisées à chaque réinstallation du service worker.
+	# (Placée APRÈS la règle générale : la dernière écrite gagne.)
+	@bible path /lire/data/*.json
+	header @bible Cache-Control "public, max-age=86400, stale-while-revalidate=604800"
+
 	# Sert les fichiers statiques et exécute les .php (ici : api/index.php seul).
 	php_server
 }
