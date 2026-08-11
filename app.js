@@ -1709,13 +1709,24 @@ function removeVerse(id) {
    ========================================================================== */
 (async function init() {
   el.innerHTML = '<p class="muted center" style="padding:40px">Chargement…</p>';
-  markActiveDay(); // ouvrir l'appli compte comme un jour d'activité (une fois par jour)
-  // Les pierres déjà méritées (y compris par les modules Lire et Défi) se
-  // posent dès l'ouverture — jamais deux fois, la clé garde la mémoire.
-  if (window.GrainePierres) GrainePierres.verifier();
-  await Promise.all([loadLibrary(), loadCollections()]);
-  syncCompletedCollections();
-  render();
+  // Un démarrage qui échoue ne doit JAMAIS laisser « Chargement… » figé :
+  // l'écran dit ce qui s'est passé et propose de réessayer.
+  try {
+    markActiveDay(); // ouvrir l'appli compte comme un jour d'activité (une fois par jour)
+    // Les pierres déjà méritées (y compris par les modules Lire et Défi) se
+    // posent dès l'ouverture — jamais deux fois, la clé garde la mémoire.
+    if (window.GrainePierres) GrainePierres.verifier();
+    await Promise.all([loadLibrary(), loadCollections()]);
+    syncCompletedCollections();
+    render();
+  } catch (e) {
+    el.innerHTML = `<div class="card center" style="margin-top:40px;padding:30px 18px">
+      <p style="margin:0 0 6px"><b>L'appli n'a pas pu démarrer.</b></p>
+      <p class="muted" style="margin:0">${esc((e && e.message) || 'Erreur inconnue')}</p>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="location.reload()">Réessayer</button>
+    </div>`;
+    return;
+  }
   // Synchronisation à l'ouverture si connecté — silencieuse, non bloquante :
   // hors-ligne, l'appli locale continue exactement comme avant.
   if (window.GraineAPI && GraineAPI.isLoggedIn()) syncNow();
