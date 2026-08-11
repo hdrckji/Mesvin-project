@@ -286,7 +286,7 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.01em; margin: 0; }
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   font-size: .72rem; padding: 4px 14px; cursor: pointer; border-radius: 10px;
 }
-.tabbar button .ic { font-size: 1.3rem; }
+.tabbar button .ic { display: flex; }
 .tabbar button.active { color: var(--grow); font-weight: 650; }
 
 /* ---------- Divers ---------- */
@@ -421,7 +421,7 @@ a.verse-item { text-decoration: none; }
   font: inherit; color: inherit; text-align: left; text-decoration: none;
 }
 .hub-card .hub-ic {
-  font-size: 1.9rem; width: 54px; height: 54px; flex-shrink: 0;
+  color: var(--accent-ink); width: 54px; height: 54px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   background: var(--surface-2); border-radius: 16px;
 }

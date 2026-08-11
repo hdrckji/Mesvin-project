@@ -28,19 +28,27 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
 function shuffle(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; }
 
-/* ---------- Icônes de section (essai — écran Moi uniquement) ----------
-   Traits fins, cohérents (viewBox 20x20, stroke-width 1.5, currentColor) au
-   lieu d'emoji : rendu identique sur tout appareil, calé sur --ink-soft.
-   Si l'essai ne convainc pas, il suffit de revenir aux emoji d'origine. */
-const ICONS = {
-  apparence: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.25"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5Z" fill="currentColor" stroke="none"/></svg>',
-  memorisation: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17V10"/><path d="M10 10C10 6.5 7 5 4 5c0 3.5 2.5 6 6 5Z"/><path d="M10 10c0-4 3-5.5 6-5.5 0 3.5-2.5 6-6 5.5Z"/></svg>',
-  assiduite: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="14" height="12.5" rx="2.2"/><path d="M3 8.5h14"/><path d="M6.5 2.5v3M13.5 2.5v3"/><path d="M7 12.2l1.8 1.8L13 10.2"/></svg>',
-  pierres: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="10" cy="15.3" rx="6.5" ry="2"/><ellipse cx="10" cy="10.7" rx="4.6" ry="1.7"/><ellipse cx="10" cy="6.8" rx="2.8" ry="1.4"/></svg>',
-  lecture: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5.2C8.3 3.9 6 3.4 3.2 3.8v11.2c2.8-.4 5.1.1 6.8 1.4 1.7-1.3 4-1.8 6.8-1.4V3.8c-2.8-.4-5.1.1-6.8 1.4Z"/><path d="M10 5.2v11.2"/></svg>',
-  defi: '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17c-3 0-5-2-5-4.6 0-2 1.2-3 1.9-4.6.4 1 1.1 1.6 1.7 1.6-.3-2.6.6-4.7 2.6-6.4-.4 2 .1 3.4 1.5 4.6 1.5 1.3 2.3 2.8 2.3 4.8 0 2.6-2 4.6-5 4.6Z"/></svg>',
+/* ---------- Icônes en traits (remplacent progressivement les emoji) ----------
+   Cohérentes (viewBox 20x20, stroke-width 1.5, currentColor) : rendu identique
+   sur tout appareil, contrairement aux emoji qui varient selon l'OS. Volontairement
+   PAS utilisées pour les 17 pierres du chemin (badges-souvenirs) : leur variété
+   colorée fait leur charme, un jeu de traits uniforme les banaliserait. */
+const ICON_PATHS = {
+  apparence: '<circle cx="10" cy="10" r="7.25"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5Z" fill="currentColor" stroke="none"/>',
+  memorisation: '<path d="M10 17V10"/><path d="M10 10C10 6.5 7 5 4 5c0 3.5 2.5 6 6 5Z"/><path d="M10 10c0-4 3-5.5 6-5.5 0 3.5-2.5 6-6 5.5Z"/>',
+  assiduite: '<rect x="3" y="4.5" width="14" height="12.5" rx="2.2"/><path d="M3 8.5h14"/><path d="M6.5 2.5v3M13.5 2.5v3"/><path d="M7 12.2l1.8 1.8L13 10.2"/>',
+  pierres: '<ellipse cx="10" cy="15.3" rx="6.5" ry="2"/><ellipse cx="10" cy="10.7" rx="4.6" ry="1.7"/><ellipse cx="10" cy="6.8" rx="2.8" ry="1.4"/>',
+  lecture: '<path d="M10 5.2C8.3 3.9 6 3.4 3.2 3.8v11.2c2.8-.4 5.1.1 6.8 1.4 1.7-1.3 4-1.8 6.8-1.4V3.8c-2.8-.4-5.1.1-6.8 1.4Z"/><path d="M10 5.2v11.2"/>',
+  defi: '<path d="M10 17c-3 0-5-2-5-4.6 0-2 1.2-3 1.9-4.6.4 1 1.1 1.6 1.7 1.6-.3-2.6.6-4.7 2.6-6.4-.4 2 .1 3.4 1.5 4.6 1.5 1.3 2.3 2.8 2.3 4.8 0 2.6-2 4.6-5 4.6Z"/>',
+  accueil: '<path d="M3.2 9.5 10 4l6.8 5.5"/><path d="M5 8.5V16h10V8.5"/><path d="M8.3 16v-4h3.4v4"/>',
+  moi: '<circle cx="10" cy="6.7" r="3"/><path d="M3.8 16.5c.7-3.6 3.4-5.5 6.2-5.5s5.5 1.9 6.2 5.5"/>',
+  apropos: '<circle cx="10" cy="10" r="7.25"/><line x1="10" y1="9.2" x2="10" y2="14"/><circle cx="10" cy="6.1" r="1" fill="currentColor" stroke="none"/>',
 };
-const icon = name => ICONS[name] || '';
+const icon = (name, size) => {
+  const p = ICON_PATHS[name]; if (!p) return '';
+  size = size || 15;
+  return `<svg class="ic-svg" viewBox="0 0 20 20" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+};
 
 /* ---------- Stockage ---------- */
 function loadStore() {
@@ -483,7 +491,7 @@ function tabbar() {
   const cur = ['memo', 'study', 'collections'].includes(route.name) ? 'home'
     : ['garden', 'verse', 'account'].includes(route.name) ? 'moi' : route.name;
   const tab = (n, ic, l) => `<button data-tab="${n}" class="${cur === n ? 'active' : ''}"><span class="ic">${ic}</span>${l}</button>`;
-  return `<nav class="tabbar">${tab('home', '🏠', 'Accueil')}${tab('moi', '👤', 'Moi')}${tab('about', '☖', 'À propos')}</nav>`;
+  return `<nav class="tabbar">${tab('home', icon('accueil', 21), 'Accueil')}${tab('moi', icon('moi', 21), 'Moi')}${tab('about', icon('apropos', 21), 'À propos')}</nav>`;
 }
 
 /* ---------- Accueil : hub des trois modules ---------- */
@@ -502,17 +510,17 @@ function viewHome() {
 
   const hub = `
     <button class="card hub-card fade" data-tab="memo">
-      <span class="hub-ic">🌱</span>
+      <span class="hub-ic">${icon('memorisation', 26)}</span>
       <span class="hub-txt"><span class="hub-title">Semer</span>
         <span class="hub-sub">${memoSub}</span></span>
       <span class="chev">›</span></button>
     <a class="card hub-card fade" href="lire/">
-      <span class="hub-ic">📖</span>
+      <span class="hub-ic">${icon('lecture', 26)}</span>
       <span class="hub-txt"><span class="hub-title">Marcher</span>
         <span class="hub-sub">Suis ton plan de lecture de la Bible, à ton rythme</span></span>
       <span class="chev">›</span></a>
     <a class="card hub-card fade" href="defi/">
-      <span class="hub-ic">🕯️</span>
+      <span class="hub-ic">${icon('defi', 26)}</span>
       <span class="hub-txt"><span class="hub-title">Sonder</span>
         <span class="hub-sub">Des questions pour tester ta connaissance de la Bible, seul ou entre amis</span></span>
       <span class="chev">›</span></a>`;
