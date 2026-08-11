@@ -349,6 +349,96 @@ check "u3 rejoint → 200"                200 "$(api POST /api/groupes/rejoindre
 check "→ 2 membres"                     2   "$(jval .groupe.nbMembres)"
 
 # ---------------------------------------------------------------------------
+# Quiz d'église — la banque de questions par groupe (groupes-quiz.php).
+# Toujours aucun appel request-code ici. u1 (responsable) et u3 (membre)
+# portent les tests ; u2, encore vivant à ce stade, sert de non-membre.
+# À ce point de la suite, quiz_questions est vide : la banque commune
+# fusionnée est exactement le fichier — les 5 premières questions du fichier
+# servent de sélection déterministe pour le test du tirage.
+say "Quiz d'église — réglages par défaut (u1 crée, u3 rejoint)"
+check "u1 crée le groupe du quiz → 201" 201 "$(api POST /api/groupes "$TOKEN1" '{"nom":"Église du Quiz"}')"
+QGCODE="$(jval .groupe.code)"
+api POST /api/groupes/rejoindre "$TOKEN3" "{\"code\":\"$QGCODE\"}" > /dev/null
+NBQF="$(api GET /api/questions > /dev/null; jval '.questions | length')"
+check "GET quiz par u3 (membre) → 200"  200 "$(api GET "/api/groupes/$QGCODE/quiz" "$TOKEN3")"
+check "mode par défaut : toutes"        toutes "$(jval .quiz.mode)"
+check "nbSelection 0"                   0   "$(jval .quiz.nbSelection)"
+check "nbPropres 0"                     0   "$(jval .quiz.nbPropres)"
+check "nbTotal = banque commune entière" "$NBQF" "$(jval .quiz.nbTotal)"
+
+say "Quiz d'église — lecture aux membres, écriture au responsable seul"
+check "GET quiz non-membre (u2) → 403"  403 "$(api GET "/api/groupes/$QGCODE/quiz" "$TOKEN2")"
+check "mode posé par u3 (membre) → 403" 403 "$(api POST "/api/groupes/$QGCODE/quiz/mode" "$TOKEN3" '{"mode":"selection"}')"
+check "sélection posée par u3 → 403"    403 "$(api PUT "/api/groupes/$QGCODE/quiz/selection" "$TOKEN3" '{"ids":[]}')"
+check "questions propres lues par u3 → 403" 403 "$(api GET "/api/groupes/$QGCODE/quiz/questions" "$TOKEN3")"
+check "question propre créée par u3 → 403" 403 "$(api POST "/api/groupes/$QGCODE/quiz/questions" "$TOKEN3" '{"categorie":"Personnages","niveau":1,"question":"Q ?","options":["A","B","C","D"],"bonne":0,"reference":"R"}')"
+check "mode inconnu → 400"              400 "$(api POST "/api/groupes/$QGCODE/quiz/mode" "$TOKEN1" '{"mode":"aucune"}')"
+
+say "Quiz d'église — sélection dans la banque commune (REMPLACE, ids vérifiés)"
+SELIDS="$(jq -c '[.questions[0:5][].id]' "$ROOT/defi/data/questions.json")"
+jq -r '.questions[0:5][].question' "$ROOT/defi/data/questions.json" > "$TMP/selection.txt"
+check "id inconnu → 400"                400 "$(api PUT "/api/groupes/$QGCODE/quiz/selection" "$TOKEN1" '{"ids":["xyz-inexistant"]}')"
+check "→ l'id fautif est nommé"         true "$(jval '.error | contains("xyz-inexistant")')"
+check "5 ids valides → 200"             200 "$(api PUT "/api/groupes/$QGCODE/quiz/selection" "$TOKEN1" "{\"ids\":$SELIDS}")"
+check "nbSelection 5"                   5   "$(jval .quiz.nbSelection)"
+check "mode encore toutes : nbTotal inchangé" "$NBQF" "$(jval .quiz.nbTotal)"
+
+say "Quiz d'église — questions propres (validations identiques à l'admin)"
+check "catégorie inconnue → 400"        400 "$(api POST "/api/groupes/$QGCODE/quiz/questions" "$TOKEN1" '{"categorie":"Cuisine","niveau":1,"question":"Q ?","options":["A","B","C","D"],"bonne":0,"reference":"R"}')"
+check "3 options seulement → 400"       400 "$(api POST "/api/groupes/$QGCODE/quiz/questions" "$TOKEN1" '{"categorie":"Personnages","niveau":1,"question":"Q ?","options":["A","B","C"],"bonne":0,"reference":"R"}')"
+check "bonne hors bornes → 400"         400 "$(api POST "/api/groupes/$QGCODE/quiz/questions" "$TOKEN1" '{"categorie":"Personnages","niveau":1,"question":"Q ?","options":["A","B","C","D"],"bonne":4,"reference":"R"}')"
+check "création → 200"                  200 "$(api POST "/api/groupes/$QGCODE/quiz/questions" "$TOKEN1" '{"categorie":"Personnages","niveau":2,"question":"Qui a fondé notre assemblée ?","options":["Pierre","Paul","Jacques","Jean"],"bonne":1,"reference":"Actes 1.1"}')"
+EGLID="$(jval .question.id)"
+check "id généré préfixé egl-"          egl- "$(printf '%s' "$EGLID" | cut -c1-4)"
+check "id généré : egl- + 6 hex"        10  "${#EGLID}"
+check "id egl- inconnu → 404"           404 "$(api POST "/api/groupes/$QGCODE/quiz/questions" "$TOKEN1" '{"id":"egl-000000","categorie":"Personnages","niveau":1,"question":"Q ?","options":["A","B","C","D"],"bonne":0,"reference":"R"}')"
+check "modification → 200"              200 "$(api POST "/api/groupes/$QGCODE/quiz/questions" "$TOKEN1" "{\"id\":\"$EGLID\",\"categorie\":\"Personnages\",\"niveau\":2,\"question\":\"Qui a fondé notre assemblée ? (v2)\",\"options\":[\"Pierre\",\"Paul\",\"Jacques\",\"Jean\"],\"bonne\":1,\"reference\":\"Actes 1.1\"}")"
+api GET "/api/groupes/$QGCODE/quiz/questions" "$TOKEN1" > /dev/null
+check "1 question propre listée"        1   "$(jval '.questions | length')"
+check "version modifiée servie"         "Qui a fondé notre assemblée ? (v2)" "$(jval '.questions[0].question')"
+check "la bonne réponse est là (responsable seul)" 1 "$(jval '.questions[0].bonne')"
+api GET "/api/groupes/$QGCODE/quiz" "$TOKEN1" > /dev/null
+check "nbPropres 1"                     1   "$(jval .quiz.nbPropres)"
+check "nbTotal (toutes) = commune + 1"  "$(( NBQF + 1 ))" "$(jval .quiz.nbTotal)"
+
+say "Quiz d'église — mode selection : la banque rétrécit"
+check "mode selection → 200"            200 "$(api POST "/api/groupes/$QGCODE/quiz/mode" "$TOKEN1" '{"mode":"selection"}')"
+check "nbTotal = 5 retenues + 1 propre" 6   "$(jval .quiz.nbTotal)"
+check "suppression de la question propre → 200" 200 "$(api DELETE "/api/groupes/$QGCODE/quiz/questions/$EGLID" "$TOKEN1")"
+check "re-suppression → 404"            404 "$(api DELETE "/api/groupes/$QGCODE/quiz/questions/$EGLID" "$TOKEN1")"
+api GET "/api/groupes/$QGCODE/quiz" "$TOKEN1" > /dev/null
+check "nbPropres 0, nbTotal 5"          "0 5" "$(jval '"\(.quiz.nbPropres) \(.quiz.nbTotal)"')"
+
+say "Veillée liée à l'église — responsable seul, tirage dans la banque du groupe"
+check "u3 (membre simple) lie une veillée → 403" 403 "$(api POST /api/veillees "$TOKEN3" "{\"nb\":5,\"groupe\":\"$QGCODE\"}")"
+check "6 questions pour 5 en banque → 400" 400 "$(api POST /api/veillees "$TOKEN1" "{\"nb\":6,\"groupe\":\"$QGCODE\"}")"
+check "→ « Pas assez de questions… »"   true "$(jval '.error | startswith("Pas assez de questions")')"
+check "u1 (responsable) crée la veillée liée → 201" 201 "$(api POST /api/veillees "$TOKEN1" "{\"nb\":5,\"seconds\":30,\"groupe\":\"$QGCODE\"}")"
+VQCODE="$(jval .veillee.code)"
+check "state : eglise = nom du groupe"  "Église du Quiz" "$(jval .veillee.eglise)"
+# LE TEST CLEF : 5 ids retenus, 0 propre → le tirage de 5 parmi 5 est
+# déterministe en CONTENU ; chaque intitulé reçu doit venir de la sélection.
+api POST "/api/veillees/$VQCODE/join" '' '{"prenom":"Timothée"}' > /dev/null
+api POST "/api/veillees/$VQCODE/advance" "$TOKEN1" '{"action":"start"}' > /dev/null
+DANS_SELECTION=0
+for _ in 1 2 3 4 5; do
+  api GET "/api/veillees/$VQCODE/state" > /dev/null
+  grep -qxF "$(jval .veillee.question.question)" "$TMP/selection.txt" && DANS_SELECTION=$((DANS_SELECTION + 1))
+  api POST "/api/veillees/$VQCODE/advance" "$TOKEN1" '{"action":"reveal"}' > /dev/null
+  api POST "/api/veillees/$VQCODE/advance" "$TOKEN1" '{"action":"next"}' > /dev/null
+done
+check "les 5 questions viennent TOUTES de la sélection" 5 "$DANS_SELECTION"
+check "une veillée ordinaire n'a pas d'église" false "$(api GET "/api/veillees/$VCODE/state" > /dev/null; jval '.veillee | has("eglise")')"
+
+say "Quiz d'église — suppression du groupe : tout est purgé"
+QSQL() { php -r '$p = new PDO("sqlite:" . $argv[1]); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
+check "u1 supprime le groupe → 200"     200 "$(api DELETE "/api/groupes/$QGCODE" "$TOKEN1")"
+check "GET quiz sur le groupe disparu → 404" 404 "$(api GET "/api/groupes/$QGCODE/quiz" "$TOKEN1")"
+check "réglages + sélection + propres + liens : 0 ligne" 0 \
+  "$(QSQL 'SELECT (SELECT COUNT(*) FROM groupe_quiz_reglages) + (SELECT COUNT(*) FROM groupe_quiz_selection) + (SELECT COUNT(*) FROM groupe_questions) + (SELECT COUNT(*) FROM veillee_groupes)')"
+check "la veillée liée survit, sans église" false "$(api GET "/api/veillees/$VQCODE/state" > /dev/null; jval '.veillee | has("eglise")')"
+
+# ---------------------------------------------------------------------------
 say "Administration — rôle admin (ADMIN_EMAILS=alice@example.org)"
 api GET /api/me "$TOKEN1" > /dev/null
 check "me alice : isAdmin true"         true  "$(jval .user.isAdmin)"

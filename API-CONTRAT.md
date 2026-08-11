@@ -130,12 +130,18 @@ Les veillées sont balayées après 24 h.
 
 ### POST /api/veillees (authentifié — l'animateur)
 Corps (tout facultatif) : `{ "nb": 5–20 (10), "seconds": 10–90 (25),
-"categorie": "..."?, "niveau": 1–3? }`
+"categorie": "..."?, "niveau": 1–3?, "groupe": "GRP-XXXXX"? }`
 → 201 `{ "veillee": { "code": "K7PM", "statut": "lobby", "qTotal": 10, … } }`
+`groupe` lie le quiz à une église : l'appelant doit en être **responsable**
+(403 sinon) et le tirage se fait dans la **banque du groupe** — voir la
+section « Quiz d'église » (400 « Pas assez de questions… » si elle est plus
+petite que `nb`).
 
 ### GET /api/veillees/{code}/state?player={playerKey}
 Public, pollable. → `{ "veillee": { "code", "statut", "qIndex", "qTotal",
 "seconds", "nPlayers", "players": [ { "prenom", "score", "rang" } ], … } }`
+- veillée liée à une église : + `"eglise": "<nom du groupe>"` (pour le
+  grand écran) — rien d'autre du groupe ne transparaît ;
 - en phase `question` : + `question` (SANS `bonne` ni `reference`),
   `remaining` (secondes restantes), `nAnswered` ;
 - en phase `reveal`/`done` : + `question.bonne`, `question.reference`,
@@ -214,6 +220,63 @@ adhésions. → `{ "ok": true }`
 adhésions sont retirées ; pour chaque groupe dont il était responsable, le
 groupe est supprimé s'il y était seul, sinon le **membre restant le plus
 ancien** est promu responsable — l'assemblée ne reste jamais sans berger.
+
+## Quiz d'église : la banque par groupe (fondations — aucune interface)
+
+Chaque église (groupe) choisit ce que **ses** quiz utilisent : toute la banque
+commune (mode `toutes`, défaut), une **sélection** de celle-ci (mode
+`selection`), et/ou ses **propres questions** (id `egl-…`, écrites par le
+responsable). Règle absolue : cela ne touche **que** les quiz lancés dans
+l'église (`POST /api/veillees` avec `groupe`) — le Défi du jour et le solo
+des membres restent **mondiaux**.
+
+Lecture aux **membres** du groupe, écriture au **responsable** seul
+(403 sinon). Le payload `quiz` commun : `{ "mode": "toutes" | "selection",
+"nbSelection", "nbPropres", "nbTotal" }` — `nbTotal` est la taille de la
+banque **résultante** (commune retenue + questions propres actives), celle où
+tirera un quiz d'église.
+
+### GET /api/groupes/{code}/quiz
+**Membres seulement.** → `{ "quiz": { … } }`
+
+### POST /api/groupes/{code}/quiz/mode
+Corps : `{ "mode": "toutes" | "selection" }` → `{ "quiz": { … } }`
+
+### PUT /api/groupes/{code}/quiz/selection
+Corps : `{ "ids": [ "gen-01", … ] }` — **remplace** la sélection entière
+(2000 ids au maximum, doublons fondus). Chaque id doit exister dans la banque
+commune fusionnée — 400 sinon, l'id fautif est nommé dans l'erreur.
+→ `{ "quiz": { … } }` — la sélection se pose même en mode `toutes` (elle ne
+compte dans `nbTotal` qu'en mode `selection`).
+
+### GET /api/groupes/{code}/quiz/questions
+Les questions **propres** du groupe — **responsable seul** (elles portent la
+bonne réponse). → `{ "questions": [ { "id", "categorie", "niveau",
+"question", "options", "bonne", "reference" } ] }`
+
+### POST /api/groupes/{code}/quiz/questions
+Créer (sans `id` → généré `egl-<6 hex>`) ou modifier (`id` en `egl-` du
+groupe — 404 s'il n'y est pas) une question propre. Validations
+**strictement identiques** à `POST /api/admin/questions` (catégorie du
+fichier, niveau 1–3, longueurs, 4 options, `bonne` 0–3). Plafond : 300
+questions propres par groupe. → `{ "question": { … } }`
+
+### DELETE /api/groupes/{code}/quiz/questions/{id}
+Supprime la question propre **pour de bon** (pas de désactivation ici).
+→ `{ "ok": true }` — 404 si l'id n'est pas une question du groupe.
+
+### Le quiz dans l'église
+`POST /api/veillees` avec `{ "groupe": "GRP-XXXXX" }` (voir la section
+Veillées) : réservé au **responsable** du groupe (403 sinon), tirage dans la
+banque du groupe, et l'état de la veillée porte `"eglise": "<nom du groupe>"`
+pour le grand écran. Le lien vit dans la table `veillee_groupes` — la table
+`veillees` n'est pas modifiée.
+
+À la suppression du groupe (route DELETE, dernier membre qui part,
+suppression de compte) : réglages, sélection, questions propres et liens
+veillée ↔ groupe sont **purgés** ; une veillée liée survit, simplement sans
+`eglise`. À la **passation** (responsable supprimé, membre promu), les
+réglages du groupe sont conservés.
 
 ## Notifications — le verset offert
 
@@ -330,7 +393,9 @@ Retire la surcharge : la version du fichier redevient active (annule une
 - Migrations auto au premier appel (CREATE TABLE IF NOT EXISTS).
 - Tables : `users`, `login_codes`, `sessions`, `sync_blobs`, `friendships`, `throttle`, `admin_log`,
   `duels`, `veillees`, `veillee_players`, `veillee_answers`, `quiz_questions`,
-  `groupes`, `groupe_membres`, `vapid`, `push_abonnements`.
+  `groupes`, `groupe_membres`, `vapid`, `push_abonnements`,
+  `groupe_quiz_reglages`, `groupe_quiz_selection`, `groupe_questions`,
+  `veillee_groupes`.
 - Rôle admin : `ADMIN_EMAILS` (adresses séparées par des virgules, casse
   ignorée) — pas de colonne en base, le rôle se retire en éditant la variable.
 - E-mail : SMTP via env (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`,

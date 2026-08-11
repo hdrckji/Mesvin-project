@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM push_abonnements LIMIT 1');
+        $pdo->query('SELECT 1 FROM veillee_groupes LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -256,6 +256,50 @@ function db_migrate(PDO $pdo): void {
                 created_at DATETIME NOT NULL,
                 INDEX idx_push_user (user_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Quiz d'église — la banque de questions PAR GROUPE (voir
+            // groupes-quiz.php). Réglages : mode 'toutes' (banque commune
+            // entière) ou 'selection' (seuls les ids retenus ci-dessous).
+            // Ne touche QUE les quiz lancés dans l'église : le Défi du jour
+            // et le solo des membres restent mondiaux.
+            "CREATE TABLE IF NOT EXISTS groupe_quiz_reglages (
+                groupe_id INT UNSIGNED NOT NULL PRIMARY KEY,
+                mode VARCHAR(10) NOT NULL DEFAULT 'toutes',
+                updated_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+            // Sélection du groupe : les ids de la banque commune retenus
+            // (utilisée seulement en mode 'selection').
+            'CREATE TABLE IF NOT EXISTS groupe_quiz_selection (
+                groupe_id INT UNSIGNED NOT NULL,
+                question_id VARCHAR(40) NOT NULL,
+                PRIMARY KEY (groupe_id, question_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Questions propres au groupe (id « egl-<6 hex> », écrites par le
+            // responsable) — mêmes contraintes de colonnes que quiz_questions.
+            'CREATE TABLE IF NOT EXISTS groupe_questions (
+                id VARCHAR(60) NOT NULL PRIMARY KEY,
+                groupe_id INT UNSIGNED NOT NULL,
+                categorie VARCHAR(60) NOT NULL,
+                niveau TINYINT NOT NULL,
+                question VARCHAR(300) NOT NULL,
+                options_json TEXT NOT NULL,
+                bonne TINYINT NOT NULL,
+                reference VARCHAR(60) NOT NULL,
+                actif TINYINT NOT NULL DEFAULT 1,
+                updated_at DATETIME NOT NULL,
+                INDEX idx_gquestions_groupe (groupe_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Lien quiz (veillée) ↔ église, SANS toucher à la table veillees
+            // existante (pas de ALTER : les bases déjà déployées ne le
+            // recevraient pas via CREATE IF NOT EXISTS).
+            'CREATE TABLE IF NOT EXISTS veillee_groupes (
+                veillee_id INT UNSIGNED NOT NULL PRIMARY KEY,
+                groupe_id INT UNSIGNED NOT NULL,
+                INDEX idx_vgroupes_groupe (groupe_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
         ];
     } else {
         $ddl = [
@@ -432,6 +476,41 @@ function db_migrate(PDO $pdo): void {
                 created_at TEXT NOT NULL
             )',
             'CREATE INDEX IF NOT EXISTS idx_push_user ON push_abonnements (user_id)',
+
+            // Quiz d'église — la banque de questions par groupe : voir le
+            // commentaire du dialecte MySQL ci-dessus.
+            "CREATE TABLE IF NOT EXISTS groupe_quiz_reglages (
+                groupe_id INTEGER NOT NULL PRIMARY KEY,
+                mode TEXT NOT NULL DEFAULT 'toutes',
+                updated_at TEXT NOT NULL
+            )",
+
+            'CREATE TABLE IF NOT EXISTS groupe_quiz_selection (
+                groupe_id INTEGER NOT NULL,
+                question_id TEXT NOT NULL,
+                PRIMARY KEY (groupe_id, question_id)
+            )',
+
+            'CREATE TABLE IF NOT EXISTS groupe_questions (
+                id TEXT NOT NULL PRIMARY KEY,
+                groupe_id INTEGER NOT NULL,
+                categorie TEXT NOT NULL,
+                niveau INTEGER NOT NULL,
+                question TEXT NOT NULL,
+                options_json TEXT NOT NULL,
+                bonne INTEGER NOT NULL,
+                reference TEXT NOT NULL,
+                actif INTEGER NOT NULL DEFAULT 1,
+                updated_at TEXT NOT NULL
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_gquestions_groupe ON groupe_questions (groupe_id)',
+
+            // Lien quiz (veillée) ↔ église — voir le dialecte MySQL.
+            'CREATE TABLE IF NOT EXISTS veillee_groupes (
+                veillee_id INTEGER NOT NULL PRIMARY KEY,
+                groupe_id INTEGER NOT NULL
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_vgroupes_groupe ON veillee_groupes (groupe_id)',
         ];
     }
 

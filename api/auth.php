@@ -339,8 +339,9 @@ function delete_user_completely(PDO $pdo, array $user): void {
             $st->execute([$groupeId, $id]);
             $heritier = $st->fetch();
             if ($heritier === false) {
-                $pdo->prepare('DELETE FROM groupe_membres WHERE groupe_id = ?')->execute([$groupeId]);
-                $pdo->prepare('DELETE FROM groupes WHERE id = ?')->execute([$groupeId]);
+                // Seul dans son groupe : le groupe disparaît avec lui, quiz
+                // d'église compris (groupe_delete_completely, groupes.php).
+                groupe_delete_completely($pdo, (int) $groupeId);
             } else {
                 $pdo->prepare('UPDATE groupes SET responsable_id = ? WHERE id = ?')
                     ->execute([$heritier['user_id'], $groupeId]);

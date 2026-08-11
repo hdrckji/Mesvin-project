@@ -44,6 +44,7 @@ function veillee_cleanup(PDO $pdo): void {
     foreach ($ids as $id) {
         $pdo->prepare('DELETE FROM veillee_answers WHERE veillee_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM veillee_players WHERE veillee_id = ?')->execute([$id]);
+        $pdo->prepare('DELETE FROM veillee_groupes WHERE veillee_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM veillees WHERE id = ?')->execute([$id]);
     }
 }
@@ -100,9 +101,12 @@ function veillee_remaining(array $v): int {
  * retouches d'administration ; filtres facultatifs), mélange l'ordre des
  * options et fige le tout — même logique que les duels, avec la catégorie
  * et le niveau conservés pour l'affichage sur le grand écran.
+ * $bank : banque de remplacement (quiz d'église → groupe_quiz_bank), sinon
+ * la banque commune.
  */
-function veillee_pick_questions(PDO $pdo, int $nb, ?string $categorie, ?int $niveau): array {
-    $all = quiz_bank($pdo);
+function veillee_pick_questions(PDO $pdo, int $nb, ?string $categorie, ?int $niveau, ?array $bank = null): array {
+    $enEglise = $bank !== null;
+    $all = $bank ?? quiz_bank($pdo);
     if ($categorie !== null) {
         $all = array_values(array_filter($all, fn (array $q): bool => ($q['categorie'] ?? '') === $categorie));
     }
@@ -110,7 +114,9 @@ function veillee_pick_questions(PDO $pdo, int $nb, ?string $categorie, ?int $niv
         $all = array_values(array_filter($all, fn (array $q): bool => (int) ($q['niveau'] ?? 0) === $niveau));
     }
     if (count($all) < $nb) {
-        json_error('Pas assez de questions avec ces critères — élargis la catégorie ou le niveau.', 400);
+        json_error($enEglise
+            ? 'Pas assez de questions dans la banque du groupe — élargis la sélection, la catégorie ou le niveau.'
+            : 'Pas assez de questions avec ces critères — élargis la catégorie ou le niveau.', 400);
     }
     shuffle($all);
     $picked = array_slice($all, 0, $nb);
@@ -182,6 +188,19 @@ function veillee_state_payload(PDO $pdo, array $v, ?array $me): array {
             $players
         ),
     ];
+
+    // Quiz lancé dans une église : le NOM du groupe, pour le grand écran —
+    // rien d'autre (le lien vit dans veillee_groupes, purgé avec le groupe).
+    $st = $pdo->prepare(
+        'SELECT g.nom FROM veillee_groupes vg
+         JOIN groupes g ON g.id = vg.groupe_id
+         WHERE vg.veillee_id = ?'
+    );
+    $st->execute([(int) $v['id']]);
+    $eglise = $st->fetchColumn();
+    if ($eglise !== false) {
+        $out['eglise'] = (string) $eglise;
+    }
 
     if ($qIndex >= 0 && $qIndex < count($questions) && $statut !== 'lobby') {
         $q = $questions[$qIndex];
@@ -294,7 +313,28 @@ function handle_veillees_create(PDO $pdo): never {
         json_error('Niveau invalide (1 à 3).', 400);
     }
 
-    $questions = veillee_pick_questions($pdo, $nb, $categorie, $niveau);
+    // Quiz dans l'église (facultatif) : « groupe » lie la veillée à un groupe
+    // dont l'appelant est RESPONSABLE — le tirage se fait alors dans la
+    // banque du groupe (groupe_quiz_bank), pas dans la banque commune.
+    $groupeLie = null;
+    if (($body['groupe'] ?? null) !== null) {
+        $codeGroupe = normalize_group_code($body['groupe']);
+        if ($codeGroupe === null) {
+            json_error('Code de groupe invalide (format attendu : GRP-XXXXX).', 400);
+        }
+        $st = $pdo->prepare('SELECT * FROM groupes WHERE code = ?');
+        $st->execute([$codeGroupe]);
+        $groupeLie = $st->fetch();
+        if ($groupeLie === false) {
+            json_error('Groupe introuvable — vérifie le code.', 404);
+        }
+        if (groupe_role($pdo, (int) $groupeLie['id'], (int) $user['id']) !== 'responsable') {
+            json_error('Seul le responsable du groupe peut lancer un quiz dans son église.', 403);
+        }
+    }
+
+    $bank = $groupeLie === null ? null : groupe_quiz_bank($pdo, (int) $groupeLie['id']);
+    $questions = veillee_pick_questions($pdo, $nb, $categorie, $niveau, $bank);
     $code = veillee_generate_code($pdo);
     $st = $pdo->prepare(
         'INSERT INTO veillees (code, host_user_id, statut, questions_json, current_q, seconds, created_at, updated_at)
@@ -309,6 +349,10 @@ function handle_veillees_create(PDO $pdo): never {
         now_sql(),
         now_sql(),
     ]);
+    if ($groupeLie !== null) {
+        $pdo->prepare('INSERT INTO veillee_groupes (veillee_id, groupe_id) VALUES (?, ?)')
+            ->execute([(int) $pdo->lastInsertId(), (int) $groupeLie['id']]);
+    }
 
     $v = veillee_load($pdo, $code);
     json_out(['veillee' => veillee_state_payload($pdo, $v, null)], 201);
