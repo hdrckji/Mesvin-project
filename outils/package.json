@@ -1,0 +1,11 @@
+{
+  "name": "biblehorizon-outils",
+  "private": true,
+  "description": "Outils de communication de Bible Horizon (hors application) : générateur du kit Instagram.",
+  "scripts": {
+    "kit": "node generer-kit.js"
+  },
+  "dependencies": {
+    "playwright-core": "^1.49.0"
+  }
+}

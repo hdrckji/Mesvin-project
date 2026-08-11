@@ -14,8 +14,11 @@ COPY Caddyfile /etc/frankenphp/Caddyfile
 RUN rm -rf /app/public && mkdir -p /app/public
 
 # Fichiers statiques de l'application (inchangés par rapport à la version Caddy).
+# ATTENTION : la copie est EXPLICITE — tout nouveau fichier servi à la racine
+# du site doit être ajouté ici, sinon il n'existe pas en production.
 WORKDIR /app/public
 COPY index.html app.css app.js icons.js pierres.js api-client.js sw.js manifest.webmanifest icon.svg ./
+COPY icon-180.png icon-192.png icon-512.png icon-maskable-512.png og-image.png robots.txt ./
 COPY data/ ./data/
 COPY lire/ ./lire/
 COPY defi/ ./defi/
