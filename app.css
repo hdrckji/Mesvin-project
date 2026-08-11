@@ -312,8 +312,17 @@ label.lbl { display: block; font-weight: 600; margin: 14px 2px 6px; font-size: .
   border-radius: 12px; padding: 8px 14px; font: inherit; cursor: pointer;
 }
 .pill.on { background: var(--grow); color: var(--on-grow); border-color: var(--grow); }
-.back-link { background: none; border: 0; color: var(--ink-soft); font: inherit;
-  cursor: pointer; padding: 4px 0; margin-bottom: 10px; }
+/* Bouton de retour : une vraie pastille visible (même famille que .acc-chip),
+   plus le texte gris discret qui se fondait dans le décor. */
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font: inherit; font-size: .92rem; font-weight: 650;
+  color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 7px 14px; margin-bottom: 12px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.back-link:active { transform: scale(.97); }
 .context-box { background: var(--surface-2); border-radius: 12px; padding: 14px 16px; margin-top: 14px;
   font-size: .95rem; color: var(--ink-soft); }
 .context-box b { color: var(--ink); }
