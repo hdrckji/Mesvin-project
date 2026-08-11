@@ -17,6 +17,11 @@
 
 'use strict';
 
+/* Filet : si icons.js manque (déploiement incomplet), l'appli s'affiche sans
+   icônes plutôt que de planter sur « icon is not defined ». */
+if (!window.icon) window.icon = function () { return ''; };
+
+
 const STORE_KEY = 'graine.defi.v1';
 const NB_QUESTIONS = 10;
 

@@ -20,6 +20,11 @@
 
 'use strict';
 
+/* Filet : si icons.js manque (déploiement incomplet), l'appli s'affiche sans
+   icônes plutôt que de planter sur « icon is not defined ». */
+if (!window.icon) window.icon = function () { return ''; };
+
+
 const STORE_KEY = 'graine.lire.v1';
 const WORDS_PER_MIN = 170; // rythme de lecture posé, pour l'estimation douce
 const MAX_PLANS = 3;

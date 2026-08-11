@@ -41,11 +41,18 @@
 	# démonstration, et son try_files retombe sur celui de la racine pour les
 	# dossiers qui n'en ont pas) et nos pages peuvent être détournées.
 	rewrite / /index.html
-	@lire path /lire /lire/
+	# /lire, /defi, /admin SANS barre finale : REDIRECTION (pas réécriture) vers
+	# la version avec barre. Réécrire servirait la page avec une mauvaise base :
+	# ses fichiers relatifs (admin.js, lire.css…) seraient cherchés à la racine
+	# → 404 silencieux et page vide. La barre finale rend les chemins justes.
+	redir /lire /lire/ permanent
+	redir /defi /defi/ permanent
+	redir /admin /admin/ permanent
+	@lire path /lire/
 	rewrite @lire /lire/index.html
-	@defi path /defi /defi/
+	@defi path /defi/
 	rewrite @defi /defi/index.html
-	@admin path /admin /admin/
+	@admin path /admin/
 	rewrite @admin /admin/index.html
 
 	# Le service worker ne doit jamais être mis en cache,

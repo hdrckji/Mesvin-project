@@ -15,6 +15,11 @@
 
 'use strict';
 
+/* Filet : si icons.js manque (déploiement incomplet), l'appli s'affiche sans
+   icônes plutôt que de planter sur « icon is not defined ». */
+if (!window.icon) window.icon = function () { return ''; };
+
+
 const el = document.getElementById('app');
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
