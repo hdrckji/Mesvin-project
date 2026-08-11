@@ -3,9 +3,9 @@
    (pratique pendant qu'on fait évoluer l'appli) ; hors-ligne, on retombe sur le
    cache. On pré-cache la coquille pour un premier lancement hors-ligne possible. */
 
-const CACHE = 'graine-v15';
+const CACHE = 'graine-v17';
 const ASSETS = [
-  '.', 'index.html', 'app.css', 'app.js', 'api-client.js', 'pierres.js',
+  '.', 'index.html', 'app.css', 'app.js', 'icons.js', 'api-client.js', 'pierres.js',
   'data/verses.json', 'data/collections.json', 'icon.svg', 'manifest.webmanifest',
   // Module « Lire » — la Bible complète (66 livres, ~4,4 Mo) est pré-cachée
   // pour un hors-ligne total ; à l'écran, chaque livre reste chargé à la demande.
