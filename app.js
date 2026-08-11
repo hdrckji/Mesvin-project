@@ -972,6 +972,7 @@ function viewAbout() {
     <div class="card">
       <p>${icon('eglise', 16)} <b>Pasteur, responsable d'église ou de jeunesse ?</b> Tu aimerais utiliser Bible Horizon avec ton assemblée — quiz sur grand écran, groupes, suivi ? Écris-nous : on regardera ensemble comment l'adapter au mieux à tes besoins.</p>
       <p class="center" style="margin-top:12px"><a class="btn btn-soft" href="mailto:contact@biblehorizon.fr?subject=Bible%20Horizon%20pour%20mon%20%C3%A9glise">contact@biblehorizon.fr</a></p>
+      <p class="muted center" style="font-size:.85rem;margin-top:10px"><a href="eglises/" style="color:var(--accent-ink)">Tout savoir sur le quiz dans ton église →</a></p>
     </div>
     <p class="muted center" style="margin-top:20px">« La semence, c'est la parole de Dieu. » — Luc 8.11</p>
     <p class="muted center" style="font-size:.8rem;margin-top:10px">Version 0.3 · projet en construction</p>`;

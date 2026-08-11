@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Quiz biblique en ligne gratuit — seul, entre amis ou dans ton église</title>
+  <meta name="description" content="600 questions sur les récits de la Bible, avec la référence du passage à chaque réponse. Gratuit, sans publicité, sans compte — seul, à plusieurs, en duel ou en direct dans ton église." />
+  <link rel="canonical" href="https://biblehorizon.fr/quiz-biblique/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Bible Horizon" />
+  <meta property="og:locale" content="fr_FR" />
+  <meta property="og:title" content="Quiz biblique en ligne gratuit — seul, entre amis ou dans ton église" />
+  <meta property="og:description" content="600 questions sur les récits de la Bible, avec la référence du passage à chaque réponse. Gratuit, sans publicité, sans compte — seul, à plusieurs, en duel ou en direct dans ton église." />
+  <meta property="og:url" content="https://biblehorizon.fr/quiz-biblique/" />
+  <meta property="og:image" content="https://biblehorizon.fr/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="theme-color" content="#f7f3ea" />
+  <script>
+    /* Anti-flash : applique le thème choisi (localStorage 'graine.theme') AVANT
+       le chargement du CSS, et fait suivre la couleur de barre du navigateur. */
+    (function () {
+      try {
+        var choix = localStorage.getItem('graine.theme');
+        if (choix === 'clair' || choix === 'sombre' || choix === 'sepia') {
+          document.documentElement.setAttribute('data-theme', choix);
+        }
+        var fonds = { clair: '#f7f3ea', sombre: '#141b28', sepia: '#f2e6cf' };
+        var mq = window.matchMedia('(prefers-color-scheme: dark)');
+        var maj = function () {
+          var t = document.documentElement.getAttribute('data-theme') || (mq.matches ? 'sombre' : 'clair');
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', fonds[t] || fonds.clair);
+        };
+        maj();
+        if (mq.addEventListener) mq.addEventListener('change', maj);
+      } catch (e) { /* stockage indisponible : on suit simplement le système */ }
+    })();
+  </script>
+  <link rel="icon" href="../icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="../icon-180.png" />
+  <link rel="stylesheet" href="../app.css" />
+  <style>
+    /* Mise en page « article » de ces pages d'accueil thématiques —
+       tout le reste (couleurs, thèmes, boutons, cartes) vient d'app.css. */
+    .lp { max-width: 660px; margin: 0 auto; padding: 20px 18px 44px; }
+    .lp-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+    .lp-top a.home { text-decoration: none; }
+    .lp h1 { font-family: var(--serif); font-size: 1.85rem; line-height: 1.22; margin: 6px 0 12px; }
+    .lp h2 { font-family: var(--serif); font-size: 1.3rem; margin: 30px 0 10px; }
+    .lp h3 { font-size: 1.02rem; margin: 18px 0 6px; }
+    .lp p, .lp li { line-height: 1.65; }
+    .lp .lead { font-size: 1.06rem; color: var(--ink-soft); margin-top: 0; }
+    .lp .cta { margin: 24px 0; }
+    .lp .cta .btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .lp .exq { margin: 12px 0; }
+    .lp .exq .rep { color: var(--ink-soft); font-size: .95rem; }
+    .lp .exq .ref { color: var(--accent-ink); font-weight: 600; }
+    .lp footer { margin-top: 40px; border-top: 1px solid var(--line); padding-top: 18px; }
+    .lp footer nav { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 12px; }
+    .lp footer a { color: var(--accent-ink); }
+    .lp .verse { font-family: var(--serif); font-style: italic; text-align: center; color: var(--ink-soft); margin-top: 26px; }
+  </style>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Le quiz est-il vraiment gratuit ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, entièrement et pour toujours : aucune publicité, aucune question payante, aucune option premium. C’est un projet bénévole."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Faut-il créer un compte ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Non pour jouer seul, à plusieurs sur un appareil ou rejoindre un quiz d’église. Un compte gratuit (e-mail et pseudo, rien d’autre) sert uniquement à défier un ami à distance ou à animer un quiz en direct."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Ça marche sur téléphone ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, sur n’importe quel téléphone, tablette ou ordinateur, directement dans le navigateur — rien à installer. Et une fois ouvert, le quiz fonctionne même hors connexion."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Comment organiser un quiz dans mon église ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Depuis l’onglet « Quiz dans ton église », l’animateur crée un quiz : un code s’affiche à projeter sur grand écran, chacun le saisit sur son téléphone et répond en direct, jusqu’à 100 participants. Gratuit, sans matériel particulier."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "D’où viennent les questions ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Elles sont rédigées à partir du texte biblique (Segond 1910) et chaque réponse cite sa référence, pour que tu puisses toujours vérifier dans ta Bible."
+      }
+    }
+  ]
+}
+  </script>
+</head>
+<body>
+  <main class="lp">
+    <header class="lp-top">
+      <a class="home" href="../"><span class="app-title">Bible <span class="seed">Horizon</span></span></a>
+      <a class="btn btn-soft" href="../">Ouvrir l’appli</a>
+    </header>
+    <h1>Un quiz biblique qui ramène toujours au texte</h1>
+    <p class="lead">Six cents questions sur les récits de la Bible — et pour chacune, la référence du passage, pour vérifier par toi-même. Gratuit, sans publicité, et sans compte pour jouer seul.</p>
+    <div class="cta"><a class="btn btn-primary" href="../defi/">Lancer le quiz</a></div>
+
+    <h2>Cinq façons de jouer</h2>
+    <div class="card">
+      <p><b>Le défi du jour.</b> Chaque jour, les mêmes questions pour tout le monde — de quoi comparer avec tes amis sans classement mondial ni pression.</p>
+      <p><b>Seul, à ton rythme.</b> Choisis une catégorie (personnages, lieux, paroles de Jésus…) et un niveau, et avance question après question.</p>
+      <p><b>À plusieurs sur un téléphone.</b> On se passe l’appareil autour de la table — parfait en famille.</p>
+      <p><b>En duel avec un ami.</b> Les mêmes questions chacun de son côté, et on compare.</p>
+      <p><b>En direct dans ton église.</b> Un code s’affiche sur grand écran, chacun rejoint avec son téléphone et répond en direct — pour une soirée de jeunesse, un camp, une veillée.</p>
+    </div>
+
+    <h2>Deux questions pour te faire une idée</h2>
+    <div class="card exq">
+      <p><b>Quel prophète fut englouti par un grand poisson ?</b><br>
+      <span class="rep">Jonas · Élie · Ésaïe · Jérémie</span><br>
+      <span class="ref">Réponse : Jonas — Jonas 2.1</span></p>
+      <p><b>Quel jeune berger vainquit le géant Goliath avec une fronde ?</b><br>
+      <span class="rep">Saül · Jonathan · David · Samson</span><br>
+      <span class="ref">Réponse : David — 1 Samuel 17.49</span></p>
+    </div>
+    <p>C’est le parti pris de ce quiz : chaque réponse donne <b>la référence du passage</b>.
+    Le but n’est pas de collectionner des points, mais de donner envie de rouvrir le texte —
+    si une question t’étonne, tu sais exactement où aller vérifier.</p>
+
+    <h2>Ce que ce quiz ne fera jamais</h2>
+    <p>Pas de publicité, pas de questions payantes, pas de série à ne pas briser, pas de
+    classement mondial. Si tu ne joues pas pendant deux semaines, il ne t’écrira pas
+    pour te le reprocher. C’est un outil pour sonder les Écritures, pas pour te retenir.</p>
+
+    <div class="cta"><a class="btn btn-primary" href="../defi/">Essayer maintenant — c’est gratuit</a></div>
+
+    <h2>Questions fréquentes</h2>
+    <h3>Le quiz est-il vraiment gratuit ?</h3>
+    <p>Oui, entièrement et pour toujours : aucune publicité, aucune question payante, aucune option premium. C’est un projet bénévole.</p>
+    <h3>Faut-il créer un compte ?</h3>
+    <p>Non pour jouer seul, à plusieurs sur un appareil ou rejoindre un quiz d’église. Un compte gratuit (e-mail et pseudo, rien d’autre) sert uniquement à défier un ami à distance ou à animer un quiz en direct.</p>
+    <h3>Ça marche sur téléphone ?</h3>
+    <p>Oui, sur n’importe quel téléphone, tablette ou ordinateur, directement dans le navigateur — rien à installer. Et une fois ouvert, le quiz fonctionne même hors connexion.</p>
+    <h3>Comment organiser un quiz dans mon église ?</h3>
+    <p>Depuis l’onglet « Quiz dans ton église », l’animateur crée un quiz : un code s’affiche à projeter sur grand écran, chacun le saisit sur son téléphone et répond en direct, jusqu’à 100 participants. Gratuit, sans matériel particulier.</p>
+    <h3>D’où viennent les questions ?</h3>
+    <p>Elles sont rédigées à partir du texte biblique (Segond 1910) et chaque réponse cite sa référence, pour que tu puisses toujours vérifier dans ta Bible.</p>
+
+    <footer>
+      <div class="muted" style="font-size:.9rem">Aussi sur Bible Horizon</div>
+      <nav>
+      <a href="../memoriser-versets/">Mémoriser des versets</a> ·
+      <a href="../plan-lecture-bible/">Plan de lecture de la Bible</a> ·
+      <a href="../eglises/">Pour votre église</a>
+      </nav>
+      <p class="muted" style="font-size:.9rem">Bible Horizon est gratuit, sans publicité, et le restera.
+      Le texte biblique est la Segond 1910 (domaine public).
+      Une question ? <a href="mailto:contact@biblehorizon.fr">contact@biblehorizon.fr</a></p>
+    </footer>
+  </main>
+</body>
+</html>

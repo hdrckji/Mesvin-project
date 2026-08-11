@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Plan de lecture de la Bible — un chemin à ton rythme, jamais de retard</title>
+  <meta name="description" content="Un plan de lecture biblique qui est un chemin, pas un calendrier : 5, 15 ou 30 minutes par jour, aucun retard possible. Toute la Bible Segond 1910, gratuite et hors-ligne." />
+  <link rel="canonical" href="https://biblehorizon.fr/plan-lecture-bible/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Bible Horizon" />
+  <meta property="og:locale" content="fr_FR" />
+  <meta property="og:title" content="Plan de lecture de la Bible — un chemin à ton rythme, jamais de retard" />
+  <meta property="og:description" content="Un plan de lecture biblique qui est un chemin, pas un calendrier : 5, 15 ou 30 minutes par jour, aucun retard possible. Toute la Bible Segond 1910, gratuite et hors-ligne." />
+  <meta property="og:url" content="https://biblehorizon.fr/plan-lecture-bible/" />
+  <meta property="og:image" content="https://biblehorizon.fr/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="theme-color" content="#f7f3ea" />
+  <script>
+    /* Anti-flash : applique le thème choisi (localStorage 'graine.theme') AVANT
+       le chargement du CSS, et fait suivre la couleur de barre du navigateur. */
+    (function () {
+      try {
+        var choix = localStorage.getItem('graine.theme');
+        if (choix === 'clair' || choix === 'sombre' || choix === 'sepia') {
+          document.documentElement.setAttribute('data-theme', choix);
+        }
+        var fonds = { clair: '#f7f3ea', sombre: '#141b28', sepia: '#f2e6cf' };
+        var mq = window.matchMedia('(prefers-color-scheme: dark)');
+        var maj = function () {
+          var t = document.documentElement.getAttribute('data-theme') || (mq.matches ? 'sombre' : 'clair');
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', fonds[t] || fonds.clair);
+        };
+        maj();
+        if (mq.addEventListener) mq.addEventListener('change', maj);
+      } catch (e) { /* stockage indisponible : on suit simplement le système */ }
+    })();
+  </script>
+  <link rel="icon" href="../icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="../icon-180.png" />
+  <link rel="stylesheet" href="../app.css" />
+  <style>
+    /* Mise en page « article » de ces pages d'accueil thématiques —
+       tout le reste (couleurs, thèmes, boutons, cartes) vient d'app.css. */
+    .lp { max-width: 660px; margin: 0 auto; padding: 20px 18px 44px; }
+    .lp-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+    .lp-top a.home { text-decoration: none; }
+    .lp h1 { font-family: var(--serif); font-size: 1.85rem; line-height: 1.22; margin: 6px 0 12px; }
+    .lp h2 { font-family: var(--serif); font-size: 1.3rem; margin: 30px 0 10px; }
+    .lp h3 { font-size: 1.02rem; margin: 18px 0 6px; }
+    .lp p, .lp li { line-height: 1.65; }
+    .lp .lead { font-size: 1.06rem; color: var(--ink-soft); margin-top: 0; }
+    .lp .cta { margin: 24px 0; }
+    .lp .cta .btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .lp .exq { margin: 12px 0; }
+    .lp .exq .rep { color: var(--ink-soft); font-size: .95rem; }
+    .lp .exq .ref { color: var(--accent-ink); font-weight: 600; }
+    .lp footer { margin-top: 40px; border-top: 1px solid var(--line); padding-top: 18px; }
+    .lp footer nav { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 12px; }
+    .lp footer a { color: var(--accent-ink); }
+    .lp .verse { font-family: var(--serif); font-style: italic; text-align: center; color: var(--ink-soft); margin-top: 26px; }
+  </style>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Quelle traduction de la Bible est utilisée ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "La Louis Segond 1910, une traduction française de référence, dans le domaine public — c’est ce qui permet de l’offrir intégralement et gratuitement."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Que se passe-t-il si j’arrête deux semaines ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Rien. Le chemin t’attend exactement où tu l’as laissé, sans compteur de retard ni message de reproche. Tu reprends, c’est tout."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Puis-je lire toute la Bible avec ce plan ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui : le chemin « Toute la Bible » traverse les 66 livres. À 15 minutes par jour, compte environ un an et demi — mais c’est ton rythme qui décide, pas le calendrier."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Est-ce que ça fonctionne sans connexion ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui. Une fois l’appli ouverte une première fois, la Bible entière est gardée sur ton appareil et se lit hors-ligne."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Combien ça coûte ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Rien, jamais : pas de publicité, pas d’abonnement, pas de version premium. C’est un projet bénévole."
+      }
+    }
+  ]
+}
+  </script>
+</head>
+<body>
+  <main class="lp">
+    <header class="lp-top">
+      <a class="home" href="../"><span class="app-title">Bible <span class="seed">Horizon</span></span></a>
+      <a class="btn btn-soft" href="../">Ouvrir l’appli</a>
+    </header>
+    <h1>Un plan de lecture qui est un chemin, pas un calendrier</h1>
+    <p class="lead">Tu connais l’histoire : on commence un plan « la Bible en un an », on rate trois jours, le compteur affiche « jour 12/365 — en retard », et on abandonne quelque part dans le Lévitique. Ce plan-là fonctionne autrement.</p>
+    <div class="cta"><a class="btn btn-primary" href="../lire/">Commencer à lire</a></div>
+
+    <h2>Aucun retard possible — par construction</h2>
+    <p>Ici, un plan de lecture est un <b>chemin</b> : une suite de livres à traverser, chapitre
+    après chapitre. Quand tu lis, tu avances. Quand tu ne lis pas, le chemin t’attend —
+    exactement là où tu l’as laissé. Il n’y a pas de dates, donc pas de retard ; pas de
+    retard, donc pas de culpabilité ; et sans culpabilité, on revient.</p>
+
+    <h2>À ton rythme, vraiment</h2>
+    <div class="card">
+      <p><b>5, 15 ou 30 minutes.</b> Tu choisis ton rythme de lecture, et l’appli te montre
+      simplement où mène ta prochaine étape — tu peux en faire plus, ou moins, sans que rien ne le compte.</p>
+      <p><b>Un évangile, un testament, ou toute la Bible.</b> Des chemins courts pour commencer
+      (l’Évangile de Marc se traverse en quelques heures de lecture) jusqu’au grand chemin des 1 189 chapitres.</p>
+      <p><b>Ta progression te suit.</b> Chaque chapitre lu est retenu sur ton appareil — et, si tu crées
+      un compte (facultatif), sur tous tes appareils.</p>
+    </div>
+
+    <h2>Le texte, tout le texte</h2>
+    <p>Toute la Bible — 66 livres, traduction <b>Segond 1910</b> (domaine public) — est incluse,
+    gratuite, et disponible <b>hors connexion</b> : dans le train, en avion, là où le réseau
+    ne passe pas, ta lecture continue. Une mise en page sobre, sans distraction, comme
+    une Bible papier.</p>
+
+    <div class="cta"><a class="btn btn-primary" href="../lire/">Choisir mon chemin</a></div>
+
+    <h2>Questions fréquentes</h2>
+    <h3>Quelle traduction de la Bible est utilisée ?</h3>
+    <p>La Louis Segond 1910, une traduction française de référence, dans le domaine public — c’est ce qui permet de l’offrir intégralement et gratuitement.</p>
+    <h3>Que se passe-t-il si j’arrête deux semaines ?</h3>
+    <p>Rien. Le chemin t’attend exactement où tu l’as laissé, sans compteur de retard ni message de reproche. Tu reprends, c’est tout.</p>
+    <h3>Puis-je lire toute la Bible avec ce plan ?</h3>
+    <p>Oui : le chemin « Toute la Bible » traverse les 66 livres. À 15 minutes par jour, compte environ un an et demi — mais c’est ton rythme qui décide, pas le calendrier.</p>
+    <h3>Est-ce que ça fonctionne sans connexion ?</h3>
+    <p>Oui. Une fois l’appli ouverte une première fois, la Bible entière est gardée sur ton appareil et se lit hors-ligne.</p>
+    <h3>Combien ça coûte ?</h3>
+    <p>Rien, jamais : pas de publicité, pas d’abonnement, pas de version premium. C’est un projet bénévole.</p>
+
+    <footer>
+      <div class="muted" style="font-size:.9rem">Aussi sur Bible Horizon</div>
+      <nav>
+      <a href="../memoriser-versets/">Mémoriser des versets</a> ·
+      <a href="../quiz-biblique/">Quiz biblique</a> ·
+      <a href="../eglises/">Pour votre église</a>
+      </nav>
+      <p class="muted" style="font-size:.9rem">Bible Horizon est gratuit, sans publicité, et le restera.
+      Le texte biblique est la Segond 1910 (domaine public).
+      Une question ? <a href="mailto:contact@biblehorizon.fr">contact@biblehorizon.fr</a></p>
+    </footer>
+  </main>
+</body>
+</html>

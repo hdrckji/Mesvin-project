@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Mémoriser des versets bibliques — une méthode douce qui tient dans la durée</title>
+  <meta name="description" content="Comment mémoriser des versets bibliques et les garder : la répétition espacée expliquée simplement, une méthode en quatre étapes, et une appli gratuite qui révise avec toi au bon moment." />
+  <link rel="canonical" href="https://biblehorizon.fr/memoriser-versets/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Bible Horizon" />
+  <meta property="og:locale" content="fr_FR" />
+  <meta property="og:title" content="Mémoriser des versets bibliques — une méthode douce qui tient dans la durée" />
+  <meta property="og:description" content="Comment mémoriser des versets bibliques et les garder : la répétition espacée expliquée simplement, une méthode en quatre étapes, et une appli gratuite qui révise avec toi au bon moment." />
+  <meta property="og:url" content="https://biblehorizon.fr/memoriser-versets/" />
+  <meta property="og:image" content="https://biblehorizon.fr/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="theme-color" content="#f7f3ea" />
+  <script>
+    /* Anti-flash : applique le thème choisi (localStorage 'graine.theme') AVANT
+       le chargement du CSS, et fait suivre la couleur de barre du navigateur. */
+    (function () {
+      try {
+        var choix = localStorage.getItem('graine.theme');
+        if (choix === 'clair' || choix === 'sombre' || choix === 'sepia') {
+          document.documentElement.setAttribute('data-theme', choix);
+        }
+        var fonds = { clair: '#f7f3ea', sombre: '#141b28', sepia: '#f2e6cf' };
+        var mq = window.matchMedia('(prefers-color-scheme: dark)');
+        var maj = function () {
+          var t = document.documentElement.getAttribute('data-theme') || (mq.matches ? 'sombre' : 'clair');
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', fonds[t] || fonds.clair);
+        };
+        maj();
+        if (mq.addEventListener) mq.addEventListener('change', maj);
+      } catch (e) { /* stockage indisponible : on suit simplement le système */ }
+    })();
+  </script>
+  <link rel="icon" href="../icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="../icon-180.png" />
+  <link rel="stylesheet" href="../app.css" />
+  <style>
+    /* Mise en page « article » de ces pages d'accueil thématiques —
+       tout le reste (couleurs, thèmes, boutons, cartes) vient d'app.css. */
+    .lp { max-width: 660px; margin: 0 auto; padding: 20px 18px 44px; }
+    .lp-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+    .lp-top a.home { text-decoration: none; }
+    .lp h1 { font-family: var(--serif); font-size: 1.85rem; line-height: 1.22; margin: 6px 0 12px; }
+    .lp h2 { font-family: var(--serif); font-size: 1.3rem; margin: 30px 0 10px; }
+    .lp h3 { font-size: 1.02rem; margin: 18px 0 6px; }
+    .lp p, .lp li { line-height: 1.65; }
+    .lp .lead { font-size: 1.06rem; color: var(--ink-soft); margin-top: 0; }
+    .lp .cta { margin: 24px 0; }
+    .lp .cta .btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    .lp .exq { margin: 12px 0; }
+    .lp .exq .rep { color: var(--ink-soft); font-size: .95rem; }
+    .lp .exq .ref { color: var(--accent-ink); font-weight: 600; }
+    .lp footer { margin-top: 40px; border-top: 1px solid var(--line); padding-top: 18px; }
+    .lp footer nav { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 12px; }
+    .lp footer a { color: var(--accent-ink); }
+    .lp .verse { font-family: var(--serif); font-style: italic; text-align: center; color: var(--ink-soft); margin-top: 26px; }
+  </style>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Combien de temps faut-il par jour ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Deux à cinq minutes suffisent : quelques versets à réviser, parfois un nouveau à semer. La régularité compte plus que la durée — et les jours sans, rien ne se perd."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Et si je rate plusieurs jours ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Les versets t’attendent, simplement. Pas de série brisée, pas de compteur de retard, pas de notification de reproche : tu reprends où tu en étais."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quels versets vais-je apprendre ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "L’appli propose un parcours de versets essentiels (confiance, paix, espérance…) en Segond 1910, et des collections par thème ou par livre. Tu n’as pas à choisir si tu ne veux pas."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "La méthode marche-t-elle vraiment ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "La répétition espacée est l’une des techniques d’apprentissage les mieux établies qui soient — c’est celle des applis de langues que tu connais. Ici, elle est mise au service de la Parole, sans les mécaniques de pression."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "C’est gratuit ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, entièrement et pour toujours — pas de publicité, pas d’abonnement. C’est un projet bénévole."
+      }
+    }
+  ]
+}
+  </script>
+</head>
+<body>
+  <main class="lp">
+    <header class="lp-top">
+      <a class="home" href="../"><span class="app-title">Bible <span class="seed">Horizon</span></span></a>
+      <a class="btn btn-soft" href="../">Ouvrir l’appli</a>
+    </header>
+    <h1>Comment mémoriser des versets bibliques (et les garder)</h1>
+    <p class="lead">« Je serre ta parole dans mon cœur » (Psaume 119.11). Apprendre un verset est facile ; le savoir encore dans trois mois, c’est une autre affaire. La bonne nouvelle : c’est un problème résolu — à condition de réviser au bon moment.</p>
+    <h2>Pourquoi on oublie (et quand)</h2>
+    <p>La mémoire fonctionne comme un sentier : fraîchement tracé, il s’efface vite ; emprunté
+    régulièrement, il devient un chemin durable. Un verset appris aujourd’hui commence à
+    s’effacer dès demain — mais chaque révision réussie <b>ralentit l’oubli</b>. C’est le
+    principe de la <b>répétition espacée</b> : revoir le verset juste avant qu’il ne s’efface,
+    à des intervalles de plus en plus longs — demain, puis dans trois jours, puis dans une
+    semaine, puis dans un mois. Quelques minutes bien placées valent mieux qu’une heure de
+    par cœur la veille.</p>
+
+    <h2>Une méthode en quatre étapes</h2>
+    <div class="card">
+      <p><b>1. Lis le verset dans son contexte.</b> Ouvre le passage entier : un verset compris
+      s’apprend deux fois plus vite qu’une suite de mots.</p>
+      <p><b>2. Reconstitue-le de mémoire.</b> Ne te contente pas de le relire : cache-le et
+      récite-le, ou remets ses mots dans l’ordre. C’est l’effort de rappel qui grave.</p>
+      <p><b>3. Révise aux bons moments.</b> Demain, dans trois jours, dans une semaine, dans un
+      mois. C’est là que presque tout le monde décroche — c’est exactement ce qu’une appli
+      peut porter à ta place.</p>
+      <p><b>4. Vis avec.</b> Un verset récité en marchant, prié le soir, partagé à un ami,
+      s’enracine bien mieux qu’un verset seulement « su ».</p>
+    </div>
+
+    <h2>Ce que Bible Horizon porte pour toi</h2>
+    <p>L’appli te propose des versets (Segond 1910) à reconstituer mot à mot, vérifie ta
+    mémoire, puis <b>fait revenir chaque verset juste avant que tu ne l’oublies</b>. Les
+    versets bien enracinés rejoignent ton « jardin », et les révisions se font en deux ou
+    trois minutes par jour. Le tout gratuitement, sans publicité — et si tu rates des jours,
+    personne ne te le reprochera : les versets t’attendent, c’est tout.</p>
+
+    <div class="cta"><a class="btn btn-primary" href="../">Semer mon premier verset</a></div>
+
+    <h2>Questions fréquentes</h2>
+    <h3>Combien de temps faut-il par jour ?</h3>
+    <p>Deux à cinq minutes suffisent : quelques versets à réviser, parfois un nouveau à semer. La régularité compte plus que la durée — et les jours sans, rien ne se perd.</p>
+    <h3>Et si je rate plusieurs jours ?</h3>
+    <p>Les versets t’attendent, simplement. Pas de série brisée, pas de compteur de retard, pas de notification de reproche : tu reprends où tu en étais.</p>
+    <h3>Quels versets vais-je apprendre ?</h3>
+    <p>L’appli propose un parcours de versets essentiels (confiance, paix, espérance…) en Segond 1910, et des collections par thème ou par livre. Tu n’as pas à choisir si tu ne veux pas.</p>
+    <h3>La méthode marche-t-elle vraiment ?</h3>
+    <p>La répétition espacée est l’une des techniques d’apprentissage les mieux établies qui soient — c’est celle des applis de langues que tu connais. Ici, elle est mise au service de la Parole, sans les mécaniques de pression.</p>
+    <h3>C’est gratuit ?</h3>
+    <p>Oui, entièrement et pour toujours — pas de publicité, pas d’abonnement. C’est un projet bénévole.</p>
+
+    <footer>
+      <div class="muted" style="font-size:.9rem">Aussi sur Bible Horizon</div>
+      <nav>
+      <a href="../plan-lecture-bible/">Plan de lecture de la Bible</a> ·
+      <a href="../quiz-biblique/">Quiz biblique</a> ·
+      <a href="../eglises/">Pour votre église</a>
+      </nav>
+      <p class="muted" style="font-size:.9rem">Bible Horizon est gratuit, sans publicité, et le restera.
+      Le texte biblique est la Segond 1910 (domaine public).
+      Une question ? <a href="mailto:contact@biblehorizon.fr">contact@biblehorizon.fr</a></p>
+    </footer>
+  </main>
+</body>
+</html>
