@@ -711,6 +711,706 @@
    "reference": "Philémon 10-12"
   },
   {
+   "id": "per-51",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Quel fils d'Isaac vendit son droit d'aînesse à son frère Jacob pour un plat de lentilles ?",
+   "options": [
+    "Esaü",
+    "Ruben",
+    "Juda",
+    "Benjamin"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 25.29-34"
+  },
+  {
+   "id": "per-52",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Quel roi fit tuer tous les enfants de Bethléem après la naissance de Jésus ?",
+   "options": [
+    "Pilate",
+    "Hérode",
+    "César Auguste",
+    "Archélaüs"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 2.16"
+  },
+  {
+   "id": "per-53",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "À qui Dieu promit-il une descendance aussi nombreuse que les étoiles du ciel ?",
+   "options": [
+    "Isaac",
+    "Jacob",
+    "Noé",
+    "Abraham"
+   ],
+   "bonne": 3,
+   "reference": "Genèse 15.5"
+  },
+  {
+   "id": "per-54",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Qui devint une statue de sel pour avoir regardé en arrière en fuyant Sodome ?",
+   "options": [
+    "La femme de Lot",
+    "La fille de Lot",
+    "La femme de Noé",
+    "Sara"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 19.26"
+  },
+  {
+   "id": "per-55",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Qui fut vendu par ses frères à des marchands qui l'emmenèrent en Égypte ?",
+   "options": [
+    "Benjamin",
+    "Ruben",
+    "Joseph",
+    "Juda"
+   ],
+   "bonne": 2,
+   "reference": "Genèse 37.28"
+  },
+  {
+   "id": "per-56",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Quel ange annonça à Marie qu'elle enfanterait Jésus ?",
+   "options": [
+    "Gabriel",
+    "Michel",
+    "Zacharie",
+    "Élisabeth"
+   ],
+   "bonne": 0,
+   "reference": "Luc 1.26-31"
+  },
+  {
+   "id": "per-57",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Quel disciple marcha sur l'eau en allant vers Jésus, avant de commencer à s'enfoncer ?",
+   "options": [
+    "André",
+    "Jean",
+    "Pierre",
+    "Jacques"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 14.29-30"
+  },
+  {
+   "id": "per-58",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Qui fut le premier chrétien mis à mort par lapidation ?",
+   "options": [
+    "Jacques",
+    "Barnabas",
+    "Philippe",
+    "Étienne"
+   ],
+   "bonne": 3,
+   "reference": "Actes 7.59-60"
+  },
+  {
+   "id": "per-59",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Quel métier exerçait Jésus avant de commencer son ministère, selon les habitants de Nazareth ?",
+   "options": [
+    "Pêcheur",
+    "Charpentier",
+    "Berger",
+    "Tisserand"
+   ],
+   "bonne": 1,
+   "reference": "Marc 6.3"
+  },
+  {
+   "id": "per-60",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Quelle prophétesse très âgée reconnut Jésus enfant lorsqu'il fut présenté au temple ?",
+   "options": [
+    "Anne",
+    "Élisabeth",
+    "Marie de Magdala",
+    "Marthe"
+   ],
+   "bonne": 0,
+   "reference": "Luc 2.36-38"
+  },
+  {
+   "id": "per-61",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Quel persécuteur des chrétiens fut enveloppé d'une lumière sur le chemin de Damas et devint apôtre ?",
+   "options": [
+    "Barnabas",
+    "Silas",
+    "Timothée",
+    "Saul"
+   ],
+   "bonne": 3,
+   "reference": "Actes 9.3-4"
+  },
+  {
+   "id": "per-62",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Quel chef des péagers monta sur un sycomore pour voir passer Jésus ?",
+   "options": [
+    "Zachée",
+    "Matthieu",
+    "Lévi",
+    "Nicodème"
+   ],
+   "bonne": 0,
+   "reference": "Luc 19.4"
+  },
+  {
+   "id": "per-63",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Quel roi ordonna que Jean-Baptiste soit décapité dans sa prison ?",
+   "options": [
+    "Pilate",
+    "Félix",
+    "Hérode",
+    "Archélaüs"
+   ],
+   "bonne": 2,
+   "reference": "Marc 6.27"
+  },
+  {
+   "id": "per-64",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Quel fils Dieu demanda-t-il à Abraham d'offrir en sacrifice sur une montagne ?",
+   "options": [
+    "Ismaël",
+    "Isaac",
+    "Jacob",
+    "Esaü"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 22.2"
+  },
+  {
+   "id": "per-65",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Quel apôtre, pêcheur comme Pierre, était son frère ?",
+   "options": [
+    "Jacques",
+    "Jean",
+    "André",
+    "Philippe"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 4.18"
+  },
+  {
+   "id": "per-66",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Quel nom Adam donna-t-il à sa femme, « parce qu'elle a été la mère de tous les vivants » ?",
+   "options": [
+    "Ève",
+    "Sara",
+    "Rébecca",
+    "Rachel"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 3.20"
+  },
+  {
+   "id": "per-67",
+   "categorie": "Personnages",
+   "niveau": 1,
+   "question": "Quels deux frères, fils de Zébédée, furent appelés par Jésus alors qu'ils réparaient leurs filets ?",
+   "options": [
+    "Pierre et André",
+    "Jacques et Jean",
+    "Philippe et Barthélemy",
+    "Thomas et Matthieu"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 4.21"
+  },
+  {
+   "id": "per-68",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quelle prophétesse, sœur d'Aaron, prit un tambourin après le passage de la mer Rouge ?",
+   "options": [
+    "Miriam",
+    "Debora",
+    "Hulda",
+    "Anne"
+   ],
+   "bonne": 0,
+   "reference": "Exode 15.20"
+  },
+  {
+   "id": "per-69",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel prophète reprocha au roi David sa faute envers Urie au moyen d'une parabole ?",
+   "options": [
+    "Gad",
+    "Nathan",
+    "Samuel",
+    "Ahija"
+   ],
+   "bonne": 1,
+   "reference": "2 Samuel 12.1"
+  },
+  {
+   "id": "per-70",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel fils de David resta suspendu par les cheveux à un chêne avant d'être tué par Joab ?",
+   "options": [
+    "Amnon",
+    "Absalom",
+    "Adonija",
+    "Salomon"
+   ],
+   "bonne": 1,
+   "reference": "2 Samuel 18.9-10"
+  },
+  {
+   "id": "per-71",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quelle reine, femme du roi Achab, fut précipitée d'une fenêtre sur l'ordre de Jéhu ?",
+   "options": [
+    "Athalie",
+    "Vasthi",
+    "Esther",
+    "Jézabel"
+   ],
+   "bonne": 3,
+   "reference": "2 Rois 9.33"
+  },
+  {
+   "id": "per-72",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel prophète fut réprimandé par son ânesse, à qui l'Éternel fit ouvrir la bouche ?",
+   "options": [
+    "Balaam",
+    "Balak",
+    "Eldad",
+    "Médad"
+   ],
+   "bonne": 0,
+   "reference": "Nombres 22.28"
+  },
+  {
+   "id": "per-73",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel juge d'Israël demanda à Dieu un signe au moyen d'une toison de laine ?",
+   "options": [
+    "Jephthé",
+    "Gédéon",
+    "Ehud",
+    "Barak"
+   ],
+   "bonne": 1,
+   "reference": "Juges 6.37"
+  },
+  {
+   "id": "per-74",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quelle jeune femme juive devint reine de Perse à la place de la reine Vasthi ?",
+   "options": [
+    "Esther",
+    "Zeresch",
+    "Rachel",
+    "Hulda"
+   ],
+   "bonne": 0,
+   "reference": "Esther 2.17"
+  },
+  {
+   "id": "per-75",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Qui refusa de se prosterner devant Haman, provoquant sa fureur ?",
+   "options": [
+    "Zorobabel",
+    "Néhémie",
+    "Esdras",
+    "Mardochée"
+   ],
+   "bonne": 3,
+   "reference": "Esther 3.2"
+  },
+  {
+   "id": "per-76",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel pharisien, chef des Juifs, vint trouver Jésus de nuit pour l'interroger ?",
+   "options": [
+    "Nicodème",
+    "Gamaliel",
+    "Joseph d'Arimathée",
+    "Lazare"
+   ],
+   "bonne": 0,
+   "reference": "Jean 3.1-2"
+  },
+  {
+   "id": "per-77",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel compagnon de Paul, surnommé « fils d'exhortation », vendit un champ pour le donner aux apôtres ?",
+   "options": [
+    "Silas",
+    "Timothée",
+    "Barnabas",
+    "Apollos"
+   ],
+   "bonne": 2,
+   "reference": "Actes 4.36-37"
+  },
+  {
+   "id": "per-78",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel centurion romain, homme pieux et craignant Dieu, reçut la visite de Pierre après une vision ?",
+   "options": [
+    "Corneille",
+    "Julius",
+    "Publius",
+    "Félix"
+   ],
+   "bonne": 0,
+   "reference": "Actes 10.1-3"
+  },
+  {
+   "id": "per-79",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Avec qui Jésus s'entretint-il longuement près d'un puits, à Sychar, en Samarie ?",
+   "options": [
+    "Marthe",
+    "Une femme samaritaine",
+    "Marie de Magdala",
+    "La femme cananéenne"
+   ],
+   "bonne": 1,
+   "reference": "Jean 4.7"
+  },
+  {
+   "id": "per-80",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel couple expliqua plus exactement la voie de Dieu à Apollos ?",
+   "options": [
+    "Silas et Timothée",
+    "Pierre et Jean",
+    "Aquilas et Priscille",
+    "Barnabas et Marc"
+   ],
+   "bonne": 2,
+   "reference": "Actes 18.26"
+  },
+  {
+   "id": "per-81",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel jeune homme tomba du troisième étage d'une fenêtre pendant que Paul prêchait tard le soir ?",
+   "options": [
+    "Tychique",
+    "Trophime",
+    "Secundus",
+    "Eutychus"
+   ],
+   "bonne": 3,
+   "reference": "Actes 20.9"
+  },
+  {
+   "id": "per-82",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel apôtre guérit un homme boiteux de naissance à la porte du temple appelée « la Belle » ?",
+   "options": [
+    "Jean",
+    "Pierre",
+    "André",
+    "Philippe"
+   ],
+   "bonne": 1,
+   "reference": "Actes 3.6-8"
+  },
+  {
+   "id": "per-83",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Qui Philippe baptisa-t-il après lui avoir expliqué un passage du prophète Ésaïe, sur un chemin désert ?",
+   "options": [
+    "Un centurion romain",
+    "Un eunuque éthiopien",
+    "Un sorcier samaritain",
+    "Un pharisien"
+   ],
+   "bonne": 1,
+   "reference": "Actes 8.27-38"
+  },
+  {
+   "id": "per-84",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Comment s'appelait le père d'Abraham, qui quitta Ur en Chaldée avec sa famille ?",
+   "options": [
+    "Nachor",
+    "Térach",
+    "Haran",
+    "Laban"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 11.31"
+  },
+  {
+   "id": "per-85",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel roi de Salem, aussi sacrificateur du Dieu Très-Haut, bénit Abram après sa victoire sur les rois ?",
+   "options": [
+    "Melchisédek",
+    "Abimélec",
+    "Kedorlaomer",
+    "Lot"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 14.18"
+  },
+  {
+   "id": "per-86",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel officier égyptien, chef des gardes de Pharaon, acheta Joseph comme esclave ?",
+   "options": [
+    "Potiphéra",
+    "Potiphar",
+    "Asénath",
+    "Jethro"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 39.1"
+  },
+  {
+   "id": "per-87",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Comment s'appelaient les deux fils que Joseph eut en Égypte ?",
+   "options": [
+    "Éphraïm et Manassé",
+    "Gad et Asser",
+    "Ruben et Siméon",
+    "Er et Onan"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 41.51-52"
+  },
+  {
+   "id": "per-88",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Comment s'appelaient les deux fils du sacrificateur Éli, tués le même jour au combat contre les Philistins ?",
+   "options": [
+    "Nadab et Abihu",
+    "Joël et Abija",
+    "Mahlon et Kiljon",
+    "Hophni et Phinées"
+   ],
+   "bonne": 3,
+   "reference": "1 Samuel 4.11"
+  },
+  {
+   "id": "per-89",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quelle fille de Saül méprisa David dans son cœur en le voyant danser devant l'arche de l'Éternel ?",
+   "options": [
+    "Merab",
+    "Abigaïl",
+    "Mical",
+    "Bath-Schéba"
+   ],
+   "bonne": 2,
+   "reference": "2 Samuel 6.16"
+  },
+  {
+   "id": "per-90",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel serviteur d'Élisée fut frappé de lèpre pour avoir menti à Naaman et pris de l'argent en cachette ?",
+   "options": [
+    "Guéhazi",
+    "Josaphat",
+    "Baruc",
+    "Ébed-Mélec"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 5.27"
+  },
+  {
+   "id": "per-91",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Comment s'appelait le plus jeune des interlocuteurs de Job, qui prit la parole après les trois amis ?",
+   "options": [
+    "Bildad",
+    "Tsophar",
+    "Élihu",
+    "Éliphaz"
+   ],
+   "bonne": 2,
+   "reference": "Job 32.2"
+  },
+  {
+   "id": "per-92",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quelle reine de Perse fut répudiée pour avoir refusé de se présenter devant le roi Assuérus ?",
+   "options": [
+    "Esther",
+    "Vasthi",
+    "Zeresch",
+    "Hulda"
+   ],
+   "bonne": 1,
+   "reference": "Esther 1.10-19"
+  },
+  {
+   "id": "per-93",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel chef, descendant de David, dirigea la pose des fondations du second temple après l'exil ?",
+   "options": [
+    "Néhémie",
+    "Esdras",
+    "Josué, fils de Jotsadak",
+    "Zorobabel"
+   ],
+   "bonne": 3,
+   "reference": "Esdras 3.8"
+  },
+  {
+   "id": "per-94",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel vieillard, juste et pieux, prit Jésus enfant dans ses bras au temple et bénit Dieu ?",
+   "options": [
+    "Zacharie",
+    "Nicodème",
+    "Siméon",
+    "Joseph d'Arimathée"
+   ],
+   "bonne": 2,
+   "reference": "Luc 2.25-34"
+  },
+  {
+   "id": "per-95",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Comment s'appelait le serviteur du souverain sacrificateur à qui Pierre trancha l'oreille droite à Gethsémané ?",
+   "options": [
+    "Malchus",
+    "Caïphe",
+    "Anne",
+    "Barabbas"
+   ],
+   "bonne": 0,
+   "reference": "Jean 18.10"
+  },
+  {
+   "id": "per-96",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quelle femme de Joppé, connue pour ses bonnes œuvres, fut ramenée à la vie par Pierre ?",
+   "options": [
+    "Lydie",
+    "Tabitha",
+    "Priscille",
+    "Rhode"
+   ],
+   "bonne": 1,
+   "reference": "Actes 9.36-40"
+  },
+  {
+   "id": "per-97",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quelle servante, tout heureuse, oublia d'ouvrir la porte à Pierre miraculeusement délivré de prison ?",
+   "options": [
+    "Rhode",
+    "Marthe",
+    "Tabitha",
+    "Marie, mère de Jean-Marc"
+   ],
+   "bonne": 0,
+   "reference": "Actes 12.13-14"
+  },
+  {
+   "id": "per-98",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel magicien juif fut frappé de cécité par Paul devant le proconsul de Chypre ?",
+   "options": [
+    "Simon le magicien",
+    "Élymas",
+    "Sceva",
+    "Sosthène"
+   ],
+   "bonne": 1,
+   "reference": "Actes 13.6-11"
+  },
+  {
+   "id": "per-99",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel principal habitant de l'île de Malte accueillit et logea Paul après son naufrage ?",
+   "options": [
+    "Julius",
+    "Félix",
+    "Festus",
+    "Publius"
+   ],
+   "bonne": 3,
+   "reference": "Actes 28.7"
+  },
+  {
+   "id": "per-100",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel eunuque éthiopien fit sortir le prophète Jérémie de la citerne où il avait été jeté ?",
+   "options": [
+    "Baruc",
+    "Ébed-Mélec",
+    "Guéhazi",
+    "Séraja"
+   ],
+   "bonne": 1,
+   "reference": "Jérémie 38.7-13"
+  },
+  {
    "id": "at-01",
    "categorie": "Ancien Testament",
    "niveau": 1,
@@ -1409,6 +2109,706 @@
    ],
    "bonne": 0,
    "reference": "1 Rois 19.19"
+  },
+  {
+   "id": "at-51",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Quelle fut la première parole créatrice de Dieu au premier jour de la création ?",
+   "options": [
+    "Que la lumière soit",
+    "Que les eaux se rassemblent",
+    "Que la terre produise de la verdure",
+    "Que les astres soient dans l'étendue"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 1.3"
+  },
+  {
+   "id": "at-52",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Selon Genèse 1, à l'image de qui Dieu créa-t-il l'homme ?",
+   "options": [
+    "À l'image des anges",
+    "À l'image de Dieu",
+    "À l'image d'Adam",
+    "À l'image du ciel"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 1.27"
+  },
+  {
+   "id": "at-53",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "De quoi l'Éternel Dieu forma-t-il l'homme ?",
+   "options": [
+    "D'une côte",
+    "D'eau et de terre",
+    "De poussière de la terre",
+    "De limon du fleuve"
+   ],
+   "bonne": 2,
+   "reference": "Genèse 2.7"
+  },
+  {
+   "id": "at-54",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "De quelle partie du corps d'Adam Dieu forma-t-il la femme ?",
+   "options": [
+    "Un doigt",
+    "Un os du bras",
+    "Un cheveu",
+    "Une côte"
+   ],
+   "bonne": 3,
+   "reference": "Genèse 2.21-22"
+  },
+  {
+   "id": "at-55",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Qui donna à Adam le fruit défendu qu'elle avait pris de l'arbre ?",
+   "options": [
+    "Ève",
+    "Le serpent",
+    "Un ange",
+    "Caïn"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 3.6"
+  },
+  {
+   "id": "at-56",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Qui tua son frère Abel dans les champs ?",
+   "options": [
+    "Seth",
+    "Caïn",
+    "Hénoc",
+    "Lamec"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 4.8"
+  },
+  {
+   "id": "at-57",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Combien de personnes en tout entrèrent dans l'arche et furent sauvées du déluge ?",
+   "options": [
+    "Quatre",
+    "Six",
+    "Huit",
+    "Dix"
+   ],
+   "bonne": 2,
+   "reference": "Genèse 7.13"
+  },
+  {
+   "id": "at-58",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Quel signe Dieu plaça-t-il dans les nuées comme signe de son alliance avec Noé après le déluge ?",
+   "options": [
+    "Une colombe",
+    "Un arc-en-ciel",
+    "Une étoile",
+    "Un feu"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 9.13"
+  },
+  {
+   "id": "at-59",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Quel fils Dieu demanda-t-il à Abraham d'offrir en holocauste sur une montagne ?",
+   "options": [
+    "Isaac",
+    "Ismaël",
+    "Esaü",
+    "Jacob"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 22.2"
+  },
+  {
+   "id": "at-60",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Dans quoi la mère de Moïse déposa-t-elle son fils pour le sauver, sur le fleuve ?",
+   "options": [
+    "Un coffre de bois d'acacia",
+    "Une caisse de jonc enduite de bitume et de poix",
+    "Une jarre en terre cuite",
+    "Un filet de pêcheur"
+   ],
+   "bonne": 1,
+   "reference": "Exode 2.3"
+  },
+  {
+   "id": "at-61",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Sous quelle forme l'Éternel apparut-il à Moïse au désert, près de Horeb ?",
+   "options": [
+    "Une colonne de nuée",
+    "Un tourbillon de vent",
+    "Une flamme au milieu d'un buisson",
+    "Une étoile"
+   ],
+   "bonne": 2,
+   "reference": "Exode 3.2"
+  },
+  {
+   "id": "at-62",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Sur quelle montagne Moïse mourut-il sans être entré dans le pays de Canaan ?",
+   "options": [
+    "Le mont Sinaï",
+    "Le mont Horeb",
+    "Le mont Carmel",
+    "Le mont Nebo"
+   ],
+   "bonne": 3,
+   "reference": "Deutéronome 34.1-5"
+  },
+  {
+   "id": "at-63",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Qui l'Éternel désigna-t-il pour succéder à Moïse à la tête d'Israël ?",
+   "options": [
+    "Josué",
+    "Caleb",
+    "Aaron",
+    "Otniel"
+   ],
+   "bonne": 0,
+   "reference": "Josué 1.1-2"
+  },
+  {
+   "id": "at-64",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Qui fit couper les sept tresses de Samson pendant son sommeil, lui faisant perdre sa force ?",
+   "options": [
+    "La femme de Timna",
+    "Dalila",
+    "Une servante des Philistins",
+    "Sa mère"
+   ],
+   "bonne": 1,
+   "reference": "Juges 16.19"
+  },
+  {
+   "id": "at-65",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Avec quelle arme David acheva-t-il Goliath après l'avoir terrassé ?",
+   "options": [
+    "Sa fronde",
+    "Une lance philistine",
+    "L'épée de Goliath lui-même",
+    "Un bâton"
+   ],
+   "bonne": 2,
+   "reference": "1 Samuel 17.51"
+  },
+  {
+   "id": "at-66",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Dans quelle fosse Daniel fut-il jeté pour avoir continué à prier son Dieu ?",
+   "options": [
+    "Une fosse remplie d'eau",
+    "Une fournaise ardente",
+    "Un puits sec",
+    "Une fosse aux lions"
+   ],
+   "bonne": 3,
+   "reference": "Daniel 6.16"
+  },
+  {
+   "id": "at-67",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Comment Jacob se déguisa-t-il pour tromper son père aveugle Isaac et recevoir sa bénédiction ?",
+   "options": [
+    "Il mit les habits d'Ésaü et couvrit ses mains de peaux de chevreaux",
+    "Il se parfuma avec l'encens du sanctuaire",
+    "Il emprunta la tente d'Ésaü",
+    "Il se fit passer pour un serviteur"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 27.15-16"
+  },
+  {
+   "id": "at-68",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Combien de coudées mesurait la longueur de l'arche que Noé devait construire ?",
+   "options": [
+    "Cent coudées",
+    "Trois cents coudées",
+    "Deux cents coudées",
+    "Cinq cents coudées"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 6.15"
+  },
+  {
+   "id": "at-69",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quel nouveau nom Dieu donna-t-il à Abram en signe d'alliance ?",
+   "options": [
+    "Israël",
+    "Isaac",
+    "Abraham",
+    "Abimélec"
+   ],
+   "bonne": 2,
+   "reference": "Genèse 17.5"
+  },
+  {
+   "id": "at-70",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Contre quoi Ésaü vendit-il son droit d'aînesse à Jacob ?",
+   "options": [
+    "Un troupeau de brebis",
+    "Une tente",
+    "Une somme d'argent",
+    "Un plat de lentilles"
+   ],
+   "bonne": 3,
+   "reference": "Genèse 25.34"
+  },
+  {
+   "id": "at-71",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quel nouveau nom fut donné à Jacob après sa lutte nocturne avec un homme ?",
+   "options": [
+    "Israël",
+    "Jischeron",
+    "Édom",
+    "Béthel"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 32.28"
+  },
+  {
+   "id": "at-72",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quel vêtement particulier Jacob avait-il fait faire pour son fils Joseph ?",
+   "options": [
+    "Une ceinture de lin",
+    "Une tunique de plusieurs couleurs",
+    "Un manteau de peau",
+    "Une robe de sacrificateur"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 37.3"
+  },
+  {
+   "id": "at-73",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que Pharaon ordonna-t-il aux sages-femmes hébreues de faire aux nouveau-nés mâles ?",
+   "options": [
+    "Les vendre en Égypte",
+    "Les faire circoncire de force",
+    "Les faire mourir",
+    "Les livrer au temple"
+   ],
+   "bonne": 2,
+   "reference": "Exode 1.16"
+  },
+  {
+   "id": "at-74",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quel genre d'agneau les Israélites devaient-ils choisir pour le repas de la Pâque ?",
+   "options": [
+    "Un agneau âgé de trois ans",
+    "Un agneau noir",
+    "N'importe quel agneau du troupeau",
+    "Un agneau sans défaut, mâle, âgé d'un an"
+   ],
+   "bonne": 3,
+   "reference": "Exode 12.5"
+  },
+  {
+   "id": "at-75",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que Moïse éleva-t-il sur une perche pour guérir ceux mordus par les serpents brûlants ?",
+   "options": [
+    "Un serpent d'airain",
+    "Une croix de bois",
+    "Une bannière blanche",
+    "Un bâton fleuri"
+   ],
+   "bonne": 0,
+   "reference": "Nombres 21.9"
+  },
+  {
+   "id": "at-76",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Qui cacha les espions envoyés par Josué avant la prise de Jéricho ?",
+   "options": [
+    "Débora",
+    "Rahab",
+    "La femme d'Achan",
+    "Une veuve de Jéricho"
+   ],
+   "bonne": 1,
+   "reference": "Josué 2.4"
+  },
+  {
+   "id": "at-77",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Comment Jaël mit-elle à mort le chef d'armée Sisera réfugié dans sa tente ?",
+   "options": [
+    "Avec une épée",
+    "Avec du poison",
+    "Avec un pieu de tente enfoncé dans la tempe",
+    "En le noyant"
+   ],
+   "bonne": 2,
+   "reference": "Juges 4.21"
+  },
+  {
+   "id": "at-78",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Qui prononça les paroles « ton peuple sera mon peuple, et ton Dieu sera mon Dieu » ?",
+   "options": [
+    "Orpa",
+    "Naomi",
+    "Booz",
+    "Ruth"
+   ],
+   "bonne": 3,
+   "reference": "Ruth 1.16"
+  },
+  {
+   "id": "at-79",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que répondit le jeune Samuel lorsque l'Éternel l'appela une quatrième fois dans le temple ?",
+   "options": [
+    "Parle, car ton serviteur écoute",
+    "Me voici, envoie-moi",
+    "Je ne suis qu'un enfant",
+    "Seigneur, que veux-tu que je fasse"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 3.10"
+  },
+  {
+   "id": "at-80",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quel mari de Bath-Schéba David plaça-t-il volontairement au plus fort du combat pour causer sa mort ?",
+   "options": [
+    "Joab",
+    "Urie le Hittite",
+    "Achitophel",
+    "Absalom"
+   ],
+   "bonne": 1,
+   "reference": "2 Samuel 11.15"
+  },
+  {
+   "id": "at-81",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Sur quelle montagne le feu de l'Éternel consuma-t-il le sacrifice offert par Élie devant les prophètes de Baal ?",
+   "options": [
+    "Le mont Sinaï",
+    "Le mont Guilboa",
+    "Le mont Carmel",
+    "Le mont Thabor"
+   ],
+   "bonne": 2,
+   "reference": "1 Rois 18.38"
+  },
+  {
+   "id": "at-82",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Comment Élie fut-il enlevé au ciel, sous les yeux d'Élisée ?",
+   "options": [
+    "Sur un nuage",
+    "Porté par des anges",
+    "Il monta une échelle de lumière",
+    "Dans un char de feu, dans un tourbillon"
+   ],
+   "bonne": 3,
+   "reference": "2 Rois 2.11"
+  },
+  {
+   "id": "at-83",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Combien de fils et de filles avait Job avant le début de ses épreuves ?",
+   "options": [
+    "Sept fils et trois filles",
+    "Cinq fils et cinq filles",
+    "Dix fils et dix filles",
+    "Trois fils et sept filles"
+   ],
+   "bonne": 0,
+   "reference": "Job 1.2"
+  },
+  {
+   "id": "at-84",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel patriarche antédiluvien « marcha avec Dieu » et fut enlevé sans connaître la mort ?",
+   "options": [
+    "Seth",
+    "Hénoc",
+    "Metuschélah",
+    "Lamec"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 5.24"
+  },
+  {
+   "id": "at-85",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel roi-sacrificateur de Salem apporta du pain et du vin à Abram après sa victoire militaire ?",
+   "options": [
+    "Abimélec",
+    "Kedorlaomer",
+    "Melchisédek",
+    "Éliézer"
+   ],
+   "bonne": 2,
+   "reference": "Genèse 14.18"
+  },
+  {
+   "id": "at-86",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Combien d'années Jacob servit-il Laban pour obtenir la main de Rachel, avant d'être trompé ?",
+   "options": [
+    "Trois ans",
+    "Cinq ans",
+    "Quatorze ans",
+    "Sept ans"
+   ],
+   "bonne": 3,
+   "reference": "Genèse 29.20"
+  },
+  {
+   "id": "at-87",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel frère de Moïse Dieu désigna-t-il pour parler à sa place devant Pharaon ?",
+   "options": [
+    "Aaron",
+    "Josué",
+    "Chur",
+    "Nadab"
+   ],
+   "bonne": 0,
+   "reference": "Exode 4.14-16"
+  },
+  {
+   "id": "at-88",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel animal était envoyé vivant au désert le jour des expiations, chargé symboliquement des péchés du peuple ?",
+   "options": [
+    "Le taureau du sacrificateur",
+    "Le bouc émissaire",
+    "L'agneau pascal",
+    "La colombe de purification"
+   ],
+   "bonne": 1,
+   "reference": "Lévitique 16.10"
+  },
+  {
+   "id": "at-89",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quels rebelles furent engloutis vivants par la terre qui s'entrouvrit sous eux, avec leurs familles ?",
+   "options": [
+    "Nadab et Abihu",
+    "Achan et sa famille",
+    "Koré, Dathan et Abiram",
+    "Élithur et sa famille"
+   ],
+   "bonne": 2,
+   "reference": "Nombres 16.31-32"
+  },
+  {
+   "id": "at-90",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Pendant combien de temps le soleil s'arrêta-t-il dans sa course, à la prière de Josué lors de la bataille contre les Amoréens ?",
+   "options": [
+    "Une heure environ",
+    "Trois jours",
+    "Une semaine",
+    "Presque un jour entier"
+   ],
+   "bonne": 3,
+   "reference": "Josué 10.13"
+  },
+  {
+   "id": "at-91",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Qu'offrit Jephté en accomplissement de son vœu, après sa victoire sur les Ammonites ?",
+   "options": [
+    "Sa fille",
+    "Un taureau",
+    "Cent moutons",
+    "Sa maison"
+   ],
+   "bonne": 0,
+   "reference": "Juges 11.34-39"
+  },
+  {
+   "id": "at-92",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Qui Saül consulta-t-il secrètement, la veille de sa dernière bataille, pour faire apparaître l'esprit de Samuel ?",
+   "options": [
+    "Un prêtre de Dagon",
+    "Une femme ayant un esprit de divination",
+    "Le grand-prêtre Ahimélec",
+    "Un devin philistin"
+   ],
+   "bonne": 1,
+   "reference": "1 Samuel 28.7"
+  },
+  {
+   "id": "at-93",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Qui mourut frappé par l'Éternel pour avoir touché l'arche de l'alliance durant son transport ?",
+   "options": [
+    "Abinadab",
+    "Éléazar",
+    "Uzza",
+    "Achio"
+   ],
+   "bonne": 2,
+   "reference": "2 Samuel 6.7"
+  },
+  {
+   "id": "at-94",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Sous quel roi, fils de Salomon, le royaume d'Israël se divisa-t-il en deux ?",
+   "options": [
+    "Jéroboam",
+    "Abija",
+    "Asa",
+    "Roboam"
+   ],
+   "bonne": 3,
+   "reference": "1 Rois 12.16-19"
+  },
+  {
+   "id": "at-95",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que se passa-t-il après que des jeunes gens eurent raillé Élisée à cause de sa calvitie ?",
+   "options": [
+    "Deux ours sortirent de la forêt et en déchirèrent plusieurs",
+    "Il les fit fuir en priant",
+    "Le sol s'ouvrit sous eux",
+    "Un feu tomba du ciel"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 2.23-24"
+  },
+  {
+   "id": "at-96",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel roi de Perse autorisa les Juifs à retourner à Jérusalem pour y rebâtir le temple ?",
+   "options": [
+    "Darius",
+    "Cyrus",
+    "Assuérus",
+    "Artaxerxès"
+   ],
+   "bonne": 1,
+   "reference": "Esdras 1.1-2"
+  },
+  {
+   "id": "at-97",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quelle fonction Néhémie exerçait-il auprès du roi Artaxerxès avant de partir rebâtir les murailles de Jérusalem ?",
+   "options": [
+    "Scribe royal",
+    "Chef de la garde",
+    "Échanson du roi",
+    "Gouverneur de province"
+   ],
+   "bonne": 2,
+   "reference": "Néhémie 1.11"
+  },
+  {
+   "id": "at-98",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quelle reine fut destituée par le roi Assuérus avant qu'Esther ne devienne reine à sa place ?",
+   "options": [
+    "Zérech",
+    "Athalie",
+    "Jézabel",
+    "Vasthi"
+   ],
+   "bonne": 3,
+   "reference": "Esther 1.19"
+  },
+  {
+   "id": "at-99",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Qui incita David à faire le dénombrement du peuple d'Israël, ce qui attira un jugement sur la nation ?",
+   "options": [
+    "Satan",
+    "Joab",
+    "Nathan",
+    "Achitophel"
+   ],
+   "bonne": 0,
+   "reference": "1 Chroniques 21.1"
+  },
+  {
+   "id": "at-100",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Combien de pierres précieuses ornaient le pectoral du grand sacrificateur, une pour chaque tribu d'Israël ?",
+   "options": [
+    "Sept",
+    "Douze",
+    "Dix",
+    "Vingt-quatre"
+   ],
+   "bonne": 1,
+   "reference": "Exode 28.21"
   },
   {
    "id": "nt-01",
@@ -2111,6 +3511,706 @@
    "reference": "1, 2 et 3 Jean"
   },
   {
+   "id": "nt-51",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Qui annonça à Marie qu'elle enfanterait un fils, à qui elle donnerait le nom de Jésus ?",
+   "options": [
+    "Le prophète Siméon",
+    "L'ange Gabriel",
+    "Le grand-prêtre Zacharie",
+    "L'ange Michel"
+   ],
+   "bonne": 1,
+   "reference": "Luc 1.26-31"
+  },
+  {
+   "id": "nt-52",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Quel jour après sa naissance Jésus fut-il circoncis, selon la loi de Moïse ?",
+   "options": [
+    "Le premier jour",
+    "Le huitième jour",
+    "Le trentième jour",
+    "Le quarantième jour"
+   ],
+   "bonne": 1,
+   "reference": "Luc 2.21"
+  },
+  {
+   "id": "nt-53",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Qui, au temple, reconnut l'enfant Jésus et dit qu'il pouvait désormais mourir en paix ?",
+   "options": [
+    "Siméon",
+    "Zacharie",
+    "Joseph",
+    "Nicodème"
+   ],
+   "bonne": 0,
+   "reference": "Luc 2.29-30"
+  },
+  {
+   "id": "nt-54",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "À quel âge Jésus resta-t-il au temple parmi les docteurs, sans que ses parents s'en aperçoivent d'abord ?",
+   "options": [
+    "Sept ans",
+    "Dix ans",
+    "Douze ans",
+    "Quinze ans"
+   ],
+   "bonne": 2,
+   "reference": "Luc 2.42"
+  },
+  {
+   "id": "nt-55",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Sous quelle forme le Saint-Esprit descendit-il sur Jésus lors de son baptême ?",
+   "options": [
+    "Une flamme",
+    "Une colombe",
+    "Un nuage",
+    "Un vent violent"
+   ],
+   "bonne": 1,
+   "reference": "Luc 3.22"
+  },
+  {
+   "id": "nt-56",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Pour combien de pièces d'argent Judas accepta-t-il de livrer Jésus ?",
+   "options": [
+    "Vingt",
+    "Trente",
+    "Cinquante",
+    "Cent"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 26.15"
+  },
+  {
+   "id": "nt-57",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Comment s'appelle le lieu où Jésus fut crucifié ?",
+   "options": [
+    "Le mont des Oliviers",
+    "Golgotha",
+    "Gethsémané",
+    "Le mont Sinaï"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 27.33"
+  },
+  {
+   "id": "nt-58",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Qui demanda à Pilate le corps de Jésus pour l'ensevelir ?",
+   "options": [
+    "Nicodème",
+    "Simon de Cyrène",
+    "Joseph d'Arimathée",
+    "Barabbas"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 27.57-58"
+  },
+  {
+   "id": "nt-59",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Selon Jésus, combien de temps le Fils de l'homme serait-il dans le sein de la terre, comme Jonas dans le poisson ?",
+   "options": [
+    "Un jour et une nuit",
+    "Trois jours et trois nuits",
+    "Sept jours",
+    "Quarante jours"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 12.40"
+  },
+  {
+   "id": "nt-60",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Quel apôtre refusa de croire à la résurrection tant qu'il n'aurait pas vu la marque des clous dans les mains de Jésus ?",
+   "options": [
+    "André",
+    "Thomas",
+    "Philippe",
+    "Barthélemy"
+   ],
+   "bonne": 1,
+   "reference": "Jean 20.25"
+  },
+  {
+   "id": "nt-61",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Qui Jésus ressuscita-t-il après quatre jours passés dans le tombeau ?",
+   "options": [
+    "Lazare",
+    "Le fils de la veuve de Naïn",
+    "La fille de Jaïrus",
+    "Étienne"
+   ],
+   "bonne": 0,
+   "reference": "Jean 11.39-44"
+  },
+  {
+   "id": "nt-62",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Environ combien de personnes furent baptisées le jour de la Pentecôte, après le discours de Pierre ?",
+   "options": [
+    "Cinq cents",
+    "Mille",
+    "Trois mille",
+    "Dix mille"
+   ],
+   "bonne": 2,
+   "reference": "Actes 2.41"
+  },
+  {
+   "id": "nt-63",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Quel apôtre, frère de Jean, Hérode fit-il mourir par l'épée ?",
+   "options": [
+    "André",
+    "Jacques",
+    "Philippe",
+    "Barthélemy"
+   ],
+   "bonne": 1,
+   "reference": "Actes 12.2"
+  },
+  {
+   "id": "nt-64",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Qui les soldats forcèrent-ils à porter la croix de Jésus jusqu'au lieu du supplice ?",
+   "options": [
+    "Simon de Cyrène",
+    "Joseph d'Arimathée",
+    "Nicodème",
+    "Barabbas"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 27.32"
+  },
+  {
+   "id": "nt-65",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Qu'écrivit-on au-dessus de la tête de Jésus sur la croix ?",
+   "options": [
+    "« Le Fils de Dieu »",
+    "« Celui-ci est Jésus, le roi des Juifs »",
+    "« Le Sauveur du monde »",
+    "« Le prophète de Nazareth »"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 27.37"
+  },
+  {
+   "id": "nt-66",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Que se passa-t-il au temple de Jérusalem au moment où Jésus expira sur la croix ?",
+   "options": [
+    "Le voile du temple se déchira en deux",
+    "Les portes du temple s'ouvrirent",
+    "L'autel s'effondra",
+    "Le chandelier d'or se brisa"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 27.51"
+  },
+  {
+   "id": "nt-67",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quel roi fit tuer les enfants de Bethléhem après avoir été trompé par les mages ?",
+   "options": [
+    "Hérode",
+    "Archélaüs",
+    "Hérode Antipas",
+    "César Auguste"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 2.16"
+  },
+  {
+   "id": "nt-68",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Où Joseph emmena-t-il Marie et l'enfant Jésus pour échapper à la colère d'Hérode ?",
+   "options": [
+    "En Samarie",
+    "En Égypte",
+    "En Syrie",
+    "À Damas"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 2.14"
+  },
+  {
+   "id": "nt-69",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que mangeait Jean-Baptiste dans le désert ?",
+   "options": [
+    "Du pain et du poisson",
+    "Des sauterelles et du miel sauvage",
+    "Des figues et des olives",
+    "Des dattes et du lait"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 3.4"
+  },
+  {
+   "id": "nt-70",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quel métier exerçait Matthieu (Lévi) avant que Jésus ne l'appelle à le suivre ?",
+   "options": [
+    "Pêcheur",
+    "Berger",
+    "Péager (collecteur d'impôts)",
+    "Charpentier"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 9.9"
+  },
+  {
+   "id": "nt-71",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Depuis combien d'années la femme guérie en touchant le bord du vêtement de Jésus souffrait-elle d'une perte de sang ?",
+   "options": [
+    "Sept ans",
+    "Douze ans",
+    "Dix-huit ans",
+    "Trente-huit ans"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 9.20"
+  },
+  {
+   "id": "nt-72",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Combien de pains les disciples avaient-ils avant que Jésus nourrisse environ quatre mille personnes ?",
+   "options": [
+    "Cinq",
+    "Sept",
+    "Deux",
+    "Douze"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 15.34"
+  },
+  {
+   "id": "nt-73",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Combien de fois Pierre proposa-t-il de pardonner à son frère qui péchait contre lui ?",
+   "options": [
+    "Jusqu'à sept fois",
+    "Jusqu'à trois fois",
+    "Jusqu'à dix fois",
+    "Jusqu'à douze fois"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 18.21"
+  },
+  {
+   "id": "nt-74",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Dans la parabole des talents, combien de talents le maître donna-t-il au premier serviteur ?",
+   "options": [
+    "Deux",
+    "Un",
+    "Cinq",
+    "Dix"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 25.15"
+  },
+  {
+   "id": "nt-75",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quel chef des pharisiens vint trouver Jésus de nuit pour l'interroger ?",
+   "options": [
+    "Nicodème",
+    "Gamaliel",
+    "Joseph d'Arimathée",
+    "Jaïrus"
+   ],
+   "bonne": 0,
+   "reference": "Jean 3.2"
+  },
+  {
+   "id": "nt-76",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Combien de vases de pierre remplis d'eau furent changés en vin aux noces de Cana ?",
+   "options": [
+    "Quatre",
+    "Six",
+    "Sept",
+    "Douze"
+   ],
+   "bonne": 1,
+   "reference": "Jean 2.6"
+  },
+  {
+   "id": "nt-77",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Où Jésus rencontra-t-il la femme samaritaine à qui il demanda à boire ?",
+   "options": [
+    "Près d'un puits",
+    "Au bord de la mer de Galilée",
+    "Dans une synagogue",
+    "Sur une montagne"
+   ],
+   "bonne": 0,
+   "reference": "Jean 4.7"
+  },
+  {
+   "id": "nt-78",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Depuis combien d'années l'homme guéri à la piscine de Béthesda était-il malade ?",
+   "options": [
+    "Douze ans",
+    "Vingt ans",
+    "Trente-huit ans",
+    "Quarante ans"
+   ],
+   "bonne": 2,
+   "reference": "Jean 5.5"
+  },
+  {
+   "id": "nt-79",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "De quoi la femme amenée devant Jésus par les scribes et les pharisiens était-elle accusée ?",
+   "options": [
+    "De vol",
+    "D'adultère",
+    "De blasphème",
+    "De mensonge"
+   ],
+   "bonne": 1,
+   "reference": "Jean 8.4"
+  },
+  {
+   "id": "nt-80",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Combien de jours Jésus resta-t-il encore là où il se trouvait après avoir appris que Lazare était malade ?",
+   "options": [
+    "Un jour",
+    "Deux jours",
+    "Quatre jours",
+    "Une semaine"
+   ],
+   "bonne": 1,
+   "reference": "Jean 11.6"
+  },
+  {
+   "id": "nt-81",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que fit Marie, sœur de Lazare et de Marthe, avec un parfum de grand prix, peu avant la mort de Jésus ?",
+   "options": [
+    "Elle en oignit les pieds de Jésus et les essuya avec ses cheveux",
+    "Elle le versa sur la tête des apôtres",
+    "Elle le vendit pour donner aux pauvres",
+    "Elle l'offrit au grand-prêtre"
+   ],
+   "bonne": 0,
+   "reference": "Jean 12.3"
+  },
+  {
+   "id": "nt-82",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Pourquoi Paul et Barnabas se séparèrent-ils, au point de ne plus voyager ensemble ?",
+   "options": [
+    "Un désaccord sur l'argent",
+    "Un désaccord au sujet de Jean-Marc",
+    "Une dispute sur la circoncision",
+    "Une divergence sur le lieu de leur mission"
+   ],
+   "bonne": 1,
+   "reference": "Actes 15.39"
+  },
+  {
+   "id": "nt-83",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Comment s'appelait la marchande de pourpre de Thyatire, convertie à Philippes, qui accueillit Paul chez elle ?",
+   "options": [
+    "Lydie",
+    "Dorcas",
+    "Priscille",
+    "Damaris"
+   ],
+   "bonne": 0,
+   "reference": "Actes 16.14"
+  },
+  {
+   "id": "nt-84",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Chez qui Jésus fut-il conduit en premier après son arrestation, avant de comparaître devant Caïphe ?",
+   "options": [
+    "Anne, beau-père de Caïphe",
+    "Le gouverneur Pilate",
+    "Le roi Hérode",
+    "Gamaliel"
+   ],
+   "bonne": 0,
+   "reference": "Jean 18.13"
+  },
+  {
+   "id": "nt-85",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Que fit Judas des trente pièces d'argent après avoir vu Jésus condamné ?",
+   "options": [
+    "Il les garda",
+    "Il les rapporta aux sacrificateurs",
+    "Il les donna aux pauvres",
+    "Il les jeta dans le Jourdain"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 27.3"
+  },
+  {
+   "id": "nt-86",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Comment fut appelé le champ acheté avec l'argent de la trahison de Judas ?",
+   "options": [
+    "Le champ du sang",
+    "Le champ des oliviers",
+    "Le champ de la miséricorde",
+    "Le champ du jugement"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 27.8"
+  },
+  {
+   "id": "nt-87",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel était le nom du souverain sacrificateur devant qui Jésus comparut, chez qui scribes et anciens s'étaient assemblés ?",
+   "options": [
+    "Anne",
+    "Caïphe",
+    "Gamaliel",
+    "Ananias"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 26.57"
+  },
+  {
+   "id": "nt-88",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Que fit Pilate devant la foule pour montrer qu'il déclinait sa responsabilité dans la mort de Jésus ?",
+   "options": [
+    "Il déchira ses vêtements",
+    "Il se lava les mains",
+    "Il quitta le tribunal",
+    "Il offrit un sacrifice"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 27.24"
+  },
+  {
+   "id": "nt-89",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel signe Judas donna-t-il aux soldats pour désigner Jésus dans le jardin de Gethsémané ?",
+   "options": [
+    "Un baiser",
+    "Une inclination",
+    "Un mot de passe",
+    "Un vêtement"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 26.48-49"
+  },
+  {
+   "id": "nt-90",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quelle quantité de myrrhe et d'aloès Nicodème apporta-t-il pour l'ensevelissement de Jésus ?",
+   "options": [
+    "Une livre",
+    "Dix livres",
+    "Environ cent livres",
+    "Mille livres"
+   ],
+   "bonne": 2,
+   "reference": "Jean 19.39"
+  },
+  {
+   "id": "nt-91",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "À qui Jésus confia-t-il sa mère, du haut de la croix ?",
+   "options": [
+    "À Pierre",
+    "Au disciple qu'il aimait",
+    "À Jacques",
+    "À Marie de Magdala"
+   ],
+   "bonne": 1,
+   "reference": "Jean 19.26-27"
+  },
+  {
+   "id": "nt-92",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Comment s'appelait le disciple qui, marchant vers Emmaüs, reconnut Jésus ressuscité à la fraction du pain ?",
+   "options": [
+    "Cléopas",
+    "Nathanaël",
+    "Silas",
+    "Barnabas"
+   ],
+   "bonne": 0,
+   "reference": "Luc 24.18"
+  },
+  {
+   "id": "nt-93",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Combien de poissons les disciples prirent-ils lors de la pêche miraculeuse survenue après la résurrection de Jésus ?",
+   "options": [
+    "Soixante-dix",
+    "Cent cinquante-trois",
+    "Deux cents",
+    "Douze"
+   ],
+   "bonne": 1,
+   "reference": "Jean 21.11"
+  },
+  {
+   "id": "nt-94",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel docteur de la loi, estimé de tout le peuple, conseilla au sanhédrin la prudence envers les apôtres ?",
+   "options": [
+    "Gamaliel",
+    "Nicodème",
+    "Ananias",
+    "Barjésus"
+   ],
+   "bonne": 0,
+   "reference": "Actes 5.34"
+  },
+  {
+   "id": "nt-95",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Comment s'appelait la servante qui, entendant la voix de Pierre à la porte, courut l'annoncer sans même ouvrir ?",
+   "options": [
+    "Rhode",
+    "Tabitha",
+    "Lydie",
+    "Damaris"
+   ],
+   "bonne": 0,
+   "reference": "Actes 12.13"
+  },
+  {
+   "id": "nt-96",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Comment s'appelait le magicien juif que Paul rendit aveugle à Paphos ?",
+   "options": [
+    "Simon",
+    "Élymas (Bar-Jésus)",
+    "Alexandre",
+    "Démétrius"
+   ],
+   "bonne": 1,
+   "reference": "Actes 13.8-11"
+  },
+  {
+   "id": "nt-97",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Dans quelle ville Paul et Barnabas furent-ils pris pour des dieux, Jupiter et Mercure, après la guérison d'un impotent ?",
+   "options": [
+    "Lystre",
+    "Iconium",
+    "Antioche de Pisidie",
+    "Derbe"
+   ],
+   "bonne": 0,
+   "reference": "Actes 14.8-12"
+  },
+  {
+   "id": "nt-98",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Selon l'épître de Jacques, qui le malade doit-il faire appeler pour être oint d'huile et recevoir la prière ?",
+   "options": [
+    "Un prophète",
+    "Les anciens de l'Église",
+    "Un scribe",
+    "Le souverain sacrificateur"
+   ],
+   "bonne": 1,
+   "reference": "Jacques 5.14"
+  },
+  {
+   "id": "nt-99",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Selon l'Apocalypse, quel est le nombre de la bête ?",
+   "options": [
+    "777",
+    "666",
+    "144",
+    "888"
+   ],
+   "bonne": 1,
+   "reference": "Apocalypse 13.18"
+  },
+  {
+   "id": "nt-100",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Sur quelle île Jean se trouvait-il lorsqu'il reçut la révélation de l'Apocalypse ?",
+   "options": [
+    "Chypre",
+    "Crète",
+    "Patmos",
+    "Malte"
+   ],
+   "bonne": 2,
+   "reference": "Apocalypse 1.9"
+  },
+  {
    "id": "dit-01",
    "categorie": "Qui a dit ?",
    "niveau": 1,
@@ -2809,6 +4909,706 @@
    ],
    "bonne": 0,
    "reference": "Actes 5.3"
+  },
+  {
+   "id": "dit-51",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Que la lumière soit ! »",
+   "options": [
+    "Dieu",
+    "Moïse",
+    "Un ange",
+    "Adam"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 1.3"
+  },
+  {
+   "id": "dit-52",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Je suis celui qui suis. » (au buisson ardent)",
+   "options": [
+    "Moïse",
+    "Dieu",
+    "Josué",
+    "Aaron"
+   ],
+   "bonne": 1,
+   "reference": "Exode 3.14"
+  },
+  {
+   "id": "dit-53",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Prenez, mangez, ceci est mon corps. » (lors de la dernière cène)",
+   "options": [
+    "Jean-Baptiste",
+    "Pierre",
+    "Jésus",
+    "Paul"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 26.26"
+  },
+  {
+   "id": "dit-54",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Je suis le chemin, la vérité, et la vie. »",
+   "options": [
+    "Thomas",
+    "Philippe",
+    "Jean",
+    "Jésus"
+   ],
+   "bonne": 3,
+   "reference": "Jean 14.6"
+  },
+  {
+   "id": "dit-55",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Je suis la résurrection et la vie. » (à Marthe)",
+   "options": [
+    "Jésus",
+    "Lazare",
+    "Marthe",
+    "Marie"
+   ],
+   "bonne": 0,
+   "reference": "Jean 11.25"
+  },
+  {
+   "id": "dit-56",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Femme, voici ton fils. » (sur la croix)",
+   "options": [
+    "Jean",
+    "Jésus",
+    "Pierre",
+    "Joseph d'Arimathée"
+   ],
+   "bonne": 1,
+   "reference": "Jean 19.26"
+  },
+  {
+   "id": "dit-57",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Mon Dieu, mon Dieu, pourquoi m'as-tu abandonné ? » (sur la croix)",
+   "options": [
+    "Le brigand crucifié",
+    "Le centenier",
+    "Jésus",
+    "Pilate"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 27.46"
+  },
+  {
+   "id": "dit-58",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Il n'est point ici; il est ressuscité, comme il l'avait dit. » (au tombeau vide)",
+   "options": [
+    "Marie de Magdala",
+    "Pierre",
+    "Jean",
+    "L'ange"
+   ],
+   "bonne": 3,
+   "reference": "Matthieu 28.6"
+  },
+  {
+   "id": "dit-59",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Laissez venir à moi les petits enfants, et ne les en empêchez pas. »",
+   "options": [
+    "Jésus",
+    "Pierre",
+    "Un pharisien",
+    "Jean"
+   ],
+   "bonne": 0,
+   "reference": "Marc 10.14"
+  },
+  {
+   "id": "dit-60",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Le salut est entré aujourd'hui dans cette maison. » (chez Zachée)",
+   "options": [
+    "Zachée",
+    "Jésus",
+    "Un pharisien",
+    "Pierre"
+   ],
+   "bonne": 1,
+   "reference": "Luc 19.9"
+  },
+  {
+   "id": "dit-61",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Venez à moi, vous tous qui êtes fatigués et chargés, et je vous donnerai du repos. »",
+   "options": [
+    "Jean-Baptiste",
+    "Paul",
+    "Jésus",
+    "Moïse"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 11.28"
+  },
+  {
+   "id": "dit-62",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Je suis le bon berger. »",
+   "options": [
+    "David",
+    "Pierre",
+    "Le prophète Ésaïe",
+    "Jésus"
+   ],
+   "bonne": 3,
+   "reference": "Jean 10.11"
+  },
+  {
+   "id": "dit-63",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Père, je remets mon esprit entre tes mains. » (sur la croix)",
+   "options": [
+    "Jésus",
+    "Étienne",
+    "Le brigand repentant",
+    "Le centenier"
+   ],
+   "bonne": 0,
+   "reference": "Luc 23.46"
+  },
+  {
+   "id": "dit-64",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Heureux les pauvres en esprit, car le royaume des cieux est à eux. » (sermon sur la montagne)",
+   "options": [
+    "Jean-Baptiste",
+    "Jésus",
+    "Pierre",
+    "Jacques"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 5.3"
+  },
+  {
+   "id": "dit-65",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Je suis la lumière du monde. »",
+   "options": [
+    "Le prophète Ésaïe",
+    "Jean-Baptiste",
+    "Jésus",
+    "Siméon"
+   ],
+   "bonne": 2,
+   "reference": "Jean 8.12"
+  },
+  {
+   "id": "dit-66",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Ne craignez point, car je vous annonce une bonne nouvelle... il vous est né un Sauveur. » (aux bergers)",
+   "options": [
+    "Zacharie",
+    "Marie",
+    "Siméon",
+    "L'ange (aux bergers)"
+   ],
+   "bonne": 3,
+   "reference": "Luc 2.10-11"
+  },
+  {
+   "id": "dit-67",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Le serpent m'a séduite, et j'en ai mangé. »",
+   "options": [
+    "Ève",
+    "Sara",
+    "Rébecca",
+    "Rachel"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 3.13"
+  },
+  {
+   "id": "dit-68",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Je suis Ésaü, ton fils aîné. » (déguisé devant son père)",
+   "options": [
+    "Ésaü",
+    "Jacob",
+    "Laban",
+    "Isaac"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 27.19"
+  },
+  {
+   "id": "dit-69",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Je suis Joseph, votre frère, que vous avez vendu pour être mené en Égypte. »",
+   "options": [
+    "Benjamin",
+    "Ruben",
+    "Joseph",
+    "Juda"
+   ],
+   "bonne": 2,
+   "reference": "Genèse 45.4"
+  },
+  {
+   "id": "dit-70",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Qui est l'Éternel, pour que j'obéisse à sa voix...? »",
+   "options": [
+    "Un magicien égyptien",
+    "Un intendant de Pharaon",
+    "Le prêtre de Madian",
+    "Pharaon"
+   ],
+   "bonne": 3,
+   "reference": "Exode 5.2"
+  },
+  {
+   "id": "dit-71",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Si j'étais rasé, ma force m'abandonnerait, et je deviendrais faible. » (à Delila)",
+   "options": [
+    "Samson",
+    "Un juge d'Israël",
+    "Un Philistin",
+    "Manoach, père de Samson"
+   ],
+   "bonne": 0,
+   "reference": "Juges 16.17"
+  },
+  {
+   "id": "dit-72",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Tu marches contre moi avec l'épée... et moi, je marche contre toi au nom de l'Éternel des armées. » (face à Goliath)",
+   "options": [
+    "Saül",
+    "David",
+    "Jonathan",
+    "Un soldat israélite"
+   ],
+   "bonne": 1,
+   "reference": "1 Samuel 17.45"
+  },
+  {
+   "id": "dit-73",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Partagez en deux l'enfant qui vit, et donnez-en la moitié à l'une et la moitié à l'autre. »",
+   "options": [
+    "Un des juges d'Israël",
+    "David",
+    "Salomon",
+    "Nathan le prophète"
+   ],
+   "bonne": 2,
+   "reference": "1 Rois 3.25"
+  },
+  {
+   "id": "dit-74",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Prenez-moi, et jetez-moi dans la mer... car je sais que c'est moi qui vous attire cette grande tempête. »",
+   "options": [
+    "Le capitaine du navire",
+    "Un marin",
+    "Élie",
+    "Jonas"
+   ],
+   "bonne": 3,
+   "reference": "Jonas 1.12"
+  },
+  {
+   "id": "dit-75",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Tu es mon Fils bien-aimé, en toi j'ai mis toute mon affection. » (au baptême de Jésus)",
+   "options": [
+    "Dieu (voix céleste)",
+    "Jean-Baptiste",
+    "Un ange",
+    "Jésus"
+   ],
+   "bonne": 0,
+   "reference": "Marc 1.11"
+  },
+  {
+   "id": "dit-76",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Seigneur, je ne suis pas digne que tu entres sous mon toit. »",
+   "options": [
+    "Un pharisien",
+    "Le centenier",
+    "Un scribe",
+    "Nicodème"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 8.8"
+  },
+  {
+   "id": "dit-77",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Mon père, j'ai péché contre le ciel et contre toi. » (dans une parabole)",
+   "options": [
+    "Le fils aîné",
+    "Le père",
+    "Le fils prodigue",
+    "Un serviteur"
+   ],
+   "bonne": 2,
+   "reference": "Luc 15.18"
+  },
+  {
+   "id": "dit-78",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« O Dieu, sois apaisé envers moi, qui suis un pécheur. » (dans une parabole)",
+   "options": [
+    "Le pharisien",
+    "Un sacrificateur",
+    "Zachée",
+    "Le publicain"
+   ],
+   "bonne": 3,
+   "reference": "Luc 18.13"
+  },
+  {
+   "id": "dit-79",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Venez voir un homme qui m'a dit tout ce que j'ai fait; ne serait-ce point le Christ ? »",
+   "options": [
+    "La femme samaritaine",
+    "Marie de Magdala",
+    "Marthe",
+    "Marie, sœur de Lazare"
+   ],
+   "bonne": 0,
+   "reference": "Jean 4.29"
+  },
+  {
+   "id": "dit-80",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Une chose que je sais, c'est que j'étais aveugle et que maintenant je vois. »",
+   "options": [
+    "Un pharisien",
+    "L'aveugle-né guéri",
+    "Nicodème",
+    "Bartimée"
+   ],
+   "bonne": 1,
+   "reference": "Jean 9.25"
+  },
+  {
+   "id": "dit-81",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Saul, Saul, pourquoi me persécutes-tu ? » (sur le chemin de Damas)",
+   "options": [
+    "Un ange",
+    "Ananias",
+    "Jésus",
+    "Étienne"
+   ],
+   "bonne": 2,
+   "reference": "Actes 9.4"
+  },
+  {
+   "id": "dit-82",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Tu es fou, Paul ! ton grand savoir te fait déraisonner. » (au procès de Paul)",
+   "options": [
+    "Le roi Agrippa",
+    "Félix",
+    "Un accusateur juif",
+    "Festus"
+   ],
+   "bonne": 3,
+   "reference": "Actes 26.24"
+  },
+  {
+   "id": "dit-83",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Voici le feu et le bois; mais où est l'agneau pour l'holocauste ? »",
+   "options": [
+    "Isaac",
+    "Ismaël",
+    "Un serviteur d'Abraham",
+    "Abraham"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 22.7"
+  },
+  {
+   "id": "dit-84",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Je ne te laisserai point aller, que tu ne m'aies béni. » (en luttant avec l'ange)",
+   "options": [
+    "Ésaü",
+    "Jacob",
+    "Laban",
+    "L'ange"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 32.26"
+  },
+  {
+   "id": "dit-85",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Je ne suis pas un homme qui a la parole facile... j'ai la bouche et la langue embarrassées. »",
+   "options": [
+    "Aaron",
+    "Josué",
+    "Moïse",
+    "Jéthro"
+   ],
+   "bonne": 2,
+   "reference": "Exode 4.10"
+  },
+  {
+   "id": "dit-86",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Tue-moi, je te prie... afin que je ne voie pas mon malheur. » (se plaignant à l'Éternel)",
+   "options": [
+    "Aaron",
+    "Josué",
+    "Caleb",
+    "Moïse"
+   ],
+   "bonne": 3,
+   "reference": "Nombres 11.15"
+  },
+  {
+   "id": "dit-87",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« De celui qui mange est sorti ce qui se mange, et du fort est sorti le doux. » (une énigme)",
+   "options": [
+    "Samson",
+    "Un Philistin",
+    "Manoach",
+    "Un compagnon de noces"
+   ],
+   "bonne": 0,
+   "reference": "Juges 14.14"
+  },
+  {
+   "id": "dit-88",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« L'obéissance vaut mieux que les sacrifices. »",
+   "options": [
+    "Saül",
+    "Samuel",
+    "David",
+    "Le prophète Nathan"
+   ],
+   "bonne": 1,
+   "reference": "1 Samuel 15.22"
+  },
+  {
+   "id": "dit-89",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Mon oreille avait entendu parler de toi; mais maintenant mon œil t'a vu. » (en réponse à l'Éternel)",
+   "options": [
+    "Éliphaz",
+    "Élihu",
+    "Job",
+    "Bildad"
+   ],
+   "bonne": 2,
+   "reference": "Job 42.5"
+  },
+  {
+   "id": "dit-90",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Je suis dans la douleur à cause de toi, Jonathan, mon frère! » (une lamentation)",
+   "options": [
+    "Saül",
+    "Absalom",
+    "Joab",
+    "David"
+   ],
+   "bonne": 3,
+   "reference": "2 Samuel 1.26"
+  },
+  {
+   "id": "dit-91",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« J'ai été très zélé pour l'Éternel... et je suis resté, moi seul, et ils cherchent à m'ôter la vie. » (au mont Horeb)",
+   "options": [
+    "Élie",
+    "Élisée",
+    "Abdias",
+    "Un prophète du Baal"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 19.10"
+  },
+  {
+   "id": "dit-92",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Qu'il y ait sur moi, je te prie, une double portion de ton esprit. » (avant l'enlèvement d'Élie)",
+   "options": [
+    "Un fils de prophète",
+    "Élisée",
+    "Guéhazi",
+    "Élie"
+   ],
+   "bonne": 1,
+   "reference": "2 Rois 2.9"
+  },
+  {
+   "id": "dit-93",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Je fais un grand ouvrage, et je ne puis descendre. » (répondant à Sanballat)",
+   "options": [
+    "Esdras",
+    "Zorobabel",
+    "Néhémie",
+    "Tobija"
+   ],
+   "bonne": 2,
+   "reference": "Néhémie 6.3"
+  },
+  {
+   "id": "dit-94",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Maintiens-tu encore ton intégrité ? Maudis Dieu, et meurs ! »",
+   "options": [
+    "Éliphaz",
+    "L'un des amis de Job",
+    "Élihu",
+    "La femme de Job"
+   ],
+   "bonne": 3,
+   "reference": "Job 2.9"
+  },
+  {
+   "id": "dit-95",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Comment ai-je trouvé grâce à tes yeux, pour que tu prennes garde à moi, moi qui suis une étrangère ? » (à Boaz)",
+   "options": [
+    "Ruth",
+    "Naomi",
+    "Orpa",
+    "Une servante de Boaz"
+   ],
+   "bonne": 0,
+   "reference": "Ruth 2.10"
+  },
+  {
+   "id": "dit-96",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Malheur à moi! je suis perdu, car je suis un homme dont les lèvres sont impures. » (en vision)",
+   "options": [
+    "Jérémie",
+    "Ésaïe",
+    "Ézéchiel",
+    "Daniel"
+   ],
+   "bonne": 1,
+   "reference": "Ésaïe 6.5"
+  },
+  {
+   "id": "dit-97",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Je ne sais point parler, car je suis un enfant. » (répondant à son appel)",
+   "options": [
+    "Baruc",
+    "Ézéchiel",
+    "Jérémie",
+    "Sophonie"
+   ],
+   "bonne": 2,
+   "reference": "Jérémie 1.6"
+  },
+  {
+   "id": "dit-98",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Tu as été pesé dans la balance, et tu as été trouvé léger. » (interprétant une inscription pour le roi)",
+   "options": [
+    "Un sage de Babylone",
+    "Nebucadnetsar",
+    "Un des trois amis de Daniel",
+    "Daniel"
+   ],
+   "bonne": 3,
+   "reference": "Daniel 5.27"
+  },
+  {
+   "id": "dit-99",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Je suis innocent du sang de ce juste. Cela vous regarde. » (devant la foule)",
+   "options": [
+    "Pilate",
+    "Le grand sacrificateur",
+    "Hérode",
+    "La femme de Pilate"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 27.24"
+  },
+  {
+   "id": "dit-100",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« C'est son ange. » (à propos de Pierre, à la porte)",
+   "options": [
+    "Rhoda, la servante",
+    "Les personnes réunies dans la maison",
+    "Un ange",
+    "Jacques, frère du Seigneur"
+   ],
+   "bonne": 1,
+   "reference": "Actes 12.15"
   },
   {
    "id": "lieu-01",
@@ -3511,6 +6311,706 @@
    "reference": "Actes 17.10-11"
   },
   {
+   "id": "lieu-51",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Quelle mer les Israélites traversèrent-ils à pied sec en fuyant l'Égypte ?",
+   "options": [
+    "Mer Rouge",
+    "Mer Morte",
+    "Mer de Galilée",
+    "Méditerranée"
+   ],
+   "bonne": 0,
+   "reference": "Exode 14.21-22"
+  },
+  {
+   "id": "lieu-52",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Depuis quelle montagne, près de Jérusalem, Jésus fut-il élevé au ciel ?",
+   "options": [
+    "Sinaï",
+    "le mont des Oliviers",
+    "Carmel",
+    "Nébo"
+   ],
+   "bonne": 1,
+   "reference": "Actes 1.9-12"
+  },
+  {
+   "id": "lieu-53",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Sur quelle montagne Moïse vit-il un buisson qui brûlait sans se consumer ?",
+   "options": [
+    "Ararat",
+    "Guérizim",
+    "Horeb",
+    "Thabor"
+   ],
+   "bonne": 2,
+   "reference": "Exode 3.1-2"
+  },
+  {
+   "id": "lieu-54",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Les murailles de quelle ville s'écroulèrent après qu'Israël en eut fait le tour sept fois ?",
+   "options": [
+    "Aï",
+    "Sichem",
+    "Silo",
+    "Jéricho"
+   ],
+   "bonne": 3,
+   "reference": "Josué 6.20"
+  },
+  {
+   "id": "lieu-55",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Dans quel village Jésus changea-t-il l'eau en vin lors d'un mariage ?",
+   "options": [
+    "Cana",
+    "Capernaüm",
+    "Béthanie",
+    "Nazareth"
+   ],
+   "bonne": 0,
+   "reference": "Jean 2.1-11"
+  },
+  {
+   "id": "lieu-56",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Dans quelle ville l'ange Gabriel annonça-t-il à Marie qu'elle enfanterait un fils ?",
+   "options": [
+    "Bethléem",
+    "Nazareth",
+    "Jérusalem",
+    "Capernaüm"
+   ],
+   "bonne": 1,
+   "reference": "Luc 1.26-31"
+  },
+  {
+   "id": "lieu-57",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Dans quel pays les Israélites furent-ils contraints de fabriquer des briques sous une dure servitude ?",
+   "options": [
+    "Assyrie",
+    "Babylone",
+    "Égypte",
+    "Madian"
+   ],
+   "bonne": 2,
+   "reference": "Exode 1.13-14"
+  },
+  {
+   "id": "lieu-58",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Sur quelle montagne Abraham s'apprêta-t-il à offrir son fils Isaac en holocauste ?",
+   "options": [
+    "Nébo",
+    "Horeb",
+    "Carmel",
+    "Moriah"
+   ],
+   "bonne": 3,
+   "reference": "Genèse 22.2"
+  },
+  {
+   "id": "lieu-59",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Sur le chemin de quelle ville Saul de Tarse fut-il aveuglé par une lumière venue du ciel ?",
+   "options": [
+    "Damas",
+    "Antioche",
+    "Césarée",
+    "Joppé"
+   ],
+   "bonne": 0,
+   "reference": "Actes 9.3-6"
+  },
+  {
+   "id": "lieu-60",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Dans quelle ville les apôtres reçurent-ils le Saint-Esprit le jour de la Pentecôte ?",
+   "options": [
+    "Bethléem",
+    "Jérusalem",
+    "Nazareth",
+    "Capernaüm"
+   ],
+   "bonne": 1,
+   "reference": "Actes 2.1-5"
+  },
+  {
+   "id": "lieu-61",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Sur les fleuves de quelle ville les exilés d'Israël s'assirent-ils pour pleurer en pensant à Sion ?",
+   "options": [
+    "Ninive",
+    "Suse",
+    "Babylone",
+    "Damas"
+   ],
+   "bonne": 2,
+   "reference": "Psaume 137.1"
+  },
+  {
+   "id": "lieu-62",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Vers quel pays Moïse envoya-t-il douze hommes pour l'explorer ?",
+   "options": [
+    "Madian",
+    "Édom",
+    "Moab",
+    "Canaan"
+   ],
+   "bonne": 3,
+   "reference": "Nombres 13.17"
+  },
+  {
+   "id": "lieu-63",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Dans quelle ville la foule étendit-elle des vêtements et des branches sur le chemin de Jésus, peu avant sa mort ?",
+   "options": [
+    "Jérusalem",
+    "Jéricho",
+    "Béthanie",
+    "Capernaüm"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 21.8-10"
+  },
+  {
+   "id": "lieu-64",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Dans quelle ville Samson emporta-t-il les portes de la ville sur ses épaules ?",
+   "options": [
+    "Ascalon",
+    "Gaza",
+    "Aschdod",
+    "Gath"
+   ],
+   "bonne": 1,
+   "reference": "Juges 16.1-3"
+  },
+  {
+   "id": "lieu-65",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Quel fleuve les Israélites traversèrent-ils à pied sec pour entrer dans le pays de Canaan, sous la conduite de Josué ?",
+   "options": [
+    "le Nil",
+    "l'Euphrate",
+    "le Jourdain",
+    "le Kison"
+   ],
+   "bonne": 2,
+   "reference": "Josué 3.17"
+  },
+  {
+   "id": "lieu-66",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Au pied de quelle montagne Aaron fabriqua-t-il un veau d'or pendant que Moïse recevait la loi ?",
+   "options": [
+    "Nébo",
+    "Guérizim",
+    "Thabor",
+    "Sinaï"
+   ],
+   "bonne": 3,
+   "reference": "Exode 32.1-4"
+  },
+  {
+   "id": "lieu-67",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quelle ville un paralytique fut-il descendu à travers le toit pour être guéri par Jésus ?",
+   "options": [
+    "Capernaüm",
+    "Naïn",
+    "Béthanie",
+    "Sychar"
+   ],
+   "bonne": 0,
+   "reference": "Marc 2.1-4"
+  },
+  {
+   "id": "lieu-68",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quelle ville Philippe prêcha-t-il Christ, provoquant une grande joie parmi les habitants ?",
+   "options": [
+    "Antioche",
+    "Samarie",
+    "Joppé",
+    "Lydda"
+   ],
+   "bonne": 1,
+   "reference": "Actes 8.5"
+  },
+  {
+   "id": "lieu-69",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quelle ville Paul et Silas furent-ils battus de verges puis jetés en prison ?",
+   "options": [
+    "Thessalonique",
+    "Corinthe",
+    "Philippes",
+    "Béroée"
+   ],
+   "bonne": 2,
+   "reference": "Actes 16.22-24"
+  },
+  {
+   "id": "lieu-70",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quelle ville Paul demeura-t-il un an et demi pour y enseigner la parole de Dieu ?",
+   "options": [
+    "Éphèse",
+    "Antioche",
+    "Colosses",
+    "Corinthe"
+   ],
+   "bonne": 3,
+   "reference": "Actes 18.11"
+  },
+  {
+   "id": "lieu-71",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quelle ville Paul arriva-t-il finalement comme prisonnier, après son long voyage en mer ?",
+   "options": [
+    "Rome",
+    "Césarée",
+    "Alexandrie",
+    "Pouzzoles"
+   ],
+   "bonne": 0,
+   "reference": "Actes 28.16"
+  },
+  {
+   "id": "lieu-72",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quel lieu Jacob vit-il en songe une échelle touchant le ciel, avec des anges qui montaient et descendaient ?",
+   "options": [
+    "Sichem",
+    "Béthel",
+    "Mahanaïm",
+    "Guilgal"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 28.11-19"
+  },
+  {
+   "id": "lieu-73",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Près de quelle ville Abraham enterra-t-il Sara, dans la caverne de Macpéla ?",
+   "options": [
+    "Sichem",
+    "Guérar",
+    "Hébron",
+    "Béer-Schéba"
+   ],
+   "bonne": 2,
+   "reference": "Genèse 23.19"
+  },
+  {
+   "id": "lieu-74",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Où Abraham planta-t-il des tamaris et invoqua-t-il le nom de l'Éternel, Dieu de l'éternité ?",
+   "options": [
+    "Hébron",
+    "Guérar",
+    "Mamré",
+    "Béer-Schéba"
+   ],
+   "bonne": 3,
+   "reference": "Genèse 21.33"
+  },
+  {
+   "id": "lieu-75",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Où Israël campa-t-il, avec douze pierres dressées en mémorial, juste après avoir franchi le Jourdain ?",
+   "options": [
+    "Guilgal",
+    "Silo",
+    "Béthel",
+    "Mitspa"
+   ],
+   "bonne": 0,
+   "reference": "Josué 4.19-20"
+  },
+  {
+   "id": "lieu-76",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quelle ville une veuve nourrit-elle le prophète Élie pendant la famine ?",
+   "options": [
+    "Sunem",
+    "Sarepta",
+    "Naïn",
+    "Sidon"
+   ],
+   "bonne": 1,
+   "reference": "1 Rois 17.9-10"
+  },
+  {
+   "id": "lieu-77",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Sur quelle montagne le roi Saül trouva-t-il la mort face aux Philistins ?",
+   "options": [
+    "Carmel",
+    "Thabor",
+    "Guilboa",
+    "Guérizim"
+   ],
+   "bonne": 2,
+   "reference": "1 Samuel 31.1"
+  },
+  {
+   "id": "lieu-78",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quelle capitale se trouvait le trône du roi Assuérus, où vécut la reine Esther ?",
+   "options": [
+    "Babylone",
+    "Ninive",
+    "Ecbatane",
+    "Suse"
+   ],
+   "bonne": 3,
+   "reference": "Esther 1.2"
+  },
+  {
+   "id": "lieu-79",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quel pays les trois compagnons de Daniel furent-ils jetés dans une fournaise ardente sans être brûlés ?",
+   "options": [
+    "Babylone",
+    "Ninive",
+    "Suse",
+    "Ur"
+   ],
+   "bonne": 0,
+   "reference": "Daniel 3.19-23"
+  },
+  {
+   "id": "lieu-80",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quel réservoir de Jérusalem un aveugle-né alla-t-il se laver sur l'ordre de Jésus, et recouvra-t-il la vue ?",
+   "options": [
+    "Bethesda",
+    "Siloé",
+    "Guihon",
+    "le réservoir supérieur"
+   ],
+   "bonne": 1,
+   "reference": "Jean 9.7"
+  },
+  {
+   "id": "lieu-81",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quelle ville le collecteur d'impôts Zachée grimpa-t-il sur un sycomore pour voir Jésus ?",
+   "options": [
+    "Capernaüm",
+    "Béthanie",
+    "Jéricho",
+    "Sychar"
+   ],
+   "bonne": 2,
+   "reference": "Luc 19.1-4"
+  },
+  {
+   "id": "lieu-82",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quelle ville le centenier Corneille reçut-il la visite de Pierre après une vision ?",
+   "options": [
+    "Joppé",
+    "Antioche",
+    "Ptolémaïs",
+    "Césarée"
+   ],
+   "bonne": 3,
+   "reference": "Actes 10.1"
+  },
+  {
+   "id": "lieu-83",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans le territoire de quelle ville Pierre confessa-t-il que Jésus était le Christ ?",
+   "options": [
+    "Césarée de Philippe",
+    "Bethsaïda",
+    "Chorazin",
+    "Magdala"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 16.13-16"
+  },
+  {
+   "id": "lieu-84",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle ville de Pisidie Paul et Barnabas prêchèrent-ils dans la synagogue ?",
+   "options": [
+    "Iconium",
+    "Antioche de Pisidie",
+    "Derbe",
+    "Attalie"
+   ],
+   "bonne": 1,
+   "reference": "Actes 13.14"
+  },
+  {
+   "id": "lieu-85",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle ville Paul fut-il lapidé par la foule et laissé pour mort ?",
+   "options": [
+    "Iconium",
+    "Derbe",
+    "Lystre",
+    "Attalie"
+   ],
+   "bonne": 2,
+   "reference": "Actes 14.19"
+  },
+  {
+   "id": "lieu-86",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle ville Paul eut-il, de nuit, la vision d'un Macédonien le suppliant de venir l'aider ?",
+   "options": [
+    "Assos",
+    "Mitylène",
+    "Milet",
+    "Troas"
+   ],
+   "bonne": 3,
+   "reference": "Actes 16.8-9"
+  },
+  {
+   "id": "lieu-87",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Depuis quelle ville Paul fit-il venir les anciens d'Éphèse pour leur adresser un discours d'adieu ?",
+   "options": [
+    "Milet",
+    "Assos",
+    "Rhodes",
+    "Patara"
+   ],
+   "bonne": 0,
+   "reference": "Actes 20.17"
+  },
+  {
+   "id": "lieu-88",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Sur quelle île Paul et ses compagnons de voyage firent-ils naufrage ?",
+   "options": [
+    "Crète",
+    "Malte",
+    "Chypre",
+    "Rhodes"
+   ],
+   "bonne": 1,
+   "reference": "Actes 28.1"
+  },
+  {
+   "id": "lieu-89",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Comment Jacob nomma-t-il le lieu où il lutta toute une nuit avec un homme mystérieux ?",
+   "options": [
+    "Béthel",
+    "Mahanaïm",
+    "Peniel",
+    "Guilgal"
+   ],
+   "bonne": 2,
+   "reference": "Genèse 32.24-30"
+  },
+  {
+   "id": "lieu-90",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Vers quelle ville Jacob envoya-t-il Joseph pour prendre des nouvelles de ses frères, qui gardaient le troupeau ?",
+   "options": [
+    "Hébron",
+    "Dothan",
+    "Béthel",
+    "Sichem"
+   ],
+   "bonne": 3,
+   "reference": "Genèse 37.12-14"
+  },
+  {
+   "id": "lieu-91",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle ville toute l'assemblée d'Israël plaça-t-elle la tente d'assignation, après la conquête du pays ?",
+   "options": [
+    "Silo",
+    "Guilgal",
+    "Sichem",
+    "Mitspa"
+   ],
+   "bonne": 0,
+   "reference": "Josué 18.1"
+  },
+  {
+   "id": "lieu-92",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Devant quelle ville les hommes d'Israël furent-ils d'abord repoussés, après leur victoire à Jéricho ?",
+   "options": [
+    "Sichem",
+    "Aï",
+    "Guibea",
+    "Béthel"
+   ],
+   "bonne": 1,
+   "reference": "Josué 7.2-5"
+  },
+  {
+   "id": "lieu-93",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle localité Saül alla-t-il consulter une femme qui avait un esprit de Python ?",
+   "options": [
+    "Sunem",
+    "Guilboa",
+    "En Dor",
+    "Nob"
+   ],
+   "bonne": 2,
+   "reference": "1 Samuel 28.7"
+  },
+  {
+   "id": "lieu-94",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle ville le roi Achab fut-il mortellement blessé au combat contre les Syriens ?",
+   "options": [
+    "Jizreel",
+    "Samarie",
+    "Aphek",
+    "Ramoth en Galaad"
+   ],
+   "bonne": 3,
+   "reference": "1 Rois 22.29-36"
+  },
+  {
+   "id": "lieu-95",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle ville se trouvait la vigne de Naboth, convoitée par le roi Achab ?",
+   "options": [
+    "Jizreel",
+    "Samarie",
+    "Sichem",
+    "Thirtsa"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 21.1"
+  },
+  {
+   "id": "lieu-96",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Près de quel torrent Élie fut-il nourri par des corbeaux, au début de la famine ?",
+   "options": [
+    "Kison",
+    "Kerith",
+    "Escol",
+    "Sorek"
+   ],
+   "bonne": 1,
+   "reference": "1 Rois 17.3-5"
+  },
+  {
+   "id": "lieu-97",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle ville le prophète Élisée ressuscita-t-il le fils d'une femme qui l'avait hébergé ?",
+   "options": [
+    "Sarepta",
+    "Jéricho",
+    "Sunem",
+    "Guilgal"
+   ],
+   "bonne": 2,
+   "reference": "2 Rois 4.8-37"
+  },
+  {
+   "id": "lieu-98",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Comment fut appelé le lieu où les Israélites trouvèrent une eau trop amère pour être bue, peu après la traversée de la mer Rouge ?",
+   "options": [
+    "Elim",
+    "Réphidim",
+    "Cadès",
+    "Mara"
+   ],
+   "bonne": 3,
+   "reference": "Exode 15.23-25"
+  },
+  {
+   "id": "lieu-99",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "En quel lieu Israël combattit-il contre Amalek, tandis que Moïse tenait les mains levées sur la colline ?",
+   "options": [
+    "Réphidim",
+    "Elim",
+    "Mara",
+    "Cadès-Barnéa"
+   ],
+   "bonne": 0,
+   "reference": "Exode 17.8-13"
+  },
+  {
+   "id": "lieu-100",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelles deux villes le roi Jéroboam plaça-t-il les veaux d'or qu'il avait fabriqués ?",
+   "options": [
+    "Silo et Mitspa",
+    "Dan et Béthel",
+    "Sichem et Guilgal",
+    "Samarie et Jizreel"
+   ],
+   "bonne": 1,
+   "reference": "1 Rois 12.28-29"
+  },
+  {
    "id": "vers-01",
    "categorie": "Complète le verset",
    "niveau": 1,
@@ -4209,6 +7709,706 @@
    ],
    "bonne": 0,
    "reference": "Psaume 118.24"
+  },
+  {
+   "id": "vers-51",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Dieu créa l'homme à son ___, il le créa à l'image de Dieu, il créa l'homme et la femme. »",
+   "options": [
+    "image",
+    "ressemblance",
+    "exemple",
+    "portrait"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 1.27"
+  },
+  {
+   "id": "vers-52",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Au commencement était la ___, et la Parole était avec Dieu, et la Parole était Dieu. »",
+   "options": [
+    "Lumière",
+    "Parole",
+    "Loi",
+    "Vérité"
+   ],
+   "bonne": 1,
+   "reference": "Jean 1.1"
+  },
+  {
+   "id": "vers-53",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Et la parole a été faite ___, et elle a habité parmi nous, pleine de grâce et de vérité. »",
+   "options": [
+    "homme",
+    "esprit",
+    "chair",
+    "lumière"
+   ],
+   "bonne": 2,
+   "reference": "Jean 1.14"
+  },
+  {
+   "id": "vers-54",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Allez, faites de toutes les ___ des disciples, les baptisant au nom du Père, du Fils et du Saint-Esprit. »",
+   "options": [
+    "peuples",
+    "familles",
+    "générations",
+    "nations"
+   ],
+   "bonne": 3,
+   "reference": "Matthieu 28.19"
+  },
+  {
+   "id": "vers-55",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Et voici, je suis avec vous tous les jours, jusqu'à la fin du ___. »",
+   "options": [
+    "monde",
+    "temps",
+    "siècle",
+    "jour"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 28.20"
+  },
+  {
+   "id": "vers-56",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« C'est qu'aujourd'hui, dans la ville de David, il vous est né un ___, qui est le Christ, le Seigneur. »",
+   "options": [
+    "prophète",
+    "Sauveur",
+    "roi",
+    "berger"
+   ],
+   "bonne": 1,
+   "reference": "Luc 2.11"
+  },
+  {
+   "id": "vers-57",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Je suis la résurrection et la ___. Celui qui croit en moi vivra, quand même il serait mort. »",
+   "options": [
+    "voie",
+    "vérité",
+    "vie",
+    "lumière"
+   ],
+   "bonne": 2,
+   "reference": "Jean 11.25"
+  },
+  {
+   "id": "vers-58",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Allez par tout le monde, et prêchez la bonne nouvelle à toute la ___. »",
+   "options": [
+    "terre",
+    "nation",
+    "humanité",
+    "création"
+   ],
+   "bonne": 3,
+   "reference": "Marc 16.15"
+  },
+  {
+   "id": "vers-59",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Je suis le bon ___. Le bon berger donne sa vie pour ses brebis. »",
+   "options": [
+    "berger",
+    "pasteur",
+    "gardien",
+    "maître"
+   ],
+   "bonne": 0,
+   "reference": "Jean 10.11"
+  },
+  {
+   "id": "vers-60",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Car rien n'est ___ à Dieu. »",
+   "options": [
+    "difficile",
+    "impossible",
+    "caché",
+    "inconnu"
+   ],
+   "bonne": 1,
+   "reference": "Luc 1.37"
+  },
+  {
+   "id": "vers-61",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Elle enfantera un fils, et tu lui donneras le nom de ___ ; c'est lui qui sauvera son peuple de ses péchés. »",
+   "options": [
+    "Emmanuel",
+    "Josué",
+    "Jésus",
+    "Christ"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 1.21"
+  },
+  {
+   "id": "vers-62",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Je suis l'alpha et l'oméga, le premier et le ___, le commencement et la fin. »",
+   "options": [
+    "seul",
+    "grand",
+    "vivant",
+    "dernier"
+   ],
+   "bonne": 3,
+   "reference": "Apocalypse 22.13"
+  },
+  {
+   "id": "vers-63",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Dieu vit tout ce qu'il avait fait et voici, cela était très ___. »",
+   "options": [
+    "bon",
+    "beau",
+    "grand",
+    "parfait"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 1.31"
+  },
+  {
+   "id": "vers-64",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Vous êtes le ___ de la terre. Mais si le sel perd sa saveur, avec quoi la lui rendra-t-on ? »",
+   "options": [
+    "sable",
+    "sel",
+    "phare",
+    "levain"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 5.13"
+  },
+  {
+   "id": "vers-65",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Heureux les pauvres en esprit, car le royaume des ___ est à eux ! »",
+   "options": [
+    "justes",
+    "saints",
+    "cieux",
+    "élus"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 5.3"
+  },
+  {
+   "id": "vers-66",
+   "categorie": "Complète le verset",
+   "niveau": 1,
+   "question": "« Notre Père qui es aux cieux ! Que ton ___ soit sanctifié. »",
+   "options": [
+    "règne",
+    "amour",
+    "esprit",
+    "nom"
+   ],
+   "bonne": 3,
+   "reference": "Matthieu 6.9"
+  },
+  {
+   "id": "vers-67",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« C'est pourquoi l'homme quittera son père et sa mère, et s'attachera à sa femme, et ils deviendront une seule ___. »",
+   "options": [
+    "chair",
+    "famille",
+    "âme",
+    "vie"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 2.24"
+  },
+  {
+   "id": "vers-68",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« Heureux l'homme qui ne marche pas selon le conseil des ___, qui ne s'arrête pas sur la voie des pécheurs. »",
+   "options": [
+    "orgueilleux",
+    "méchants",
+    "impies",
+    "insensés"
+   ],
+   "bonne": 1,
+   "reference": "Psaume 1.1"
+  },
+  {
+   "id": "vers-69",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« L'Éternel est ma lumière et mon ___ : de qui aurais-je crainte ? »",
+   "options": [
+    "rocher",
+    "bouclier",
+    "salut",
+    "refuge"
+   ],
+   "bonne": 2,
+   "reference": "Psaume 27.1"
+  },
+  {
+   "id": "vers-70",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« Instruis l'enfant selon la voie qu'il doit suivre ; et quand il sera vieux, il ne s'en ___ pas. »",
+   "options": [
+    "souviendra",
+    "éloignera",
+    "lassera",
+    "détournera"
+   ],
+   "bonne": 3,
+   "reference": "Proverbes 22.6"
+  },
+  {
+   "id": "vers-71",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« Ne crains rien, car je suis avec toi ; ne prends pas d'inquiétude, car je suis ton ___. »",
+   "options": [
+    "Dieu",
+    "berger",
+    "roc",
+    "sauveur"
+   ],
+   "bonne": 0,
+   "reference": "Ésaïe 41.10"
+  },
+  {
+   "id": "vers-72",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« Il n'y a pas de plus grand amour que de donner sa vie pour ses ___. »",
+   "options": [
+    "frères",
+    "amis",
+    "brebis",
+    "disciples"
+   ],
+   "bonne": 1,
+   "reference": "Jean 15.13"
+  },
+  {
+   "id": "vers-73",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« Et que servirait-il à un homme de gagner tout le monde, s'il perdait son ___ ? »",
+   "options": [
+    "esprit",
+    "cœur",
+    "âme",
+    "salut"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 16.26"
+  },
+  {
+   "id": "vers-74",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« Car ce n'est pas un esprit de timidité que Dieu nous a donné, mais un esprit de force, d'amour et de ___. »",
+   "options": [
+    "paix",
+    "vérité",
+    "gloire",
+    "sagesse"
+   ],
+   "bonne": 3,
+   "reference": "2 Timothée 1.7"
+  },
+  {
+   "id": "vers-75",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« Car c'est par la ___ que vous êtes sauvés, par le moyen de la foi. »",
+   "options": [
+    "grâce",
+    "loi",
+    "prière",
+    "croix"
+   ],
+   "bonne": 0,
+   "reference": "Éphésiens 2.8"
+  },
+  {
+   "id": "vers-76",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« Mais le fruit de l'Esprit, c'est l'amour, la ___, la paix, la patience, la bonté. »",
+   "options": [
+    "grâce",
+    "joie",
+    "gloire",
+    "force"
+   ],
+   "bonne": 1,
+   "reference": "Galates 5.22"
+  },
+  {
+   "id": "vers-77",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« Tout ce que vous faites, faites-le de bon ___, comme pour le Seigneur et non pour des hommes. »",
+   "options": [
+    "gré",
+    "vouloir",
+    "cœur",
+    "esprit"
+   ],
+   "bonne": 2,
+   "reference": "Colossiens 3.23"
+  },
+  {
+   "id": "vers-78",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« Celui qui n'aime pas n'a pas connu Dieu, car Dieu est ___. »",
+   "options": [
+    "lumière",
+    "esprit",
+    "vérité",
+    "amour"
+   ],
+   "bonne": 3,
+   "reference": "1 Jean 4.8"
+  },
+  {
+   "id": "vers-79",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« Sentez et voyez combien l'Éternel est ___ ! Heureux l'homme qui cherche en lui son refuge ! »",
+   "options": [
+    "bon",
+    "grand",
+    "juste",
+    "saint"
+   ],
+   "bonne": 0,
+   "reference": "Psaume 34.9"
+  },
+  {
+   "id": "vers-80",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« Comme le fer aiguise le fer, ainsi un homme excite la face de son ___. »",
+   "options": [
+    "frère",
+    "ami",
+    "prochain",
+    "voisin"
+   ],
+   "bonne": 1,
+   "reference": "Proverbes 27.17"
+  },
+  {
+   "id": "vers-81",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« C'est que tu pratiques la justice, que tu aimes la ___, et que tu marches humblement avec ton Dieu. »",
+   "options": [
+    "patience",
+    "vérité",
+    "miséricorde",
+    "sagesse"
+   ],
+   "bonne": 2,
+   "reference": "Michée 6.8"
+  },
+  {
+   "id": "vers-82",
+   "categorie": "Complète le verset",
+   "niveau": 2,
+   "question": "« Je vous donne un commandement ___ : aimez-vous les uns les autres ; comme je vous ai aimés, vous aussi, aimez-vous les uns les autres. »",
+   "options": [
+    "unique",
+    "suprême",
+    "éternel",
+    "nouveau"
+   ],
+   "bonne": 3,
+   "reference": "Jean 13.34"
+  },
+  {
+   "id": "vers-83",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Ton peuple sera mon peuple, et ton Dieu sera mon ___. »",
+   "options": [
+    "Dieu",
+    "Seigneur",
+    "roi",
+    "sauveur"
+   ],
+   "bonne": 0,
+   "reference": "Ruth 1.16"
+  },
+  {
+   "id": "vers-84",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« L'homme regarde à ce qui frappe les yeux, mais l'Éternel regarde au ___. »",
+   "options": [
+    "visage",
+    "cœur",
+    "esprit",
+    "corps"
+   ],
+   "bonne": 1,
+   "reference": "1 Samuel 16.7"
+  },
+  {
+   "id": "vers-85",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Car je connais les projets que j'ai formés sur vous, dit l'Éternel, projets de paix et non de malheur, afin de vous donner un avenir et de l' ___. »",
+   "options": [
+    "abondance",
+    "sagesse",
+    "espérance",
+    "innocence"
+   ],
+   "bonne": 2,
+   "reference": "Jérémie 29.11"
+  },
+  {
+   "id": "vers-86",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Moi et ma maison, nous servirons ___. »",
+   "options": [
+    "le Seigneur",
+    "notre Dieu",
+    "le Très-Haut",
+    "l'Éternel"
+   ],
+   "bonne": 3,
+   "reference": "Josué 24.15"
+  },
+  {
+   "id": "vers-87",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Tu aimeras l'Éternel, ton Dieu, de tout ton cœur, de toute ton âme et de toute ta ___. »",
+   "options": [
+    "force",
+    "vie",
+    "pensée",
+    "volonté"
+   ],
+   "bonne": 0,
+   "reference": "Deutéronome 6.5"
+  },
+  {
+   "id": "vers-88",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Car il ordonnera à ses ___ de te garder dans toutes tes voies. »",
+   "options": [
+    "serviteurs",
+    "anges",
+    "gardiens",
+    "prophètes"
+   ],
+   "bonne": 1,
+   "reference": "Psaume 91.11"
+  },
+  {
+   "id": "vers-89",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Et c'est par ses meurtrissures que nous sommes ___. »",
+   "options": [
+    "sauvés",
+    "délivrés",
+    "guéris",
+    "pardonnés"
+   ],
+   "bonne": 2,
+   "reference": "Ésaïe 53.5"
+  },
+  {
+   "id": "vers-90",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Je répondis : Me voici, ___-moi. »",
+   "options": [
+    "prends",
+    "garde",
+    "conduis",
+    "envoie"
+   ],
+   "bonne": 3,
+   "reference": "Ésaïe 6.8"
+  },
+  {
+   "id": "vers-91",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Mais que la droiture soit comme un courant d'eau, et la justice comme un ___ qui jamais ne tarit. »",
+   "options": [
+    "torrent",
+    "fleuve",
+    "ruisseau",
+    "océan"
+   ],
+   "bonne": 0,
+   "reference": "Amos 5.24"
+  },
+  {
+   "id": "vers-92",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Il rend mes pieds semblables à ceux des ___, et il me fait marcher sur mes lieux élevés. »",
+   "options": [
+    "gazelles",
+    "biches",
+    "aigles",
+    "chevreuils"
+   ],
+   "bonne": 1,
+   "reference": "Habacuc 3.19"
+  },
+  {
+   "id": "vers-93",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Apportez à la maison du trésor toutes les ___, afin qu'il y ait de la nourriture dans ma maison. »",
+   "options": [
+    "offrandes",
+    "prémices",
+    "dîmes",
+    "richesses"
+   ],
+   "bonne": 2,
+   "reference": "Malachie 3.10"
+  },
+  {
+   "id": "vers-94",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Car sans moi vous ne pouvez rien ___. »",
+   "options": [
+    "obtenir",
+    "espérer",
+    "réussir",
+    "faire"
+   ],
+   "bonne": 3,
+   "reference": "Jean 15.5"
+  },
+  {
+   "id": "vers-95",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Et vous serez mes ___ à Jérusalem, dans toute la Judée, dans la Samarie, et jusqu'aux extrémités de la terre. »",
+   "options": [
+    "témoins",
+    "disciples",
+    "envoyés",
+    "messagers"
+   ],
+   "bonne": 0,
+   "reference": "Actes 1.8"
+  },
+  {
+   "id": "vers-96",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Ne vous conformez pas au siècle présent, mais soyez transformés par le renouvellement de l' ___. »",
+   "options": [
+    "esprit",
+    "intelligence",
+    "cœur",
+    "âme"
+   ],
+   "bonne": 1,
+   "reference": "Romains 12.2"
+  },
+  {
+   "id": "vers-97",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Si quelqu'un est en Christ, il est une nouvelle ___. Les choses anciennes sont passées ; voici, toutes choses sont devenues nouvelles. »",
+   "options": [
+    "personne",
+    "naissance",
+    "création",
+    "vie"
+   ],
+   "bonne": 2,
+   "reference": "2 Corinthiens 5.17"
+  },
+  {
+   "id": "vers-98",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Revêtez-vous de toutes les armes de Dieu, afin de pouvoir tenir ferme contre les ___ du diable. »",
+   "options": [
+    "attaques",
+    "tentations",
+    "assauts",
+    "ruses"
+   ],
+   "bonne": 3,
+   "reference": "Éphésiens 6.11"
+  },
+  {
+   "id": "vers-99",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Si quelqu'un d'entre vous manque de sagesse, qu'il la demande à Dieu, qui donne à tous simplement et sans ___, et elle lui sera donnée. »",
+   "options": [
+    "reproche",
+    "mesure",
+    "condition",
+    "hésitation"
+   ],
+   "bonne": 0,
+   "reference": "Jacques 1.5"
+  },
+  {
+   "id": "vers-100",
+   "categorie": "Complète le verset",
+   "niveau": 3,
+   "question": "« Déchargez-vous sur lui de tous vos soucis, car lui-même prend ___ de vous. »",
+   "options": [
+    "garde",
+    "soin",
+    "pitié",
+    "charge"
+   ],
+   "bonne": 1,
+   "reference": "1 Pierre 5.7"
   }
  ]
 }

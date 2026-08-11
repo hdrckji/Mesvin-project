@@ -82,6 +82,9 @@ function loadStore() {
   if (!s.groupe) s.groupe = { prenoms: [], relevees: 0 };
   // Duels à distance : compteur local distinct — ne touche jamais aux stats solo.
   if (!s.duelsAmis) s.duelsAmis = { relevees: 0 };
+  // Questions déjà servies récemment (défi libre, coopératif) par « case » de
+  // filtres — pour tirer sans remise tant que la case n'est pas épuisée.
+  if (!s.vues) s.vues = {};
   return s;
 }
 function saveStore() { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {} }
@@ -121,6 +124,24 @@ function habille(q, rnd) {
   return { q, ordre, bonnePos: ordre.indexOf(q.bonne) };
 }
 
+/* Tirage « sans remise » : évite de reservir une question déjà vue tant que
+   la case (mode + catégorie + niveau) n'est pas épuisée. Le compteur des vues
+   vit dans le localStorage de l'appareil (store.vues) — une fois la case
+   épuisée, elle se réinitialise et le cycle recommence. */
+function tirageSansRemise(caseKey, pool, n, rnd) {
+  const vues = new Set(store.vues[caseKey] || []);
+  let frais = pool.filter(q => !vues.has(q.id));
+  if (frais.length < n) { vues.clear(); frais = pool; }
+  const tirees = melange(frais, rnd).slice(0, n);
+  tirees.forEach(q => vues.add(q.id));
+  store.vues[caseKey] = [...vues];
+  saveStore();
+  return tirees;
+}
+function caseFiltres(prefixe, filtres) {
+  return `${prefixe}|${filtres.categorie || 'tous'}|${filtres.niveau || 'tous'}`;
+}
+
 function tirage(mode, filtres) {
   if (mode === 'jour') {
     // SANS REDITE : la banque entière est mélangée une fois par « période »
@@ -137,8 +158,9 @@ function tirage(mode, filtres) {
     return ordre.slice(rang * NB_QUESTIONS, rang * NB_QUESTIONS + NB_QUESTIONS).map(q => habille(q, rnd));
   }
   const rnd = rngSeme('libre-' + Date.now() + '-' + Math.random());
+  const tirees = tirageSansRemise(caseFiltres('libre', filtres), poolFiltre(filtres), NB_QUESTIONS, rnd);
   // L'ordre des 4 réponses est lui aussi mélangé.
-  return melange(poolFiltre(filtres), rnd).slice(0, NB_QUESTIONS).map(q => habille(q, rnd));
+  return tirees.map(q => habille(q, rnd));
 }
 
 /* Tirage équitable pour le compétitif : les manches sont construites niveau
@@ -174,7 +196,8 @@ function tirageCompet(filtres, nb, parTete) {
 }
 function tirageCoop(filtres, n) {
   const rnd = rngSeme('coop-' + Date.now() + '-' + Math.random());
-  return melange(poolFiltre(filtres), rnd).slice(0, n).map(q => habille(q, rnd));
+  const tirees = tirageSansRemise(caseFiltres('coop', filtres), poolFiltre(filtres), n, rnd);
+  return tirees.map(q => habille(q, rnd));
 }
 
 /* ---------- État de l'écran ---------- */
