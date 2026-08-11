@@ -832,6 +832,9 @@ function viewMoi() {
         <span class="pi-date">posée le ${esc(p.date)}</span></span>
     </div>`).join('');
   const pierresSec = `<div class="section-title">🪨 Pierres du chemin</div>
+    <p class="muted me-note fade">Des badges-souvenirs qui marquent un pas réel du chemin — premier
+      verset planté, premier chapitre lu, premier défi relevé… Une pierre se pose une seule fois,
+      et ne se retire jamais.</p>
     <p class="pierres-quote fade">« Que signifient ces pierres ? » — Josué 4.21</p>
     ${pierresList.length
       ? pierresTiles + `<p class="muted me-note center">D'autres pierres se poseront au fil du chemin.</p>`

@@ -86,6 +86,12 @@ function require_user(PDO $pdo): array {
     if ($user === false) {
         json_error('Session expirée — reconnecte-toi.', 401);
     }
+    // Session glissante : chaque utilisation active repousse l'expiration de
+    // SESSION_LIFETIME_SECONDS (voir auth.php) — un compte utilisé au moins
+    // une fois par période ne se déconnecte donc jamais tout seul ; seule une
+    // longue absence, ou une déconnexion explicite, met fin à la session.
+    $ext = $pdo->prepare('UPDATE sessions SET expires_at = ? WHERE token = ?');
+    $ext->execute([now_sql_plus(SESSION_LIFETIME_SECONDS), $token]);
     $up = $pdo->prepare('UPDATE users SET last_seen = ? WHERE id = ?');
     $up->execute([now_sql(), $user['id']]);
     return $user;
