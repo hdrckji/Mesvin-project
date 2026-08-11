@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM veillee_groupes LIMIT 1');
+        $pdo->query('SELECT 1 FROM groupe_service_inscriptions LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -219,6 +219,56 @@ function db_migrate(PDO $pdo): void {
                 joined_at DATETIME NOT NULL,
                 PRIMARY KEY (groupe_id, user_id),
                 INDEX idx_gmembres_user (user_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // La page de l'église (voir groupes-page.php) : les annonces du
+            // responsable, épinglables pour rester en tête de page.
+            'CREATE TABLE IF NOT EXISTS groupe_annonces (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                groupe_id INT UNSIGNED NOT NULL,
+                titre VARCHAR(80) NOT NULL,
+                texte VARCHAR(2000) NOT NULL,
+                epingle TINYINT NOT NULL DEFAULT 0,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL,
+                INDEX idx_gannonces_groupe (groupe_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Les rendez-vous réguliers de l'assemblée (« Culte », « Prière »…) :
+            // jour 0 = dimanche … 6 = samedi, heure « HH:MM », ordre d'affichage.
+            'CREATE TABLE IF NOT EXISTS groupe_rdv (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                groupe_id INT UNSIGNED NOT NULL,
+                libelle VARCHAR(80) NOT NULL,
+                jour TINYINT NOT NULL,
+                heure CHAR(5) NOT NULL,
+                lieu VARCHAR(80) NULL,
+                ordre INT NOT NULL DEFAULT 0,
+                INDEX idx_grdv_groupe (groupe_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Les services ponctuels (« Nettoyage de la salle ») — VOLONTAIRES :
+            // on lève la main (table suivante), on n'est pas réquisitionné.
+            // date_service « YYYY-MM-DD » ; balayés 90 jours après la date.
+            'CREATE TABLE IF NOT EXISTS groupe_services (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                groupe_id INT UNSIGNED NOT NULL,
+                titre VARCHAR(80) NOT NULL,
+                date_service CHAR(10) NOT NULL,
+                details VARCHAR(500) NULL,
+                places TINYINT NOT NULL,
+                created_at DATETIME NOT NULL,
+                INDEX idx_gservices_groupe (groupe_id),
+                INDEX idx_gservices_date (date_service)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Les mains levées : une ligne par membre inscrit à un service.
+            'CREATE TABLE IF NOT EXISTS groupe_service_inscriptions (
+                service_id INT UNSIGNED NOT NULL,
+                user_id INT UNSIGNED NOT NULL,
+                created_at DATETIME NOT NULL,
+                PRIMARY KEY (service_id, user_id),
+                INDEX idx_gsinscriptions_user (user_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
 
             // Configuration des notifications push (« le verset offert ») :
@@ -449,6 +499,50 @@ function db_migrate(PDO $pdo): void {
                 PRIMARY KEY (groupe_id, user_id)
             )',
             'CREATE INDEX IF NOT EXISTS idx_gmembres_user ON groupe_membres (user_id)',
+
+            // La page de l'église (annonces, rendez-vous, services et mains
+            // levées) — voir les commentaires du dialecte MySQL ci-dessus.
+            'CREATE TABLE IF NOT EXISTS groupe_annonces (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                groupe_id INTEGER NOT NULL,
+                titre TEXT NOT NULL,
+                texte TEXT NOT NULL,
+                epingle INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_gannonces_groupe ON groupe_annonces (groupe_id)',
+
+            'CREATE TABLE IF NOT EXISTS groupe_rdv (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                groupe_id INTEGER NOT NULL,
+                libelle TEXT NOT NULL,
+                jour INTEGER NOT NULL,
+                heure TEXT NOT NULL,
+                lieu TEXT NULL,
+                ordre INTEGER NOT NULL DEFAULT 0
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_grdv_groupe ON groupe_rdv (groupe_id)',
+
+            'CREATE TABLE IF NOT EXISTS groupe_services (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                groupe_id INTEGER NOT NULL,
+                titre TEXT NOT NULL,
+                date_service TEXT NOT NULL,
+                details TEXT NULL,
+                places INTEGER NOT NULL,
+                created_at TEXT NOT NULL
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_gservices_groupe ON groupe_services (groupe_id)',
+            'CREATE INDEX IF NOT EXISTS idx_gservices_date ON groupe_services (date_service)',
+
+            'CREATE TABLE IF NOT EXISTS groupe_service_inscriptions (
+                service_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (service_id, user_id)
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_gsinscriptions_user ON groupe_service_inscriptions (user_id)',
 
             // Configuration des notifications push — voir le commentaire du
             // dialecte MySQL ci-dessus (une rangée, id = 1, auto-générée).

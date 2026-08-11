@@ -269,14 +269,23 @@ function handle_groupes_leave(PDO $pdo, string $rawCode): never {
 /* ---- DELETE /api/groupes/{code} — suppression par le responsable ---------------- */
 
 /**
- * Supprime un groupe, toutes ses adhésions et ses réglages de quiz (mode,
+ * Supprime un groupe, toutes ses adhésions, ses réglages de quiz (mode,
  * sélection, questions propres, liens veillée ↔ groupe — voir
- * groupe_quiz_purge dans groupes-quiz.php). Seul chemin de suppression d'un
- * groupe : route DELETE, responsable dernier membre qui part, et suppression
- * de compte (delete_user_completely, auth.php).
+ * groupe_quiz_purge dans groupes-quiz.php) et TOUTE sa page d'église
+ * (annonces, rendez-vous, services et inscriptions — voir groupes-page.php).
+ * Seul chemin de suppression d'un groupe : la route DELETE, le responsable
+ * dernier membre qui quitte, la suppression d'un compte
+ * (delete_user_completely, auth.php).
  */
 function groupe_delete_completely(PDO $pdo, int $groupeId): void {
     groupe_quiz_purge($pdo, $groupeId);
+    $pdo->prepare(
+        'DELETE FROM groupe_service_inscriptions
+         WHERE service_id IN (SELECT id FROM groupe_services WHERE groupe_id = ?)'
+    )->execute([$groupeId]);
+    $pdo->prepare('DELETE FROM groupe_services WHERE groupe_id = ?')->execute([$groupeId]);
+    $pdo->prepare('DELETE FROM groupe_rdv WHERE groupe_id = ?')->execute([$groupeId]);
+    $pdo->prepare('DELETE FROM groupe_annonces WHERE groupe_id = ?')->execute([$groupeId]);
     $pdo->prepare('DELETE FROM groupe_membres WHERE groupe_id = ?')->execute([$groupeId]);
     $pdo->prepare('DELETE FROM groupes WHERE id = ?')->execute([$groupeId]);
 }

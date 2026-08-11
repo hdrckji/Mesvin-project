@@ -301,10 +301,12 @@ function handle_auth_logout(PDO $pdo): never {
  * /api/me (l'utilisateur lui-même) et DELETE /api/admin/users/{id}
  * (l'administration).
  *
- * Groupes d'église : ses adhésions sont retirées ; pour chaque groupe dont il
- * est responsable, le groupe est supprimé s'il y était seul, sinon le membre
- * restant le plus ancien est promu responsable (groupes.responsable_id ET son
- * role dans groupe_membres) — l'assemblée ne reste jamais sans berger.
+ * Groupes d'église : ses adhésions et ses inscriptions aux services de la
+ * page de l'église sont retirées ; pour chaque groupe dont il est
+ * responsable, le groupe est supprimé s'il y était seul (page comprise),
+ * sinon le membre restant le plus ancien est promu responsable
+ * (groupes.responsable_id ET son role dans groupe_membres) — l'assemblée ne
+ * reste jamais sans berger.
  *
  * Notifications push : les abonnements de l'appareil sont DÉTACHÉS du compte
  * (user_id → NULL), pas supprimés — l'utilisateur a activé « le verset
@@ -326,8 +328,14 @@ function delete_user_completely(PDO $pdo, array $user): void {
         $st = $pdo->prepare('DELETE FROM duels WHERE challenger_id = ? OR opponent_id = ?');
         $st->execute([$id, $id]);
 
-        // Groupes dont il est responsable : suppression s'il y est seul,
-        // sinon passation au membre restant le plus ancien.
+        // Page de l'église : ses mains levées sont retirées — les services
+        // eux-mêmes restent, une place se libère simplement.
+        $st = $pdo->prepare('DELETE FROM groupe_service_inscriptions WHERE user_id = ?');
+        $st->execute([$id]);
+
+        // Groupes dont il est responsable : suppression s'il y est seul
+        // (avec toute la page — voir groupe_delete_completely), sinon
+        // passation au membre restant le plus ancien.
         $st = $pdo->prepare('SELECT id FROM groupes WHERE responsable_id = ?');
         $st->execute([$id]);
         foreach (array_column($st->fetchAll(), 'id') as $groupeId) {
@@ -340,7 +348,7 @@ function delete_user_completely(PDO $pdo, array $user): void {
             $heritier = $st->fetch();
             if ($heritier === false) {
                 // Seul dans son groupe : le groupe disparaît avec lui, quiz
-                // d'église compris (groupe_delete_completely, groupes.php).
+                // d'église et page compris (groupe_delete_completely).
                 groupe_delete_completely($pdo, (int) $groupeId);
             } else {
                 $pdo->prepare('UPDATE groupes SET responsable_id = ? WHERE id = ?')

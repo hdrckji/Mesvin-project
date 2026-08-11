@@ -24,6 +24,7 @@ require __DIR__ . '/sync.php';
 require __DIR__ . '/friends.php';
 require __DIR__ . '/groupes.php';
 require __DIR__ . '/groupes-quiz.php';
+require __DIR__ . '/groupes-page.php';
 require __DIR__ . '/duels.php';
 require __DIR__ . '/veillees.php';
 require __DIR__ . '/admin.php';
@@ -130,6 +131,34 @@ if (preg_match('#^/api/groupes/([^/]+)/verset$#', $path, $m) && $method === 'POS
 if (preg_match('#^/api/groupes/([^/]+)/membres/moi$#', $path, $m) && $method === 'DELETE') {
     handle_groupes_leave($pdo, $m[1]);
 }
+
+/* ---- La page de l'église : annonces, rendez-vous, services (groupes-page.php) --- */
+if (preg_match('#^/api/groupes/([^/]+)/page$#', $path, $m) && $method === 'GET') {
+    handle_groupe_page($pdo, $m[1]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/annonces$#', $path, $m) && $method === 'POST') {
+    handle_groupe_annonce_save($pdo, $m[1]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/annonces/([0-9]+)$#', $path, $m) && $method === 'DELETE') {
+    handle_groupe_annonce_delete($pdo, $m[1], (int) $m[2]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/rdv$#', $path, $m) && $method === 'POST') {
+    handle_groupe_rdv_save($pdo, $m[1]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/rdv/([0-9]+)$#', $path, $m) && $method === 'DELETE') {
+    handle_groupe_rdv_delete($pdo, $m[1], (int) $m[2]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/services$#', $path, $m) && $method === 'POST') {
+    handle_groupe_service_save($pdo, $m[1]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/services/([0-9]+)$#', $path, $m) && $method === 'DELETE') {
+    handle_groupe_service_delete($pdo, $m[1], (int) $m[2]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/services/([0-9]+)/inscription$#', $path, $m)) {
+    if ($method === 'POST')   handle_groupe_service_inscription($pdo, $m[1], (int) $m[2]);
+    if ($method === 'DELETE') handle_groupe_service_desinscription($pdo, $m[1], (int) $m[2]);
+}
+
 if (preg_match('#^/api/groupes/([^/]+)$#', $path, $m)) {
     if ($method === 'GET')    handle_groupes_detail($pdo, $m[1]);
     if ($method === 'DELETE') handle_groupes_delete($pdo, $m[1]);
