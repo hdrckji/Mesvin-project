@@ -23,6 +23,7 @@ require __DIR__ . '/auth.php';
 require __DIR__ . '/sync.php';
 require __DIR__ . '/friends.php';
 require __DIR__ . '/groupes.php';
+require __DIR__ . '/groupes-quiz.php';
 require __DIR__ . '/duels.php';
 require __DIR__ . '/veillees.php';
 require __DIR__ . '/admin.php';
@@ -132,6 +133,24 @@ if (preg_match('#^/api/groupes/([^/]+)/membres/moi$#', $path, $m) && $method ===
 if (preg_match('#^/api/groupes/([^/]+)$#', $path, $m)) {
     if ($method === 'GET')    handle_groupes_detail($pdo, $m[1]);
     if ($method === 'DELETE') handle_groupes_delete($pdo, $m[1]);
+}
+
+/* ---- Quiz d'église : la banque par groupe (voir groupes-quiz.php) --------------- */
+if (preg_match('#^/api/groupes/([^/]+)/quiz$#', $path, $m) && $method === 'GET') {
+    handle_groupe_quiz_get($pdo, $m[1]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/quiz/mode$#', $path, $m) && $method === 'POST') {
+    handle_groupe_quiz_mode($pdo, $m[1]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/quiz/selection$#', $path, $m) && $method === 'PUT') {
+    handle_groupe_quiz_selection($pdo, $m[1]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/quiz/questions$#', $path, $m)) {
+    if ($method === 'GET')  handle_groupe_quiz_questions_list($pdo, $m[1]);
+    if ($method === 'POST') handle_groupe_quiz_question_save($pdo, $m[1]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/quiz/questions/([A-Za-z0-9-]{1,60})$#', $path, $m) && $method === 'DELETE') {
+    handle_groupe_quiz_question_delete($pdo, $m[1], $m[2]);
 }
 
 /* ---- Duels -------------------------------------------------------------------- */
