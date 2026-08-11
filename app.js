@@ -278,22 +278,27 @@ function nextToLearn() {
   return LIBRARY.find(v => !store.cards[v.id]) || null;
 }
 
-/* ---------- Contexte factuel du livre ---------- */
+/* ---------- Contexte factuel du livre ----------
+   Règle : ces résumés doivent rester STRICTEMENT bibliques — uniquement ce
+   que le livre affirme de lui-même (ex. Romains 1.1 « Paul, apôtre ») ou ce
+   qu'un autre passage biblique dit de lui, jamais une tradition d'Église,
+   une hypothèse d'érudition ou un repère historique externe au texte, même
+   largement admis. En cas de doute sur une attribution, l'omettre. */
 const BOOKS = {
-  'Jean': "Évangile écrit par Jean, l'un des douze apôtres. Il met en avant l'identité de Jésus, Fils de Dieu.",
+  'Jean': "Évangile selon Jean, centré sur l'identité de Jésus, Fils de Dieu.",
   'Psaumes': "Recueil de 150 prières et chants d'Israël (David et d'autres). Louange, détresse, confiance.",
   'Philippiens': "Lettre de Paul, écrite depuis la prison, à l'église de Philippes. Un ton de joie et de reconnaissance.",
   'Proverbes': "Recueil de sentences de sagesse, en grande partie attribuées à Salomon.",
   'Romains': "Lettre de l'apôtre Paul à l'église de Rome, exposé de fond sur le salut par la foi.",
   'Ésaïe': "Livre du prophète Ésaïe, annonçant le jugement puis la consolation et l'espérance.",
-  'Matthieu': "Évangile écrit par Matthieu, qui présente Jésus comme le Messie promis.",
+  'Matthieu': "Évangile selon Matthieu, qui présente Jésus comme le Messie promis.",
   'Josué': "Récit de l'entrée du peuple d'Israël dans le pays promis, sous la conduite de Josué.",
   'Éphésiens': "Lettre de Paul à l'église d'Éphèse, sur la grâce et la vie nouvelle en Christ.",
   'Jérémie': "Livre du prophète Jérémie, écrit dans une période d'épreuve et d'exil.",
   '1 Corinthiens': "Première lettre de Paul à l'église de Corinthe, réponses à des questions de la vie d'église.",
-  '1 Jean': "Lettre de l'apôtre Jean sur l'amour, la lumière et l'assurance du salut.",
+  '1 Jean': "Lettre de Jean sur l'amour, la lumière et l'assurance du salut.",
   'Apocalypse': "Dernier livre de la Bible, une révélation donnée à Jean, pleine d'espérance.",
-  '2 Timothée': "Dernière lettre de Paul, à son disciple Timothée, comme un testament d'encouragement.",
+  '2 Timothée': "Lettre de Paul à son disciple Timothée, écrite alors qu'il sent sa fin proche, comme un testament d'encouragement.",
   'Galates': "Lettre de Paul aux églises de Galatie sur la liberté et la vie par l'Esprit.",
   'Michée': "Livre du prophète Michée, appel à la justice et à l'humilité devant Dieu.",
   'Hébreux': "Lettre exhortant à persévérer dans la foi en Christ, supérieur à tout.",
