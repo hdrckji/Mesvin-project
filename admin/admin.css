@@ -49,3 +49,11 @@
 .adm-table tr:last-child td { border-bottom: 0; }
 .adm-table td.pseudo { font-weight: 650; }
 .adm-table .fr-x { background: none; border: 0; color: var(--danger); cursor: pointer; font-size: 1rem; padding: 4px 8px; }
+
+
+/* ---------- Onglet Système ---------- */
+.sys-ligne { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 2px; border-top: 1px solid var(--line); }
+.sys-ligne:first-child { border-top: 0; }
+.sys-ligne b { text-align: right; overflow-wrap: anywhere; }
+.sys-alerte { color: var(--danger); }
+.sys-cron { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: .85rem; overflow-wrap: anywhere; }

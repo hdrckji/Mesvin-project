@@ -67,6 +67,9 @@
     /* ---- configuration publique (ex. client ID Google) ---- */
     async config() { return call('GET', '/api/config'); },
 
+    /* ---- état du serveur (détaillé si la session est admin) ---- */
+    async health() { return call('GET', '/api/health'); },
+
     /* ---- authentification ---- */
     async requestCode(email) { return call('POST', '/api/auth/request-code', { email }); },
     async googleSignIn(credential, pseudo) {

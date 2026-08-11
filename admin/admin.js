@@ -37,7 +37,8 @@ function dateCourte(iso) {
 const normalise = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 /* ---------- État ---------- */
-let onglet = 'questions';   // 'questions' | 'users'
+let onglet = 'questions';   // 'questions' | 'users' | 'systeme'
+let sys = null, sysErreur = null; // onglet Système : état du serveur
 let categories = [];        // catégories du fichier (ordre d'affichage, et du select)
 let qListe = null;          // [{ q, etat }] — null tant que rien n'est chargé
 let qRecherche = '';
@@ -168,6 +169,57 @@ async function supprimerCompte(id, pseudo, email) {
   await ouvrirUsers();
 }
 
+/* ---------- Système : état du serveur et adresse du cron ---------- */
+
+async function ouvrirSysteme() {
+  onglet = 'systeme';
+  sys = null; sysErreur = null;
+  render();
+  try { sys = await GraineAPI.health(); }
+  catch (e) { sysErreur = messageDoux(e); }
+  render();
+}
+
+function ligneSys(label, valeur, ok) {
+  return `<div class="sys-ligne"><span class="muted">${label}</span><b class="${ok === false ? 'sys-alerte' : ''}">${esc(String(valeur))}</b></div>`;
+}
+
+function htmlSysteme() {
+  if (sysErreur) return `<div class="card"><p class="field-error" style="margin:0">${esc(sysErreur)}</p></div>`;
+  if (!sys) return `<div class="card center" style="padding:30px"><p class="muted" style="margin:0">Chargement…</p></div>`;
+  const p = sys.push || {};
+  return `
+    <div class="section-title">État du serveur</div>
+    <div class="card">
+      ${ligneSys('Base de données', sys.db || '?')}
+      ${ligneSys("Envoi d'e-mails", sys.mail === 'dev' ? 'non configuré (mode dev)' : sys.mail, sys.mail !== 'dev')}
+      ${ligneSys("Adresse d'expédition", sys.mailFrom || '—')}
+      ${ligneSys('Dernier envoi', sys.lastMailError ? sys.lastMailError : 'aucun échec récent', !sys.lastMailError)}
+    </div>
+
+    <div class="section-title">Le verset offert (notifications)</div>
+    <div class="card">
+      ${ligneSys('Abonnements', p.abonnements ?? 0)}
+      <p class="muted" style="margin:12px 2px 8px">Pour que les versets partent chaque jour, un service doit appeler cette
+        adresse <b>toutes les heures</b>. Sur Railway : nouveau service vide, Cron Schedule <code>0 * * * *</code>,
+        commande <code>curl -fsS "&lt;l'adresse ci-dessous&gt;"</code>. (Ou un pinger gratuit type cron-job.org.)</p>
+      <div class="sys-cron"><code>${esc(p.cronUrl || '— (indisponible)')}</code></div>
+      <button class="btn btn-soft btn-block" id="btn-copie-cron" style="margin-top:10px" ${p.cronUrl ? '' : 'disabled'}>Copier l'adresse du cron</button>
+      <p class="muted" style="font-size:.85rem;margin:10px 2px 0">Cette adresse contient une clé secrète : ne la partage jamais publiquement.</p>
+    </div>`;
+}
+
+function brancherSysteme() {
+  const b = document.getElementById('btn-copie-cron');
+  if (b) b.onclick = async () => {
+    const url = (sys && sys.push && sys.push.cronUrl) || '';
+    if (!url) return;
+    try { await navigator.clipboard.writeText(url); b.textContent = 'Adresse copiée ✓'; }
+    catch (e) { b.textContent = 'Copie impossible — sélectionne le texte à la main'; }
+    setTimeout(() => { b.textContent = "Copier l'adresse du cron"; }, 2600);
+  };
+}
+
 /* ============================================================================
    Rendu
    ========================================================================== */
@@ -199,14 +251,17 @@ function render() {
     <div class="pill-row" style="margin-bottom:16px">
       <button class="pill ${onglet === 'questions' ? 'on' : ''}" id="tab-questions">Questions</button>
       <button class="pill ${onglet === 'users' ? 'on' : ''}" id="tab-users">Utilisateurs</button>
+      <button class="pill ${onglet === 'systeme' ? 'on' : ''}" id="tab-systeme">Système</button>
     </div>`;
 
-  el.innerHTML = `<div class="fade">${entete}${onglet === 'users' ? htmlUsers() : htmlQuestions()}</div>`;
+  el.innerHTML = `<div class="fade">${entete}${onglet === 'users' ? htmlUsers() : onglet === 'systeme' ? htmlSysteme() : htmlQuestions()}</div>`;
 
   document.getElementById('btn-retour').onclick = () => { location.href = '../index.html'; };
   document.getElementById('tab-questions').onclick = () => { onglet = 'questions'; qForm = null; render(); };
   document.getElementById('tab-users').onclick = ouvrirUsers;
+  document.getElementById('tab-systeme').onclick = ouvrirSysteme;
   if (onglet === 'users') brancherUsers();
+  else if (onglet === 'systeme') brancherSysteme();
   else brancherQuestions();
 }
 
