@@ -485,6 +485,51 @@ function purgerQuestions(idsVivants) {
 function apiPret() { return typeof window !== 'undefined' && !!window.GraineAPI; }
 function connecte() { return apiPret() && GraineAPI.isLoggedIn(); }
 
+/* ---------- Partage & invitation (même petit helper que dans app.js) ----------
+   navigator.share quand il existe (mobile — WhatsApp & co), sinon copie dans
+   le presse-papiers avec une confirmation douce (.toast-copie, voir app.css).
+   L'URL partagée est location.origin : elle suivra le domaine du site. */
+function toastCopie(message) {
+  const old = document.querySelector('.toast-copie');
+  if (old) old.remove();
+  const t = document.createElement('div');
+  t.className = 'toast-copie';
+  t.textContent = message;
+  document.body.appendChild(t);
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, 2200);
+}
+function partager(texte) {
+  if (navigator.share) { navigator.share({ text: texte }).catch(() => { /* partage annulé : rien à faire */ }); return; }
+  const done = () => toastCopie('Copié — colle-le où tu veux 🙂');
+  const fallback = () => { // repli : sélection + execCommand (vieux navigateurs)
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = texte; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      done();
+    } catch (e) { /* tant pis : rien d'intrusif */ }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texte).then(done).catch(fallback);
+  else fallback();
+}
+/* Partage du défi du jour : le même pour tout le monde, c'est tout l'intérêt. */
+function texteScoreJour(score, total) {
+  return `J'ai fait ${score}/${total} au défi biblique du jour sur Bible Horizon — c'est le même défi pour tout le monde aujourd'hui. Tu feras mieux ? 🙂\n` + location.origin;
+}
+/* Invitation à se retrouver pour un duel : le code ami s'insère automatiquement
+   (lu au moment du clic via GraineAPI.user()). */
+function texteInvitationDuel() {
+  const u = apiPret() ? GraineAPI.user() : null;
+  const code = u && u.friendCode ? u.friendCode : '';
+  return `Je te défie sur Bible Horizon ! Crée ton compte (gratuit) et ajoute-moi avec mon code ami : ${code}\n` + location.origin;
+}
+/* Partage du code du quiz d'église, depuis l'écran d'attente de l'animateur. */
+function texteCodeQuiz(code) {
+  return `Rejoins notre quiz biblique sur Bible Horizon ! Code : ${code}\n` + location.origin;
+}
+
 let duelsConnus = null; // dernière liste reçue (pour le badge de l'accueil)
 
 function statutDuel(d) {
@@ -876,6 +921,7 @@ function renderFin() {
       <div class="seal">🌾</div>
       <div class="defi-score">${vue.score}<span class="of">/${total}</span></div>
       <p class="defi-word">${esc(motDeFin(vue.score, total))}</p>
+      ${vue.mode === 'jour' ? `<p style="margin:10px 0 0"><button class="linkbtn" id="btn-partager-score">Partager mon score</button></p>` : ''}
     </div>
 
     ${vue.ratees.length ? `
@@ -897,6 +943,8 @@ function renderFin() {
 
   document.getElementById('btn-recommencer').onclick = () => demarrer(vue.mode);
   document.getElementById('btn-retour').onclick = () => { vue = { ecran: 'solo' }; render(); };
+  const ps = document.getElementById('btn-partager-score');
+  if (ps) ps.onclick = () => partager(texteScoreJour(vue.score, total));
 }
 
 /* ---------- À plusieurs : préparation ---------- */
@@ -1276,6 +1324,7 @@ function renderDuels() {
       ` : `
         <p class="defi-lead">Pas encore d'amis par ici. Ajoute-les dans l'écran <b>Moi</b> de l'accueil, avec leur code ami — et le premier duel peut commencer.</p>
         <div class="defi-actions">
+          <button class="btn btn-grow btn-block" id="btn-inviter-proche">Inviter un proche</button>
           <a class="btn btn-ghost btn-block" href="../index.html" style="display:block;text-align:center;text-decoration:none">Aller à l'écran Moi</a>
         </div>
       `}
@@ -1294,6 +1343,8 @@ function renderDuels() {
 
   document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'accueil' }; render(); };
   document.getElementById('btn-actualiser').onclick = ouvrirDuels;
+  const ip = document.getElementById('btn-inviter-proche');
+  if (ip) ip.onclick = () => partager(texteInvitationDuel());
   document.querySelectorAll('.duel-row.ami').forEach(b => {
     b.onclick = () => nouveauDuel(b.dataset.code);
   });
@@ -1456,6 +1507,7 @@ function renderDuelReview() {
       ${fini ? `<button class="btn btn-grow btn-block" id="btn-revanche">Revanche</button>` : `<button class="btn btn-grow btn-block" id="btn-actualiser">Actualiser</button>`}
       <button class="btn btn-ghost btn-block" id="btn-retour">Retour aux duels</button>
     </div>
+    ${fini ? `<p class="duel-note-basse"><button class="linkbtn" id="btn-inviter-autre">Inviter quelqu'un d'autre</button></p>` : ''}
   </div>`;
 
   document.getElementById('btn-retour-duels').onclick = ouvrirDuels;
@@ -1476,6 +1528,8 @@ function renderDuelReview() {
   };
   const rv = document.getElementById('btn-revanche');
   if (rv) rv.onclick = () => revanche({ pseudo, friendCode: d.opponent && d.opponent.friendCode });
+  const ia = document.getElementById('btn-inviter-autre');
+  if (ia) ia.onclick = () => partager(texteInvitationDuel());
 }
 
 /* ============================================================================
@@ -1852,6 +1906,7 @@ function renderVeilleeHost() {
     </div>
     <div class="defi-actions">
       <button class="btn btn-primary btn-block" id="btn-vl-start" ${e.nPlayers === 0 || vl.busy ? 'disabled' : ''}>Lancer le quiz</button>
+      <button class="btn btn-soft btn-block" id="btn-vl-partager" style="margin-top:8px">Partager le code</button>
     </div>`;
   } else if (e.statut === 'question') {
     corps = `
@@ -1937,6 +1992,8 @@ function renderVeilleeHost() {
   if (endB) endB.onclick = () => { if (confirm('Clore le quiz pour tout le monde ?')) vlAvancer('end'); };
   const s = document.getElementById('btn-vl-start');
   if (s) s.onclick = () => vlAvancer('start');
+  const pc = document.getElementById('btn-vl-partager');
+  if (pc) pc.onclick = () => partager(texteCodeQuiz(e.code));
   const rv = document.getElementById('btn-vl-reveal');
   if (rv) rv.onclick = () => vlAvancer('reveal');
   const nx = document.getElementById('btn-vl-next');

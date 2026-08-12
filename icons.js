@@ -49,6 +49,7 @@
     enveloppe: '<rect x="3" y="5" width="14" height="10.2" rx="1.8"/><path d="M3.5 6.1 10 11.5l6.5-5.4"/>',
     amis: '<circle cx="6.6" cy="7.6" r="2.3"/><circle cx="13.6" cy="8.5" r="1.9"/><path d="M2.8 16c.4-2.9 2.1-4.4 3.9-4.4s3.4 1.3 3.9 3.7"/><path d="M11.2 12.2c1.5.2 2.6 1.4 3 3.2"/>',
     fleur: '<circle cx="10" cy="10" r="1.6" fill="currentColor" stroke="none"/><ellipse cx="10" cy="5.6" rx="1.8" ry="2.6"/><ellipse cx="10" cy="14.4" rx="1.8" ry="2.6"/><ellipse cx="5.6" cy="10" rx="2.6" ry="1.8"/><ellipse cx="14.4" cy="10" rx="2.6" ry="1.8"/>',
+    partage: '<circle cx="14.5" cy="5" r="2.2"/><circle cx="5.5" cy="10" r="2.2"/><circle cx="14.5" cy="15" r="2.2"/><path d="M7.4 8.9 12.6 6.1M7.4 11.1 12.6 13.9"/>',
 
     // ---- module Défi ----
     seul: '<circle cx="10" cy="7" r="3.1"/><path d="M4 16.5c.7-3.9 3-5.9 6-5.9s5.3 2 6 5.9"/>',

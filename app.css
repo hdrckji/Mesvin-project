@@ -609,3 +609,26 @@ a.verse-item { text-decoration: none; }
   display: block; font-size: .74rem; font-weight: 600; letter-spacing: .04em;
   text-transform: uppercase; color: var(--accent-ink); margin-top: 4px;
 }
+
+/* ============================================================================
+   Invitation & partage — petit toast de confirmation quand le texte est copié
+   (repli sans navigator.share). Sert aussi au module Défi (qui charge app.css).
+   Encre et fond inversés : lisible tel quel dans les quatre thèmes.
+   ========================================================================== */
+.toast-copie {
+  position: fixed; left: 50%; bottom: calc(88px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  background: var(--ink); color: var(--bg);
+  font-size: .92rem; font-weight: 600; white-space: nowrap;
+  max-width: calc(100vw - 36px); overflow: hidden; text-overflow: ellipsis;
+  padding: 10px 18px; border-radius: 999px;
+  box-shadow: var(--shadow); z-index: 60;
+  /* keyframes dédiés : ceux de .fade écraseraient le translateX(-50%)
+     pendant l'animation (toast décentré qui « saute » au centre à la fin) */
+  animation: toast-copie-pose .25s ease;
+}
+@keyframes toast-copie-pose {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to   { opacity: 1; transform: translateX(-50%); }
+}
+.toast-copie.out { opacity: 0; transition: opacity .4s ease; }

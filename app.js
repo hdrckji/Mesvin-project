@@ -898,6 +898,9 @@ function viewMoi() {
 
   const friends = user ? moiFriendsSection(user) : '';
 
+  // Faire découvrir l'appli — visible pour tous, connecté ou non.
+  const invite = moiPartageCard();
+
   // Petite carte discrète vers l'espace d'administration — seulement pour
   // les comptes dont l'e-mail figure dans ADMIN_EMAILS (champ isAdmin du
   // payload utilisateur ; le serveur revérifie de toute façon à chaque route).
@@ -907,7 +910,7 @@ function viewMoi() {
         <span class="hub-sub">Comptes et banque de questions du Défi</span></span>
       <span class="chev">›</span></a>` : '';
 
-  return topbar() + head + account + apparence + pousse + memo + assiduite + pierresSec + lireSec + defiSec + friends + admin;
+  return topbar() + head + account + apparence + pousse + memo + assiduite + pierresSec + lireSec + defiSec + friends + invite + admin;
 }
 
 /* ---------- Jardin (versets mémorisés) ---------- */
@@ -1551,6 +1554,52 @@ function copyFriendCode() {
   else fallback();
 }
 
+/* ---------- Invitation & partage (bouche-à-oreille, sobre) ----------
+   Un seul chemin : navigator.share quand il existe (mobile — WhatsApp & co),
+   sinon copie dans le presse-papiers avec une petite confirmation.
+   L'URL partagée est location.origin : elle suivra le domaine du site. */
+function toastCopie(message) {
+  const old = document.querySelector('.toast-copie');
+  if (old) old.remove();
+  const t = document.createElement('div');
+  t.className = 'toast-copie';
+  t.textContent = message;
+  document.body.appendChild(t);
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, 2200);
+}
+function partager(texte) {
+  if (navigator.share) { navigator.share({ text: texte }).catch(() => { /* partage annulé : rien à faire */ }); return; }
+  const done = () => toastCopie('Copié — colle-le où tu veux 🙂');
+  const fallback = () => { // repli : sélection + execCommand (vieux navigateurs)
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = texte; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      done();
+    } catch (e) { /* tant pis : rien d'intrusif */ }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texte).then(done).catch(fallback);
+  else fallback();
+}
+// Texte d'invitation : le même pour tous ; connecté, le code ami s'y glisse
+// (lu au moment du clic — jamais figé dans le HTML).
+function texteInvitation() {
+  const u = window.GraineAPI ? GraineAPI.user() : null;
+  let t = 'Découvre Bible Horizon : mémorise des versets, lis la Bible à ton rythme, relève des défis bibliques. Gratuit et sans pub.';
+  if (u && u.friendCode) t += ` Rejoins-moi : mon code ami est ${u.friendCode}.`;
+  return t + '\n' + location.origin;
+}
+// La carte « Fais découvrir » de l'écran Moi — visible pour tous, connecté ou non.
+function moiPartageCard() {
+  return `<div class="card account-card fade">
+    <div class="acc-head"><span class="acc-ic">${icon('partage', 22)}</span><b>Fais découvrir Bible Horizon</b></div>
+    <p class="muted">Quelqu'un autour de toi aimerait peut-être, lui aussi, avancer dans la Parole — un simple message suffit.</p>
+    <button class="btn btn-soft btn-block" data-invite="1" style="margin-top:10px">Inviter un proche</button>
+  </div>`;
+}
+
 /* ---------- Amis ---------- */
 function normalizeFriendCode(raw) {
   let c = String(raw || '').toUpperCase().replace(/[\s-]+/g, '');
@@ -1681,6 +1730,7 @@ function wire() {
   });
   if (q('[data-syncnow]')) q('[data-syncnow]').addEventListener('click', () => { syncNow(); });
   if (q('[data-copycode]')) q('[data-copycode]').addEventListener('click', copyFriendCode);
+  if (q('[data-invite]')) q('[data-invite]').addEventListener('click', () => partager(texteInvitation()));
   if (q('[data-editpseudo]')) q('[data-editpseudo]').addEventListener('click', () => {
     pseudoEdit = { value: (GraineAPI.user() || {}).pseudo || '', error: null, busy: false }; render();
   });
