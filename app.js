@@ -24,6 +24,10 @@ if (!window.icon) window.icon = function () { return ''; };
 const STORE_KEY = 'graine.v3';
 const EASE_MIN = 1.3, EASE_DEFAULT = 2.5;
 const MASTERY = 3;            // nombre de réussites objectives pour « mémorisé »
+const SEMER_MAX = 3;          // versets introduits par fournée (objectif compris)
+const REVISER_MAX = 10;       // versets par session de révision — au-delà, les
+                              // plus anciens passent d'abord, le reste patiente
+                              // (un retour de vacances doit rester une joie)
 const SCRAMBLE_MAX = 12;      // au-delà, on passe aux mots à trous
 
 /* ---------- Aides ---------- */
@@ -549,8 +553,14 @@ function viewMemo() {
   }
   let actions = '';
   if (due.length > 0) {
+    // Au-delà du plafond de session : on le dit avec douceur — les versets en
+    // attente ne s'abîment pas, et personne ne doit rentrer de vacances
+    // devant une montagne.
+    const texte = due.length > REVISER_MAX
+      ? `${due.length} versets t'attendent — on commence par les ${REVISER_MAX} plus anciens, les autres patienteront sans s'abîmer.`
+      : `${due.length} verset${due.length > 1 ? 's' : ''} à revoir pour bien ${due.length > 1 ? 'les' : 'l\''} enraciner.`;
     actions += `<div class="card action fade"><div class="action-txt"><b>Arroser mes versets</b>
-      <span class="muted">${due.length} verset${due.length > 1 ? 's' : ''} à revoir pour bien ${due.length > 1 ? 'les' : 'l\''} enraciner.</span></div>
+      <span class="muted">${texte}</span></div>
       <button class="btn btn-primary" data-review="1">Commencer</button></div>`;
   }
   if (nextToLearn()) {
@@ -633,9 +643,15 @@ function selectCollection(id) {
 // (tous — une collection se découvre d'un bloc), sinon les 3 prochains du
 // parcours général.
 function versesToIntroduce() {
+  // Par fournées de SEMER_MAX, objectif choisi ou non : une collection entière
+  // d'un coup ferait déferler autant de révisions dès le lendemain — le reste
+  // attend sagement les prochaines fournées.
   const c = activeColl();
-  if (c) return c.verses.filter(id => !store.cards[id]).map(id => LIBRARY.find(v => v.id === id)).filter(Boolean);
-  return LIBRARY.filter(v => !store.cards[v.id]).slice(0, 3);
+  if (c) {
+    return c.verses.filter(id => !store.cards[id])
+      .map(id => LIBRARY.find(v => v.id === id)).filter(Boolean).slice(0, SEMER_MAX);
+  }
+  return LIBRARY.filter(v => !store.cards[v.id]).slice(0, SEMER_MAX);
 }
 function startLearnNew() {
   studyList = versesToIntroduce();
@@ -690,7 +706,9 @@ function liveCard() {
 function startReview() {
   const due = dueCards().sort((a, b) => a.due - b.due);
   if (!due.length) { go('memo'); return; }
-  session = { queue: due, idx: 0, done: [], mastered: [], celebrated: [] };
+  // Session plafonnée : les plus anciens d'abord, le reste patiente sans
+  // s'abîmer (et rien n'empêche d'enchaîner une seconde session si on veut).
+  session = { queue: due.slice(0, REVISER_MAX), idx: 0, done: [], mastered: [], celebrated: [] };
   enterCard(); go('session');
 }
 
