@@ -81,8 +81,13 @@ function handle_auth_request_code(PDO $pdo): never {
     $st->execute([$email, password_hash($code, PASSWORD_DEFAULT), now_sql_plus(CODE_VALIDITY_SECONDS), now_sql()]);
     $codeId = (int) $pdo->lastInsertId();
 
+    // Journal : la demande est acceptée (quotas passés), AVANT l'envoi.
+    journal_log($pdo, 'code_demande', $email);
+
     if (mail_mode() === 'dev') {
         // Aucun envoi d'e-mail configuré : mode développement uniquement.
+        // Pas de « code_envoye » au journal : aucun e-mail n'est réellement
+        // parti — l'événement ne trace que de vrais envois (Brevo/SMTP).
         json_out(['ok' => true, 'devCode' => $code]);
     }
     if (!mail_send_code($email, $code)) {
@@ -90,8 +95,13 @@ function handle_auth_request_code(PDO $pdo): never {
         // tentative ne doit PAS consommer son quota horaire.
         $st = $pdo->prepare('DELETE FROM login_codes WHERE id = ?');
         $st->execute([$codeId]);
+        // Raison courte : la trace mémorisée par mail.php (statut HTTP +
+        // début de la réponse du fournisseur — jamais la clé API).
+        journal_log($pdo, 'code_echec_envoi', $email,
+            mail_last_error() ?? "l'e-mail n'est pas parti (voir les logs)");
         json_error("L'envoi de l'e-mail a échoué — réessaie dans un instant.", 502);
     }
+    journal_log($pdo, 'code_envoye', $email);
     json_out(['ok' => true]);
 }
 
@@ -130,6 +140,7 @@ function handle_auth_verify(PDO $pdo): never {
         if (password_verify($code, $row['code_hash'])) { $bon = true; break; }
     }
     if (!$bon) {
+        journal_log($pdo, 'code_incorrect', $email);
         json_error('Code incorrect.', 401);
     }
 
@@ -158,12 +169,14 @@ function handle_auth_verify(PDO $pdo): never {
         $st = $pdo->prepare('SELECT * FROM users WHERE email = ?');
         $st->execute([$email]);
         $user = $st->fetch();
+        journal_log($pdo, 'compte_cree', $email, $pseudo);
     }
 
     // Connexion réussie : on consomme tous les codes de cet e-mail.
     $st = $pdo->prepare('DELETE FROM login_codes WHERE email = ?');
     $st->execute([$email]);
 
+    journal_log($pdo, 'code_verifie_ok', $email);
     json_out(['token' => open_session($pdo, $user), 'user' => user_payload($user)]);
 }
 
@@ -268,8 +281,10 @@ function handle_auth_google(PDO $pdo): never {
         $st = $pdo->prepare('SELECT * FROM users WHERE email = ?');
         $st->execute([$email]);
         $user = $st->fetch();
+        journal_log($pdo, 'compte_cree', $email, $pseudo);
     }
 
+    journal_log($pdo, 'connexion_google', $email);
     json_out(['token' => open_session($pdo, $user), 'user' => user_payload($user)]);
 }
 
@@ -385,6 +400,9 @@ function delete_user_completely(PDO $pdo, array $user): void {
         $pdo->rollBack();
         throw $e;
     }
+    // APRÈS le commit : le journal ne participe pas à la transaction
+    // (et ne pourrait de toute façon jamais la faire échouer).
+    journal_log($pdo, 'compte_supprime', $user['email'], $user['pseudo']);
 }
 
 function handle_me_delete(PDO $pdo): never {

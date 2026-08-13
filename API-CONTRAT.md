@@ -455,6 +455,37 @@ entre 0 et 3, référence non vide ≤ 60 caractères.
 Retire la surcharge : la version du fichier redevient active (annule une
 édition ou une désactivation). → `{ "ok": true }` — 404 si pas de surcharge.
 
+### GET /api/admin/journal
+Le **journal serveur** (onglet « Activité ») : les 100 derniers événements du
+parcours de connexion, les plus récents d'abord.
+→ `{ "events": [ { "ts": "ISO", "event": "…", "email": "…"|null, "detail": "…"|null } ] }`
+Événements tracés (table `journal`, helper `journal_log` — qui ne casse
+JAMAIS le flux principal) :
+- `code_demande` : demande de code acceptée (quotas passés), **avant** l'envoi ;
+- `code_envoye` : l'e-mail est réellement parti (Brevo/SMTP). En **mode dev**
+  (aucun envoi configuré, `devCode` dans la réponse), seul `code_demande` est
+  enregistré : `code_envoye` ne trace que de **vrais** envois ;
+- `code_echec_envoi` : échec d'envoi (detail = raison courte, statut HTTP +
+  début de la réponse du fournisseur — jamais la clé API) ;
+- `code_verifie_ok` : connexion réussie ; `code_incorrect` : mauvais code ;
+- `compte_cree` (detail = pseudo), `connexion_google`, `compte_supprime`.
+L'e-mail est stocké **en clair** (l'admin voit déjà les adresses des comptes ;
+c'est ce qui permet d'aider quelqu'un de bloqué) mais chaque écriture **purge
+les entrées de plus de 30 jours** — le journal ne s'accumule jamais.
+
+### GET /api/admin/brevo
+La **remontée Brevo** (onglet « Activité ») : le serveur appelle
+`GET https://api.brevo.com/v3/smtp/statistics/events?limit=100&sort=desc`
+(clé `BREVO_API_KEY`, timeout 15 s) et renvoie une liste simplifiée :
+→ `{ "events": [ { "ts": "…", "email": "…", "event":
+"requests|delivered|opened|clicks|softBounces|hardBounces|blocked|spam|…",
+"subject": "…" } ] }`
+Robustesse : `BREVO_API_KEY` absente → `{ "events": [], "note": "Brevo non
+configuré" }` ; erreur réseau ou HTTP → `{ "events": [], "note": "Brevo
+injoignable pour le moment" }` — **toujours en 200** (l'admin voit la note,
+rien ne casse) ; le parsing de la réponse Brevo est défensif (champs
+date/email/event/subject avec repli). La clé API ne sort **jamais**.
+
 ## Backend — notes d'implémentation
 
 - PHP 8 + PDO. `MYSQL_URL` (Railway) ; **repli SQLite** (`api/data/dev.sqlite`)
@@ -465,7 +496,7 @@ Retire la surcharge : la version du fichier redevient active (annule une
   `groupes`, `groupe_membres`, `groupe_annonces`, `groupe_rdv`,
   `groupe_services`, `groupe_service_inscriptions`, `vapid`, `push_abonnements`,
   `groupe_quiz_reglages`, `groupe_quiz_selection`, `groupe_questions`,
-  `veillee_groupes`.
+  `veillee_groupes`, `journal`.
 - Rôle admin : `ADMIN_EMAILS` (adresses séparées par des virgules, casse
   ignorée) — pas de colonne en base, le rôle se retire en éditant la variable.
 - E-mail : SMTP via env (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`,

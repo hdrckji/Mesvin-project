@@ -130,6 +130,9 @@
     async adminSaveQuestion(q) { return (await call('POST', '/api/admin/questions', q)).question; },
     async adminDeleteQuestion(id) { return call('DELETE', '/api/admin/questions/' + encodeURIComponent(id)); },
     async adminRestoreQuestion(id) { return call('POST', '/api/admin/questions/' + encodeURIComponent(id) + '/restore'); },
+    // Onglet « Activité » : le journal serveur, et les événements vus par Brevo.
+    async adminJournal() { return call('GET', '/api/admin/journal'); },
+    async adminBrevo() { return call('GET', '/api/admin/brevo'); },
 
     /* ---- veillées en direct ---- */
     async createVeillee(opts) { return (await call('POST', '/api/veillees', opts || {})).veillee; },

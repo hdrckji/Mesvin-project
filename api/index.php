@@ -202,8 +202,10 @@ if ($path === '/api/push/unsubscribe' && $method === 'POST') handle_push_unsubsc
 if ($path === '/api/cron/notify'      && $method === 'GET')  handle_cron_notify($pdo);
 
 /* ---- Administration (ADMIN_EMAILS seulement) ----------------------------------- */
-if ($path === '/api/admin/users' && $method === 'GET') handle_admin_users($pdo);
-if ($path === '/api/admin/log'   && $method === 'GET') handle_admin_log_get($pdo);
+if ($path === '/api/admin/users'   && $method === 'GET') handle_admin_users($pdo);
+if ($path === '/api/admin/log'     && $method === 'GET') handle_admin_log_get($pdo);
+if ($path === '/api/admin/journal' && $method === 'GET') handle_admin_journal($pdo);
+if ($path === '/api/admin/brevo'   && $method === 'GET') handle_admin_brevo($pdo);
 if (preg_match('#^/api/admin/users/([0-9]+)$#', $path, $m) && $method === 'DELETE') {
     handle_admin_user_delete($pdo, (int) $m[1]);
 }

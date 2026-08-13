@@ -42,8 +42,10 @@ function dateCourte(iso) {
 const normalise = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 /* ---------- État ---------- */
-let onglet = 'questions';   // 'questions' | 'users' | 'systeme'
+let onglet = 'questions';   // 'questions' | 'users' | 'activite' | 'systeme'
 let sys = null, sysErreur = null; // onglet Système : état du serveur
+let actJournal = null, actJournalErreur = null; // onglet Activité : journal serveur
+let actBrevo = null, actBrevoErreur = null;     // onglet Activité : côté Brevo
 let categories = [];        // catégories du fichier (ordre d'affichage, et du select)
 let qListe = null;          // [{ q, etat }] — null tant que rien n'est chargé
 let qRecherche = '';
@@ -174,6 +176,137 @@ async function supprimerCompte(id, pseudo, email) {
   await ouvrirUsers();
 }
 
+/* ---------- Activité : journal serveur + remontée Brevo ---------- */
+
+/* Les événements du journal serveur, traduits en français lisible.
+   ok: true = bonne nouvelle (vert), false = alerte (rouge). */
+const ACT_EVENEMENTS = {
+  code_demande:     { label: 'Code demandé' },
+  code_envoye:      { label: 'Code envoyé ✓', ok: true },
+  code_echec_envoi: { label: "Échec d'envoi", ok: false },
+  code_verifie_ok:  { label: 'Connexion réussie', ok: true },
+  code_incorrect:   { label: 'Code incorrect', ok: false },
+  compte_cree:      { label: 'Compte créé', ok: true },
+  connexion_google: { label: 'Connexion Google', ok: true },
+  compte_supprime:  { label: 'Compte supprimé' }
+};
+
+/* Les événements vus par Brevo, en français lisible. */
+const ACT_BREVO = {
+  requests:     { label: 'Envoi demandé' },
+  delivered:    { label: 'Délivré', ok: true },
+  opened:       { label: 'Ouvert', ok: true },
+  uniqueOpened: { label: 'Ouvert', ok: true },
+  proxy_open:   { label: 'Ouvert (proxy)' },
+  loadedByProxy:{ label: 'Ouvert (proxy)' },
+  clicks:       { label: 'Cliqué', ok: true },
+  softBounces:  { label: 'Rejet temporaire', ok: false },
+  hardBounces:  { label: 'Rejet définitif', ok: false },
+  blocked:      { label: 'Bloqué', ok: false },
+  spam:         { label: 'Signalé spam', ok: false },
+  invalid:      { label: 'Adresse invalide', ok: false },
+  deferred:     { label: 'Différé', ok: false },
+  unsubscribed: { label: 'Désinscrit' },
+  error:        { label: 'Erreur', ok: false }
+};
+
+function heureLocale(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '—'
+    : d.toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+async function chargerActivite() {
+  actJournal = null; actJournalErreur = null;
+  actBrevo = null; actBrevoErreur = null;
+  render();
+  // Les deux sections en parallèle, chacune avec son propre filet : un souci
+  // d'un côté (Brevo, par exemple) ne prive pas de l'autre.
+  await Promise.all([
+    GraineAPI.adminJournal()
+      .then(r => { actJournal = r; })
+      .catch(e => { actJournalErreur = messageDoux(e); }),
+    GraineAPI.adminBrevo()
+      .then(r => { actBrevo = r; })
+      .catch(e => { actBrevoErreur = messageDoux(e); })
+  ]);
+  render();
+}
+
+function ouvrirActivite() {
+  onglet = 'activite';
+  chargerActivite();
+}
+
+function actBadge(table, evt) {
+  const info = table[evt] || { label: evt };
+  const classe = info.ok === true ? 'ok' : info.ok === false ? 'err' : '';
+  return `<span class="act-evt ${classe}">${esc(info.label)}</span>`;
+}
+
+function htmlJournalServeur() {
+  if (actJournalErreur) return `<div class="card"><p class="field-error" style="margin:0">${esc(actJournalErreur)}</p></div>`;
+  if (!actJournal) return `<div class="card center" style="padding:22px"><p class="muted" style="margin:0">Chargement…</p></div>`;
+  const lignes = (actJournal.events || []).map(e => `
+    <tr>
+      <td class="act-heure">${esc(heureLocale(e.ts))}</td>
+      <td>${actBadge(ACT_EVENEMENTS, e.event)}</td>
+      <td>${esc(e.email || '—')}</td>
+      <td class="act-detail">${esc(e.detail || '')}</td>
+    </tr>`).join('');
+  return `
+    <div class="card" style="padding:8px 10px">
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead><tr><th>Quand</th><th>Événement</th><th>E-mail</th><th>Détail</th></tr></thead>
+          <tbody>${lignes || `<tr><td colspan="4" class="muted">Rien au journal pour l'instant.</td></tr>`}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function htmlChezBrevo() {
+  if (actBrevoErreur) return `<div class="card"><p class="field-error" style="margin:0">${esc(actBrevoErreur)}</p></div>`;
+  if (!actBrevo) return `<div class="card center" style="padding:22px"><p class="muted" style="margin:0">Chargement…</p></div>`;
+  const note = actBrevo.note ? `<p class="muted" style="margin:2px 2px 10px">${esc(actBrevo.note)}</p>` : '';
+  const lignes = (actBrevo.events || []).map(e => {
+    const sujet = e.subject ? (e.subject.length > 42 ? e.subject.slice(0, 41) + '…' : e.subject) : '—';
+    return `
+    <tr>
+      <td class="act-heure">${esc(heureLocale(e.ts))}</td>
+      <td>${actBadge(ACT_BREVO, e.event)}</td>
+      <td>${esc(e.email || '—')}</td>
+      <td class="act-detail">${esc(sujet)}</td>
+    </tr>`;
+  }).join('');
+  return `
+    <div class="card" style="padding:8px 10px">
+      ${note}
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead><tr><th>Quand</th><th>Événement</th><th>E-mail</th><th>Sujet</th></tr></thead>
+          <tbody>${lignes || (actBrevo.note ? '' : `<tr><td colspan="4" class="muted">Aucun événement récent chez Brevo.</td></tr>`)}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function htmlActivite() {
+  const enCours = actJournal === null && !actJournalErreur;
+  return `
+    <button class="btn btn-soft btn-block" id="btn-act-actualiser" style="margin-bottom:14px" ${enCours ? 'disabled' : ''}>Actualiser</button>
+    <div class="section-title">Journal du serveur</div>
+    ${htmlJournalServeur()}
+    <div class="section-title" style="margin-top:18px">Chez Brevo</div>
+    ${htmlChezBrevo()}`;
+}
+
+function brancherActivite() {
+  const b = document.getElementById('btn-act-actualiser');
+  if (b) b.onclick = chargerActivite;
+}
+
 /* ---------- Système : état du serveur et adresse du cron ---------- */
 
 /* L'état du serveur, même si api-client.js est encore une vieille version en
@@ -269,16 +402,23 @@ function render() {
     <div class="pill-row" style="margin-bottom:16px">
       <button class="pill ${onglet === 'questions' ? 'on' : ''}" id="tab-questions">Questions</button>
       <button class="pill ${onglet === 'users' ? 'on' : ''}" id="tab-users">Utilisateurs</button>
+      <button class="pill ${onglet === 'activite' ? 'on' : ''}" id="tab-activite">Activité</button>
       <button class="pill ${onglet === 'systeme' ? 'on' : ''}" id="tab-systeme">Système</button>
     </div>`;
 
-  el.innerHTML = `<div class="fade">${entete}${onglet === 'users' ? htmlUsers() : onglet === 'systeme' ? htmlSysteme() : htmlQuestions()}</div>`;
+  el.innerHTML = `<div class="fade">${entete}${
+    onglet === 'users' ? htmlUsers()
+    : onglet === 'activite' ? htmlActivite()
+    : onglet === 'systeme' ? htmlSysteme()
+    : htmlQuestions()}</div>`;
 
   document.getElementById('btn-retour').onclick = () => { location.href = '../index.html'; };
   document.getElementById('tab-questions').onclick = () => { onglet = 'questions'; qForm = null; render(); };
   document.getElementById('tab-users').onclick = ouvrirUsers;
+  document.getElementById('tab-activite').onclick = ouvrirActivite;
   document.getElementById('tab-systeme').onclick = ouvrirSysteme;
   if (onglet === 'users') brancherUsers();
+  else if (onglet === 'activite') brancherActivite();
   else if (onglet === 'systeme') brancherSysteme();
   else brancherQuestions();
 }

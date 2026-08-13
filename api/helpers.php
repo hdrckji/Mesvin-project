@@ -182,6 +182,34 @@ function admin_log(PDO $pdo, array $admin, string $action, string $cible): void 
     $st->execute([(int) $admin['id'], $admin['email'], $action, mb_substr($cible, 0, 190), now_sql()]);
 }
 
+/**
+ * Journal serveur (onglet « Activité » de l'administration) : trace un
+ * événement du parcours de connexion — code_demande, code_envoye,
+ * code_echec_envoi, code_verifie_ok, code_incorrect, compte_cree,
+ * connexion_google, compte_supprime.
+ *
+ * L'e-mail est stocké EN CLAIR (l'admin voit déjà les adresses des comptes ;
+ * c'est ce qui permet d'aider quelqu'un de bloqué), mais chaque écriture
+ * purge les entrées de plus de 30 jours — le journal ne s'accumule jamais.
+ *
+ * Tout est enveloppé de try/catch : un journal qui tousse ne doit JAMAIS
+ * casser le flux principal (connexion, envoi de code…).
+ */
+function journal_log(PDO $pdo, string $event, ?string $email = null, ?string $detail = null): void {
+    try {
+        $pdo->prepare('DELETE FROM journal WHERE ts < ?')->execute([now_sql_plus(-30 * 86400)]);
+        $st = $pdo->prepare('INSERT INTO journal (ts, event, email, detail) VALUES (?, ?, ?, ?)');
+        $st->execute([
+            now_sql(),
+            mb_substr($event, 0, 40),
+            $email === null ? null : mb_substr($email, 0, 255),
+            $detail === null ? null : mb_substr($detail, 0, 200),
+        ]);
+    } catch (Throwable $e) {
+        error_log('Journal : écriture impossible — ' . $e->getMessage());
+    }
+}
+
 /** Représentation publique d'un utilisateur (jamais l'id interne). */
 function user_payload(array $user): array {
     return [

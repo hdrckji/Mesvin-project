@@ -8,6 +8,8 @@
    - POST   /api/admin/questions              : créer (id adm-…) ou modifier une question.
    - DELETE /api/admin/questions/{id}         : désactiver (id du fichier) ou supprimer (adm-).
    - POST   /api/admin/questions/{id}/restore : retirer la surcharge (version fichier).
+   - GET    /api/admin/journal                : journal serveur (connexions, envois de codes).
+   - GET    /api/admin/brevo                  : les derniers événements chez Brevo.
 
    La banque de base vit dans defi/data/questions.json, embarquée dans l'image
    Docker ; le système de fichiers de Railway étant éphémère, les retouches
@@ -291,4 +293,90 @@ function handle_admin_log_get(PDO $pdo): never {
         ];
     }
     json_out(['log' => $entries]);
+}
+
+/* ---- GET /api/admin/journal — journal serveur (onglet « Activité ») ------------- */
+
+/**
+ * Les 100 derniers événements du journal serveur (voir journal_log dans
+ * helpers.php), les plus récents d'abord : demandes et envois de codes,
+ * connexions, créations et suppressions de comptes.
+ */
+function handle_admin_journal(PDO $pdo): never {
+    require_admin($pdo);
+    $st = $pdo->query('SELECT * FROM journal ORDER BY id DESC LIMIT 100');
+    $events = [];
+    foreach ($st->fetchAll() as $row) {
+        $events[] = [
+            'ts'     => sql_to_iso($row['ts']),
+            'event'  => (string) $row['event'],
+            'email'  => $row['email'] !== null ? (string) $row['email'] : null,
+            'detail' => $row['detail'] !== null ? (string) $row['detail'] : null,
+        ];
+    }
+    json_out(['events' => $events]);
+}
+
+/* ---- GET /api/admin/brevo — les derniers événements chez Brevo ------------------ */
+
+/**
+ * Remonte les derniers événements e-mail vus par Brevo (délivré, ouvert,
+ * rejeté…), pour croiser avec le journal serveur sans quitter l'écran.
+ *
+ * Appelle GET https://api.brevo.com/v3/smtp/statistics/events?limit=100&sort=desc
+ * (documentée sur https://developers.brevo.com — getEmailEventReport). La
+ * réponse attendue est { "events": [ { "date": "ISO 8601", "email": "…",
+ * "subject": "…", "event": "requests|delivered|opened|clicks|softBounces|
+ * hardBounces|blocked|spam|invalid|deferred|unsubscribed|error|…",
+ * "messageId": "…", "from": "…" } ] } — le parsing reste DÉFENSIF (chaque
+ * champ avec repli) : les docs n'étant pas toujours joignables depuis ici,
+ * un champ absent ou renommé ne casse rien.
+ *
+ * Robustesse : clé absente ou Brevo injoignable → 200 avec events vide et
+ * une note lisible — l'admin voit l'état, rien ne casse. La clé API ne sort
+ * JAMAIS de la réponse.
+ */
+function handle_admin_brevo(PDO $pdo): never {
+    require_admin($pdo);
+
+    $apiKey = (string) getenv('BREVO_API_KEY');
+    if ($apiKey === '') {
+        json_out(['events' => [], 'note' => 'Brevo non configuré']);
+    }
+
+    $ch = curl_init('https://api.brevo.com/v3/smtp/statistics/events?limit=100&sort=desc');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_HTTPHEADER     => [
+            'api-key: ' . $apiKey,
+            'Accept: application/json',
+        ],
+    ]);
+    $response = curl_exec($ch);
+    $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($response === false || $status >= 300) {
+        // Détail complet dans les logs (sans la clé) ; à l'écran, une note douce.
+        error_log("Brevo : événements injoignables — HTTP $status $curlError "
+            . substr((string) $response, 0, 300));
+        json_out(['events' => [], 'note' => 'Brevo injoignable pour le moment']);
+    }
+
+    $data = json_decode((string) $response, true);
+    $events = [];
+    foreach (is_array($data['events'] ?? null) ? $data['events'] : [] as $e) {
+        if (!is_array($e)) {
+            continue;
+        }
+        $events[] = [
+            'ts'      => is_string($e['date'] ?? null) ? $e['date'] : null,
+            'email'   => is_string($e['email'] ?? null) ? $e['email'] : null,
+            'event'   => is_string($e['event'] ?? null) ? $e['event'] : 'inconnu',
+            'subject' => is_string($e['subject'] ?? null) ? $e['subject'] : null,
+        ];
+    }
+    json_out(['events' => $events]);
 }

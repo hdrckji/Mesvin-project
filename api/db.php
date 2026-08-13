@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM groupe_service_inscriptions LIMIT 1');
+        $pdo->query('SELECT 1 FROM journal LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -350,6 +350,20 @@ function db_migrate(PDO $pdo): void {
                 groupe_id INT UNSIGNED NOT NULL,
                 INDEX idx_vgroupes_groupe (groupe_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Journal serveur (onglet « Activité » de l'administration) :
+            // les événements de connexion et d'envoi de codes, pour ne plus
+            // fouiller les logs Railway. E-mail en clair (l'admin voit déjà
+            // les adresses des comptes) mais purge automatique à 30 jours —
+            // voir journal_log() dans helpers.php.
+            'CREATE TABLE IF NOT EXISTS journal (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                ts DATETIME NOT NULL,
+                event VARCHAR(40) NOT NULL,
+                email VARCHAR(255) NULL,
+                detail VARCHAR(200) NULL,
+                INDEX idx_journal_ts (ts)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
         ];
     } else {
         $ddl = [
@@ -605,6 +619,16 @@ function db_migrate(PDO $pdo): void {
                 groupe_id INTEGER NOT NULL
             )',
             'CREATE INDEX IF NOT EXISTS idx_vgroupes_groupe ON veillee_groupes (groupe_id)',
+
+            // Journal serveur — voir le commentaire du dialecte MySQL ci-dessus.
+            'CREATE TABLE IF NOT EXISTS journal (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts TEXT NOT NULL,
+                event TEXT NOT NULL,
+                email TEXT NULL,
+                detail TEXT NULL
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_journal_ts ON journal (ts)',
         ];
     }
 
