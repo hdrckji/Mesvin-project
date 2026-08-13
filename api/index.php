@@ -76,6 +76,9 @@ if ($path === '/api/health' && $method === 'GET') {
         // Diagnostic de déploiement : la page de démonstration de l'image de
         // base est-elle encore présente à la racine web ? (doit être false)
         'demo' => file_exists(dirname(__DIR__) . '/index.php'),
+        // Configuration : chaque variable attendue, définie ou non — la
+        // valeur elle-même ne quitte JAMAIS le serveur.
+        'config' => config_checklist(),
         'push' => [
             'abonnements' => (int) $pdo->query('SELECT COUNT(*) FROM push_abonnements')->fetchColumn(),
             'cronKey'     => $pushCfg === null ? null : $pushCfg['cron_key'],

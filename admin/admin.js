@@ -335,6 +335,28 @@ function ligneSys(label, valeur, ok) {
   return `<div class="sys-ligne"><span class="muted">${label}</span><b class="${ok === false ? 'sys-alerte' : ''}">${esc(String(valeur))}</b></div>`;
 }
 
+/* Une ligne de la liste « Configuration » : la variable est-elle définie sur
+   le serveur ? Uniquement configurée/manquante — jamais les valeurs. */
+function ligneConfig(c) {
+  const ok = !!c.definie;
+  return `<div class="sys-ligne">
+    <span class="muted">${esc(c.libelle || c.variable)} <code class="sys-var">${esc(c.variable)}</code></span>
+    <b class="${ok ? 'sys-bon' : 'sys-alerte'}">${ok ? 'configurée ✓' : 'manquante ✗'}</b>
+  </div>`;
+}
+
+function htmlConfiguration() {
+  // Absente d'une réponse encore en cache (ancienne version de l'API en cours
+  // de déploiement) : la section s'efface d'elle-même plutôt que d'alarmer.
+  if (!Array.isArray(sys.config) || sys.config.length === 0) return '';
+  return `
+    <div class="section-title">Configuration</div>
+    <div class="card">
+      ${sys.config.map(ligneConfig).join('')}
+      <p class="muted" style="font-size:.85rem;margin:10px 2px 0">Seule la présence de chaque variable est vérifiée — les valeurs ne sont jamais affichées ni transmises.</p>
+    </div>`;
+}
+
 function htmlSysteme() {
   if (sysErreur) return `<div class="card"><p class="field-error" style="margin:0">${esc(sysErreur)}</p></div>`;
   if (!sys) return `<div class="card center" style="padding:30px"><p class="muted" style="margin:0">Chargement…</p></div>`;
@@ -347,6 +369,7 @@ function htmlSysteme() {
       ${ligneSys("Adresse d'expédition", sys.mailFrom || '—')}
       ${ligneSys('Dernier envoi', sys.lastMailError ? sys.lastMailError : 'aucun échec récent', !sys.lastMailError)}
     </div>
+    ${htmlConfiguration()}
 
     <div class="section-title">Le verset offert (notifications)</div>
     <div class="card">

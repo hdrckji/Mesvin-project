@@ -326,3 +326,29 @@ function generate_group_code(PDO $pdo): string {
     }
     throw new RuntimeException('Impossible de générer un code de groupe unique.');
 }
+
+/**
+ * État de la configuration : pour chaque variable d'environnement attendue,
+ * dit UNIQUEMENT si elle est définie — jamais sa valeur. Affiché dans
+ * l'onglet Système de l'administration, pour savoir d'un coup d'œil ce qui
+ * est actif en production sans ouvrir le tableau de bord de l'hébergeur.
+ */
+function config_checklist(): array {
+    $definie = fn (string $nom): bool => (string) getenv($nom) !== '';
+    $lignes = [
+        ['variable' => 'MYSQL_URL',        'libelle' => 'Base de données MySQL',    'definie' => $definie('MYSQL_URL')],
+        ['variable' => 'BREVO_API_KEY',    'libelle' => "Envoi d'e-mails (Brevo)",  'definie' => $definie('BREVO_API_KEY')],
+        ['variable' => 'MAIL_FROM',        'libelle' => "Adresse d'expédition",     'definie' => $definie('MAIL_FROM')],
+        ['variable' => 'GOOGLE_CLIENT_ID', 'libelle' => 'Connexion Google',         'definie' => $definie('GOOGLE_CLIENT_ID')],
+        ['variable' => 'ADMIN_EMAILS',     'libelle' => 'Administrateurs',          'definie' => $definie('ADMIN_EMAILS')],
+    ];
+    // La voie SMTP est une ALTERNATIVE à Brevo : on ne l'affiche que si elle
+    // est entamée (SMTP_HOST posée), pour ne pas semer des « manquante ✗ »
+    // alarmants sur une voie volontairement inutilisée.
+    if ($definie('SMTP_HOST')) {
+        $lignes[] = ['variable' => 'SMTP_HOST', 'libelle' => 'Serveur SMTP',          'definie' => true];
+        $lignes[] = ['variable' => 'SMTP_USER', 'libelle' => 'Identifiant SMTP',      'definie' => $definie('SMTP_USER')];
+        $lignes[] = ['variable' => 'SMTP_PASS', 'libelle' => 'Mot de passe SMTP',     'definie' => $definie('SMTP_PASS')];
+    }
+    return $lignes;
+}

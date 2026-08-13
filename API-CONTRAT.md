@@ -20,6 +20,10 @@
 - `GET /api/health` : `{ "ok": true }` pour tout le monde ; le **détail**
   (pilote de base, mode e-mail, dernière erreur d'envoi, drapeau demo) n'est
   renvoyé qu'aux **admins** authentifiés. En panne de base : `{ "ok": false }`.
+  Le détail admin contient aussi `config` : la liste des variables
+  d'environnement attendues, chacune sous la forme
+  `{ "variable", "libelle", "definie": true|false }` — **jamais les valeurs**
+  (fonction `config_checklist()` dans `api/helpers.php`).
 - `POST /api/auth/request-code` est plafonné **par e-mail** (3/heure) ET
   **par adresse IP** (30/heure, table `throttle`) → 429 au-delà.
 - Chaque action d'administration est tracée (table `admin_log`) et
@@ -31,7 +35,7 @@
 
 ### POST /api/auth/request-code
 Corps : `{ "email": "..." }`
-→ `{ "ok": true }` — envoie un code à 6 chiffres (validité 10 min, 5 essais max,
+→ `{ "ok": true }` — envoie un code à 6 chiffres (validité 45 min, 5 essais max,
 3 demandes/heure/e-mail). En mode dev (pas de SMTP configuré), la réponse
 contient aussi `"devCode": "123456"` — JAMAIS en production.
 

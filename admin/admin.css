@@ -70,4 +70,6 @@
 .sys-ligne:first-child { border-top: 0; }
 .sys-ligne b { text-align: right; overflow-wrap: anywhere; }
 .sys-alerte { color: var(--danger); }
+.sys-bon { color: var(--grow); }
+.sys-var { font-size: .78rem; color: var(--ink-soft); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; margin-left: 4px; white-space: nowrap; }
 .sys-cron { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: .85rem; overflow-wrap: anywhere; }
