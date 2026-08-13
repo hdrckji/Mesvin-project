@@ -385,6 +385,13 @@ label.lbl { display: block; font-weight: 600; margin: 14px 2px 6px; font-size: .
 .exresult.ko .exres-title { color: var(--accent-ink); }
 .ex-wrong { text-align: center; color: var(--danger); font-size: .92rem; margin: 10px 0 0; }
 
+/* situer le verset : retrouver le livre (et, en expert, chapitre.verset) */
+.situer-q { text-align: center; margin: 0 0 12px; }
+.situer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.situer-opt { justify-content: center; text-align: center; padding: 12px 8px; font-weight: 600; }
+.situer-fb { text-align: center; font-size: .95rem; color: var(--ink-soft); margin: 12px 0 0; }
+.situer-fb.ok { color: var(--grow); font-weight: 650; }
+
 /* aides discrètes sous l'exercice */
 .ex-tools { display: flex; justify-content: space-between; margin-top: 12px; }
 .linkbtn { background: none; border: 0; font: inherit; font-size: .88rem;

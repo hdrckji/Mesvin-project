@@ -61,6 +61,8 @@ function normalizeStore(s) {
   // jours d'activité : compteur démarré à la première ouverture (aucun historique inventé)
   if (typeof s.activeDays !== 'number') s.activeDays = 0;
   if (!('activeDayLast' in s)) s.activeDayLast = null; // dernier jour compté
+  // Situer le verset, mode expert : après le livre, chapitre et numéro aussi.
+  if (typeof s.situerExpert !== 'boolean') s.situerExpert = false;
   if (!s.streak || typeof s.streak !== 'object') s.streak = { count: 0, lastDay: null };
   return s;
 }
@@ -447,10 +449,67 @@ function exCorrect(ex) {
 }
 
 /* ============================================================================
+   Situer le verset — après une révision réussie, retrouver le LIVRE du verset
+   (et, en mode expert, le chapitre et le numéro). Connaître un verset, c'est
+   aussi savoir où le retrouver dans sa Bible. Se tromper ici ne compte JAMAIS
+   dans la répétition espacée : la référence est un plus, pas une barrière.
+   ========================================================================== */
+// Les 66 livres, groupés par section : deux des trois leurres viennent de la
+// même section que le bon livre — situer un verset apprend au passage la
+// structure de la Bible (une épître se confond avec une épître, pas avec un
+// prophète).
+const BIBLE_SECTIONS = [
+  ['Genèse', 'Exode', 'Lévitique', 'Nombres', 'Deutéronome'],
+  ['Josué', 'Juges', 'Ruth', '1 Samuel', '2 Samuel', '1 Rois', '2 Rois',
+   '1 Chroniques', '2 Chroniques', 'Esdras', 'Néhémie', 'Esther'],
+  ['Job', 'Psaumes', 'Proverbes', 'Ecclésiaste', 'Cantique des cantiques'],
+  ['Ésaïe', 'Jérémie', 'Lamentations', 'Ézéchiel', 'Daniel', 'Osée', 'Joël',
+   'Amos', 'Abdias', 'Jonas', 'Michée', 'Nahum', 'Habacuc', 'Sophonie',
+   'Aggée', 'Zacharie', 'Malachie'],
+  ['Matthieu', 'Marc', 'Luc', 'Jean', 'Actes'],
+  ['Romains', '1 Corinthiens', '2 Corinthiens', 'Galates', 'Éphésiens',
+   'Philippiens', 'Colossiens', '1 Thessaloniciens', '2 Thessaloniciens',
+   '1 Timothée', '2 Timothée', 'Tite', 'Philémon'],
+  ['Hébreux', 'Jacques', '1 Pierre', '2 Pierre', '1 Jean', '2 Jean', '3 Jean',
+   'Jude', 'Apocalypse'],
+];
+
+// « Philippiens 4.13 » → { livre, chapitre, versets } — versets reste une
+// chaîne pour respecter les plages (« Romains 8.38-39 »). Null si la
+// référence a une forme inattendue : l'étape est alors simplement sautée.
+function parseRef(ref) {
+  const m = /^(.+?)\s+(\d+)\.(\d+(?:-\d+)?)$/.exec(String(ref || ''));
+  return m ? { livre: m[1], chapitre: +m[2], versets: m[3] } : null;
+}
+
+// Quatre livres proposés : le bon, deux voisins de section, un d'ailleurs.
+function situerOptionsLivres(livre) {
+  const section = BIBLE_SECTIONS.find(s => s.includes(livre)) || [];
+  const proches = shuffle(section.filter(l => l !== livre)).slice(0, 2);
+  const autres = shuffle(BIBLE_SECTIONS.flat().filter(l => l !== livre && !proches.includes(l)));
+  return shuffle([livre, ...proches, ...autres.slice(0, 3 - proches.length)]);
+}
+
+// Mode expert : quatre « chapitre.verset » plausibles autour du bon — assez
+// proches pour demander une vraie mémoire, assez distincts pour rester francs.
+function situerOptionsRef(chapitre, versets) {
+  const v = parseInt(versets, 10);
+  const bonne = chapitre + '.' + versets;
+  const leurres = [];
+  [[chapitre, v + 2], [chapitre, Math.max(1, v - 3)], [chapitre + 1, v],
+   [Math.max(1, chapitre - 1), v + 1], [chapitre + 2, Math.max(1, v - 1)]]
+    .forEach(([c, n]) => {
+      const s = c + '.' + n;
+      if (s !== bonne && !leurres.includes(s)) leurres.push(s);
+    });
+  return shuffle([bonne, ...shuffle(leurres).slice(0, 3)]);
+}
+
+/* ============================================================================
    Navigation & session
    ========================================================================== */
 let route = { name: 'home', param: null };
-let session = null; // { queue, idx, intro?, phase:'exercise'|'result', ex, result, done:[], mastered:[] }
+let session = null; // { queue, idx, intro?, phase:'exercise'|'situer'|'result', ex, result, situer, done:[], mastered:[] }
 let studyList = []; // versets présentés sur la page d'étude en cours (avant le quiz d'introduction)
 const go = (name, param) => { route = { name, param: param || null }; render(); window.scrollTo(0, 0); };
 
@@ -596,6 +655,14 @@ function viewMemo() {
   progress += `<button class="verse-item gardenlink fade" data-tab="garden">
       <span class="stage">${icon('arbre', 20)}</span><span class="vi-main"><span class="vi-ref">Mon jardin</span><br>
       <span class="vi-text">${gardenN} verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}</span></span><span class="chev">›</span></button>`;
+  // Situer le verset, mode expert : après chaque révision réussie, l'appli
+  // demande déjà le livre ; en expert, elle demande aussi chapitre et numéro.
+  progress += `<button class="verse-item fade" data-situer-expert="1">
+      <span class="stage">${icon('cible', 20)}</span><span class="vi-main"><span class="vi-ref">Situer mes versets — mode expert ${store.situerExpert ? '<span class="mini-badge">activé</span>' : ''}</span><br>
+      <span class="vi-text">${store.situerExpert
+        ? 'Après chaque révision réussie : le livre, puis le chapitre et le verset. Touche pour revenir au mode simple.'
+        : 'Après chaque révision réussie, tu situes déjà le livre. En expert : le chapitre et le numéro aussi.'}</span></span>
+      <span class="chev">${store.situerExpert ? '✓' : '›'}</span></button>`;
 
   return topbar() + head + actions + objective + progress;
 }
@@ -695,6 +762,7 @@ function enterCard() {
   session.phase = 'exercise';
   session.ex = buildExercise({ text: item.text, validations: known ? known.validations : 0 });
   session.result = null;
+  session.situer = null;
 }
 // La card sur laquelle on enregistre le résultat. En quiz d'introduction, elle
 // n'est créée qu'ici, au premier essai réel — quitter avant ne laisse rien.
@@ -725,14 +793,45 @@ function viewSession() {
   const badge = validations >= MASTERY ? 'Entretien' : `Apprentissage · ${validations}/${MASTERY}`;
 
   let body = '';
-  if (session.phase === 'result') {
+  if (session.phase === 'situer') {
+    // Étape bonus après une révision réussie : situer le verset. La référence
+    // n'apparaît nulle part sur cet écran — c'est justement la question.
+    const st = session.situer;
+    if (!st.refOptions) {
+      body = `<div class="ex-instr">C'est juste ! Une dernière chose…</div>
+        <p class="situer-q">Dans quel <b>livre</b> se trouve ce verset ?</p>
+        <div class="verse small">« ${esc(card.text)} »</div>
+        <div class="situer-grid">${st.options.map(l => `<button class="chip situer-opt" data-situer-livre="${esc(l)}">${esc(l)}</button>`).join('')}</div>
+        <p class="muted center" style="font-size:.85rem;margin:14px 0 0">Se tromper ici ne compte pas — la référence, c'est le petit plus.</p>`;
+    } else {
+      body = `<div class="ex-instr">${esc(st.livre)}, exact !</div>
+        <p class="situer-q">Et plus précisément — <b>chapitre et verset</b> ?</p>
+        <div class="verse small">« ${esc(card.text)} »</div>
+        <div class="situer-grid">${st.refOptions.map(r => `<button class="chip situer-opt" data-situer-ref="${esc(r)}">${esc(st.livre)} ${esc(r)}</button>`).join('')}</div>`;
+    }
+  } else if (session.phase === 'result') {
     const ok = session.result === 'success';
+    // Retour de l'étape « situer » (si elle a eu lieu) : bienveillant dans
+    // tous les cas — la bonne référence s'affiche juste en dessous, on la
+    // relit et on avance.
+    const st = session.situer;
+    let situerFb = '';
+    if (st && st.choixLivre !== null) {
+      const okLivre = st.choixLivre === st.livre;
+      const okRef = st.choixRef === null || st.choixRef === st.chapitre + '.' + st.versets;
+      situerFb = okLivre && okRef
+        ? `<p class="situer-fb ok">${icon('cible', 14)} Et bien situé${st.choixRef !== null ? ', au verset près' : ''} !</p>`
+        : okLivre
+          ? `<p class="situer-fb">${icon('cible', 14)} Bon livre — le chapitre viendra avec le temps 🙂</p>`
+          : `<p class="situer-fb">${icon('cible', 14)} Il se trouve dans ${esc(st.livre)} — tu le retiendras 🙂</p>`;
+    }
     body = `<div class="exresult ${ok ? 'ok' : 'ko'} fade">
         <div class="exres-icon">${icon(ok ? 'coche' : 'fleur', 34)}</div>
         <div class="exres-title">${ok ? (ex.hinted ? 'Juste ! (avec un coup d\'œil)' : 'Juste, de mémoire !') : 'Pas grave — on le reverra'}</div>
       </div>
       <div class="verse small" style="margin-top:8px">« ${esc(card.text)} »</div>
       <div class="ref">${esc(card.ref)}</div>
+      ${situerFb}
       ${ok && isMastered(card) && session.mastered.includes(card.id) ? `<p class="center" style="color:var(--grow);font-weight:650;margin-top:12px">${icon('germe', 15)} Planté dans ton jardin !</p>` : ''}
       <button class="btn btn-grow btn-block" data-snext="1" style="margin-top:16px">Continuer</button>`;
   } else { // exercise
@@ -1703,6 +1802,9 @@ function wire() {
   el.querySelectorAll('[data-unpick]').forEach(b => b.addEventListener('click', () => { session.ex.answer.splice(+b.dataset.unpick, 1); session.ex.wrong = false; render(); }));
   el.querySelectorAll('[data-fillword]').forEach(b => b.addEventListener('click', () => fillNext(+b.dataset.fillword)));
   el.querySelectorAll('[data-clear]').forEach(b => b.addEventListener('click', () => { session.ex.filled[+b.dataset.clear] = null; session.ex.wrong = false; render(); }));
+  el.querySelectorAll('[data-situer-livre]').forEach(b => b.addEventListener('click', () => situerPickLivre(b.dataset.situerLivre)));
+  el.querySelectorAll('[data-situer-ref]').forEach(b => b.addEventListener('click', () => situerPickRef(b.dataset.situerRef)));
+  if (q('[data-situer-expert]')) q('[data-situer-expert]').addEventListener('click', () => { store.situerExpert = !store.situerExpert; saveStore(); render(); });
 
   el.querySelectorAll('[data-verse]').forEach(b => b.addEventListener('click', () => go('verse', b.dataset.verse)));
   if (q('[data-remove]')) q('[data-remove]').addEventListener('click', () => removeVerse(q('[data-remove]').dataset.remove));
@@ -1777,7 +1879,18 @@ function checkExercise() {
     // Une pierre du chemin vient-elle de se poser ? (verset planté, collection
     // complétée, verset enraciné…) — léger : simple lecture des stores.
     if (window.GrainePierres) GrainePierres.verifier();
-    session.result = 'success'; session.phase = 'result'; render();
+    session.result = 'success';
+    // Situer le verset : uniquement en révision (en introduction, la page
+    // d'étude vient d'afficher la référence — la demander serait factice).
+    const p = session.intro ? null : parseRef(card.ref);
+    if (p) {
+      session.situer = { livre: p.livre, chapitre: p.chapitre, versets: p.versets,
+        options: situerOptionsLivres(p.livre), refOptions: null, choixLivre: null, choixRef: null };
+      session.phase = 'situer';
+    } else {
+      session.phase = 'result';
+    }
+    render();
   } else {
     ex.errors++; ex.wrong = true; render();
   }
@@ -1794,6 +1907,23 @@ function giveUp() {
 function nextInSession() {
   session.idx++;
   if (session.idx < session.queue.length) enterCard();
+  render();
+}
+// Situer : choix du livre. Bon livre + mode expert → on précise chapitre et
+// verset ; sinon, direction l'écran de résultat (qui affiche la réponse).
+function situerPickLivre(livre) {
+  const st = session.situer;
+  st.choixLivre = livre;
+  if (livre === st.livre && store.situerExpert) {
+    st.refOptions = situerOptionsRef(st.chapitre, st.versets);
+  } else {
+    session.phase = 'result';
+  }
+  render();
+}
+function situerPickRef(ref) {
+  session.situer.choixRef = ref;
+  session.phase = 'result';
   render();
 }
 function removeVerse(id) {
