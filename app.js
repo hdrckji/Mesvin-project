@@ -1355,7 +1355,7 @@ function viewAccount() {
           ${err}
           <button class="btn btn-primary" type="submit" ${busy} style="margin-top:14px">${auth.busy ? 'Envoi…' : 'Recevoir mon code'}</button>
         </form>
-        <p class="muted" style="font-size:.85rem;margin:12px 2px 0">Pas de mot de passe : on t'envoie un code à 6 chiffres par e-mail, valable 10 minutes.</p>
+        <p class="muted" style="font-size:.85rem;margin:12px 2px 0">Pas de mot de passe : on t'envoie un code à 6 chiffres par e-mail, valable 45 minutes. Il peut mettre quelques minutes à arriver — pense à vérifier tes courriers indésirables.</p>
       </div>
       ${publicConfig && publicConfig.googleClientId ? `
       <div class="or-sep"><span>ou</span></div>

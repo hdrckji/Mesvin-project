@@ -21,7 +21,10 @@
 
 defined('GRAINE_API') || exit;
 
-const CODE_VALIDITY_SECONDS   = 600;          // 10 minutes
+const CODE_VALIDITY_SECONDS   = 2700;         // 45 minutes — les e-mails
+// d'un domaine récent peuvent être différés (greylisting) : un code trop
+// court expire avant d'arriver. 6 chiffres hachés + 5 essais + plafond IP
+// suffisent à garder cette fenêtre sûre.
 const CODE_MAX_ATTEMPTS       = 5;
 const CODE_MAX_PER_HOUR       = 3;
 const SESSION_LIFETIME_SECONDS = 90 * 86400;  // ~90 jours
@@ -102,24 +105,31 @@ function handle_auth_verify(PDO $pdo): never {
         json_error('Le code doit comporter 6 chiffres.', 400);
     }
 
-    // Dernier code encore valable pour cet e-mail.
+    // TOUS les codes encore valables pour cet e-mail (du plus récent au plus
+    // ancien). Pourquoi tous : quand l'e-mail tarde (greylisting), l'utilisateur
+    // clique « Renvoyer un code » — si seul le dernier comptait, le code qui
+    // finit par arriver serait refusé alors qu'il est parfaitement légitime.
     $st = $pdo->prepare(
-        'SELECT * FROM login_codes WHERE email = ? AND expires_at > ? ORDER BY id DESC LIMIT 1'
+        'SELECT * FROM login_codes WHERE email = ? AND expires_at > ? ORDER BY id DESC'
     );
     $st->execute([$email, now_sql()]);
-    $row = $st->fetch();
-    if ($row === false) {
+    $rows = $st->fetchAll();
+    if ($rows === []) {
         json_error('Code expiré ou jamais demandé — demande un nouveau code.', 400);
     }
-    if ((int) $row['attempts'] >= CODE_MAX_ATTEMPTS) {
+    // La limite d'essais se compte sur le code le plus récent : un essai est
+    // toujours enregistré AVANT la vérification, pour que la limite tienne.
+    if ((int) $rows[0]['attempts'] >= CODE_MAX_ATTEMPTS) {
         json_error("Trop d'essais — demande un nouveau code.", 429);
     }
-
-    // On compte l'essai AVANT de vérifier, pour que la limite tienne toujours.
     $st = $pdo->prepare('UPDATE login_codes SET attempts = attempts + 1 WHERE id = ?');
-    $st->execute([$row['id']]);
+    $st->execute([$rows[0]['id']]);
 
-    if (!password_verify($code, $row['code_hash'])) {
+    $bon = false;
+    foreach ($rows as $row) {
+        if (password_verify($code, $row['code_hash'])) { $bon = true; break; }
+    }
+    if (!$bon) {
         json_error('Code incorrect.', 401);
     }
 

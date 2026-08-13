@@ -48,7 +48,7 @@ function mail_send_code(string $email, string $code): bool {
     $subject = 'Ton code de connexion — Bible Horizon';
     $text = "Bonjour,\n\n"
         . "Ton code de connexion : $code\n\n"
-        . "Il est valable 10 minutes. Si tu n'as rien demandé, ignore simplement ce message.\n\n"
+        . "Il est valable 45 minutes. Si tu n'as rien demandé, ignore simplement ce message.\n\n"
         . "Bible Horizon";
     return $mode === 'brevo'
         ? mail_send_brevo($email, $subject, $text)
