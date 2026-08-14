@@ -723,18 +723,60 @@ function render() {
   if (vue.ecran === 'duelQuestion') return vue.recap ? renderDuelEnvoi() : renderDuelQuestion();
   if (vue.ecran === 'duelReview') return renderDuelReview();
   if (vue.ecran === 'veillee') return renderVeillee();
+  if (vue.ecran === 'quiz') return renderQuiz();
   renderAccueil();
 }
 
-/* ---------- Accueil du module : seul ou à plusieurs ---------- */
+/* ---------- Accueil du module : le choix de l'épreuve ---------- */
 function renderAccueil() {
-  const g = store.groupe;
+  const jourFait = store.jour && store.jour.date === dateISO();
   el.innerHTML = `
   <div class="fade">
     <button class="back-link" id="btn-retour-accueil">‹ Accueil</button>
     <div class="topbar">
       <div class="brand">
-        <h1 class="app-title">Défi <span class="seed">•</span> <span class="muted">seul ou à plusieurs</span></h1>
+        <h1 class="app-title">Défi <span class="seed">•</span> <span class="muted">deux épreuves</span></h1>
+      </div>
+    </div>
+
+    <p class="defi-lead" style="margin:0 4px 16px">Sonde ta connaissance de la Bible, seul ou à plusieurs — chaque réponse ramène vers le texte.</p>
+
+    <button class="card hub-card" id="btn-quiz">
+      <span class="hub-ic">${icon('defi', 26)}</span>
+      <span class="hub-txt">
+        <span class="hub-title">Qui, où, quand ?</span>
+        <span class="hub-sub">Des questions sur les récits de la Bible.${jourFait ? '' : ` <b class="grp-count">Le défi du jour t'attend</b>`}<span id="duel-attente"></span></span>
+      </span>
+      <span class="chev">›</span>
+    </button>
+
+    <button class="card hub-card" id="btn-avantapres">
+      <span class="hub-ic">${icon('sablier', 26)}</span>
+      <span class="hub-txt">
+        <span class="hub-title">Avant ou après ?</span>
+        <span class="hub-sub">Replace les livres et les grands événements dans l'ordre — la frise se construit sous tes yeux.</span>
+      </span>
+      <span class="chev">›</span>
+    </button>
+  </div>`;
+
+  document.getElementById('btn-retour-accueil').onclick = () => { location.href = '../index.html'; };
+  document.getElementById('btn-quiz').onclick = () => { vue = { ecran: 'quiz' }; render(); };
+  document.getElementById('btn-avantapres').onclick = () => { location.href = '../frise/'; };
+
+  // Badge discret si au moins un duel m'attend (silencieux hors-ligne).
+  majBadgeDuels();
+}
+
+/* ---------- « Qui, où, quand ? » : les quatre manières de s'y frotter ---------- */
+function renderQuiz() {
+  const g = store.groupe;
+  el.innerHTML = `
+  <div class="fade">
+    <button class="back-link" id="btn-retour-module">‹ Défi</button>
+    <div class="topbar">
+      <div class="brand">
+        <h1 class="app-title">Qui, où, quand ? <span class="seed">•</span> <span class="muted">les récits</span></h1>
       </div>
     </div>
 
@@ -770,30 +812,19 @@ function renderAccueil() {
     <button class="card hub-card" id="btn-veillee">
       <span class="hub-ic">${icon('ecranDirect', 26)}</span>
       <span class="hub-txt">
-        <span class="hub-title">Quiz dans ton église</span>
-        <span class="hub-sub">En direct : un grand écran pour tous, chacun répond sur son téléphone.</span>
-      </span>
-      <span class="chev">›</span>
-    </button>
-
-    <button class="card hub-card" id="btn-avantapres">
-      <span class="hub-ic">${icon('sablier', 26)}</span>
-      <span class="hub-txt">
-        <span class="hub-title">Avant ou après ?</span>
-        <span class="hub-sub">Replace les livres et les grands événements dans l'ordre — seul, en tablée, par code ou en veillée.</span>
+        <span class="hub-title">En direct, dans ton église</span>
+        <span class="hub-sub">Un grand écran pour tous, chacun répond sur son téléphone.</span>
       </span>
       <span class="chev">›</span>
     </button>
   </div>`;
 
-  document.getElementById('btn-retour-accueil').onclick = () => { location.href = '../index.html'; };
+  document.getElementById('btn-retour-module').onclick = () => { vue = { ecran: 'accueil' }; render(); };
   document.getElementById('btn-seul').onclick = () => { vue = { ecran: 'solo' }; render(); };
   document.getElementById('btn-plusieurs').onclick = () => { vue = { ecran: 'prepa' }; render(); };
   document.getElementById('btn-ami').onclick = ouvrirDuels;
   document.getElementById('btn-veillee').onclick = ouvrirVeillee;
-  document.getElementById('btn-avantapres').onclick = () => { location.href = '../frise/'; };
 
-  // Badge discret si au moins un duel m'attend (silencieux hors-ligne).
   majBadgeDuels();
 }
 
@@ -807,7 +838,7 @@ function majBadgeDuels() {
   if (!connecte()) return;
   GraineAPI.duels().then(liste => {
     duelsConnus = liste;
-    if (vue.ecran === 'accueil') poser(liste);
+    if (vue.ecran === 'accueil' || vue.ecran === 'quiz') poser(liste);
   }).catch(() => { /* hors-ligne : on n'affiche simplement rien */ });
 }
 
@@ -818,7 +849,7 @@ function renderSolo() {
 
   el.innerHTML = `
   <div class="fade">
-    <button class="back-link" id="btn-retour-defi">‹ Défi</button>
+    <button class="back-link" id="btn-retour-defi">‹ Qui, où, quand ?</button>
     <div class="topbar">
       <div class="brand">
         <h1 class="app-title">Seul <span class="seed">•</span> <span class="muted">connaissance biblique</span></h1>
@@ -865,7 +896,7 @@ function renderSolo() {
     </div>` : ''}
   </div>`;
 
-  document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'accueil' }; render(); };
+  document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'quiz' }; render(); };
   document.getElementById('btn-jour').onclick = () => demarrer('jour');
   document.getElementById('btn-libre').onclick = () => demarrer('libre');
   document.querySelectorAll('#pills-cat .pill').forEach(b => {
@@ -966,7 +997,7 @@ function renderPrepa() {
 
   el.innerHTML = `
   <div class="fade">
-    <button class="back-link" id="btn-retour-defi">‹ Défi</button>
+    <button class="back-link" id="btn-retour-defi">‹ Qui, où, quand ?</button>
     <div class="topbar">
       <div class="brand">
         <h1 class="app-title">À plusieurs <span class="seed">•</span> <span class="muted">sur un même appareil</span></h1>
@@ -1026,7 +1057,7 @@ function renderPrepa() {
     </div>
   </div>`;
 
-  document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'accueil' }; render(); };
+  document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'quiz' }; render(); };
   document.getElementById('mode-compet').onclick = () => { prepa.mode = 'compet'; renderPrepa(); };
   document.getElementById('mode-coop').onclick = () => { prepa.mode = 'coop'; renderPrepa(); };
   document.querySelectorAll('#pills-nb .pill').forEach(b => {
@@ -1196,7 +1227,7 @@ function renderFinCompet() {
   </div>`;
 
   document.getElementById('btn-encore').onclick = () => { m = null; vue = { ecran: 'prepa' }; render(); };
-  document.getElementById('btn-retour').onclick = () => { m = null; vue = { ecran: 'accueil' }; render(); };
+  document.getElementById('btn-retour').onclick = () => { m = null; vue = { ecran: 'quiz' }; render(); };
 }
 
 /* ---------- Coopératif : réussite ou pas, toujours encourageant ---------- */
@@ -1233,7 +1264,7 @@ function renderFinCoop() {
   </div>`;
 
   document.getElementById('btn-encore').onclick = () => { m = null; vue = { ecran: 'prepa' }; render(); };
-  document.getElementById('btn-retour').onclick = () => { m = null; vue = { ecran: 'accueil' }; render(); };
+  document.getElementById('btn-retour').onclick = () => { m = null; vue = { ecran: 'quiz' }; render(); };
 }
 
 /* ============================================================================
@@ -1244,7 +1275,7 @@ function renderFinCoop() {
 function renderDuelCompte() {
   el.innerHTML = `
   <div class="fade">
-    <button class="back-link" id="btn-retour-defi">‹ Défi</button>
+    <button class="back-link" id="btn-retour-defi">‹ Qui, où, quand ?</button>
     <div class="topbar">
       <div class="brand">
         <h1 class="app-title">Défier un ami <span class="seed">•</span> <span class="muted">à distance</span></h1>
@@ -1262,13 +1293,13 @@ function renderDuelCompte() {
     </div>
   </div>`;
 
-  document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'accueil' }; render(); };
+  document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'quiz' }; render(); };
 }
 
 /* ---------- Écran des duels (connecté) ---------- */
 function renderDuels() {
   const entete = `
-    <button class="back-link" id="btn-retour-defi">‹ Défi</button>
+    <button class="back-link" id="btn-retour-defi">‹ Qui, où, quand ?</button>
     <div class="topbar">
       <div class="brand">
         <h1 class="app-title">Défier un ami <span class="seed">•</span> <span class="muted">à distance</span></h1>
@@ -1277,7 +1308,7 @@ function renderDuels() {
 
   if (vue.chargement) {
     el.innerHTML = `<div class="fade">${entete}<div class="card"><p class="defi-lead duel-charge">Un instant…</p></div></div>`;
-    document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'accueil' }; render(); };
+    document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'quiz' }; render(); };
     return;
   }
 
@@ -1292,7 +1323,7 @@ function renderDuels() {
         </div>
       </div>
     </div>`;
-    document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'accueil' }; render(); };
+    document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'quiz' }; render(); };
     document.getElementById('btn-reessayer').onclick = ouvrirDuels;
     document.getElementById('btn-retour').onclick = () => { vue = { ecran: 'accueil' }; render(); };
     return;
@@ -1351,7 +1382,7 @@ function renderDuels() {
     ${store.duelsAmis.relevees > 0 ? `<p class="duel-compteur">${store.duelsAmis.relevees} épreuve${store.duelsAmis.relevees > 1 ? 's' : ''} de duel relevée${store.duelsAmis.relevees > 1 ? 's' : ''} depuis cet appareil.</p>` : ''}
   </div>`;
 
-  document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'accueil' }; render(); };
+  document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'quiz' }; render(); };
   document.getElementById('btn-actualiser').onclick = ouvrirDuels;
   const ip = document.getElementById('btn-inviter-proche');
   if (ip) ip.onclick = () => partager(texteInvitationDuel());
@@ -1744,7 +1775,7 @@ function renderVeilleeMenu() {
   const reprise = vlSauvegarde();
   el.innerHTML = `
   <div class="fade">
-    <button class="back-link" id="btn-retour-defi">‹ Défi</button>
+    <button class="back-link" id="btn-retour-defi">‹ Qui, où, quand ?</button>
     <div class="topbar"><div class="brand">
       <h1 class="app-title">Quiz dans ton église <span class="seed">•</span> <span class="muted">en direct</span></h1>
     </div></div>
@@ -1781,7 +1812,7 @@ function renderVeilleeMenu() {
     </button>
   </div>`;
 
-  document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'accueil' }; render(); };
+  document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'quiz' }; render(); };
   const rp = document.getElementById('btn-vl-reprendre');
   if (rp) rp.onclick = vlReprendre;
   document.getElementById('btn-vl-rejoindre').onclick = () => { vl = { mode: 'join', code: '', prenom: '', busy: false, error: null }; render(); };
