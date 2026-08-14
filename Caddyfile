@@ -76,7 +76,7 @@
 	# Les pages HTML non plus : sans en-tête, les navigateurs les gardent en
 	# cache « heuristique » et une ancienne page d'accueil peut coller
 	# longtemps après un déploiement. no-cache = revalider à chaque visite.
-	@html path / /index.html /lire /lire/ /lire/index.html /defi /defi/ /defi/index.html /admin /admin/ /admin/index.html /quiz-biblique/ /quiz-biblique/index.html /plan-lecture-bible/ /plan-lecture-bible/index.html /memoriser-versets/ /memoriser-versets/index.html /eglises/ /eglises/index.html
+	@html path / /index.html /lire /lire/ /lire/index.html /defi /defi/ /defi/index.html /admin /admin/ /admin/index.html /quiz-biblique/ /quiz-biblique/index.html /plan-lecture-bible/ /plan-lecture-bible/index.html /memoriser-versets/ /memoriser-versets/index.html /eglises/ /eglises/index.html /frise-essai.html
 	header @html Cache-Control "no-cache"
 
 	# Type MIME correct pour le manifeste PWA.
