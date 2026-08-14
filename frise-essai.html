@@ -76,6 +76,22 @@
   .sep { text-align: center; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase;
     color: var(--ink-soft); margin: 8px 0 2px; }
 
+  /* ---- À plusieurs ---- */
+  .deckrow { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    border-radius: 999px; font: inherit; font-size: .88rem; padding: 8px 14px; cursor: pointer; }
+  .pill.on { background: var(--grow-soft); border-color: var(--grow); color: var(--grow); font-weight: 700; }
+  .pin { display: block; width: 100%; font: inherit; padding: 11px 12px; margin: 8px 0 0;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); }
+  .pin:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  .pchips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+  .pchip { font-size: .82rem; border: 1px solid var(--line); border-radius: 999px;
+    padding: 4px 10px; color: var(--ink-soft); background: var(--surface); }
+  .pchip.on { background: var(--grow-soft); border-color: var(--grow); color: var(--grow); font-weight: 700; }
+  .frow { display: flex; justify-content: space-between; padding: 9px 4px;
+    border-top: 1px solid var(--line); text-align: left; }
+  .frow.tete { color: var(--grow); font-weight: 650; }
+
   /* ---- Fin ---- */
   .fin { text-align: center; padding: 26px 16px; }
   .fin .score { font-family: var(--serif); font-size: 2rem; color: var(--grow); font-weight: 700; }
@@ -174,8 +190,10 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 function shuffle(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; }
 
 const CARTES_PAR_SEANCE = 10;
-let ecran = 'accueil'; // 'accueil' | 'seance' | 'fin'
-let seance = null;     // { titre, placees:[], courante, pioche:[], score, total, fb, revele }
+let ecran = 'accueil'; // 'accueil' | 'config' | 'seance' | 'fin'
+let seance = null;     // { titre, placees:[], courante, pioche:[], score, total, fb, revele,
+                       //   participants: [{nom, score}] | null (solo), tour }
+let config = { mode: 'evenements', portee: 'tout', noms: ['', ''] }; // écran « à plusieurs »
 
 /* Construit le paquet d'une séance : chaque carte = { titre, ref?, ordre }. */
 function paquet(mode, portee) {
@@ -187,14 +205,21 @@ function paquet(mode, portee) {
   return EVENEMENTS.map(([titre, ref], i) => ({ titre, ref, ordre: i }));
 }
 
-function demarrer(mode, portee) {
-  const cartes = shuffle(paquet(mode, portee)).slice(0, CARTES_PAR_SEANCE + 1);
+function demarrer(mode, portee, noms) {
+  const base = paquet(mode, portee);
+  // À plusieurs : chacun place le même nombre de cartes (5, ou moins si le
+  // paquet est petit) ; en solo, la séance classique de CARTES_PAR_SEANCE.
+  const parTete = noms ? Math.max(3, Math.min(5, Math.floor((base.length - 1) / noms.length))) : 0;
+  const total = noms ? parTete * noms.length : CARTES_PAR_SEANCE;
+  const cartes = shuffle(base).slice(0, total + 1);
   const premiere = cartes[0]; // une carte déjà posée pour amorcer la frise
   seance = {
     titre: mode === 'livres'
       ? "L'ordre des livres" + (portee === 'at' ? ' · Ancien Testament' : portee === 'nt' ? ' · Nouveau Testament' : ' · toute la Bible')
       : 'La frise des événements',
-    mode: mode,
+    mode: mode, portee: portee,
+    participants: noms ? noms.map(nom => ({ nom: nom, score: 0 })) : null,
+    tour: 0,
     placees: [premiere],
     pioche: cartes.slice(1),
     courante: null, score: 0, total: cartes.length - 1,
@@ -224,7 +249,7 @@ function placer(k) {
   if (vraie === -1) vraie = s.placees.length;
   s.placees.splice(vraie, 0, c);
   if (bon) {
-    s.score++;
+    if (s.participants) s.participants[s.tour].score++; else s.score++;
     s.fb = { ok: true, texte: 'Bien placé !' };
   } else {
     const avant = vraie > 0 ? s.placees[vraie - 1] : null;
@@ -238,6 +263,7 @@ function placer(k) {
   setTimeout(() => {
     if (!seance || seance !== s) return;
     s.revele = null;
+    if (s.participants) s.tour = (s.tour + 1) % s.participants.length;
     piocher();
     render();
   }, bon ? 900 : 2400);
@@ -265,7 +291,40 @@ function vueAccueil() {
       <p class="mode-sub">Du commencement à Patmos : replace chaque événement dans l'ordre où la Bible le raconte. Chaque carte porte sa référence.</p>
       <button class="btn btn-grow" data-mode="evenements" data-portee="tout">Commencer</button>
     </div>
-    <p class="muted" style="font-size:.85rem;text-align:center;margin-top:16px">${CARTES_PAR_SEANCE} cartes par séance · se tromper montre la bonne place, tout simplement.</p>
+    <div class="card">
+      <p class="mode-title">À plusieurs, sur un téléphone</p>
+      <p class="mode-sub">La frise passe de main en main : chacun son tour place une carte dans la frise commune — et plus elle grandit, plus c'est serré. De 2 à 6 participants.</p>
+      <button class="btn btn-primary" data-multi="1">Préparer la tablée</button>
+    </div>
+    <p class="muted" style="font-size:.85rem;text-align:center;margin-top:16px">${CARTES_PAR_SEANCE} cartes par séance en solo · se tromper montre la bonne place, tout simplement.</p>
+  </div>`;
+}
+
+/* ---------- À plusieurs : préparation de la tablée ---------- */
+function vueConfig() {
+  const c = config;
+  const decks = [
+    ['evenements', 'tout', 'Les événements'],
+    ['livres', 'tout', 'Livres · toute la Bible'],
+    ['livres', 'at', 'Livres · Ancien T.'],
+    ['livres', 'nt', 'Livres · Nouveau T.'],
+  ];
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ Retour</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">À plusieurs, sur un téléphone</h1>
+    <p class="muted" style="margin:4px 0 0">Chacun son tour : une carte, un choix, et la frise grandit pour tout le monde.</p>
+    <div class="card">
+      <p class="mode-title" style="margin-top:0">Le paquet</p>
+      <div class="deckrow">${decks.map(([m, p, l]) =>
+        `<button class="pill ${c.mode === m && c.portee === p ? 'on' : ''}" data-deck="${m}:${p}">${l}</button>`).join('')}</div>
+      <p class="mode-title" style="margin-top:16px">Les participants</p>
+      ${c.noms.map((n, i) => `<input class="pin" data-nom="${i}" maxlength="14" placeholder="Prénom ${i + 1}" value="${esc(n)}">`).join('')}
+      <div class="choix-row">
+        <button class="btn btn-ghost" data-addp="1" ${c.noms.length >= 6 ? 'disabled' : ''}>+ Ajouter</button>
+        <button class="btn btn-ghost" data-delp="1" ${c.noms.length <= 2 ? 'disabled' : ''}>− Retirer</button>
+      </div>
+      <button class="btn btn-grow" data-multistart="1">Commencer</button>
+    </div>
   </div>`;
 }
 
@@ -275,6 +334,10 @@ function vueSeance() {
   const fb = s.fb
     ? `<p class="feedback ${s.fb.ok ? 'ok' : 'faux'}">${esc(s.fb.texte)}</p>`
     : `<p class="feedback"></p>`;
+  const tablee = s.participants
+    ? `<div class="pchips">${s.participants.map((p, i) =>
+        `<span class="pchip ${i === s.tour ? 'on' : ''}">${esc(p.nom)} · ${p.score}</span>`).join('')}</div>`
+    : '';
   const frise = [];
   for (let k = 0; k <= s.placees.length; k++) {
     if (!s.revele) frise.push(`<button class="slot" data-slot="${k}">↳ placer ici</button>`);
@@ -286,13 +349,14 @@ function vueSeance() {
     }
   }
   const courante = s.courante
-    ? `<div class="acarte"><span class="lbl">Carte ${faites + 1} / ${s.total} — à situer</span>
+    ? `<div class="acarte"><span class="lbl">${s.participants ? 'Au tour de ' + esc(s.participants[s.tour].nom) + ' — c' : 'C'}arte ${faites + 1} / ${s.total}</span>
         <p class="titre">${esc(s.courante.titre)}</p>
         ${s.courante.ref ? `<span class="r muted" style="font-size:.82rem">${esc(s.courante.ref)}</span>` : ''}</div>`
     : '';
   return `<div class="fade">
-    <div class="topline"><span>${esc(s.titre)} · <b>${s.score}</b> bien placée${s.score > 1 ? 's' : ''}</span>
+    <div class="topline"><span>${s.participants ? esc(s.titre) : esc(s.titre) + ' · <b>' + s.score + '</b> bien placée' + (s.score > 1 ? 's' : '')}</span>
       <button class="quit" data-quit="1">Quitter</button></div>
+    ${tablee}
     ${courante}
     ${fb}
     <p class="sep">La frise — du plus ancien au plus récent</p>
@@ -300,7 +364,25 @@ function vueSeance() {
   </div>`;
 }
 
+function vueFinMulti() {
+  const cls = seance.participants.slice().sort((a, b) => b.score - a.score);
+  const top = cls[0].score;
+  const gagnants = cls.filter(p => p.score === top);
+  const mot = gagnants.length > 1
+    ? 'Ex æquo en tête — la frise vous départagera une autre fois 🙂'
+    : `${esc(gagnants[0].nom)} connaît sa frise 🏅`;
+  const lignes = cls.map((p, i) => `<div class="frow ${p.score === top ? 'tete' : ''}">
+      <span>${i + 1}. ${esc(p.nom)}</span><b>${p.score} carte${p.score > 1 ? 's' : ''}</b></div>`).join('');
+  return `<div class="card fin fade">
+    <p style="margin:0 0 12px;font-weight:650">${mot}</p>
+    ${lignes}
+    <button class="btn btn-primary" data-encore="1">Rejouer la tablée</button>
+    <button class="btn btn-ghost" data-quit="1">Revenir à l'accueil</button>
+  </div>`;
+}
+
 function vueFin() {
+  if (seance.participants) return vueFinMulti();
   const s = seance;
   const parfait = s.score === s.total;
   const bien = s.score >= Math.ceil(s.total * 0.7);
@@ -317,17 +399,38 @@ function vueFin() {
 }
 
 function render() {
-  el.innerHTML = ecran === 'seance' ? vueSeance() : ecran === 'fin' ? vueFin() : vueAccueil();
+  el.innerHTML = ecran === 'seance' ? vueSeance() : ecran === 'fin' ? vueFin()
+    : ecran === 'config' ? vueConfig() : vueAccueil();
   el.querySelectorAll('[data-mode]').forEach(b =>
-    b.addEventListener('click', () => demarrer(b.dataset.mode, b.dataset.portee)));
+    b.addEventListener('click', () => demarrer(b.dataset.mode, b.dataset.portee, null)));
   el.querySelectorAll('[data-slot]').forEach(b =>
     b.addEventListener('click', () => placer(+b.dataset.slot)));
   const q = el.querySelector('[data-quit]');
   if (q) q.addEventListener('click', quitter);
   const enc = el.querySelector('[data-encore]');
   if (enc) enc.addEventListener('click', () => {
-    const m = seance.mode, t = seance.titre;
-    demarrer(m, m === 'livres' ? (t.includes('Ancien') ? 'at' : t.includes('Nouveau') ? 'nt' : 'tout') : 'tout');
+    // Rejouer : même paquet — et même tablée s'il y en avait une.
+    demarrer(seance.mode, seance.portee, seance.participants ? seance.participants.map(p => p.nom) : null);
+  });
+  // À plusieurs : préparation de la tablée
+  const multi = el.querySelector('[data-multi]');
+  if (multi) multi.addEventListener('click', () => { ecran = 'config'; render(); });
+  el.querySelectorAll('[data-deck]').forEach(b => b.addEventListener('click', () => {
+    const [m, p] = b.dataset.deck.split(':');
+    config.mode = m; config.portee = p; render();
+  }));
+  // Les prénoms se tapent sans re-rendu (sinon le clavier perdrait le focus).
+  el.querySelectorAll('[data-nom]').forEach(inp => inp.addEventListener('input', () => {
+    config.noms[+inp.dataset.nom] = inp.value;
+  }));
+  const addp = el.querySelector('[data-addp]');
+  if (addp) addp.addEventListener('click', () => { if (config.noms.length < 6) { config.noms.push(''); render(); } });
+  const delp = el.querySelector('[data-delp]');
+  if (delp) delp.addEventListener('click', () => { if (config.noms.length > 2) { config.noms.pop(); render(); } });
+  const ms = el.querySelector('[data-multistart]');
+  if (ms) ms.addEventListener('click', () => {
+    const noms = config.noms.map((n, i) => n.trim() !== '' ? n.trim() : 'Participant ' + (i + 1));
+    demarrer(config.mode, config.portee, noms);
   });
 }
 render();
