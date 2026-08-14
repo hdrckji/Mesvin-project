@@ -449,10 +449,11 @@ function exCorrect(ex) {
 }
 
 /* ============================================================================
-   Situer le verset — après une révision réussie, retrouver le LIVRE du verset
-   (et, en mode expert, le chapitre et le numéro). Connaître un verset, c'est
-   aussi savoir où le retrouver dans sa Bible. Se tromper ici ne compte JAMAIS
-   dans la répétition espacée : la référence est un plus, pas une barrière.
+   Situer le verset — après chaque exercice réussi (introduction comme
+   révision), retrouver le LIVRE du verset (et, en mode expert, le chapitre et
+   le numéro). Connaître un verset, c'est aussi savoir où le retrouver dans sa
+   Bible. Se tromper ici ne compte JAMAIS dans la répétition espacée : la
+   référence est un plus, pas une barrière.
    ========================================================================== */
 // Les 66 livres, groupés par section : deux des trois leurres viennent de la
 // même section que le bon livre — situer un verset apprend au passage la
@@ -655,13 +656,13 @@ function viewMemo() {
   progress += `<button class="verse-item gardenlink fade" data-tab="garden">
       <span class="stage">${icon('arbre', 20)}</span><span class="vi-main"><span class="vi-ref">Mon jardin</span><br>
       <span class="vi-text">${gardenN} verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}</span></span><span class="chev">›</span></button>`;
-  // Situer le verset, mode expert : après chaque révision réussie, l'appli
+  // Situer le verset, mode expert : après chaque exercice réussi, l'appli
   // demande déjà le livre ; en expert, elle demande aussi chapitre et numéro.
   progress += `<button class="verse-item fade" data-situer-expert="1">
       <span class="stage">${icon('cible', 20)}</span><span class="vi-main"><span class="vi-ref">Situer mes versets — mode expert ${store.situerExpert ? '<span class="mini-badge">activé</span>' : ''}</span><br>
       <span class="vi-text">${store.situerExpert
-        ? 'Après chaque révision réussie : le livre, puis le chapitre et le verset. Touche pour revenir au mode simple.'
-        : 'Après chaque révision réussie, tu situes déjà le livre. En expert : le chapitre et le numéro aussi.'}</span></span>
+        ? 'Après chaque exercice réussi : le livre, puis le chapitre et le verset. Touche pour revenir au mode simple.'
+        : 'Après chaque exercice réussi, tu situes déjà le livre. En expert : le chapitre et le numéro aussi.'}</span></span>
       <span class="chev">${store.situerExpert ? '✓' : '›'}</span></button>`;
 
   return topbar() + head + actions + objective + progress;
@@ -794,7 +795,7 @@ function viewSession() {
 
   let body = '';
   if (session.phase === 'situer') {
-    // Étape bonus après une révision réussie : situer le verset. La référence
+    // Étape bonus après un exercice réussi : situer le verset. La référence
     // n'apparaît nulle part sur cet écran — c'est justement la question.
     const st = session.situer;
     if (!st.refOptions) {
@@ -1880,9 +1881,10 @@ function checkExercise() {
     // complétée, verset enraciné…) — léger : simple lecture des stores.
     if (window.GrainePierres) GrainePierres.verifier();
     session.result = 'success';
-    // Situer le verset : uniquement en révision (en introduction, la page
-    // d'étude vient d'afficher la référence — la demander serait factice).
-    const p = session.intro ? null : parseRef(card.ref);
+    // Situer le verset : après chaque exercice réussi — en introduction, la
+    // page d'étude vient de montrer la référence, la redemander tout de suite
+    // est justement un premier ancrage.
+    const p = parseRef(card.ref);
     if (p) {
       session.situer = { livre: p.livre, chapitre: p.chapitre, versets: p.versets,
         options: situerOptionsLivres(p.livre), refOptions: null, choixLivre: null, choixRef: null };
