@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- ============================================================================
+     LA FRISE — ATELIER D'ESSAI (page volontairement NON RELIÉE au site)
+     Aucun lien n'y mène : on y accède uniquement par son adresse directe.
+     Entièrement autonome (style, script et données dans ce seul fichier) :
+     aucun fichier de l'appli n'est touché, aucun impact sur les utilisateurs.
+     Deux épreuves : replacer les LIVRES dans l'ordre de la Bible, et replacer
+     les ÉVÉNEMENTS dans l'ordre où la Bible les raconte.
+     ========================================================================== -->
+<meta name="robots" content="noindex, nofollow">
+<title>La Frise — atelier d'essai · Bible Horizon</title>
+<style>
+  :root {
+    --bg: #f7f3ea; --surface: #fffdf8; --surface-2: #f0e9da;
+    --ink: #24303f; --ink-soft: #5b6675; --line: #e2d9c6;
+    --accent: #b98a2e; --accent-ink: #7a5a15;
+    --grow: #3f6c49; --grow-soft: #e4efe4; --danger: #a34a24;
+    --on-accent: #241a05;
+    --shadow: 0 6px 24px rgba(40, 34, 20, .10); --radius: 18px;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans);
+    -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 18px 16px 40px; }
+  h1 { font-family: var(--serif); font-size: 1.5rem; margin: 6px 0 2px; }
+  h1 .seed { color: var(--accent); }
+  .muted { color: var(--ink-soft); }
+  .essai-note { font-size: .85rem; background: var(--surface-2); border: 1px dashed var(--accent);
+    border-radius: 12px; padding: 10px 12px; margin: 14px 0; color: var(--accent-ink); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 18px; margin: 12px 0; }
+  .btn { display: block; width: 100%; border: 0; border-radius: 14px; padding: 14px 16px;
+    font: inherit; font-weight: 700; cursor: pointer; margin-top: 10px; }
+  .btn-primary { background: var(--accent); color: var(--on-accent); }
+  .btn-grow { background: var(--grow); color: #fff; }
+  .btn-ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--line); }
+  .mode-title { font-family: var(--serif); font-size: 1.1rem; font-weight: 650; margin: 0 0 4px; }
+  .mode-sub { font-size: .9rem; color: var(--ink-soft); margin: 0; }
+  .choix-row { display: flex; gap: 8px; margin-top: 12px; }
+  .choix-row .btn { margin-top: 0; font-size: .92rem; padding: 11px 8px; }
+
+  /* ---- Séance ---- */
+  .topline { display: flex; justify-content: space-between; align-items: center;
+    font-size: .85rem; color: var(--ink-soft); margin-bottom: 8px; }
+  .topline b { color: var(--ink); }
+  .quit { background: none; border: 0; font: inherit; color: var(--ink-soft);
+    cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 4px; }
+  .acarte { position: sticky; top: 8px; z-index: 5; background: var(--surface);
+    border: 2px solid var(--accent); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 14px 16px; text-align: center; }
+  .acarte .lbl { font-size: .78rem; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--accent-ink); font-weight: 700; }
+  .acarte .titre { font-family: var(--serif); font-size: 1.12rem; font-weight: 650; margin: 4px 0 0; }
+  .feedback { text-align: center; font-size: .92rem; font-weight: 650; margin: 10px 2px;
+    min-height: 1.3em; }
+  .feedback.ok { color: var(--grow); }
+  .feedback.faux { color: var(--danger); }
+
+  .frise { margin-top: 6px; }
+  .fcarte { background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 14px; }
+  .fcarte .t { font-weight: 600; font-size: .95rem; }
+  .fcarte .r { font-size: .8rem; color: var(--ink-soft); }
+  .fcarte.bon { border-color: var(--grow); background: var(--grow-soft); }
+  .fcarte.faux { border-color: var(--danger); }
+  .slot { display: block; width: 100%; border: 1px dashed var(--accent); background: transparent;
+    color: var(--accent-ink); border-radius: 10px; font: inherit; font-size: .82rem;
+    padding: 7px; margin: 8px 0; cursor: pointer; }
+  .slot:disabled { opacity: .35; cursor: default; }
+  .sep { text-align: center; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-soft); margin: 8px 0 2px; }
+
+  /* ---- Fin ---- */
+  .fin { text-align: center; padding: 26px 16px; }
+  .fin .score { font-family: var(--serif); font-size: 2rem; color: var(--grow); font-weight: 700; }
+  .fade { animation: fade .35s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+'use strict';
+/* ---------- Données : les 66 livres, dans l'ordre de la Bible ---------- */
+const LIVRES_AT = ['Genèse','Exode','Lévitique','Nombres','Deutéronome','Josué','Juges','Ruth',
+  '1 Samuel','2 Samuel','1 Rois','2 Rois','1 Chroniques','2 Chroniques','Esdras','Néhémie',
+  'Esther','Job','Psaumes','Proverbes','Ecclésiaste','Cantique des cantiques','Ésaïe','Jérémie',
+  'Lamentations','Ézéchiel','Daniel','Osée','Joël','Amos','Abdias','Jonas','Michée','Nahum',
+  'Habacuc','Sophonie','Aggée','Zacharie','Malachie'];
+const LIVRES_NT = ['Matthieu','Marc','Luc','Jean','Actes','Romains','1 Corinthiens','2 Corinthiens',
+  'Galates','Éphésiens','Philippiens','Colossiens','1 Thessaloniciens','2 Thessaloniciens',
+  '1 Timothée','2 Timothée','Tite','Philémon','Hébreux','Jacques','1 Pierre','2 Pierre',
+  '1 Jean','2 Jean','3 Jean','Jude','Apocalypse'];
+
+/* ---------- Données : les événements, dans l'ordre où la Bible les raconte.
+   Chaque événement porte sa référence : le placement est toujours justifiable
+   par le texte. Les cas discutés entre spécialistes sont volontairement
+   absents (Job, Ruth, Esther, prophètes contemporains entre eux…). ---------- */
+const EVENEMENTS = [
+  ['La création du monde', 'Genèse 1'],
+  ["Adam et Ève chassés du jardin d'Éden", 'Genèse 3'],
+  ["Le déluge et l'arche de Noé", 'Genèse 7'],
+  ['La tour de Babel', 'Genèse 11'],
+  ["L'appel d'Abram", 'Genèse 12'],
+  ["La naissance d'Isaac", 'Genèse 21'],
+  ["Abraham mis à l'épreuve avec Isaac", 'Genèse 22'],
+  ['Jacob reçoit le nom d’Israël', 'Genèse 32'],
+  ['Joseph vendu par ses frères', 'Genèse 37'],
+  ["Joseph gouverneur de l'Égypte", 'Genèse 41'],
+  ['Moïse sauvé des eaux', 'Exode 2'],
+  ['Le buisson ardent', 'Exode 3'],
+  ["Les dix plaies d'Égypte", 'Exode 7–12'],
+  ['La traversée de la mer Rouge', 'Exode 14'],
+  ['Les dix commandements au Sinaï', 'Exode 20'],
+  ["Le veau d'or", 'Exode 32'],
+  ['Quarante ans au désert décrétés', 'Nombres 14'],
+  ['La mort de Moïse', 'Deutéronome 34'],
+  ['La chute de Jéricho', 'Josué 6'],
+  ['Débora délivre Israël', 'Juges 4'],
+  ['Gédéon et ses trois cents hommes', 'Juges 7'],
+  ['Samson perd sa force', 'Juges 16'],
+  ["L'Éternel appelle le jeune Samuel", '1 Samuel 3'],
+  ["Saül devient le premier roi d'Israël", '1 Samuel 10'],
+  ['David abat Goliath', '1 Samuel 17'],
+  ['David devient roi sur tout Israël', '2 Samuel 5'],
+  ['Salomon demande la sagesse', '1 Rois 3'],
+  ['La dédicace du premier temple', '1 Rois 8'],
+  ['Le royaume se divise en deux', '1 Rois 12'],
+  ['Élie face aux prophètes de Baal au Carmel', '1 Rois 18'],
+  ['Élie enlevé au ciel dans un tourbillon', '2 Rois 2'],
+  ['Jonas englouti par un grand poisson', 'Jonas 2 · 2 Rois 14.25'],
+  ['La chute de Samarie', '2 Rois 17'],
+  ['Jérusalem délivrée de Sanchérib', '2 Rois 19'],
+  ['Josias retrouve le livre de la loi', '2 Rois 22'],
+  ["La chute de Jérusalem et l'exil à Babylone", '2 Rois 25'],
+  ['Trois hommes dans la fournaise ardente', 'Daniel 3'],
+  ['Daniel dans la fosse aux lions', 'Daniel 6'],
+  ["L'édit de Cyrus : le retour d'exil", 'Esdras 1'],
+  ['Le second temple achevé', 'Esdras 6'],
+  ['Néhémie relève la muraille de Jérusalem', 'Néhémie 6'],
+  ["L'ange Gabriel annonce à Marie la naissance de Jésus", 'Luc 1'],
+  ['La naissance de Jésus à Bethléhem', 'Luc 2'],
+  ["La visite des mages et la fuite en Égypte", 'Matthieu 2'],
+  ['Jésus, à douze ans, dans le temple', 'Luc 2.42'],
+  ['Le baptême de Jésus dans le Jourdain', 'Matthieu 3'],
+  ['Jésus tenté au désert', 'Matthieu 4'],
+  ['Les noces de Cana, premier miracle', 'Jean 2'],
+  ['La multiplication des pains', 'Matthieu 14'],
+  ['La transfiguration', 'Matthieu 17'],
+  ["L'entrée de Jésus à Jérusalem", 'Matthieu 21'],
+  ['La Cène', 'Matthieu 26'],
+  ['La crucifixion', 'Matthieu 27'],
+  ['La résurrection', 'Matthieu 28'],
+  ["L'ascension", 'Actes 1'],
+  ['La Pentecôte', 'Actes 2'],
+  ['Étienne, premier martyr', 'Actes 7'],
+  ['La conversion de Saul sur le chemin de Damas', 'Actes 9'],
+  ['Pierre chez le centenier Corneille', 'Actes 10'],
+  ['Le concile de Jérusalem', 'Actes 15'],
+  ['Paul prêche à Athènes', 'Actes 17'],
+  ['Paul arrive prisonnier à Rome', 'Actes 28'],
+  ["Jean reçoit l'Apocalypse à Patmos", 'Apocalypse 1'],
+];
+
+/* ---------- Aides ---------- */
+const el = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function shuffle(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; }
+
+const CARTES_PAR_SEANCE = 10;
+let ecran = 'accueil'; // 'accueil' | 'seance' | 'fin'
+let seance = null;     // { titre, placees:[], courante, pioche:[], score, total, fb, revele }
+
+/* Construit le paquet d'une séance : chaque carte = { titre, ref?, ordre }. */
+function paquet(mode, portee) {
+  if (mode === 'livres') {
+    const base = portee === 'at' ? LIVRES_AT : portee === 'nt' ? LIVRES_NT
+      : LIVRES_AT.concat(LIVRES_NT);
+    return base.map((titre, i) => ({ titre, ref: null, ordre: i }));
+  }
+  return EVENEMENTS.map(([titre, ref], i) => ({ titre, ref, ordre: i }));
+}
+
+function demarrer(mode, portee) {
+  const cartes = shuffle(paquet(mode, portee)).slice(0, CARTES_PAR_SEANCE + 1);
+  const premiere = cartes[0]; // une carte déjà posée pour amorcer la frise
+  seance = {
+    titre: mode === 'livres'
+      ? "L'ordre des livres" + (portee === 'at' ? ' · Ancien Testament' : portee === 'nt' ? ' · Nouveau Testament' : ' · toute la Bible')
+      : 'La frise des événements',
+    mode: mode,
+    placees: [premiere],
+    pioche: cartes.slice(1),
+    courante: null, score: 0, total: cartes.length - 1,
+    fb: null, revele: null,
+  };
+  piocher();
+  ecran = 'seance';
+  render();
+}
+
+function piocher() {
+  seance.courante = seance.pioche.shift() || null;
+  if (seance.courante === null) { ecran = 'fin'; }
+}
+
+/* L'utilisateur touche l'emplacement k (avant la carte posée d'index k). */
+function placer(k) {
+  const s = seance;
+  if (s.revele) return; // le temps de lire le verdict, tout est figé
+  const c = s.courante;
+  const avantOk = k === 0 || s.placees[k - 1].ordre < c.ordre;
+  const apresOk = k === s.placees.length || c.ordre < s.placees[k].ordre;
+  const bon = avantOk && apresOk;
+  // La carte rejoint TOUJOURS sa vraie place : la frise reste juste, et la
+  // bonne position se voit (vert si trouvée, rouge si manquée).
+  let vraie = s.placees.findIndex(p => p.ordre > c.ordre);
+  if (vraie === -1) vraie = s.placees.length;
+  s.placees.splice(vraie, 0, c);
+  if (bon) {
+    s.score++;
+    s.fb = { ok: true, texte: 'Bien placé !' };
+  } else {
+    const avant = vraie > 0 ? s.placees[vraie - 1] : null;
+    const apres = vraie < s.placees.length - 1 ? s.placees[vraie + 1] : null;
+    s.fb = { ok: false, texte: 'Pas là — ' + (avant && apres
+      ? 'entre « ' + avant.titre + ' » et « ' + apres.titre + ' ».'
+      : avant ? 'après « ' + avant.titre + ' ».' : 'avant « ' + apres.titre + ' ».') };
+  }
+  s.revele = { ordre: c.ordre, bon: bon };
+  render();
+  setTimeout(() => {
+    if (!seance || seance !== s) return;
+    s.revele = null;
+    piocher();
+    render();
+  }, bon ? 900 : 2400);
+}
+
+function quitter() { seance = null; ecran = 'accueil'; render(); }
+
+/* ---------- Écrans ---------- */
+function vueAccueil() {
+  return `<div class="fade">
+    <h1>La Frise <span class="seed">•</span> <span class="muted" style="font-size:1rem">Bible Horizon</span></h1>
+    <p class="muted" style="margin:4px 0 0">Chaque carte doit trouver sa place dans la frise. À toi de la situer.</p>
+    <div class="essai-note">Atelier d'essai — cette page n'est reliée à aucun menu du site. Elle sert à tester l'épreuve avant de décider de son avenir.</div>
+    <div class="card">
+      <p class="mode-title">L'ordre des livres</p>
+      <p class="mode-sub">Replace chaque livre là où il se trouve dans la Bible — le meilleur moyen de s'y retrouver ensuite, pages en main.</p>
+      <div class="choix-row">
+        <button class="btn btn-ghost" data-mode="livres" data-portee="at">Ancien T.</button>
+        <button class="btn btn-ghost" data-mode="livres" data-portee="nt">Nouveau T.</button>
+        <button class="btn btn-primary" data-mode="livres" data-portee="tout">Toute la Bible</button>
+      </div>
+    </div>
+    <div class="card">
+      <p class="mode-title">La frise des événements</p>
+      <p class="mode-sub">Du commencement à Patmos : replace chaque événement dans l'ordre où la Bible le raconte. Chaque carte porte sa référence.</p>
+      <button class="btn btn-grow" data-mode="evenements" data-portee="tout">Commencer</button>
+    </div>
+    <p class="muted" style="font-size:.85rem;text-align:center;margin-top:16px">${CARTES_PAR_SEANCE} cartes par séance · se tromper montre la bonne place, tout simplement.</p>
+  </div>`;
+}
+
+function vueSeance() {
+  const s = seance;
+  const faites = s.total - s.pioche.length - 1;
+  const fb = s.fb
+    ? `<p class="feedback ${s.fb.ok ? 'ok' : 'faux'}">${esc(s.fb.texte)}</p>`
+    : `<p class="feedback"></p>`;
+  const frise = [];
+  for (let k = 0; k <= s.placees.length; k++) {
+    if (!s.revele) frise.push(`<button class="slot" data-slot="${k}">↳ placer ici</button>`);
+    else if (k < s.placees.length) frise.push('<div style="height:8px"></div>');
+    if (k < s.placees.length) {
+      const p = s.placees[k];
+      const cls = s.revele && p.ordre === s.revele.ordre ? (s.revele.bon ? ' bon' : ' faux') : '';
+      frise.push(`<div class="fcarte${cls}"><span class="t">${esc(p.titre)}</span>${p.ref ? ` <span class="r">· ${esc(p.ref)}</span>` : ''}</div>`);
+    }
+  }
+  const courante = s.courante
+    ? `<div class="acarte"><span class="lbl">Carte ${faites + 1} / ${s.total} — à situer</span>
+        <p class="titre">${esc(s.courante.titre)}</p>
+        ${s.courante.ref ? `<span class="r muted" style="font-size:.82rem">${esc(s.courante.ref)}</span>` : ''}</div>`
+    : '';
+  return `<div class="fade">
+    <div class="topline"><span>${esc(s.titre)} · <b>${s.score}</b> bien placée${s.score > 1 ? 's' : ''}</span>
+      <button class="quit" data-quit="1">Quitter</button></div>
+    ${courante}
+    ${fb}
+    <p class="sep">La frise — du plus ancien au plus récent</p>
+    <div class="frise">${frise.join('')}</div>
+  </div>`;
+}
+
+function vueFin() {
+  const s = seance;
+  const parfait = s.score === s.total;
+  const bien = s.score >= Math.ceil(s.total * 0.7);
+  const mot = parfait ? 'Sans une seule erreur — la frise est limpide pour toi ✨'
+    : bien ? 'Belle séance — les repères se mettent en place 🌱'
+    : "Chaque carte mal placée t'a montré sa vraie place — c'est comme ça qu'on apprend 🌱";
+  return `<div class="card fin fade">
+    <div class="score">${s.score} / ${s.total}</div>
+    <p class="muted" style="margin:6px 0 0">carte${s.score > 1 ? 's' : ''} bien placée${s.score > 1 ? 's' : ''} du premier coup</p>
+    <p style="margin:14px 0 0">${mot}</p>
+    <button class="btn btn-primary" data-encore="1">Refaire une séance</button>
+    <button class="btn btn-ghost" data-quit="1">Changer d'épreuve</button>
+  </div>`;
+}
+
+function render() {
+  el.innerHTML = ecran === 'seance' ? vueSeance() : ecran === 'fin' ? vueFin() : vueAccueil();
+  el.querySelectorAll('[data-mode]').forEach(b =>
+    b.addEventListener('click', () => demarrer(b.dataset.mode, b.dataset.portee)));
+  el.querySelectorAll('[data-slot]').forEach(b =>
+    b.addEventListener('click', () => placer(+b.dataset.slot)));
+  const q = el.querySelector('[data-quit]');
+  if (q) q.addEventListener('click', quitter);
+  const enc = el.querySelector('[data-encore]');
+  if (enc) enc.addEventListener('click', () => {
+    const m = seance.mode, t = seance.titre;
+    demarrer(m, m === 'livres' ? (t.includes('Ancien') ? 'at' : t.includes('Nouveau') ? 'nt' : 'tout') : 'tout');
+  });
+}
+render();
+</script>
+</body>
+</html>
