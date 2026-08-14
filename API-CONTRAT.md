@@ -31,6 +31,32 @@
 - Les en-têtes de sécurité (CSP, nosniff, frame-ancestors, HSTS…) sont posés
   par le Caddyfile sur toutes les réponses.
 
+## La Frise (atelier d'essai — page isolée frise-essai.html)
+
+Endpoints **sans compte**, dédiés à l'atelier : le paquet de cartes
+`[{ "t": titre, "r": référence|null, "o": rang }]` est fourni par le client à
+la création (la 1re carte amorce la frise) ; le serveur arbitre les positions
+par les rangs `o` et ne révèle jamais les cartes à venir d'une veillée.
+Codes `FD-XXXXX` (défis, balayés à 7 jours) et `FV-XXXXX` (veillées, 24 h).
+Plafond 10 créations/heure/IP (fichier `api/frise.php`).
+
+- `POST /api/frise/duel` `{pseudo, mode, deck}` → `{code, cle}` — la clé
+  authentifie le créateur (case p1).
+- `GET /api/frise/duel/{code}` → `{mode, deck, total, p1, p2}`.
+- `POST /api/frise/duel/{code}/score` `{score, cle}` (créateur) ou
+  `{score, pseudo}` (case p2, premier arrivé) → l'état du duel ; chaque case
+  ne s'écrit qu'une fois (409 sinon).
+- `POST /api/frise/veillee` `{mode, deck}` → `{code, cle}` (clé = animateur).
+- `POST /api/frise/veillee/{code}/rejoindre` `{prenom}` → `{jeton}` (40 max).
+- `POST /api/frise/veillee/{code}/avancer` `{cle}` — attente → placement
+  (carte 1) → revele → placement (suivante, réponses remises à zéro) → … → fin.
+- `POST /api/frise/veillee/{code}/reponse` `{jeton, carte, position}` — en
+  phase placement uniquement, une seule réponse par carte ; le serveur pose
+  le verdict et le point.
+- `GET /api/frise/veillee/{code}/etat?jeton=…|cle=…` → `{phase, carte, total,
+  participants, moi, frise, enCours, positionJuste, animateur}` — les verdicts
+  des autres n'apparaissent qu'en phase `revele`.
+
 ## Authentification
 
 ### POST /api/auth/request-code

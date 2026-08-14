@@ -10,6 +10,8 @@
      aucun fichier de l'appli n'est touché, aucun impact sur les utilisateurs.
      Deux épreuves : replacer les LIVRES dans l'ordre de la Bible, et replacer
      les ÉVÉNEMENTS dans l'ordre où la Bible les raconte.
+     Modes : solo, à plusieurs sur un téléphone, défi à distance par code et
+     veillée en direct (endpoints dédiés /api/frise/*, sans compte).
      ========================================================================== -->
 <meta name="robots" content="noindex, nofollow">
 <title>La Frise — atelier d'essai · Bible Horizon</title>
@@ -91,6 +93,10 @@
   .frow { display: flex; justify-content: space-between; padding: 9px 4px;
     border-top: 1px solid var(--line); text-align: left; }
   .frow.tete { color: var(--grow); font-weight: 650; }
+
+  .code-big { font-family: var(--serif); font-size: 1.9rem; font-weight: 700; letter-spacing: .12em;
+    color: var(--accent-ink); background: var(--surface-2); border: 1px dashed var(--accent);
+    border-radius: 12px; padding: 10px 6px; margin: 6px 0 2px; }
 
   /* ---- Fin ---- */
   .fin { text-align: center; padding: 26px 16px; }
@@ -194,6 +200,29 @@ let ecran = 'accueil'; // 'accueil' | 'config' | 'seance' | 'fin'
 let seance = null;     // { titre, placees:[], courante, pioche:[], score, total, fb, revele,
                        //   participants: [{nom, score}] | null (solo), tour }
 let config = { mode: 'evenements', portee: 'tout', noms: ['', ''] }; // écran « à plusieurs »
+let online = null;  // duel : { code, cle?, resultat } · veillée : { code, cle?, jeton?, prenom?, etat }
+let saisie = { pseudo: '', code: '' }; // champs des écrans en ligne (survivent aux re-rendus)
+let minuterie = null; // l'interrogation régulière du serveur (écrans en ligne)
+
+/* ---- Réseau : les points d'entrée dédiés /api/frise/* (sans compte) ---- */
+async function api(chemin, corps) {
+  const r = await fetch('api/frise/' + chemin, corps === undefined ? {}
+    : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || 'Le serveur a répondu ' + r.status + '.');
+  return data;
+}
+/* Le paquet au format serveur : la 1re carte est l'amorce, l'ordre du
+   tableau est l'ordre de pioche (les deux adversaires reçoivent le même). */
+function deckServeur(mode, portee, nb) {
+  return shuffle(paquet(mode, portee)).slice(0, nb + 1)
+    .map(c => ({ t: c.titre, r: c.ref, o: c.ordre }));
+}
+function titrePaquet(mode, portee) {
+  return mode === 'livres'
+    ? "L'ordre des livres" + (portee === 'at' ? ' · Ancien Testament' : portee === 'nt' ? ' · Nouveau Testament' : ' · toute la Bible')
+    : 'La frise des événements';
+}
 
 /* Construit le paquet d'une séance : chaque carte = { titre, ref?, ordre }. */
 function paquet(mode, portee) {
@@ -203,6 +232,21 @@ function paquet(mode, portee) {
     return base.map((titre, i) => ({ titre, ref: null, ordre: i }));
   }
   return EVENEMENTS.map(([titre, ref], i) => ({ titre, ref, ordre: i }));
+}
+
+/* Démarre une séance sur un paquet SERVI par le serveur (défi à distance) :
+   même paquet, même ordre de pioche pour les deux adversaires. */
+function demarrerServi(deckSrv, titre, enLigne) {
+  const cartes = deckSrv.map(c => ({ titre: c.t, ref: c.r, ordre: c.o }));
+  seance = {
+    titre: titre, mode: null, portee: null, participants: null, tour: 0,
+    enLigne: enLigne, envoye: false,
+    placees: [cartes[0]], pioche: cartes.slice(1),
+    courante: null, score: 0, total: cartes.length - 1, fb: null, revele: null,
+  };
+  piocher();
+  ecran = 'seance';
+  render();
 }
 
 function demarrer(mode, portee, noms) {
@@ -269,7 +313,7 @@ function placer(k) {
   }, bon ? 900 : 2400);
 }
 
-function quitter() { seance = null; ecran = 'accueil'; render(); }
+function quitter() { seance = null; online = null; pollArret(); ecran = 'accueil'; render(); }
 
 /* ---------- Écrans ---------- */
 function vueAccueil() {
@@ -296,8 +340,228 @@ function vueAccueil() {
       <p class="mode-sub">La frise passe de main en main : chacun son tour place une carte dans la frise commune — et plus elle grandit, plus c'est serré. De 2 à 6 participants.</p>
       <button class="btn btn-primary" data-multi="1">Préparer la tablée</button>
     </div>
+    <div class="card">
+      <p class="mode-title">À distance</p>
+      <p class="mode-sub">Défie un ami avec un code à partager (chacun la même frise, chacun chez soi), ou anime une veillée en direct où tout le monde répond sur son téléphone.</p>
+      <div class="choix-row">
+        <button class="btn btn-primary" data-duelcfg="1">Défier un ami</button>
+        <button class="btn btn-grow" data-veilcfg="1">Animer une veillée</button>
+      </div>
+      <button class="btn btn-ghost" data-join="1">J'ai reçu un code</button>
+    </div>
     <p class="muted" style="font-size:.85rem;text-align:center;margin-top:16px">${CARTES_PAR_SEANCE} cartes par séance en solo · se tromper montre la bonne place, tout simplement.</p>
   </div>`;
+}
+
+/* ---------- À distance : défi par code & veillée en direct ---------- */
+
+function vueDuelConfig() {
+  const c = config;
+  const decks = [
+    ['evenements', 'tout', 'Les événements'],
+    ['livres', 'tout', 'Livres · toute la Bible'],
+    ['livres', 'at', 'Livres · Ancien T.'],
+    ['livres', 'nt', 'Livres · Nouveau T.'],
+  ];
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ Retour</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">Défier un ami</h1>
+    <p class="muted" style="margin:4px 0 0">Tu fais ta frise maintenant, tu reçois un code — ton ami fera exactement la même, quand il voudra.</p>
+    <div class="card">
+      <p class="mode-title" style="margin-top:0">Le paquet</p>
+      <div class="deckrow">${decks.map(([m, p, l]) =>
+        `<button class="pill ${c.mode === m && c.portee === p ? 'on' : ''}" data-deck="${m}:${p}">${l}</button>`).join('')}</div>
+      <p class="mode-title" style="margin-top:16px">Ton prénom</p>
+      <input class="pin" id="in-pseudo" maxlength="20" placeholder="Prénom" value="${esc(saisie.pseudo)}">
+      <button class="btn btn-primary" data-duelgo="1">Créer le défi et commencer</button>
+      <p class="feedback faux" id="err-ligne"></p>
+    </div>
+  </div>`;
+}
+
+function vueJoin() {
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ Retour</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">J'ai reçu un code</h1>
+    <p class="muted" style="margin:4px 0 0">Un code FD- ouvre un défi, un code FV- rejoint une veillée en direct.</p>
+    <div class="card">
+      <input class="pin" id="in-code" maxlength="8" placeholder="Code (FD-XXXXX ou FV-XXXXX)" value="${esc(saisie.code)}" autocapitalize="characters">
+      <input class="pin" id="in-pseudo" maxlength="20" placeholder="Ton prénom" value="${esc(saisie.pseudo)}">
+      <button class="btn btn-primary" data-joingo="1">Rejoindre</button>
+      <p class="feedback faux" id="err-ligne"></p>
+    </div>
+  </div>`;
+}
+
+function vueDuelResultat() {
+  const o = online;
+  const r = o.resultat;
+  let corps = '';
+  if (o.erreur) {
+    corps = `<p class="feedback faux">${esc(o.erreur)}</p>`;
+  } else if (r) {
+    const ligne = j => j ? `<div class="frow"><span>${esc(j.pseudo)}</span><b>${j.score === null ? 'pas encore terminé' : j.score + ' / ' + r.total}</b></div>` : '';
+    let verdict = '';
+    if (r.p1 && r.p2 && r.p1.score !== null && r.p2.score !== null) {
+      verdict = r.p1.score === r.p2.score ? '<p style="font-weight:650;margin:12px 0 0">Égalité parfaite 🙂</p>'
+        : `<p style="font-weight:650;margin:12px 0 0">${esc(r.p1.score > r.p2.score ? r.p1.pseudo : r.p2.pseudo)} connaît sa frise 🏅</p>`;
+    } else if (!r.p2) {
+      verdict = '<p class="muted" style="margin:12px 0 0">En attente de ton adversaire — partage-lui le code ci-dessus.</p>';
+    }
+    corps = ligne(r.p1) + ligne(r.p2) + verdict;
+  } else {
+    corps = '<p class="muted">Un instant…</p>';
+  }
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ Accueil</button>
+    <div class="card fin">
+      <p class="muted" style="margin:0 0 4px">Le code du défi — à partager tel quel :</p>
+      <div class="code-big">${esc(o.code)}</div>
+      <button class="btn btn-ghost" data-copie="${esc(o.code)}">Copier le code</button>
+      ${corps}
+    </div>
+  </div>`;
+}
+
+function vueVeilleeConfig() {
+  const c = config;
+  const decks = [
+    ['evenements', 'tout', 'Les événements'],
+    ['livres', 'tout', 'Livres · toute la Bible'],
+    ['livres', 'at', 'Livres · Ancien T.'],
+    ['livres', 'nt', 'Livres · Nouveau T.'],
+  ];
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ Retour</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">Animer une veillée</h1>
+    <p class="muted" style="margin:4px 0 0">Tu ouvres la salle et tu donnes le code : chacun rejoint sur son téléphone, tout le monde voit la même carte au même moment, et c'est toi qui rythmes.</p>
+    <div class="card">
+      <p class="mode-title" style="margin-top:0">Le paquet</p>
+      <div class="deckrow">${decks.map(([m, p, l]) =>
+        `<button class="pill ${c.mode === m && c.portee === p ? 'on' : ''}" data-deck="${m}:${p}">${l}</button>`).join('')}</div>
+      <button class="btn btn-grow" data-veilgo="1">Ouvrir la veillée</button>
+      <p class="feedback faux" id="err-ligne"></p>
+    </div>
+  </div>`;
+}
+
+/* La frise vue par l'animateur et les participants (cartes {t, r} déjà à
+   leur place). En révélation, la carte du moment s'y glisse en vert/rouge. */
+function htmlFriseEtat(etat, marquerBon) {
+  const cartes = etat.frise.map(c => `<div class="fcarte"><span class="t">${esc(c.t)}</span>${c.r ? ` <span class="r">· ${esc(c.r)}</span>` : ''}</div>`);
+  if (etat.phase === 'revele' && etat.enCours && etat.positionJuste !== null) {
+    const cls = marquerBon === null ? 'bon' : marquerBon ? 'bon' : 'faux';
+    cartes.splice(etat.positionJuste, 0,
+      `<div class="fcarte ${cls}"><span class="t">${esc(etat.enCours.t)}</span>${etat.enCours.r ? ` <span class="r">· ${esc(etat.enCours.r)}</span>` : ''}</div>`);
+  }
+  return `<p class="sep">La frise — du plus ancien au plus récent</p>
+    <div class="frise">${cartes.map(c => c + '<div style="height:8px"></div>').join('')}</div>`;
+}
+
+function vueAnim() {
+  const o = online;
+  const e = o.etat;
+  if (!e) return `<div class="card center" style="padding:30px"><p class="muted" style="margin:0">Un instant…</p></div>`;
+  const repondu = e.participants.filter(p => p.aRepondu).length;
+  let controle = '';
+  if (e.phase === 'attente') {
+    controle = `<p class="muted">${e.participants.length} participant${e.participants.length > 1 ? 's' : ''} dans la salle — attends que tout le monde soit là.</p>
+      <button class="btn btn-grow" data-avancer="1" ${e.participants.length === 0 ? 'disabled' : ''}>Lancer la première carte</button>`;
+  } else if (e.phase === 'placement') {
+    controle = `<p class="muted">${repondu} / ${e.participants.length} ont répondu.</p>
+      <button class="btn btn-grow" data-avancer="1">Révéler</button>`;
+  } else if (e.phase === 'revele') {
+    controle = `<button class="btn btn-grow" data-avancer="1">${e.carte >= e.total ? 'Terminer la veillée' : 'Carte suivante'}</button>`;
+  }
+  const carte = e.enCours && e.phase !== 'fin'
+    ? `<div class="acarte"><span class="lbl">Carte ${e.carte} / ${e.total}</span>
+        <p class="titre">${esc(e.enCours.t)}</p>${e.enCours.r ? `<span class="r muted" style="font-size:.82rem">${esc(e.enCours.r)}</span>` : ''}</div>`
+    : '';
+  const participants = e.participants.length
+    ? `<div class="pchips">${e.participants.map(p =>
+        `<span class="pchip ${p.bon === true ? 'on' : ''}">${esc(p.prenom)} · ${p.score}${e.phase === 'placement' && p.aRepondu ? ' ✓' : ''}${p.bon === false ? ' ✗' : ''}</span>`).join('')}</div>`
+    : '';
+  const fin = e.phase === 'fin'
+    ? `<div class="card fin"><p style="font-weight:650;margin:0 0 8px">La veillée est terminée 🌱</p>
+        ${e.participants.map((p, i) => `<div class="frow ${i === 0 ? 'tete' : ''}"><span>${i + 1}. ${esc(p.prenom)}</span><b>${p.score} / ${e.total}</b></div>`).join('')}</div>`
+    : '';
+  return `<div class="fade">
+    <div class="topline"><span>Veillée · ${esc(e.mode)}</span><button class="quit" data-quit="1">Fermer</button></div>
+    <div class="card" style="text-align:center">
+      <p class="muted" style="margin:0 0 4px">Le code de la salle :</p>
+      <div class="code-big">${esc(o.code)}</div>
+      <button class="btn btn-ghost" data-copie="${esc(o.code)}">Copier le code</button>
+      ${controle}
+    </div>
+    ${participants}
+    ${carte}
+    ${fin || (e.phase !== 'attente' ? htmlFriseEtat(e, null) : '')}
+  </div>`;
+}
+
+function vuePart() {
+  const o = online;
+  const e = o.etat;
+  if (!e) return `<div class="card center" style="padding:30px"><p class="muted" style="margin:0">Un instant…</p></div>`;
+  const moi = e.moi || { score: 0, reponse: null, bon: null };
+  let corps = '';
+  if (e.phase === 'attente') {
+    corps = `<div class="card fin"><p style="margin:0">Te voilà dans la salle, ${esc(o.prenom)} 🙂</p>
+      <p class="muted" style="margin:8px 0 0">${e.participants.length} participant${e.participants.length > 1 ? 's' : ''} — l'animateur va lancer la première carte.</p></div>`;
+  } else if (e.phase === 'placement' && e.enCours) {
+    const carte = `<div class="acarte"><span class="lbl">Carte ${e.carte} / ${e.total} — à situer</span>
+      <p class="titre">${esc(e.enCours.t)}</p></div>`;
+    if (moi.reponse === null) {
+      const frise = [];
+      for (let k = 0; k <= e.frise.length; k++) {
+        frise.push(`<button class="slot" data-pos="${k}">↳ placer ici</button>`);
+        if (k < e.frise.length) {
+          frise.push(`<div class="fcarte"><span class="t">${esc(e.frise[k].t)}</span>${e.frise[k].r ? ` <span class="r">· ${esc(e.frise[k].r)}</span>` : ''}</div>`);
+        }
+      }
+      corps = carte + `<p class="sep">La frise — du plus ancien au plus récent</p><div class="frise">${frise.join('')}</div>`;
+    } else {
+      corps = carte + `<p class="feedback ok">Réponse posée ✓ — on attend les autres (${e.participants.filter(p => p.aRepondu).length} / ${e.participants.length}).</p>`
+        + htmlFriseEtat(e, null);
+    }
+  } else if (e.phase === 'revele') {
+    corps = `<p class="feedback ${moi.bon ? 'ok' : 'faux'}">${moi.bon ? 'Bien placé !' : moi.reponse === null ? "Tu n'avais pas répondu." : 'Pas là — la voici à sa place.'}</p>`
+      + htmlFriseEtat(e, moi.bon);
+  } else if (e.phase === 'fin') {
+    corps = `<div class="card fin"><p style="font-weight:650;margin:0 0 8px">La veillée est terminée 🌱</p>
+      ${e.participants.map((p, i) => `<div class="frow ${i === 0 ? 'tete' : ''}"><span>${i + 1}. ${esc(p.prenom)}</span><b>${p.score} / ${e.total}</b></div>`).join('')}</div>`;
+  }
+  return `<div class="fade">
+    <div class="topline"><span>Veillée · ${esc(e.mode)} · <b>${moi.score}</b> pt${moi.score > 1 ? 's' : ''}</span>
+      <button class="quit" data-quit="1">Quitter</button></div>
+    ${corps}
+  </div>`;
+}
+
+/* ---- L'interrogation régulière du serveur (écrans en ligne) ---- */
+function pollArret() { if (minuterie) { clearInterval(minuterie); minuterie = null; } }
+function pollDemarre() {
+  pollArret();
+  minuterie = setInterval(async () => {
+    try {
+      if (ecran === 'dres' && online && !online.erreur) {
+        const r = await api('duel/' + online.code);
+        // on ne re-rend que si quelque chose a bougé (éviter de casser un tap)
+        if (JSON.stringify(r) !== JSON.stringify(online.resultat)) { online.resultat = r; render(); }
+        if (r.p1 && r.p2 && r.p1.score !== null && r.p2.score !== null) pollArret();
+      } else if ((ecran === 'anim' || ecran === 'part') && online) {
+        // garde-fou : si un clic (avancer, réponse) met l'état à jour pendant
+        // que cette interrogation voyage, sa réponse — plus vieille — est jetée.
+        const vAvant = online.v || 0;
+        const q = ecran === 'anim' ? 'cle=' + online.cle : 'jeton=' + online.jeton;
+        const e = await api('veillee/' + online.code + '/etat?' + q);
+        if (online && (online.v || 0) === vAvant
+            && JSON.stringify(e) !== JSON.stringify(online.etat)) { online.etat = e; render(); }
+      } else {
+        pollArret();
+      }
+    } catch (err) { /* un raté de réseau : la prochaine interrogation retentera */ }
+  }, 2500);
 }
 
 /* ---------- À plusieurs : préparation de la tablée ---------- */
@@ -381,7 +645,25 @@ function vueFinMulti() {
   </div>`;
 }
 
+/* Fin d'une séance de défi à distance : le score part au serveur (une seule
+   fois), puis on bascule sur l'écran de résultat qui s'actualise tout seul. */
+function envoyerScoreDuel() {
+  const s = seance;
+  s.envoye = true;
+  const corps = s.enLigne.cle
+    ? { score: s.score, cle: s.enLigne.cle }
+    : { score: s.score, pseudo: s.enLigne.pseudo };
+  api('duel/' + s.enLigne.code + '/score', corps)
+    .then(resultat => { online = { code: s.enLigne.code, resultat: resultat, erreur: null }; ecran = 'dres'; render(); })
+    .catch(e => { online = { code: s.enLigne.code, resultat: null, erreur: e.message }; ecran = 'dres'; render(); });
+}
+
 function vueFin() {
+  if (seance.enLigne) {
+    if (!seance.envoye) envoyerScoreDuel();
+    return `<div class="card fin fade"><div class="score">${seance.score} / ${seance.total}</div>
+      <p class="muted" style="margin:10px 0 0">On envoie ton score…</p></div>`;
+  }
   if (seance.participants) return vueFinMulti();
   const s = seance;
   const parfait = s.score === s.total;
@@ -400,7 +682,11 @@ function vueFin() {
 
 function render() {
   el.innerHTML = ecran === 'seance' ? vueSeance() : ecran === 'fin' ? vueFin()
-    : ecran === 'config' ? vueConfig() : vueAccueil();
+    : ecran === 'config' ? vueConfig()
+    : ecran === 'dcfg' ? vueDuelConfig() : ecran === 'join' ? vueJoin()
+    : ecran === 'dres' ? vueDuelResultat() : ecran === 'vcfg' ? vueVeilleeConfig()
+    : ecran === 'anim' ? vueAnim() : ecran === 'part' ? vuePart()
+    : vueAccueil();
   el.querySelectorAll('[data-mode]').forEach(b =>
     b.addEventListener('click', () => demarrer(b.dataset.mode, b.dataset.portee, null)));
   el.querySelectorAll('[data-slot]').forEach(b =>
@@ -432,6 +718,100 @@ function render() {
     const noms = config.noms.map((n, i) => n.trim() !== '' ? n.trim() : 'Participant ' + (i + 1));
     demarrer(config.mode, config.portee, noms);
   });
+
+  /* ---- À distance ---- */
+  const versEcran = e => () => { ecran = e; render(); };
+  if (el.querySelector('[data-duelcfg]')) el.querySelector('[data-duelcfg]').addEventListener('click', versEcran('dcfg'));
+  if (el.querySelector('[data-veilcfg]')) el.querySelector('[data-veilcfg]').addEventListener('click', versEcran('vcfg'));
+  if (el.querySelector('[data-join]')) el.querySelector('[data-join]').addEventListener('click', versEcran('join'));
+  // champs : l'état est la source de vérité, pas de re-rendu pendant la frappe
+  const inPseudo = el.querySelector('#in-pseudo');
+  if (inPseudo) inPseudo.addEventListener('input', () => { saisie.pseudo = inPseudo.value; });
+  const inCode = el.querySelector('#in-code');
+  if (inCode) inCode.addEventListener('input', () => { saisie.code = inCode.value; });
+  const erreurLigne = msg => {
+    const n = el.querySelector('#err-ligne');
+    if (n) n.textContent = msg;
+  };
+
+  const duelgo = el.querySelector('[data-duelgo]');
+  if (duelgo) duelgo.addEventListener('click', async () => {
+    const pseudo = saisie.pseudo.trim();
+    if (pseudo === '') { erreurLigne('Ton prénom, pour que ton ami sache qui le défie 🙂'); return; }
+    duelgo.disabled = true;
+    try {
+      const deck = deckServeur(config.mode, config.portee, CARTES_PAR_SEANCE);
+      const r = await api('duel', { pseudo: pseudo, mode: titrePaquet(config.mode, config.portee), deck: deck });
+      demarrerServi(deck, titrePaquet(config.mode, config.portee), { code: r.code, cle: r.cle });
+    } catch (e) { duelgo.disabled = false; erreurLigne(e.message); }
+  });
+
+  const joingo = el.querySelector('[data-joingo]');
+  if (joingo) joingo.addEventListener('click', async () => {
+    const code = saisie.code.trim().toUpperCase();
+    const prenom = saisie.pseudo.trim();
+    if (prenom === '') { erreurLigne('Ton prénom, pour le classement 🙂'); return; }
+    joingo.disabled = true;
+    try {
+      if (code.startsWith('FD-')) {
+        const r = await api('duel/' + code);
+        if (r.p2) throw new Error('Ce défi a déjà trouvé son adversaire.');
+        demarrerServi(r.deck, r.mode, { code: code, pseudo: prenom });
+      } else if (code.startsWith('FV-')) {
+        const r = await api('veillee/' + code + '/rejoindre', { prenom: prenom });
+        online = { code: code, jeton: r.jeton, prenom: prenom, etat: null };
+        ecran = 'part'; render(); pollDemarre();
+      } else {
+        throw new Error('Un code commence par FD- (défi) ou FV- (veillée).');
+      }
+    } catch (e) { joingo.disabled = false; erreurLigne(e.message); }
+  });
+
+  const veilgo = el.querySelector('[data-veilgo]');
+  if (veilgo) veilgo.addEventListener('click', async () => {
+    veilgo.disabled = true;
+    try {
+      const deck = deckServeur(config.mode, config.portee, CARTES_PAR_SEANCE);
+      const r = await api('veillee', { mode: titrePaquet(config.mode, config.portee), deck: deck });
+      online = { code: r.code, cle: r.cle, etat: null };
+      ecran = 'anim'; render(); pollDemarre();
+    } catch (e) { veilgo.disabled = false; erreurLigne(e.message); }
+  });
+
+  const avancer = el.querySelector('[data-avancer]');
+  if (avancer) avancer.addEventListener('click', async () => {
+    // un seul « avancer » à la fois : le bouton renaît à chaque rafraîchissement,
+    // un double-tap pressé ne doit pas faire sauter une phase entière.
+    if (online.enVol) return;
+    online.enVol = true;
+    avancer.disabled = true;
+    try {
+      online.etat = await api('veillee/' + online.code + '/avancer', { cle: online.cle });
+      online.v = (online.v || 0) + 1;
+      online.enVol = false;
+      render();
+    } catch (e) { online.enVol = false; render(); }
+  });
+
+  el.querySelectorAll('[data-pos]').forEach(b => b.addEventListener('click', async () => {
+    el.querySelectorAll('[data-pos]').forEach(x => { x.disabled = true; });
+    try {
+      online.etat = await api('veillee/' + online.code + '/reponse',
+        { jeton: online.jeton, carte: online.etat.carte, position: +b.dataset.pos });
+      online.v = (online.v || 0) + 1;
+      render();
+    } catch (e) { render(); }
+  }));
+
+  const copie = el.querySelector('[data-copie]');
+  if (copie) copie.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(copie.dataset.copie); copie.textContent = 'Code copié ✓'; }
+    catch (e) { copie.textContent = 'Copie impossible — note-le à la main'; }
+    setTimeout(() => { copie.textContent = 'Copier le code'; }, 2400);
+  });
+
+  // l'écran de résultat de défi s'actualise tant que l'adversaire manque
+  if (ecran === 'dres' && online && !online.erreur && !minuterie) pollDemarre();
 }
 render();
 </script>

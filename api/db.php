@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM journal LIMIT 1');
+        $pdo->query('SELECT 1 FROM frise_participants LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -364,6 +364,50 @@ function db_migrate(PDO $pdo): void {
                 detail VARCHAR(200) NULL,
                 INDEX idx_journal_ts (ts)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // La Frise (atelier d'essai, sans compte) — défis par code : le
+            // paquet de cartes [{t,r,o}] est fourni par le client, la clé
+            // authentifie le créateur (case p1). Balayage à 7 jours.
+            'CREATE TABLE IF NOT EXISTS frise_duels (
+                code VARCHAR(10) NOT NULL PRIMARY KEY,
+                cle CHAR(32) NOT NULL,
+                mode VARCHAR(40) NOT NULL,
+                deck MEDIUMTEXT NOT NULL,
+                total INT NOT NULL,
+                p1_pseudo VARCHAR(20) NOT NULL,
+                p1_score INT NULL,
+                p2_pseudo VARCHAR(20) NULL,
+                p2_score INT NULL,
+                created_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // La Frise — veillées en direct : phase attente|placement|revele|
+            // fin, carte = index de la carte en cours dans le paquet.
+            // Balayage à 24 h. La clé authentifie l'animateur.
+            'CREATE TABLE IF NOT EXISTS frise_veillees (
+                code VARCHAR(10) NOT NULL PRIMARY KEY,
+                cle CHAR(32) NOT NULL,
+                mode VARCHAR(40) NOT NULL,
+                deck MEDIUMTEXT NOT NULL,
+                phase VARCHAR(12) NOT NULL,
+                carte INT NOT NULL DEFAULT 0,
+                created_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // La Frise — participants d'une veillée : le jeton authentifie,
+            // reponse/bon portent la carte EN COURS (remis à NULL à chaque
+            // nouvelle carte), le score cumule.
+            'CREATE TABLE IF NOT EXISTS frise_participants (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                code VARCHAR(10) NOT NULL,
+                jeton CHAR(32) NOT NULL,
+                prenom VARCHAR(20) NOT NULL,
+                score INT NOT NULL DEFAULT 0,
+                reponse INT NULL,
+                bon TINYINT NULL,
+                created_at DATETIME NOT NULL,
+                INDEX idx_frisep_code (code)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
         ];
     } else {
         $ddl = [
@@ -629,6 +673,40 @@ function db_migrate(PDO $pdo): void {
                 detail TEXT NULL
             )',
             'CREATE INDEX IF NOT EXISTS idx_journal_ts ON journal (ts)',
+
+            // La Frise (atelier d'essai) — voir le dialecte MySQL ci-dessus.
+            'CREATE TABLE IF NOT EXISTS frise_duels (
+                code TEXT NOT NULL PRIMARY KEY,
+                cle TEXT NOT NULL,
+                mode TEXT NOT NULL,
+                deck TEXT NOT NULL,
+                total INTEGER NOT NULL,
+                p1_pseudo TEXT NOT NULL,
+                p1_score INTEGER NULL,
+                p2_pseudo TEXT NULL,
+                p2_score INTEGER NULL,
+                created_at TEXT NOT NULL
+            )',
+            'CREATE TABLE IF NOT EXISTS frise_veillees (
+                code TEXT NOT NULL PRIMARY KEY,
+                cle TEXT NOT NULL,
+                mode TEXT NOT NULL,
+                deck TEXT NOT NULL,
+                phase TEXT NOT NULL,
+                carte INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            )',
+            'CREATE TABLE IF NOT EXISTS frise_participants (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT NOT NULL,
+                jeton TEXT NOT NULL,
+                prenom TEXT NOT NULL,
+                score INTEGER NOT NULL DEFAULT 0,
+                reponse INTEGER NULL,
+                bon INTEGER NULL,
+                created_at TEXT NOT NULL
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_frisep_code ON frise_participants (code)',
         ];
     }
 

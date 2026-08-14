@@ -27,6 +27,7 @@ require __DIR__ . '/groupes-quiz.php';
 require __DIR__ . '/groupes-page.php';
 require __DIR__ . '/duels.php';
 require __DIR__ . '/veillees.php';
+require __DIR__ . '/frise.php';
 require __DIR__ . '/admin.php';
 require __DIR__ . '/push.php';
 
@@ -228,6 +229,32 @@ if (preg_match('#^/api/veillees/([A-Za-z0-9]{4})/(state|join|answer|advance)$#',
     if ($m[2] === 'join'    && $method === 'POST') handle_veillees_join($pdo, $code);
     if ($m[2] === 'answer'  && $method === 'POST') handle_veillees_answer($pdo, $code);
     if ($m[2] === 'advance' && $method === 'POST') handle_veillees_advance($pdo, $code);
+}
+
+/* ---- La Frise (atelier d'essai) : défis et veillées par code, sans compte ---- */
+if ($path === '/api/frise/duel' && $method === 'POST') frise_duel_create($pdo);
+if (preg_match('#^/api/frise/duel/(FD-[A-Z2-9]{5})$#', $path, $m)) {
+    if ($method === 'GET') frise_duel_get($pdo, $m[1]);
+}
+if (preg_match('#^/api/frise/duel/(FD-[A-Z2-9]{5})/score$#', $path, $m)) {
+    if ($method === 'POST') frise_duel_score($pdo, $m[1]);
+}
+if ($path === '/api/frise/veillee' && $method === 'POST') frise_veillee_create($pdo);
+if (preg_match('#^/api/frise/veillee/(FV-[A-Z2-9]{5})/rejoindre$#', $path, $m)) {
+    if ($method === 'POST') frise_veillee_rejoindre($pdo, $m[1]);
+}
+if (preg_match('#^/api/frise/veillee/(FV-[A-Z2-9]{5})/avancer$#', $path, $m)) {
+    if ($method === 'POST') frise_veillee_avancer($pdo, $m[1]);
+}
+if (preg_match('#^/api/frise/veillee/(FV-[A-Z2-9]{5})/reponse$#', $path, $m)) {
+    if ($method === 'POST') frise_veillee_reponse($pdo, $m[1]);
+}
+if (preg_match('#^/api/frise/veillee/(FV-[A-Z2-9]{5})/etat$#', $path, $m)) {
+    if ($method === 'GET') {
+        frise_veillee_etat($pdo, $m[1],
+            is_string($_GET['jeton'] ?? null) ? $_GET['jeton'] : null,
+            is_string($_GET['cle'] ?? null) ? $_GET['cle'] : null);
+    }
 }
 
 json_error('Route inconnue.', 404);
