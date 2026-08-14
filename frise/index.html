@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- ============================================================================
+     AVANT OU APRÈS ? — l'épreuve de la frise (accessible depuis Sonder).
+     Chaque carte doit trouver sa place : les LIVRES dans l'ordre de la Bible,
+     les ÉVÉNEMENTS dans l'ordre où la Bible les raconte.
+     Modes : solo, à plusieurs sur un téléphone, défi à distance par code et
+     veillée en direct (endpoints dédiés /api/frise/*, sans compte).
+     Page autonome (style, script et données dans ce seul fichier), née dans
+     l'atelier frise-essai.html — qui redirige désormais ici.
+     ========================================================================== -->
+<title>Avant ou après ? — Bible Horizon</title>
+<meta name="description" content="Replace les livres et les grands événements de la Bible dans l'ordre : la frise se construit sous tes yeux. Seul, à plusieurs, par code ou en veillée. Gratuit, sans publicité." />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Bible Horizon" />
+<meta property="og:locale" content="fr_FR" />
+<meta property="og:title" content="Avant ou après ? — Bible Horizon" />
+<meta property="og:description" content="Replace les livres et les grands événements de la Bible dans l'ordre — seul, à plusieurs, par code ou en veillée en direct." />
+<meta property="og:url" content="https://biblehorizon.fr/frise/" />
+<meta property="og:image" content="https://biblehorizon.fr/og-image.png" />
+<meta name="theme-color" content="#f7f3ea" />
+<script>
+  /* Anti-flash : applique le thème choisi (localStorage 'graine.theme') AVANT
+     le rendu, et fait suivre la couleur de barre du navigateur — même
+     mécanique que les autres modules. */
+  (function () {
+    try {
+      var choix = localStorage.getItem('graine.theme');
+      if (choix === 'clair' || choix === 'sombre' || choix === 'sepia') {
+        document.documentElement.setAttribute('data-theme', choix);
+      }
+      var fonds = { clair: '#f7f3ea', sombre: '#141b28', sepia: '#f2e6cf' };
+      var mq = window.matchMedia('(prefers-color-scheme: dark)');
+      var maj = function () {
+        var t = document.documentElement.getAttribute('data-theme') || (mq.matches ? 'sombre' : 'clair');
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', fonds[t] || fonds.clair);
+      };
+      maj();
+      if (mq.addEventListener) mq.addEventListener('change', maj);
+    } catch (e) { /* stockage indisponible : on suit simplement le système */ }
+  })();
+</script>
+<link rel="icon" href="../icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="../icon-180.png" />
+<style>
+  :root {
+    --bg: #f7f3ea; --surface: #fffdf8; --surface-2: #f0e9da;
+    --ink: #24303f; --ink-soft: #5b6675; --line: #e2d9c6;
+    --accent: #b98a2e; --accent-ink: #7a5a15;
+    --grow: #3f6c49; --grow-soft: #e4efe4; --danger: #a34a24;
+    --on-accent: #241a05;
+    --shadow: 0 6px 24px rgba(40, 34, 20, .10); --radius: 18px;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  /* Sombre — mêmes valeurs que app.css (deux portes : système, ou choix posé). */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --bg: #141b28; --surface: #1b2434; --surface-2: #232f43;
+      --ink: #f2f5fa; --ink-soft: #aebfd4; --line: #2c3a52;
+      --accent: #d9b45f; --accent-ink: #e7c987;
+      --grow: #7cbb89; --grow-soft: #22322a; --danger: #e89880;
+      --on-accent: #241a05;
+      --shadow: 0 8px 28px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="sombre"] {
+    --bg: #141b28; --surface: #1b2434; --surface-2: #232f43;
+    --ink: #f2f5fa; --ink-soft: #aebfd4; --line: #2c3a52;
+    --accent: #d9b45f; --accent-ink: #e7c987;
+    --grow: #7cbb89; --grow-soft: #22322a; --danger: #e89880;
+    --on-accent: #241a05;
+    --shadow: 0 8px 28px rgba(0, 0, 0, .35);
+  }
+  /* Sépia — papier ancien, encres brunes (mêmes valeurs que app.css). */
+  :root[data-theme="sepia"] {
+    --bg: #f2e6cf; --surface: #faf3e2; --surface-2: #e9d9b7;
+    --ink: #3b2f1b; --ink-soft: #6d5a39; --line: #d9c49a;
+    --accent: #a87e22; --accent-ink: #77500e;
+    --grow: #3c6845; --grow-soft: #dde5c8; --danger: #9c4220;
+    --on-accent: #241a05;
+    --shadow: 0 6px 24px rgba(84, 62, 22, .14);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans);
+    -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 18px 16px 40px; }
+  h1 { font-family: var(--serif); font-size: 1.5rem; margin: 6px 0 2px; }
+  h1 .seed { color: var(--accent); }
+  .muted { color: var(--ink-soft); }
+  .essai-note { font-size: .85rem; background: var(--surface-2); border: 1px dashed var(--accent);
+    border-radius: 12px; padding: 10px 12px; margin: 14px 0; color: var(--accent-ink); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 18px; margin: 12px 0; }
+  .btn { display: block; width: 100%; border: 0; border-radius: 14px; padding: 14px 16px;
+    font: inherit; font-weight: 700; cursor: pointer; margin-top: 10px; }
+  .btn-primary { background: var(--accent); color: var(--on-accent); }
+  .btn-grow { background: var(--grow); color: #fff; }
+  .btn-ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--line); }
+  .mode-title { font-family: var(--serif); font-size: 1.1rem; font-weight: 650; margin: 0 0 4px; }
+  .mode-sub { font-size: .9rem; color: var(--ink-soft); margin: 0; }
+  .choix-row { display: flex; gap: 8px; margin-top: 12px; }
+  .choix-row .btn { margin-top: 0; font-size: .92rem; padding: 11px 8px; }
+
+  /* ---- Séance ---- */
+  .topline { display: flex; justify-content: space-between; align-items: center;
+    font-size: .85rem; color: var(--ink-soft); margin-bottom: 8px; }
+  .topline b { color: var(--ink); }
+  .quit { background: none; border: 0; font: inherit; color: var(--ink-soft);
+    cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 4px; }
+  .acarte { position: sticky; top: 8px; z-index: 5; background: var(--surface);
+    border: 2px solid var(--accent); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 14px 16px; text-align: center; }
+  .acarte .lbl { font-size: .78rem; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--accent-ink); font-weight: 700; }
+  .acarte .titre { font-family: var(--serif); font-size: 1.12rem; font-weight: 650; margin: 4px 0 0; }
+  .feedback { text-align: center; font-size: .92rem; font-weight: 650; margin: 10px 2px;
+    min-height: 1.3em; }
+  .feedback.ok { color: var(--grow); }
+  .feedback.faux { color: var(--danger); }
+
+  .frise { margin-top: 6px; }
+  .fcarte { background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 14px; }
+  .fcarte .t { font-weight: 600; font-size: .95rem; }
+  .fcarte .r { font-size: .8rem; color: var(--ink-soft); }
+  .fcarte.bon { border-color: var(--grow); background: var(--grow-soft); }
+  .fcarte.faux { border-color: var(--danger); }
+  .slot { display: block; width: 100%; border: 1px dashed var(--accent); background: transparent;
+    color: var(--accent-ink); border-radius: 10px; font: inherit; font-size: .82rem;
+    padding: 7px; margin: 8px 0; cursor: pointer; }
+  .slot:disabled { opacity: .35; cursor: default; }
+  .sep { text-align: center; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-soft); margin: 8px 0 2px; }
+
+  /* ---- À plusieurs ---- */
+  .deckrow { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    border-radius: 999px; font: inherit; font-size: .88rem; padding: 8px 14px; cursor: pointer; }
+  .pill.on { background: var(--grow-soft); border-color: var(--grow); color: var(--grow); font-weight: 700; }
+  .pin { display: block; width: 100%; font: inherit; padding: 11px 12px; margin: 8px 0 0;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); }
+  .pin:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  .pchips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+  .pchip { font-size: .82rem; border: 1px solid var(--line); border-radius: 999px;
+    padding: 4px 10px; color: var(--ink-soft); background: var(--surface); }
+  .pchip.on { background: var(--grow-soft); border-color: var(--grow); color: var(--grow); font-weight: 700; }
+  .frow { display: flex; justify-content: space-between; padding: 9px 4px;
+    border-top: 1px solid var(--line); text-align: left; }
+  .frow.tete { color: var(--grow); font-weight: 650; }
+
+  .code-big { font-family: var(--serif); font-size: 1.9rem; font-weight: 700; letter-spacing: .12em;
+    color: var(--accent-ink); background: var(--surface-2); border: 1px dashed var(--accent);
+    border-radius: 12px; padding: 10px 6px; margin: 6px 0 2px; }
+
+  /* ---- Fin ---- */
+  .fin { text-align: center; padding: 26px 16px; }
+  .fin .score { font-family: var(--serif); font-size: 2rem; color: var(--grow); font-weight: 700; }
+  .fade { animation: fade .35s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+'use strict';
+/* ---------- Données : les 66 livres, dans l'ordre de la Bible ---------- */
+const LIVRES_AT = ['Genèse','Exode','Lévitique','Nombres','Deutéronome','Josué','Juges','Ruth',
+  '1 Samuel','2 Samuel','1 Rois','2 Rois','1 Chroniques','2 Chroniques','Esdras','Néhémie',
+  'Esther','Job','Psaumes','Proverbes','Ecclésiaste','Cantique des cantiques','Ésaïe','Jérémie',
+  'Lamentations','Ézéchiel','Daniel','Osée','Joël','Amos','Abdias','Jonas','Michée','Nahum',
+  'Habacuc','Sophonie','Aggée','Zacharie','Malachie'];
+const LIVRES_NT = ['Matthieu','Marc','Luc','Jean','Actes','Romains','1 Corinthiens','2 Corinthiens',
+  'Galates','Éphésiens','Philippiens','Colossiens','1 Thessaloniciens','2 Thessaloniciens',
+  '1 Timothée','2 Timothée','Tite','Philémon','Hébreux','Jacques','1 Pierre','2 Pierre',
+  '1 Jean','2 Jean','3 Jean','Jude','Apocalypse'];
+
+/* ---------- Données : les événements, dans l'ordre où la Bible les raconte.
+   Chaque événement porte sa référence : le placement est toujours justifiable
+   par le texte. Les cas discutés entre spécialistes sont volontairement
+   absents (Job, Ruth, Esther, prophètes contemporains entre eux…). ---------- */
+const EVENEMENTS = [
+  ['La création du monde', 'Genèse 1'],
+  ["Adam et Ève chassés du jardin d'Éden", 'Genèse 3'],
+  ["Le déluge et l'arche de Noé", 'Genèse 7'],
+  ['La tour de Babel', 'Genèse 11'],
+  ["L'appel d'Abram", 'Genèse 12'],
+  ["La naissance d'Isaac", 'Genèse 21'],
+  ["Abraham mis à l'épreuve avec Isaac", 'Genèse 22'],
+  ['Jacob reçoit le nom d’Israël', 'Genèse 32'],
+  ['Joseph vendu par ses frères', 'Genèse 37'],
+  ["Joseph gouverneur de l'Égypte", 'Genèse 41'],
+  ['Moïse sauvé des eaux', 'Exode 2'],
+  ['Le buisson ardent', 'Exode 3'],
+  ["Les dix plaies d'Égypte", 'Exode 7–12'],
+  ['La traversée de la mer Rouge', 'Exode 14'],
+  ['Les dix commandements au Sinaï', 'Exode 20'],
+  ["Le veau d'or", 'Exode 32'],
+  ['Quarante ans au désert décrétés', 'Nombres 14'],
+  ['La mort de Moïse', 'Deutéronome 34'],
+  ['La chute de Jéricho', 'Josué 6'],
+  ['Débora délivre Israël', 'Juges 4'],
+  ['Gédéon et ses trois cents hommes', 'Juges 7'],
+  ['Samson perd sa force', 'Juges 16'],
+  ["L'Éternel appelle le jeune Samuel", '1 Samuel 3'],
+  ["Saül devient le premier roi d'Israël", '1 Samuel 10'],
+  ['David abat Goliath', '1 Samuel 17'],
+  ['David devient roi sur tout Israël', '2 Samuel 5'],
+  ['Salomon demande la sagesse', '1 Rois 3'],
+  ['La dédicace du premier temple', '1 Rois 8'],
+  ['Le royaume se divise en deux', '1 Rois 12'],
+  ['Élie face aux prophètes de Baal au Carmel', '1 Rois 18'],
+  ['Élie enlevé au ciel dans un tourbillon', '2 Rois 2'],
+  ['Jonas englouti par un grand poisson', 'Jonas 2 · 2 Rois 14.25'],
+  ['La chute de Samarie', '2 Rois 17'],
+  ['Jérusalem délivrée de Sanchérib', '2 Rois 19'],
+  ['Josias retrouve le livre de la loi', '2 Rois 22'],
+  ["La chute de Jérusalem et l'exil à Babylone", '2 Rois 25'],
+  ['Trois hommes dans la fournaise ardente', 'Daniel 3'],
+  ['Daniel dans la fosse aux lions', 'Daniel 6'],
+  ["L'édit de Cyrus : le retour d'exil", 'Esdras 1'],
+  ['Le second temple achevé', 'Esdras 6'],
+  ['Néhémie relève la muraille de Jérusalem', 'Néhémie 6'],
+  ["L'ange Gabriel annonce à Marie la naissance de Jésus", 'Luc 1'],
+  ['La naissance de Jésus à Bethléhem', 'Luc 2'],
+  ["La visite des mages et la fuite en Égypte", 'Matthieu 2'],
+  ['Jésus, à douze ans, dans le temple', 'Luc 2.42'],
+  ['Le baptême de Jésus dans le Jourdain', 'Matthieu 3'],
+  ['Jésus tenté au désert', 'Matthieu 4'],
+  ['Les noces de Cana, premier miracle', 'Jean 2'],
+  ['La multiplication des pains', 'Matthieu 14'],
+  ['La transfiguration', 'Matthieu 17'],
+  ["L'entrée de Jésus à Jérusalem", 'Matthieu 21'],
+  ['La Cène', 'Matthieu 26'],
+  ['La crucifixion', 'Matthieu 27'],
+  ['La résurrection', 'Matthieu 28'],
+  ["L'ascension", 'Actes 1'],
+  ['La Pentecôte', 'Actes 2'],
+  ['Étienne, premier martyr', 'Actes 7'],
+  ['La conversion de Saul sur le chemin de Damas', 'Actes 9'],
+  ['Pierre chez le centenier Corneille', 'Actes 10'],
+  ['Le concile de Jérusalem', 'Actes 15'],
+  ['Paul prêche à Athènes', 'Actes 17'],
+  ['Paul arrive prisonnier à Rome', 'Actes 28'],
+  ["Jean reçoit l'Apocalypse à Patmos", 'Apocalypse 1'],
+];
+
+/* ---------- Aides ---------- */
+const el = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function shuffle(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; }
+
+const CARTES_PAR_SEANCE = 10;
+let ecran = 'accueil'; // 'accueil' | 'config' | 'seance' | 'fin'
+let seance = null;     // { titre, placees:[], courante, pioche:[], score, total, fb, revele,
+                       //   participants: [{nom, score}] | null (solo), tour }
+let config = { mode: 'evenements', portee: 'tout', noms: ['', ''] }; // écran « à plusieurs »
+let online = null;  // duel : { code, cle?, resultat } · veillée : { code, cle?, jeton?, prenom?, etat }
+let saisie = { pseudo: '', code: '' }; // champs des écrans en ligne (survivent aux re-rendus)
+let minuterie = null; // l'interrogation régulière du serveur (écrans en ligne)
+
+/* ---- Réseau : les points d'entrée dédiés /api/frise/* (sans compte) ---- */
+async function api(chemin, corps) {
+  const r = await fetch('../api/frise/' + chemin, corps === undefined ? {}
+    : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || 'Le serveur a répondu ' + r.status + '.');
+  return data;
+}
+/* Le paquet au format serveur : la 1re carte est l'amorce, l'ordre du
+   tableau est l'ordre de pioche (les deux adversaires reçoivent le même). */
+function deckServeur(mode, portee, nb) {
+  return shuffle(paquet(mode, portee)).slice(0, nb + 1)
+    .map(c => ({ t: c.titre, r: c.ref, o: c.ordre }));
+}
+function titrePaquet(mode, portee) {
+  return mode === 'livres'
+    ? "L'ordre des livres" + (portee === 'at' ? ' · Ancien Testament' : portee === 'nt' ? ' · Nouveau Testament' : ' · toute la Bible')
+    : 'La frise des événements';
+}
+
+/* Construit le paquet d'une séance : chaque carte = { titre, ref?, ordre }. */
+function paquet(mode, portee) {
+  if (mode === 'livres') {
+    const base = portee === 'at' ? LIVRES_AT : portee === 'nt' ? LIVRES_NT
+      : LIVRES_AT.concat(LIVRES_NT);
+    return base.map((titre, i) => ({ titre, ref: null, ordre: i }));
+  }
+  return EVENEMENTS.map(([titre, ref], i) => ({ titre, ref, ordre: i }));
+}
+
+/* Démarre une séance sur un paquet SERVI par le serveur (défi à distance) :
+   même paquet, même ordre de pioche pour les deux adversaires. */
+function demarrerServi(deckSrv, titre, enLigne) {
+  const cartes = deckSrv.map(c => ({ titre: c.t, ref: c.r, ordre: c.o }));
+  seance = {
+    titre: titre, mode: null, portee: null, participants: null, tour: 0,
+    enLigne: enLigne, envoye: false,
+    placees: [cartes[0]], pioche: cartes.slice(1),
+    courante: null, score: 0, total: cartes.length - 1, fb: null, revele: null,
+  };
+  piocher();
+  ecran = 'seance';
+  render();
+}
+
+function demarrer(mode, portee, noms) {
+  const base = paquet(mode, portee);
+  // À plusieurs : chacun place le même nombre de cartes (5, ou moins si le
+  // paquet est petit) ; en solo, la séance classique de CARTES_PAR_SEANCE.
+  const parTete = noms ? Math.max(3, Math.min(5, Math.floor((base.length - 1) / noms.length))) : 0;
+  const total = noms ? parTete * noms.length : CARTES_PAR_SEANCE;
+  const cartes = shuffle(base).slice(0, total + 1);
+  const premiere = cartes[0]; // une carte déjà posée pour amorcer la frise
+  seance = {
+    titre: mode === 'livres'
+      ? "L'ordre des livres" + (portee === 'at' ? ' · Ancien Testament' : portee === 'nt' ? ' · Nouveau Testament' : ' · toute la Bible')
+      : 'La frise des événements',
+    mode: mode, portee: portee,
+    participants: noms ? noms.map(nom => ({ nom: nom, score: 0 })) : null,
+    tour: 0,
+    placees: [premiere],
+    pioche: cartes.slice(1),
+    courante: null, score: 0, total: cartes.length - 1,
+    fb: null, revele: null,
+  };
+  piocher();
+  ecran = 'seance';
+  render();
+}
+
+function piocher() {
+  seance.courante = seance.pioche.shift() || null;
+  if (seance.courante === null) { ecran = 'fin'; }
+}
+
+/* L'utilisateur touche l'emplacement k (avant la carte posée d'index k). */
+function placer(k) {
+  const s = seance;
+  if (s.revele) return; // le temps de lire le verdict, tout est figé
+  const c = s.courante;
+  const avantOk = k === 0 || s.placees[k - 1].ordre < c.ordre;
+  const apresOk = k === s.placees.length || c.ordre < s.placees[k].ordre;
+  const bon = avantOk && apresOk;
+  // La carte rejoint TOUJOURS sa vraie place : la frise reste juste, et la
+  // bonne position se voit (vert si trouvée, rouge si manquée).
+  let vraie = s.placees.findIndex(p => p.ordre > c.ordre);
+  if (vraie === -1) vraie = s.placees.length;
+  s.placees.splice(vraie, 0, c);
+  if (bon) {
+    if (s.participants) s.participants[s.tour].score++; else s.score++;
+    s.fb = { ok: true, texte: 'Bien placé !' };
+  } else {
+    const avant = vraie > 0 ? s.placees[vraie - 1] : null;
+    const apres = vraie < s.placees.length - 1 ? s.placees[vraie + 1] : null;
+    s.fb = { ok: false, texte: 'Pas là — ' + (avant && apres
+      ? 'entre « ' + avant.titre + ' » et « ' + apres.titre + ' ».'
+      : avant ? 'après « ' + avant.titre + ' ».' : 'avant « ' + apres.titre + ' ».') };
+  }
+  s.revele = { ordre: c.ordre, bon: bon };
+  render();
+  setTimeout(() => {
+    if (!seance || seance !== s) return;
+    s.revele = null;
+    if (s.participants) s.tour = (s.tour + 1) % s.participants.length;
+    piocher();
+    render();
+  }, bon ? 900 : 2400);
+}
+
+function quitter() { seance = null; online = null; pollArret(); ecran = 'accueil'; render(); }
+
+/* ---------- Écrans ---------- */
+function vueAccueil() {
+  return `<div class="fade">
+    <button class="quit" data-retour-defi="1">‹ Défi</button>
+    <h1 style="margin-top:10px">Avant ou après <span class="seed">?</span></h1>
+    <p class="muted" style="margin:4px 0 0">Chaque carte doit trouver sa place dans la frise. À toi de la situer.</p>
+    <div class="card">
+      <p class="mode-title">L'ordre des livres</p>
+      <p class="mode-sub">Replace chaque livre là où il se trouve dans la Bible — le meilleur moyen de s'y retrouver ensuite, pages en main.</p>
+      <div class="choix-row">
+        <button class="btn btn-ghost" data-mode="livres" data-portee="at">Ancien T.</button>
+        <button class="btn btn-ghost" data-mode="livres" data-portee="nt">Nouveau T.</button>
+        <button class="btn btn-primary" data-mode="livres" data-portee="tout">Toute la Bible</button>
+      </div>
+    </div>
+    <div class="card">
+      <p class="mode-title">La frise des événements</p>
+      <p class="mode-sub">Du commencement à Patmos : replace chaque événement dans l'ordre où la Bible le raconte. Chaque carte porte sa référence.</p>
+      <button class="btn btn-grow" data-mode="evenements" data-portee="tout">Commencer</button>
+    </div>
+    <div class="card">
+      <p class="mode-title">À plusieurs, sur un téléphone</p>
+      <p class="mode-sub">La frise passe de main en main : chacun son tour place une carte dans la frise commune — et plus elle grandit, plus c'est serré. De 2 à 6 participants.</p>
+      <button class="btn btn-primary" data-multi="1">Préparer la tablée</button>
+    </div>
+    <div class="card">
+      <p class="mode-title">À distance</p>
+      <p class="mode-sub">Défie un ami avec un code à partager (chacun la même frise, chacun chez soi), ou anime une veillée en direct où tout le monde répond sur son téléphone.</p>
+      <div class="choix-row">
+        <button class="btn btn-primary" data-duelcfg="1">Défier un ami</button>
+        <button class="btn btn-grow" data-veilcfg="1">Animer une veillée</button>
+      </div>
+      <button class="btn btn-ghost" data-join="1">J'ai reçu un code</button>
+    </div>
+    <p class="muted" style="font-size:.85rem;text-align:center;margin-top:16px">${CARTES_PAR_SEANCE} cartes par séance en solo · se tromper montre la bonne place, tout simplement.</p>
+  </div>`;
+}
+
+/* ---------- À distance : défi par code & veillée en direct ---------- */
+
+function vueDuelConfig() {
+  const c = config;
+  const decks = [
+    ['evenements', 'tout', 'Les événements'],
+    ['livres', 'tout', 'Livres · toute la Bible'],
+    ['livres', 'at', 'Livres · Ancien T.'],
+    ['livres', 'nt', 'Livres · Nouveau T.'],
+  ];
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ Retour</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">Défier un ami</h1>
+    <p class="muted" style="margin:4px 0 0">Tu fais ta frise maintenant, tu reçois un code — ton ami fera exactement la même, quand il voudra.</p>
+    <div class="card">
+      <p class="mode-title" style="margin-top:0">Le paquet</p>
+      <div class="deckrow">${decks.map(([m, p, l]) =>
+        `<button class="pill ${c.mode === m && c.portee === p ? 'on' : ''}" data-deck="${m}:${p}">${l}</button>`).join('')}</div>
+      <p class="mode-title" style="margin-top:16px">Ton prénom</p>
+      <input class="pin" id="in-pseudo" maxlength="20" placeholder="Prénom" value="${esc(saisie.pseudo)}">
+      <button class="btn btn-primary" data-duelgo="1">Créer le défi et commencer</button>
+      <p class="feedback faux" id="err-ligne"></p>
+    </div>
+  </div>`;
+}
+
+function vueJoin() {
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ Retour</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">J'ai reçu un code</h1>
+    <p class="muted" style="margin:4px 0 0">Un code FD- ouvre un défi, un code FV- rejoint une veillée en direct.</p>
+    <div class="card">
+      <input class="pin" id="in-code" maxlength="8" placeholder="Code (FD-XXXXX ou FV-XXXXX)" value="${esc(saisie.code)}" autocapitalize="characters">
+      <input class="pin" id="in-pseudo" maxlength="20" placeholder="Ton prénom" value="${esc(saisie.pseudo)}">
+      <button class="btn btn-primary" data-joingo="1">Rejoindre</button>
+      <p class="feedback faux" id="err-ligne"></p>
+    </div>
+  </div>`;
+}
+
+function vueDuelResultat() {
+  const o = online;
+  const r = o.resultat;
+  let corps = '';
+  if (o.erreur) {
+    corps = `<p class="feedback faux">${esc(o.erreur)}</p>`;
+  } else if (r) {
+    const ligne = j => j ? `<div class="frow"><span>${esc(j.pseudo)}</span><b>${j.score === null ? 'pas encore terminé' : j.score + ' / ' + r.total}</b></div>` : '';
+    let verdict = '';
+    if (r.p1 && r.p2 && r.p1.score !== null && r.p2.score !== null) {
+      verdict = r.p1.score === r.p2.score ? '<p style="font-weight:650;margin:12px 0 0">Égalité parfaite 🙂</p>'
+        : `<p style="font-weight:650;margin:12px 0 0">${esc(r.p1.score > r.p2.score ? r.p1.pseudo : r.p2.pseudo)} connaît sa frise 🏅</p>`;
+    } else if (!r.p2) {
+      verdict = '<p class="muted" style="margin:12px 0 0">En attente de ton adversaire — partage-lui le code ci-dessus.</p>';
+    }
+    corps = ligne(r.p1) + ligne(r.p2) + verdict;
+  } else {
+    corps = '<p class="muted">Un instant…</p>';
+  }
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ Accueil</button>
+    <div class="card fin">
+      <p class="muted" style="margin:0 0 4px">Le code du défi — à partager tel quel :</p>
+      <div class="code-big">${esc(o.code)}</div>
+      <button class="btn btn-ghost" data-copie="${esc(o.code)}">Copier le code</button>
+      ${corps}
+    </div>
+  </div>`;
+}
+
+function vueVeilleeConfig() {
+  const c = config;
+  const decks = [
+    ['evenements', 'tout', 'Les événements'],
+    ['livres', 'tout', 'Livres · toute la Bible'],
+    ['livres', 'at', 'Livres · Ancien T.'],
+    ['livres', 'nt', 'Livres · Nouveau T.'],
+  ];
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ Retour</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">Animer une veillée</h1>
+    <p class="muted" style="margin:4px 0 0">Tu ouvres la salle et tu donnes le code : chacun rejoint sur son téléphone, tout le monde voit la même carte au même moment, et c'est toi qui rythmes.</p>
+    <div class="card">
+      <p class="mode-title" style="margin-top:0">Le paquet</p>
+      <div class="deckrow">${decks.map(([m, p, l]) =>
+        `<button class="pill ${c.mode === m && c.portee === p ? 'on' : ''}" data-deck="${m}:${p}">${l}</button>`).join('')}</div>
+      <button class="btn btn-grow" data-veilgo="1">Ouvrir la veillée</button>
+      <p class="feedback faux" id="err-ligne"></p>
+    </div>
+  </div>`;
+}
+
+/* La frise vue par l'animateur et les participants (cartes {t, r} déjà à
+   leur place). En révélation, la carte du moment s'y glisse en vert/rouge. */
+function htmlFriseEtat(etat, marquerBon) {
+  const cartes = etat.frise.map(c => `<div class="fcarte"><span class="t">${esc(c.t)}</span>${c.r ? ` <span class="r">· ${esc(c.r)}</span>` : ''}</div>`);
+  if (etat.phase === 'revele' && etat.enCours && etat.positionJuste !== null) {
+    const cls = marquerBon === null ? 'bon' : marquerBon ? 'bon' : 'faux';
+    cartes.splice(etat.positionJuste, 0,
+      `<div class="fcarte ${cls}"><span class="t">${esc(etat.enCours.t)}</span>${etat.enCours.r ? ` <span class="r">· ${esc(etat.enCours.r)}</span>` : ''}</div>`);
+  }
+  return `<p class="sep">La frise — du plus ancien au plus récent</p>
+    <div class="frise">${cartes.map(c => c + '<div style="height:8px"></div>').join('')}</div>`;
+}
+
+function vueAnim() {
+  const o = online;
+  const e = o.etat;
+  if (!e) return `<div class="card center" style="padding:30px"><p class="muted" style="margin:0">Un instant…</p></div>`;
+  const repondu = e.participants.filter(p => p.aRepondu).length;
+  let controle = '';
+  if (e.phase === 'attente') {
+    controle = `<p class="muted">${e.participants.length} participant${e.participants.length > 1 ? 's' : ''} dans la salle — attends que tout le monde soit là.</p>
+      <button class="btn btn-grow" data-avancer="1" ${e.participants.length === 0 ? 'disabled' : ''}>Lancer la première carte</button>`;
+  } else if (e.phase === 'placement') {
+    controle = `<p class="muted">${repondu} / ${e.participants.length} ont répondu.</p>
+      <button class="btn btn-grow" data-avancer="1">Révéler</button>`;
+  } else if (e.phase === 'revele') {
+    controle = `<button class="btn btn-grow" data-avancer="1">${e.carte >= e.total ? 'Terminer la veillée' : 'Carte suivante'}</button>`;
+  }
+  const carte = e.enCours && e.phase !== 'fin'
+    ? `<div class="acarte"><span class="lbl">Carte ${e.carte} / ${e.total}</span>
+        <p class="titre">${esc(e.enCours.t)}</p>${e.enCours.r ? `<span class="r muted" style="font-size:.82rem">${esc(e.enCours.r)}</span>` : ''}</div>`
+    : '';
+  const participants = e.participants.length
+    ? `<div class="pchips">${e.participants.map(p =>
+        `<span class="pchip ${p.bon === true ? 'on' : ''}">${esc(p.prenom)} · ${p.score}${e.phase === 'placement' && p.aRepondu ? ' ✓' : ''}${p.bon === false ? ' ✗' : ''}</span>`).join('')}</div>`
+    : '';
+  const fin = e.phase === 'fin'
+    ? `<div class="card fin"><p style="font-weight:650;margin:0 0 8px">La veillée est terminée 🌱</p>
+        ${e.participants.map((p, i) => `<div class="frow ${i === 0 ? 'tete' : ''}"><span>${i + 1}. ${esc(p.prenom)}</span><b>${p.score} / ${e.total}</b></div>`).join('')}</div>`
+    : '';
+  return `<div class="fade">
+    <div class="topline"><span>Veillée · ${esc(e.mode)}</span><button class="quit" data-quit="1">Fermer</button></div>
+    <div class="card" style="text-align:center">
+      <p class="muted" style="margin:0 0 4px">Le code de la salle :</p>
+      <div class="code-big">${esc(o.code)}</div>
+      <button class="btn btn-ghost" data-copie="${esc(o.code)}">Copier le code</button>
+      ${controle}
+    </div>
+    ${participants}
+    ${carte}
+    ${fin || (e.phase !== 'attente' ? htmlFriseEtat(e, null) : '')}
+  </div>`;
+}
+
+function vuePart() {
+  const o = online;
+  const e = o.etat;
+  if (!e) return `<div class="card center" style="padding:30px"><p class="muted" style="margin:0">Un instant…</p></div>`;
+  const moi = e.moi || { score: 0, reponse: null, bon: null };
+  let corps = '';
+  if (e.phase === 'attente') {
+    corps = `<div class="card fin"><p style="margin:0">Te voilà dans la salle, ${esc(o.prenom)} 🙂</p>
+      <p class="muted" style="margin:8px 0 0">${e.participants.length} participant${e.participants.length > 1 ? 's' : ''} — l'animateur va lancer la première carte.</p></div>`;
+  } else if (e.phase === 'placement' && e.enCours) {
+    const carte = `<div class="acarte"><span class="lbl">Carte ${e.carte} / ${e.total} — à situer</span>
+      <p class="titre">${esc(e.enCours.t)}</p></div>`;
+    if (moi.reponse === null) {
+      const frise = [];
+      for (let k = 0; k <= e.frise.length; k++) {
+        frise.push(`<button class="slot" data-pos="${k}">↳ placer ici</button>`);
+        if (k < e.frise.length) {
+          frise.push(`<div class="fcarte"><span class="t">${esc(e.frise[k].t)}</span>${e.frise[k].r ? ` <span class="r">· ${esc(e.frise[k].r)}</span>` : ''}</div>`);
+        }
+      }
+      corps = carte + `<p class="sep">La frise — du plus ancien au plus récent</p><div class="frise">${frise.join('')}</div>`;
+    } else {
+      corps = carte + `<p class="feedback ok">Réponse posée ✓ — on attend les autres (${e.participants.filter(p => p.aRepondu).length} / ${e.participants.length}).</p>`
+        + htmlFriseEtat(e, null);
+    }
+  } else if (e.phase === 'revele') {
+    corps = `<p class="feedback ${moi.bon ? 'ok' : 'faux'}">${moi.bon ? 'Bien placé !' : moi.reponse === null ? "Tu n'avais pas répondu." : 'Pas là — la voici à sa place.'}</p>`
+      + htmlFriseEtat(e, moi.bon);
+  } else if (e.phase === 'fin') {
+    corps = `<div class="card fin"><p style="font-weight:650;margin:0 0 8px">La veillée est terminée 🌱</p>
+      ${e.participants.map((p, i) => `<div class="frow ${i === 0 ? 'tete' : ''}"><span>${i + 1}. ${esc(p.prenom)}</span><b>${p.score} / ${e.total}</b></div>`).join('')}</div>`;
+  }
+  return `<div class="fade">
+    <div class="topline"><span>Veillée · ${esc(e.mode)} · <b>${moi.score}</b> pt${moi.score > 1 ? 's' : ''}</span>
+      <button class="quit" data-quit="1">Quitter</button></div>
+    ${corps}
+  </div>`;
+}
+
+/* ---- L'interrogation régulière du serveur (écrans en ligne) ---- */
+function pollArret() { if (minuterie) { clearInterval(minuterie); minuterie = null; } }
+function pollDemarre() {
+  pollArret();
+  minuterie = setInterval(async () => {
+    try {
+      if (ecran === 'dres' && online && !online.erreur) {
+        const r = await api('duel/' + online.code);
+        // on ne re-rend que si quelque chose a bougé (éviter de casser un tap)
+        if (JSON.stringify(r) !== JSON.stringify(online.resultat)) { online.resultat = r; render(); }
+        if (r.p1 && r.p2 && r.p1.score !== null && r.p2.score !== null) pollArret();
+      } else if ((ecran === 'anim' || ecran === 'part') && online) {
+        // garde-fou : si un clic (avancer, réponse) met l'état à jour pendant
+        // que cette interrogation voyage, sa réponse — plus vieille — est jetée.
+        const vAvant = online.v || 0;
+        const q = ecran === 'anim' ? 'cle=' + online.cle : 'jeton=' + online.jeton;
+        const e = await api('veillee/' + online.code + '/etat?' + q);
+        if (online && (online.v || 0) === vAvant
+            && JSON.stringify(e) !== JSON.stringify(online.etat)) { online.etat = e; render(); }
+      } else {
+        pollArret();
+      }
+    } catch (err) { /* un raté de réseau : la prochaine interrogation retentera */ }
+  }, 2500);
+}
+
+/* ---------- À plusieurs : préparation de la tablée ---------- */
+function vueConfig() {
+  const c = config;
+  const decks = [
+    ['evenements', 'tout', 'Les événements'],
+    ['livres', 'tout', 'Livres · toute la Bible'],
+    ['livres', 'at', 'Livres · Ancien T.'],
+    ['livres', 'nt', 'Livres · Nouveau T.'],
+  ];
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ Retour</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">À plusieurs, sur un téléphone</h1>
+    <p class="muted" style="margin:4px 0 0">Chacun son tour : une carte, un choix, et la frise grandit pour tout le monde.</p>
+    <div class="card">
+      <p class="mode-title" style="margin-top:0">Le paquet</p>
+      <div class="deckrow">${decks.map(([m, p, l]) =>
+        `<button class="pill ${c.mode === m && c.portee === p ? 'on' : ''}" data-deck="${m}:${p}">${l}</button>`).join('')}</div>
+      <p class="mode-title" style="margin-top:16px">Les participants</p>
+      ${c.noms.map((n, i) => `<input class="pin" data-nom="${i}" maxlength="14" placeholder="Prénom ${i + 1}" value="${esc(n)}">`).join('')}
+      <div class="choix-row">
+        <button class="btn btn-ghost" data-addp="1" ${c.noms.length >= 6 ? 'disabled' : ''}>+ Ajouter</button>
+        <button class="btn btn-ghost" data-delp="1" ${c.noms.length <= 2 ? 'disabled' : ''}>− Retirer</button>
+      </div>
+      <button class="btn btn-grow" data-multistart="1">Commencer</button>
+    </div>
+  </div>`;
+}
+
+function vueSeance() {
+  const s = seance;
+  const faites = s.total - s.pioche.length - 1;
+  const fb = s.fb
+    ? `<p class="feedback ${s.fb.ok ? 'ok' : 'faux'}">${esc(s.fb.texte)}</p>`
+    : `<p class="feedback"></p>`;
+  const tablee = s.participants
+    ? `<div class="pchips">${s.participants.map((p, i) =>
+        `<span class="pchip ${i === s.tour ? 'on' : ''}">${esc(p.nom)} · ${p.score}</span>`).join('')}</div>`
+    : '';
+  const frise = [];
+  for (let k = 0; k <= s.placees.length; k++) {
+    if (!s.revele) frise.push(`<button class="slot" data-slot="${k}">↳ placer ici</button>`);
+    else if (k < s.placees.length) frise.push('<div style="height:8px"></div>');
+    if (k < s.placees.length) {
+      const p = s.placees[k];
+      const cls = s.revele && p.ordre === s.revele.ordre ? (s.revele.bon ? ' bon' : ' faux') : '';
+      frise.push(`<div class="fcarte${cls}"><span class="t">${esc(p.titre)}</span>${p.ref ? ` <span class="r">· ${esc(p.ref)}</span>` : ''}</div>`);
+    }
+  }
+  const courante = s.courante
+    ? `<div class="acarte"><span class="lbl">${s.participants ? 'Au tour de ' + esc(s.participants[s.tour].nom) + ' — c' : 'C'}arte ${faites + 1} / ${s.total}</span>
+        <p class="titre">${esc(s.courante.titre)}</p>
+        ${s.courante.ref ? `<span class="r muted" style="font-size:.82rem">${esc(s.courante.ref)}</span>` : ''}</div>`
+    : '';
+  return `<div class="fade">
+    <div class="topline"><span>${s.participants ? esc(s.titre) : esc(s.titre) + ' · <b>' + s.score + '</b> bien placée' + (s.score > 1 ? 's' : '')}</span>
+      <button class="quit" data-quit="1">Quitter</button></div>
+    ${tablee}
+    ${courante}
+    ${fb}
+    <p class="sep">La frise — du plus ancien au plus récent</p>
+    <div class="frise">${frise.join('')}</div>
+  </div>`;
+}
+
+function vueFinMulti() {
+  const cls = seance.participants.slice().sort((a, b) => b.score - a.score);
+  const top = cls[0].score;
+  const gagnants = cls.filter(p => p.score === top);
+  const mot = gagnants.length > 1
+    ? 'Ex æquo en tête — la frise vous départagera une autre fois 🙂'
+    : `${esc(gagnants[0].nom)} connaît sa frise 🏅`;
+  const lignes = cls.map((p, i) => `<div class="frow ${p.score === top ? 'tete' : ''}">
+      <span>${i + 1}. ${esc(p.nom)}</span><b>${p.score} carte${p.score > 1 ? 's' : ''}</b></div>`).join('');
+  return `<div class="card fin fade">
+    <p style="margin:0 0 12px;font-weight:650">${mot}</p>
+    ${lignes}
+    <button class="btn btn-primary" data-encore="1">Rejouer la tablée</button>
+    <button class="btn btn-ghost" data-quit="1">Revenir à l'accueil</button>
+  </div>`;
+}
+
+/* Fin d'une séance de défi à distance : le score part au serveur (une seule
+   fois), puis on bascule sur l'écran de résultat qui s'actualise tout seul. */
+function envoyerScoreDuel() {
+  const s = seance;
+  s.envoye = true;
+  const corps = s.enLigne.cle
+    ? { score: s.score, cle: s.enLigne.cle }
+    : { score: s.score, pseudo: s.enLigne.pseudo };
+  api('duel/' + s.enLigne.code + '/score', corps)
+    .then(resultat => { online = { code: s.enLigne.code, resultat: resultat, erreur: null }; ecran = 'dres'; render(); })
+    .catch(e => { online = { code: s.enLigne.code, resultat: null, erreur: e.message }; ecran = 'dres'; render(); });
+}
+
+function vueFin() {
+  if (seance.enLigne) {
+    if (!seance.envoye) envoyerScoreDuel();
+    return `<div class="card fin fade"><div class="score">${seance.score} / ${seance.total}</div>
+      <p class="muted" style="margin:10px 0 0">On envoie ton score…</p></div>`;
+  }
+  if (seance.participants) return vueFinMulti();
+  const s = seance;
+  const parfait = s.score === s.total;
+  const bien = s.score >= Math.ceil(s.total * 0.7);
+  const mot = parfait ? 'Sans une seule erreur — la frise est limpide pour toi ✨'
+    : bien ? 'Belle séance — les repères se mettent en place 🌱'
+    : "Chaque carte mal placée t'a montré sa vraie place — c'est comme ça qu'on apprend 🌱";
+  return `<div class="card fin fade">
+    <div class="score">${s.score} / ${s.total}</div>
+    <p class="muted" style="margin:6px 0 0">carte${s.score > 1 ? 's' : ''} bien placée${s.score > 1 ? 's' : ''} du premier coup</p>
+    <p style="margin:14px 0 0">${mot}</p>
+    <button class="btn btn-primary" data-encore="1">Refaire une séance</button>
+    <button class="btn btn-ghost" data-quit="1">Changer d'épreuve</button>
+  </div>`;
+}
+
+function render() {
+  el.innerHTML = ecran === 'seance' ? vueSeance() : ecran === 'fin' ? vueFin()
+    : ecran === 'config' ? vueConfig()
+    : ecran === 'dcfg' ? vueDuelConfig() : ecran === 'join' ? vueJoin()
+    : ecran === 'dres' ? vueDuelResultat() : ecran === 'vcfg' ? vueVeilleeConfig()
+    : ecran === 'anim' ? vueAnim() : ecran === 'part' ? vuePart()
+    : vueAccueil();
+  el.querySelectorAll('[data-mode]').forEach(b =>
+    b.addEventListener('click', () => demarrer(b.dataset.mode, b.dataset.portee, null)));
+  el.querySelectorAll('[data-slot]').forEach(b =>
+    b.addEventListener('click', () => placer(+b.dataset.slot)));
+  const q = el.querySelector('[data-quit]');
+  if (q) q.addEventListener('click', quitter);
+  const enc = el.querySelector('[data-encore]');
+  if (enc) enc.addEventListener('click', () => {
+    // Rejouer : même paquet — et même tablée s'il y en avait une.
+    demarrer(seance.mode, seance.portee, seance.participants ? seance.participants.map(p => p.nom) : null);
+  });
+  // À plusieurs : préparation de la tablée
+  const multi = el.querySelector('[data-multi]');
+  if (multi) multi.addEventListener('click', () => { ecran = 'config'; render(); });
+  const retourDefi = el.querySelector('[data-retour-defi]');
+  if (retourDefi) retourDefi.addEventListener('click', () => { location.href = '../defi/'; });
+  el.querySelectorAll('[data-deck]').forEach(b => b.addEventListener('click', () => {
+    const [m, p] = b.dataset.deck.split(':');
+    config.mode = m; config.portee = p; render();
+  }));
+  // Les prénoms se tapent sans re-rendu (sinon le clavier perdrait le focus).
+  el.querySelectorAll('[data-nom]').forEach(inp => inp.addEventListener('input', () => {
+    config.noms[+inp.dataset.nom] = inp.value;
+  }));
+  const addp = el.querySelector('[data-addp]');
+  if (addp) addp.addEventListener('click', () => { if (config.noms.length < 6) { config.noms.push(''); render(); } });
+  const delp = el.querySelector('[data-delp]');
+  if (delp) delp.addEventListener('click', () => { if (config.noms.length > 2) { config.noms.pop(); render(); } });
+  const ms = el.querySelector('[data-multistart]');
+  if (ms) ms.addEventListener('click', () => {
+    const noms = config.noms.map((n, i) => n.trim() !== '' ? n.trim() : 'Participant ' + (i + 1));
+    demarrer(config.mode, config.portee, noms);
+  });
+
+  /* ---- À distance ---- */
+  const versEcran = e => () => { ecran = e; render(); };
+  if (el.querySelector('[data-duelcfg]')) el.querySelector('[data-duelcfg]').addEventListener('click', versEcran('dcfg'));
+  if (el.querySelector('[data-veilcfg]')) el.querySelector('[data-veilcfg]').addEventListener('click', versEcran('vcfg'));
+  if (el.querySelector('[data-join]')) el.querySelector('[data-join]').addEventListener('click', versEcran('join'));
+  // champs : l'état est la source de vérité, pas de re-rendu pendant la frappe
+  const inPseudo = el.querySelector('#in-pseudo');
+  if (inPseudo) inPseudo.addEventListener('input', () => { saisie.pseudo = inPseudo.value; });
+  const inCode = el.querySelector('#in-code');
+  if (inCode) inCode.addEventListener('input', () => { saisie.code = inCode.value; });
+  const erreurLigne = msg => {
+    const n = el.querySelector('#err-ligne');
+    if (n) n.textContent = msg;
+  };
+
+  const duelgo = el.querySelector('[data-duelgo]');
+  if (duelgo) duelgo.addEventListener('click', async () => {
+    const pseudo = saisie.pseudo.trim();
+    if (pseudo === '') { erreurLigne('Ton prénom, pour que ton ami sache qui le défie 🙂'); return; }
+    duelgo.disabled = true;
+    try {
+      const deck = deckServeur(config.mode, config.portee, CARTES_PAR_SEANCE);
+      const r = await api('duel', { pseudo: pseudo, mode: titrePaquet(config.mode, config.portee), deck: deck });
+      demarrerServi(deck, titrePaquet(config.mode, config.portee), { code: r.code, cle: r.cle });
+    } catch (e) { duelgo.disabled = false; erreurLigne(e.message); }
+  });
+
+  const joingo = el.querySelector('[data-joingo]');
+  if (joingo) joingo.addEventListener('click', async () => {
+    const code = saisie.code.trim().toUpperCase();
+    const prenom = saisie.pseudo.trim();
+    if (prenom === '') { erreurLigne('Ton prénom, pour le classement 🙂'); return; }
+    joingo.disabled = true;
+    try {
+      if (code.startsWith('FD-')) {
+        const r = await api('duel/' + code);
+        if (r.p2) throw new Error('Ce défi a déjà trouvé son adversaire.');
+        demarrerServi(r.deck, r.mode, { code: code, pseudo: prenom });
+      } else if (code.startsWith('FV-')) {
+        const r = await api('veillee/' + code + '/rejoindre', { prenom: prenom });
+        online = { code: code, jeton: r.jeton, prenom: prenom, etat: null };
+        ecran = 'part'; render(); pollDemarre();
+      } else {
+        throw new Error('Un code commence par FD- (défi) ou FV- (veillée).');
+      }
+    } catch (e) { joingo.disabled = false; erreurLigne(e.message); }
+  });
+
+  const veilgo = el.querySelector('[data-veilgo]');
+  if (veilgo) veilgo.addEventListener('click', async () => {
+    veilgo.disabled = true;
+    try {
+      const deck = deckServeur(config.mode, config.portee, CARTES_PAR_SEANCE);
+      const r = await api('veillee', { mode: titrePaquet(config.mode, config.portee), deck: deck });
+      online = { code: r.code, cle: r.cle, etat: null };
+      ecran = 'anim'; render(); pollDemarre();
+    } catch (e) { veilgo.disabled = false; erreurLigne(e.message); }
+  });
+
+  const avancer = el.querySelector('[data-avancer]');
+  if (avancer) avancer.addEventListener('click', async () => {
+    // un seul « avancer » à la fois : le bouton renaît à chaque rafraîchissement,
+    // un double-tap pressé ne doit pas faire sauter une phase entière.
+    if (online.enVol) return;
+    online.enVol = true;
+    avancer.disabled = true;
+    try {
+      online.etat = await api('veillee/' + online.code + '/avancer', { cle: online.cle });
+      online.v = (online.v || 0) + 1;
+      online.enVol = false;
+      render();
+    } catch (e) { online.enVol = false; render(); }
+  });
+
+  el.querySelectorAll('[data-pos]').forEach(b => b.addEventListener('click', async () => {
+    el.querySelectorAll('[data-pos]').forEach(x => { x.disabled = true; });
+    try {
+      online.etat = await api('veillee/' + online.code + '/reponse',
+        { jeton: online.jeton, carte: online.etat.carte, position: +b.dataset.pos });
+      online.v = (online.v || 0) + 1;
+      render();
+    } catch (e) { render(); }
+  }));
+
+  const copie = el.querySelector('[data-copie]');
+  if (copie) copie.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(copie.dataset.copie); copie.textContent = 'Code copié ✓'; }
+    catch (e) { copie.textContent = 'Copie impossible — note-le à la main'; }
+    setTimeout(() => { copie.textContent = 'Copier le code'; }, 2400);
+  });
+
+  // l'écran de résultat de défi s'actualise tant que l'adversaire manque
+  if (ecran === 'dres' && online && !online.erreur && !minuterie) pollDemarre();
+}
+render();
+</script>
+</body>
+</html>

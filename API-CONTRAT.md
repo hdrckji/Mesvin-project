@@ -31,9 +31,10 @@
 - Les en-têtes de sécurité (CSP, nosniff, frame-ancestors, HSTS…) sont posés
   par le Caddyfile sur toutes les réponses.
 
-## La Frise (atelier d'essai — page isolée frise-essai.html)
+## « Avant ou après ? » — l'épreuve de la frise (/frise/, reliée à Sonder)
 
-Endpoints **sans compte**, dédiés à l'atelier : le paquet de cartes
+Endpoints **sans compte** (l'épreuve se partage par codes, y compris avec
+des personnes sans compte) : le paquet de cartes
 `[{ "t": titre, "r": référence|null, "o": rang }]` est fourni par le client à
 la création (la 1re carte amorce la frise) ; le serveur arbitre les positions
 par les rangs `o` et ne révèle jamais les cartes à venir d'une veillée.

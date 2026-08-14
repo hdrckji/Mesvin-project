@@ -19,7 +19,9 @@ RUN rm -rf /app/public && mkdir -p /app/public
 WORKDIR /app/public
 COPY index.html app.css app.js icons.js pierres.js api-client.js sw.js manifest.webmanifest icon.svg ./
 COPY icon-180.png icon-192.png icon-512.png icon-maskable-512.png og-image.png robots.txt sitemap.xml ./
-# Atelier d'essai « La Frise » — page isolée, reliée à rien (voir le fichier).
+# « Avant ou après ? » (l'épreuve de la frise, reliée à Sonder) — et l'ancienne
+# adresse d'essai, qui redirige vers /frise/.
+COPY frise/ ./frise/
 COPY frise-essai.html ./
 # Pages d'accueil thématiques (référencement — voir sitemap.xml).
 COPY quiz-biblique/ ./quiz-biblique/

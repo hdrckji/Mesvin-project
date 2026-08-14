@@ -775,6 +775,15 @@ function renderAccueil() {
       </span>
       <span class="chev">›</span>
     </button>
+
+    <button class="card hub-card" id="btn-avantapres">
+      <span class="hub-ic">${icon('sablier', 26)}</span>
+      <span class="hub-txt">
+        <span class="hub-title">Avant ou après ?</span>
+        <span class="hub-sub">Replace les livres et les grands événements dans l'ordre — seul, en tablée, par code ou en veillée.</span>
+      </span>
+      <span class="chev">›</span>
+    </button>
   </div>`;
 
   document.getElementById('btn-retour-accueil').onclick = () => { location.href = '../index.html'; };
@@ -782,6 +791,7 @@ function renderAccueil() {
   document.getElementById('btn-plusieurs').onclick = () => { vue = { ecran: 'prepa' }; render(); };
   document.getElementById('btn-ami').onclick = ouvrirDuels;
   document.getElementById('btn-veillee').onclick = ouvrirVeillee;
+  document.getElementById('btn-avantapres').onclick = () => { location.href = '../frise/'; };
 
   // Badge discret si au moins un duel m'attend (silencieux hors-ligne).
   majBadgeDuels();
