@@ -157,6 +157,30 @@
     color: var(--accent-ink); background: var(--surface-2); border: 1px dashed var(--accent);
     border-radius: 12px; padding: 10px 6px; margin: 6px 0 2px; }
 
+  /* ---- Écran de projection (veillée sur grand écran) ---- */
+  .wrap.proj { max-width: 1150px; }
+  .proj-code { font-family: var(--serif); font-size: clamp(3rem, 9vw, 6rem); font-weight: 700;
+    letter-spacing: .14em; color: var(--accent-ink); background: var(--surface-2);
+    border: 3px dashed var(--accent); border-radius: 22px; padding: 18px 10px; text-align: center; }
+  .proj-invite { text-align: center; font-size: clamp(1.05rem, 2.6vw, 1.6rem); color: var(--ink-soft); margin: 18px 0 6px; }
+  .proj-invite b { color: var(--ink); }
+  .proj-carte { border: 3px solid var(--accent); border-radius: 22px; background: var(--surface);
+    box-shadow: var(--shadow); text-align: center; padding: 22px 18px; margin: 14px 0; }
+  .proj-carte .lbl { font-size: clamp(.85rem, 1.6vw, 1.1rem); letter-spacing: .08em;
+    text-transform: uppercase; color: var(--accent-ink); font-weight: 700; }
+  .proj-carte .titre { font-family: var(--serif); font-size: clamp(1.5rem, 4vw, 2.6rem);
+    font-weight: 650; margin: 8px 0 0; }
+  .proj-carte .r { font-size: clamp(1rem, 2vw, 1.4rem); color: var(--ink-soft); }
+  .proj-etat { text-align: center; font-size: clamp(1.05rem, 2.4vw, 1.5rem); font-weight: 650; margin: 10px 0; }
+  .proj-frise { column-width: 330px; column-gap: 18px; margin-top: 10px; }
+  .proj-frise .fcarte { break-inside: avoid; margin-bottom: 10px; font-size: clamp(.95rem, 1.8vw, 1.2rem); }
+  .proj-frise .num { display: inline-block; min-width: 1.6em; color: var(--ink-soft); font-weight: 700; }
+  .proj-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 14px 0; }
+  .proj-chips .pchip { font-size: clamp(.95rem, 2vw, 1.3rem); padding: 8px 16px; }
+  .pchip.faux { background: transparent; border-color: var(--danger); color: var(--danger); font-weight: 700; }
+  .proj-classement { max-width: 640px; margin: 0 auto; }
+  .proj-classement .frow { font-size: clamp(1.1rem, 2.6vw, 1.7rem); padding: 14px 8px; }
+
   /* ---- Fin ---- */
   .fin { text-align: center; padding: 26px 16px; }
   .fin .score { font-family: var(--serif); font-size: 2rem; color: var(--grow); font-weight: 700; }
@@ -447,6 +471,7 @@ function vueJoin() {
       <input class="pin" id="in-code" maxlength="8" placeholder="Code (FD-XXXXX ou FV-XXXXX)" value="${esc(saisie.code)}" autocapitalize="characters">
       <input class="pin" id="in-pseudo" maxlength="20" placeholder="Ton prénom" value="${esc(saisie.pseudo)}">
       <button class="btn btn-primary" data-joingo="1">Rejoindre</button>
+      <button class="btn btn-ghost" data-projgo="1">Grand écran (projection d'une veillée)</button>
       <p class="feedback faux" id="err-ligne"></p>
     </div>
   </div>`;
@@ -544,6 +569,7 @@ function vueAnim() {
     ? `<div class="card fin"><p style="font-weight:650;margin:0 0 8px">La veillée est terminée 🌱</p>
         ${e.participants.map((p, i) => `<div class="frow ${i === 0 ? 'tete' : ''}"><span>${i + 1}. ${esc(p.prenom)}</span><b>${p.score} / ${e.total}</b></div>`).join('')}</div>`
     : '';
+  const lienProj = location.origin + location.pathname + '?direct=' + o.code;
   return `<div class="fade">
     <div class="topline"><span>Veillée · ${esc(e.mode)}</span><button class="quit" data-quit="1">Fermer</button></div>
     <div class="card" style="text-align:center">
@@ -551,6 +577,9 @@ function vueAnim() {
       <div class="code-big">${esc(o.code)}</div>
       <button class="btn btn-ghost" data-copie="${esc(o.code)}">Copier le code</button>
       ${controle}
+      <p class="muted" style="font-size:.85rem;margin:14px 2px 0">Grand écran : sur l'ordinateur relié au projecteur, ouvre cette adresse — la salle suivra tout en direct.</p>
+      <div style="font-size:.82rem;overflow-wrap:anywhere;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:8px"><code>${esc(lienProj)}</code></div>
+      <button class="btn btn-ghost" data-copie-lien="${esc(lienProj)}">Copier l'adresse du grand écran</button>
     </div>
     ${participants}
     ${carte}
@@ -597,6 +626,67 @@ function vuePart() {
   </div>`;
 }
 
+/* ---------- Écran de projection : la veillée vue par toute la salle ----------
+   Lecture seule — il ne connaît que le CODE (ni clé, ni jeton) : l'état
+   public suffit, et il ne contient jamais les cartes à venir. */
+function vueProj() {
+  const o = online;
+  const e = o.etat;
+  if (!e) return `<div class="card center" style="padding:40px;text-align:center"><p class="muted" style="margin:0">Un instant…</p></div>`;
+  const repondu = e.participants.filter(p => p.aRepondu).length;
+
+  const chips = (marquer) => e.participants.length
+    ? `<div class="proj-chips">${e.participants.map(p =>
+        `<span class="pchip ${marquer && p.bon === true ? 'on' : ''}${marquer && p.bon === false ? ' faux' : ''}">${esc(p.prenom)} · ${p.score}${!marquer && p.aRepondu ? ' ✓' : ''}${marquer && p.bon === true ? ' ✓' : ''}${marquer && p.bon === false ? ' ✗' : ''}</span>`).join('')}</div>`
+    : '';
+
+  const friseHtml = (avecEnCours) => {
+    const cartes = e.frise.map(c => ({ t: c.t, r: c.r, cls: '' }));
+    if (avecEnCours && e.enCours && e.positionJuste !== null) {
+      cartes.splice(e.positionJuste, 0, { t: e.enCours.t, r: e.enCours.r, cls: ' bon' });
+    }
+    return `<p class="sep">La frise — du plus ancien au plus récent</p>
+      <div class="proj-frise">${cartes.map((c, i) =>
+        `<div class="fcarte${c.cls}"><span class="num">${i + 1}.</span><span class="t">${esc(c.t)}</span>${c.r ? ` <span class="r">· ${esc(c.r)}</span>` : ''}</div>`).join('')}</div>`;
+  };
+
+  if (e.phase === 'attente') {
+    return `<div class="fade" style="padding-top:24px">
+      <p class="proj-invite">Pour rejoindre : <b>biblehorizon.fr/frise</b> → « J'ai reçu un code »</p>
+      <div class="proj-code">${esc(o.code)}</div>
+      <p class="proj-etat" style="color:var(--ink-soft)">${e.participants.length === 0 ? 'La salle est ouverte — à vos téléphones !' : e.participants.length + ' déjà là — on attend les retardataires…'}</p>
+      ${chips(false)}
+    </div>`;
+  }
+  if (e.phase === 'placement') {
+    return `<div class="fade">
+      <p class="proj-invite" style="margin-top:8px">${esc(e.mode)} · code <b>${esc(o.code)}</b></p>
+      <div class="proj-carte"><span class="lbl">Carte ${e.carte} / ${e.total} — où se place-t-elle ?</span>
+        <p class="titre">${esc(e.enCours ? e.enCours.t : '')}</p></div>
+      <p class="proj-etat">${repondu} / ${e.participants.length} ont répondu…</p>
+      ${chips(false)}
+      ${friseHtml(false)}
+    </div>`;
+  }
+  if (e.phase === 'revele') {
+    return `<div class="fade">
+      <p class="proj-invite" style="margin-top:8px">${esc(e.mode)} · code <b>${esc(o.code)}</b></p>
+      <div class="proj-carte"><span class="lbl">Carte ${e.carte} / ${e.total} — la voici à sa place</span>
+        <p class="titre">${esc(e.enCours ? e.enCours.t : '')}</p>
+        ${e.enCours && e.enCours.r ? `<span class="r">${esc(e.enCours.r)}</span>` : ''}</div>
+      ${chips(true)}
+      ${friseHtml(true)}
+    </div>`;
+  }
+  // fin : le classement, bien en grand
+  return `<div class="fade" style="padding-top:20px">
+    <p class="proj-invite"><b>${esc(e.mode)}</b> — la veillée est terminée 🌱</p>
+    <div class="card proj-classement">
+      ${e.participants.map((p, i) => `<div class="frow ${i === 0 ? 'tete' : ''}"><span>${i + 1}. ${esc(p.prenom)}</span><b>${p.score} / ${e.total}</b></div>`).join('')}
+    </div>
+  </div>`;
+}
+
 /* ---- L'interrogation régulière du serveur (écrans en ligne) ---- */
 function pollArret() { if (minuterie) { clearInterval(minuterie); minuterie = null; } }
 function pollDemarre() {
@@ -608,12 +698,12 @@ function pollDemarre() {
         // on ne re-rend que si quelque chose a bougé (éviter de casser un tap)
         if (JSON.stringify(r) !== JSON.stringify(online.resultat)) { online.resultat = r; render(); }
         if (r.p1 && r.p2 && r.p1.score !== null && r.p2.score !== null) pollArret();
-      } else if ((ecran === 'anim' || ecran === 'part') && online) {
+      } else if ((ecran === 'anim' || ecran === 'part' || ecran === 'proj') && online) {
         // garde-fou : si un clic (avancer, réponse) met l'état à jour pendant
         // que cette interrogation voyage, sa réponse — plus vieille — est jetée.
         const vAvant = online.v || 0;
-        const q = ecran === 'anim' ? 'cle=' + online.cle : 'jeton=' + online.jeton;
-        const e = await api('veillee/' + online.code + '/etat?' + q);
+        const q = ecran === 'anim' ? 'cle=' + online.cle : ecran === 'part' ? 'jeton=' + online.jeton : '';
+        const e = await api('veillee/' + online.code + '/etat' + (q ? '?' + q : ''));
         if (online && (online.v || 0) === vAvant
             && JSON.stringify(e) !== JSON.stringify(online.etat)) { online.etat = e; render(); }
       } else {
@@ -740,11 +830,13 @@ function vueFin() {
 }
 
 function render() {
+  el.classList.toggle('proj', ecran === 'proj'); // la projection s'étale en largeur
   el.innerHTML = ecran === 'seance' ? vueSeance() : ecran === 'fin' ? vueFin()
     : ecran === 'config' ? vueConfig()
     : ecran === 'dcfg' ? vueDuelConfig() : ecran === 'join' ? vueJoin()
     : ecran === 'dres' ? vueDuelResultat() : ecran === 'vcfg' ? vueVeilleeConfig()
     : ecran === 'anim' ? vueAnim() : ecran === 'part' ? vuePart()
+    : ecran === 'proj' ? vueProj()
     : vueAccueil();
   el.querySelectorAll('[data-mode]').forEach(b =>
     b.addEventListener('click', () => demarrer(b.dataset.mode, b.dataset.portee, null)));
@@ -864,6 +956,33 @@ function render() {
     } catch (e) { render(); }
   }));
 
+  const projgo = el.querySelector('[data-projgo]');
+  if (projgo) projgo.addEventListener('click', async () => {
+    const code = saisie.code.trim().toUpperCase();
+    if (!code.startsWith('FV-')) {
+      const n = el.querySelector('#err-ligne');
+      if (n) n.textContent = 'Le grand écran affiche une veillée : il faut un code FV-.';
+      return;
+    }
+    projgo.disabled = true;
+    try {
+      await api('veillee/' + code + '/etat'); // le code existe-t-il ?
+      online = { code: code, projection: true, etat: null };
+      ecran = 'proj'; render(); pollDemarre();
+    } catch (e) {
+      projgo.disabled = false;
+      const n = el.querySelector('#err-ligne');
+      if (n) n.textContent = e.message;
+    }
+  });
+
+  const copieLien = el.querySelector('[data-copie-lien]');
+  if (copieLien) copieLien.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(copieLien.dataset.copieLien); copieLien.textContent = 'Adresse copiée ✓'; }
+    catch (e) { copieLien.textContent = 'Copie impossible — recopie-la à la main'; }
+    setTimeout(() => { copieLien.textContent = "Copier l'adresse du grand écran"; }, 2400);
+  });
+
   const copie = el.querySelector('[data-copie]');
   if (copie) copie.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(copie.dataset.copie); copie.textContent = 'Code copié ✓'; }
@@ -873,6 +992,14 @@ function render() {
 
   // l'écran de résultat de défi s'actualise tant que l'adversaire manque
   if (ecran === 'dres' && online && !online.erreur && !minuterie) pollDemarre();
+}
+/* Arrivée directe sur le grand écran : ?direct=FV-XXXXX (l'adresse que
+   l'animateur copie pour l'ordinateur du projecteur). */
+const direct = new URLSearchParams(location.search).get('direct');
+if (direct && /^FV-[A-Z2-9]{5}$/.test(direct.toUpperCase())) {
+  online = { code: direct.toUpperCase(), projection: true, etat: null };
+  ecran = 'proj';
+  pollDemarre();
 }
 render();
 </script>
