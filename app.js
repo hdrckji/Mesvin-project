@@ -797,18 +797,38 @@ function viewSession() {
   if (session.phase === 'situer') {
     // Étape bonus après un exercice réussi : situer le verset. La référence
     // n'apparaît nulle part sur cet écran — c'est justement la question.
+    // Au toucher d'une réponse, on RESTE sur cet écran le temps d'un vrai
+    // retour : le bon choix passe en vert, le mauvais en rouge — aucune
+    // ambiguïté possible — puis on avance tout seul (voir situerPickLivre).
     const st = session.situer;
+    const opt = (attr, valeur, texte, bonne) => {
+      let cls = '';
+      if (st.revele && valeur === bonne) cls = ' bon';
+      else if (st.revele && valeur === (attr === 'livre' ? st.choixLivre : st.choixRef)) cls = ' faux';
+      return `<button class="chip situer-opt${cls}" data-situer-${attr}="${esc(valeur)}" ${st.revele ? 'disabled' : ''}>${esc(texte)}</button>`;
+    };
     if (!st.refOptions) {
+      const fb = !st.revele
+        ? `<p class="muted center" style="font-size:.85rem;margin:14px 0 0">Se tromper ici ne compte pas — la référence, c'est le petit plus.</p>`
+        : st.choixLivre === st.livre
+          ? `<p class="situer-fb ok">${icon('coche', 14)} Exact !</p>`
+          : `<p class="situer-fb faux">Pas celui-là — c'était ${esc(st.livre)}.</p>`;
       body = `<div class="ex-instr">C'est juste ! Une dernière chose…</div>
         <p class="situer-q">Dans quel <b>livre</b> se trouve ce verset ?</p>
         <div class="verse small">« ${esc(card.text)} »</div>
-        <div class="situer-grid">${st.options.map(l => `<button class="chip situer-opt" data-situer-livre="${esc(l)}">${esc(l)}</button>`).join('')}</div>
-        <p class="muted center" style="font-size:.85rem;margin:14px 0 0">Se tromper ici ne compte pas — la référence, c'est le petit plus.</p>`;
+        <div class="situer-grid${st.revele ? ' revele' : ''}">${st.options.map(l => opt('livre', l, l, st.livre)).join('')}</div>
+        ${fb}`;
     } else {
+      const bonne = st.chapitre + '.' + st.versets;
+      const fb = !st.revele ? ''
+        : st.choixRef === bonne
+          ? `<p class="situer-fb ok">${icon('coche', 14)} Au verset près !</p>`
+          : `<p class="situer-fb faux">Pas tout à fait — c'était ${esc(st.livre)} ${esc(bonne)}.</p>`;
       body = `<div class="ex-instr">${esc(st.livre)}, exact !</div>
         <p class="situer-q">Et plus précisément — <b>chapitre et verset</b> ?</p>
         <div class="verse small">« ${esc(card.text)} »</div>
-        <div class="situer-grid">${st.refOptions.map(r => `<button class="chip situer-opt" data-situer-ref="${esc(r)}">${esc(st.livre)} ${esc(r)}</button>`).join('')}</div>`;
+        <div class="situer-grid${st.revele ? ' revele' : ''}">${st.refOptions.map(r => opt('ref', r, st.livre + ' ' + r, bonne)).join('')}</div>
+        ${fb}`;
     }
   } else if (session.phase === 'result') {
     const ok = session.result === 'success';
@@ -1887,7 +1907,8 @@ function checkExercise() {
     const p = parseRef(card.ref);
     if (p) {
       session.situer = { livre: p.livre, chapitre: p.chapitre, versets: p.versets,
-        options: situerOptionsLivres(p.livre), refOptions: null, choixLivre: null, choixRef: null };
+        options: situerOptionsLivres(p.livre), refOptions: null,
+        choixLivre: null, choixRef: null, revele: false };
       session.phase = 'situer';
     } else {
       session.phase = 'result';
@@ -1911,22 +1932,42 @@ function nextInSession() {
   if (session.idx < session.queue.length) enterCard();
   render();
 }
-// Situer : choix du livre. Bon livre + mode expert → on précise chapitre et
-// verset ; sinon, direction l'écran de résultat (qui affiche la réponse).
+// Situer : au toucher, on révèle d'abord (vert/rouge, boutons figés), puis on
+// avance tout seul — vite si c'était bon, plus posément s'il faut lire la
+// correction. Le garde-fou vérifie qu'on est toujours sur le même écran
+// (l'utilisateur a pu quitter la session pendant la pause).
+function situerAvance(st, delai, suite) {
+  setTimeout(() => {
+    if (!session || session.phase !== 'situer' || session.situer !== st) return;
+    suite();
+    render();
+  }, delai);
+}
 function situerPickLivre(livre) {
   const st = session.situer;
+  if (st.revele) return;
   st.choixLivre = livre;
-  if (livre === st.livre && store.situerExpert) {
-    st.refOptions = situerOptionsRef(st.chapitre, st.versets);
-  } else {
-    session.phase = 'result';
-  }
+  st.revele = true;
   render();
+  const ok = livre === st.livre;
+  situerAvance(st, ok ? 900 : 2100, () => {
+    if (ok && store.situerExpert) {
+      st.refOptions = situerOptionsRef(st.chapitre, st.versets);
+      st.revele = false;
+    } else {
+      session.phase = 'result';
+    }
+  });
 }
 function situerPickRef(ref) {
-  session.situer.choixRef = ref;
-  session.phase = 'result';
+  const st = session.situer;
+  if (st.revele) return;
+  st.choixRef = ref;
+  st.revele = true;
   render();
+  situerAvance(st, ref === st.chapitre + '.' + st.versets ? 900 : 2100, () => {
+    session.phase = 'result';
+  });
 }
 function removeVerse(id) {
   if (!confirm('Retirer ce verset de ton jardin ? Ta progression sur ce verset sera effacée.')) return;

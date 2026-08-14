@@ -391,6 +391,12 @@ label.lbl { display: block; font-weight: 600; margin: 14px 2px 6px; font-size: .
 .situer-opt { justify-content: center; text-align: center; padding: 12px 8px; font-weight: 600; }
 .situer-fb { text-align: center; font-size: .95rem; color: var(--ink-soft); margin: 12px 0 0; }
 .situer-fb.ok { color: var(--grow); font-weight: 650; }
+.situer-fb.faux { color: var(--danger); font-weight: 650; }
+/* réponse révélée : le bon choix en vert, le mauvais en rouge, le reste s'efface */
+.situer-opt:disabled { cursor: default; }
+.situer-opt.bon { background: var(--grow-soft); border-color: var(--grow); color: var(--grow); font-weight: 700; }
+.situer-opt.faux { background: transparent; border-color: var(--danger); color: var(--danger); }
+.situer-grid.revele .situer-opt:not(.bon):not(.faux) { opacity: .4; }
 
 /* aides discrètes sous l'exercice */
 .ex-tools { display: flex; justify-content: space-between; margin-top: 12px; }
