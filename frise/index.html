@@ -106,6 +106,18 @@
   .choix-row { display: flex; gap: 8px; margin-top: 12px; }
   .choix-row .btn { margin-top: 0; font-size: .92rem; padding: 11px 8px; }
 
+  /* ---- Cartes du menu (mêmes cotes que le hub de l'appli) ---- */
+  .hub-card { display: flex; align-items: center; gap: 16px; width: 100%;
+    padding: 20px 18px; cursor: pointer; font: inherit; color: inherit;
+    text-align: left; text-decoration: none; border: 1px solid var(--line); }
+  .hub-card .hub-ic { color: var(--accent-ink); width: 54px; height: 54px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-2); border-radius: 16px; }
+  .hub-card .hub-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+  .hub-card .hub-title { font-family: var(--serif); font-size: 1.25rem; font-weight: 650; }
+  .hub-card .hub-sub { color: var(--ink-soft); font-size: .92rem; }
+  .hub-card .chev { color: var(--ink-soft); font-size: 1.5rem; padding-left: 4px; }
+
   /* ---- Séance ---- */
   .topline { display: flex; justify-content: space-between; align-items: center;
     font-size: .85rem; color: var(--ink-soft); margin-bottom: 8px; }
@@ -190,8 +202,11 @@
 </head>
 <body>
 <div class="wrap" id="app"></div>
+<script src="../icons.js"></script>
 <script>
 'use strict';
+/* icons.js fournit icon(nom, taille) — repli silencieux s'il manque. */
+if (!window.icon) window.icon = function () { return ''; };
 /* ---------- Données : les 66 livres, dans l'ordre de la Bible ---------- */
 const LIVRES_AT = ['Genèse','Exode','Lévitique','Nombres','Deutéronome','Josué','Juges','Ruth',
   '1 Samuel','2 Samuel','1 Rois','2 Rois','1 Chroniques','2 Chroniques','Esdras','Néhémie',
@@ -403,36 +418,67 @@ function vueAccueil() {
   return `<div class="fade">
     <button class="quit" data-retour-defi="1">‹ Défi</button>
     <h1 style="margin-top:10px">Avant ou après <span class="seed">?</span></h1>
-    <p class="muted" style="margin:4px 0 0">Chaque carte doit trouver sa place dans la frise. À toi de la situer.</p>
+    <p class="muted" style="margin:4px 0 16px">Chaque carte doit trouver sa place dans la frise : les livres dans l'ordre de la Bible, les événements dans l'ordre où elle les raconte.</p>
+
+    <button class="card hub-card" data-solo="1">
+      <span class="hub-ic">${icon('seul', 26)}</span>
+      <span class="hub-txt">
+        <span class="hub-title">Seul</span>
+        <span class="hub-sub">Dix cartes à placer — choisis ton paquet, la frise se construit sous tes yeux.</span>
+      </span>
+      <span class="chev">›</span>
+    </button>
+
+    <button class="card hub-card" data-multi="1">
+      <span class="hub-ic">${icon('groupe', 26)}</span>
+      <span class="hub-txt">
+        <span class="hub-title">À plusieurs, ici</span>
+        <span class="hub-sub">Le téléphone passe de main en main : chacun son tour place une carte dans la frise commune. De 2 à 6.</span>
+      </span>
+      <span class="chev">›</span>
+    </button>
+
+    <button class="card hub-card" data-duelcfg="1">
+      <span class="hub-ic">${icon('epees', 26)}</span>
+      <span class="hub-txt">
+        <span class="hub-title">Défier un ami</span>
+        <span class="hub-sub">À distance, par code à partager : la même frise pour vous deux, chacun quand il veut.</span>
+      </span>
+      <span class="chev">›</span>
+    </button>
+
+    <button class="card hub-card" data-veilcfg="1">
+      <span class="hub-ic">${icon('ecranDirect', 26)}</span>
+      <span class="hub-txt">
+        <span class="hub-title">En direct, dans ton église</span>
+        <span class="hub-sub">Un grand écran pour tous, chacun répond sur son téléphone — et c'est l'animateur qui rythme.</span>
+      </span>
+      <span class="chev">›</span>
+    </button>
+
+    <button class="btn btn-ghost" data-join="1" style="margin-top:14px">J'ai reçu un code (FD- ou FV-)</button>
+  </div>`;
+}
+
+/* ---------- Seul : choisir son paquet, puis la séance ---------- */
+function vueSoloCfg() {
+  const c = config;
+  const decks = [
+    ['evenements', 'tout', 'Les événements'],
+    ['livres', 'tout', 'Livres · toute la Bible'],
+    ['livres', 'at', 'Livres · Ancien T.'],
+    ['livres', 'nt', 'Livres · Nouveau T.'],
+  ];
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ Avant ou après ?</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">Seul</h1>
+    <p class="muted" style="margin:4px 0 0">${CARTES_PAR_SEANCE} cartes par séance · se tromper montre la bonne place, tout simplement.</p>
     <div class="card">
-      <p class="mode-title">L'ordre des livres</p>
-      <p class="mode-sub">Replace chaque livre là où il se trouve dans la Bible — le meilleur moyen de s'y retrouver ensuite, pages en main.</p>
-      <div class="choix-row">
-        <button class="btn btn-ghost" data-mode="livres" data-portee="at">Ancien T.</button>
-        <button class="btn btn-ghost" data-mode="livres" data-portee="nt">Nouveau T.</button>
-        <button class="btn btn-primary" data-mode="livres" data-portee="tout">Toute la Bible</button>
-      </div>
+      <p class="mode-title" style="margin-top:0">Le paquet</p>
+      <div class="deckrow">${decks.map(([m, p, l]) =>
+        `<button class="pill ${c.mode === m && c.portee === p ? 'on' : ''}" data-deck="${m}:${p}">${l}</button>`).join('')}</div>
+      <button class="btn btn-primary" data-sologo="1">Commencer</button>
     </div>
-    <div class="card">
-      <p class="mode-title">La frise des événements</p>
-      <p class="mode-sub">Du commencement à Patmos : replace chaque événement dans l'ordre où la Bible le raconte. Chaque carte porte sa référence.</p>
-      <button class="btn btn-grow" data-mode="evenements" data-portee="tout">Commencer</button>
-    </div>
-    <div class="card">
-      <p class="mode-title">À plusieurs, sur un téléphone</p>
-      <p class="mode-sub">La frise passe de main en main : chacun son tour place une carte dans la frise commune — et plus elle grandit, plus c'est serré. De 2 à 6 participants.</p>
-      <button class="btn btn-primary" data-multi="1">Préparer la tablée</button>
-    </div>
-    <div class="card">
-      <p class="mode-title">À distance</p>
-      <p class="mode-sub">Défie un ami avec un code à partager (chacun la même frise, chacun chez soi), ou anime une veillée en direct où tout le monde répond sur son téléphone.</p>
-      <div class="choix-row">
-        <button class="btn btn-primary" data-duelcfg="1">Défier un ami</button>
-        <button class="btn btn-grow" data-veilcfg="1">Animer une veillée</button>
-      </div>
-      <button class="btn btn-ghost" data-join="1">J'ai reçu un code</button>
-    </div>
-    <p class="muted" style="font-size:.85rem;text-align:center;margin-top:16px">${CARTES_PAR_SEANCE} cartes par séance en solo · se tromper montre la bonne place, tout simplement.</p>
   </div>`;
 }
 
@@ -517,7 +563,7 @@ function vueVeilleeConfig() {
   ];
   return `<div class="fade">
     <button class="quit" data-quit="1">‹ Retour</button>
-    <h1 style="font-size:1.25rem;margin-top:10px">Animer une veillée</h1>
+    <h1 style="font-size:1.25rem;margin-top:10px">En direct, dans ton église</h1>
     <p class="muted" style="margin:4px 0 0">Tu ouvres la salle et tu donnes le code : chacun rejoint sur son téléphone, tout le monde voit la même carte au même moment, et c'est toi qui rythmes.</p>
     <div class="card">
       <p class="mode-title" style="margin-top:0">Le paquet</p>
@@ -724,7 +770,7 @@ function vueConfig() {
   ];
   return `<div class="fade">
     <button class="quit" data-quit="1">‹ Retour</button>
-    <h1 style="font-size:1.25rem;margin-top:10px">À plusieurs, sur un téléphone</h1>
+    <h1 style="font-size:1.25rem;margin-top:10px">À plusieurs, ici</h1>
     <p class="muted" style="margin:4px 0 0">Chacun son tour : une carte, un choix, et la frise grandit pour tout le monde.</p>
     <div class="card">
       <p class="mode-title" style="margin-top:0">Le paquet</p>
@@ -832,14 +878,17 @@ function vueFin() {
 function render() {
   el.classList.toggle('proj', ecran === 'proj'); // la projection s'étale en largeur
   el.innerHTML = ecran === 'seance' ? vueSeance() : ecran === 'fin' ? vueFin()
+    : ecran === 'scfg' ? vueSoloCfg()
     : ecran === 'config' ? vueConfig()
     : ecran === 'dcfg' ? vueDuelConfig() : ecran === 'join' ? vueJoin()
     : ecran === 'dres' ? vueDuelResultat() : ecran === 'vcfg' ? vueVeilleeConfig()
     : ecran === 'anim' ? vueAnim() : ecran === 'part' ? vuePart()
     : ecran === 'proj' ? vueProj()
     : vueAccueil();
-  el.querySelectorAll('[data-mode]').forEach(b =>
-    b.addEventListener('click', () => demarrer(b.dataset.mode, b.dataset.portee, null)));
+  const solo = el.querySelector('[data-solo]');
+  if (solo) solo.addEventListener('click', () => { ecran = 'scfg'; render(); });
+  const sologo = el.querySelector('[data-sologo]');
+  if (sologo) sologo.addEventListener('click', () => demarrer(config.mode, config.portee, null));
   el.querySelectorAll('[data-slot]').forEach(b =>
     b.addEventListener('click', () => placer(+b.dataset.slot)));
   const q = el.querySelector('[data-quit]');
