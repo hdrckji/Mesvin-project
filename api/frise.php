@@ -172,13 +172,13 @@ function frise_duel_score(PDO $pdo, string $code): never {
         if ($duel['p1_score'] !== null) {
             json_error('Ton score est déjà posé.', 409);
         }
-        $pdo->prepare('UPDATE frise_duels SET p1_score = ? WHERE code = ?')->execute([$score, $code]);
+        $pdo->prepare('UPDATE frise_duels SET p1_score = ? WHERE code = ? AND p1_score IS NULL')->execute([$score, $code]);
     } else {
         if ($duel['p2_pseudo'] !== null) {
             json_error('Ce défi a déjà trouvé son adversaire.', 409);
         }
         $pseudo = frise_prenom($body['pseudo'] ?? null);
-        $pdo->prepare('UPDATE frise_duels SET p2_pseudo = ?, p2_score = ? WHERE code = ?')
+        $pdo->prepare('UPDATE frise_duels SET p2_pseudo = ?, p2_score = ? WHERE code = ? AND p2_pseudo IS NULL')
             ->execute([$pseudo, $score, $code]);
     }
     frise_duel_get($pdo, $code);
@@ -257,10 +257,15 @@ function frise_veillee_avancer(PDO $pdo, string $code): never {
         if ((int) $v['carte'] >= $total) {
             $pdo->prepare("UPDATE frise_veillees SET phase = 'fin' WHERE code = ?")->execute([$code]);
         } else {
-            $pdo->prepare("UPDATE frise_veillees SET phase = 'placement', carte = carte + 1 WHERE code = ?")
-                ->execute([$code]);
-            $pdo->prepare('UPDATE frise_participants SET reponse = NULL, bon = NULL WHERE code = ?')
-                ->execute([$code]);
+            // Conditionné sur (phase, carte) lues : deux « avancer » simultanés
+            // (animateur à deux onglets) n'avancent qu'une fois ; le reset des
+            // réponses ne suit que si l'avancement a bien eu lieu.
+            $st = $pdo->prepare("UPDATE frise_veillees SET phase = 'placement', carte = carte + 1 WHERE code = ? AND phase = 'revele' AND carte = ?");
+            $st->execute([$code, (int) $v['carte']]);
+            if ($st->rowCount() > 0) {
+                $pdo->prepare('UPDATE frise_participants SET reponse = NULL, bon = NULL WHERE code = ?')
+                    ->execute([$code]);
+            }
         }
     } else {
         json_error('La veillée est déjà terminée.', 409);
@@ -300,7 +305,7 @@ function frise_veillee_reponse(PDO $pdo, string $code): never {
         json_error('Réponse invalide (position hors de la frise).', 400);
     }
     $bon = $position === frise_position_juste($frise, (int) $deck[$carte]['o']) ? 1 : 0;
-    $pdo->prepare('UPDATE frise_participants SET reponse = ?, bon = ?, score = score + ? WHERE id = ?')
+    $pdo->prepare('UPDATE frise_participants SET reponse = ?, bon = ?, score = score + ? WHERE id = ? AND reponse IS NULL')
         ->execute([$position, $bon, $bon, $moi['id']]);
     frise_veillee_etat($pdo, $code, $jeton, null);
 }

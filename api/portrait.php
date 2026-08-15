@@ -185,17 +185,20 @@ function portrait_veillee_avancer(PDO $pdo, string $code): never {
         if ((int) $v['indice'] >= PORTRAIT_INDICES) {
             json_error('Tous les indices sont déjà révélés.', 409);
         }
-        $pdo->prepare('UPDATE portrait_veillees SET indice = indice + 1 WHERE code = ?')->execute([$code]);
+        $pdo->prepare('UPDATE portrait_veillees SET indice = indice + 1 WHERE code = ? AND phase = \'portrait\' AND indice = ?')->execute([$code, (int) $v['indice']]);
     } elseif ($v['phase'] === 'portrait' && $action === 'reveler') {
         $pdo->prepare("UPDATE portrait_veillees SET phase = 'revele' WHERE code = ?")->execute([$code]);
     } elseif ($v['phase'] === 'revele' && $action === 'suivant') {
         if ((int) $v['carte'] >= $total) {
             $pdo->prepare("UPDATE portrait_veillees SET phase = 'fin' WHERE code = ?")->execute([$code]);
         } else {
-            $pdo->prepare("UPDATE portrait_veillees SET phase = 'portrait', carte = carte + 1, indice = 1 WHERE code = ?")
-                ->execute([$code]);
-            $pdo->prepare('UPDATE portrait_participants SET reponse = NULL, bon = NULL, points = NULL WHERE code = ?')
-                ->execute([$code]);
+            // Conditionné sur (phase, carte) lues — cf. frise_veillee_avancer.
+            $st = $pdo->prepare("UPDATE portrait_veillees SET phase = 'portrait', carte = carte + 1, indice = 1 WHERE code = ? AND phase = 'revele' AND carte = ?");
+            $st->execute([$code, (int) $v['carte']]);
+            if ($st->rowCount() > 0) {
+                $pdo->prepare('UPDATE portrait_participants SET reponse = NULL, bon = NULL, points = NULL WHERE code = ?')
+                    ->execute([$code]);
+            }
         }
     } elseif ($v['phase'] === 'fin') {
         json_error('La veillée est déjà terminée.', 409);
@@ -231,7 +234,7 @@ function portrait_veillee_reponse(PDO $pdo, string $code): never {
     $portrait = $deck[$carte - 1];
     $bon = in_array(portrait_norm($texte), $portrait['accepte'], true) ? 1 : 0;
     $points = $bon ? (PORTRAIT_INDICES + 1 - (int) $v['indice']) : 0;
-    $pdo->prepare('UPDATE portrait_participants SET reponse = ?, bon = ?, points = ?, score = score + ? WHERE id = ?')
+    $pdo->prepare('UPDATE portrait_participants SET reponse = ?, bon = ?, points = ?, score = score + ? WHERE id = ? AND reponse IS NULL')
         ->execute([$texte, $bon, $points, $points, $moi['id']]);
     portrait_veillee_etat($pdo, $code, $jeton, null);
 }

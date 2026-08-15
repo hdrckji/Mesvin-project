@@ -142,13 +142,13 @@ function epreuve_duel_score(PDO $pdo, string $code): never {
         if ($duel['p1_score'] !== null) {
             json_error('Ton score est déjà posé.', 409);
         }
-        $pdo->prepare('UPDATE epreuve_duels SET p1_score = ? WHERE code = ?')->execute([$score, $code]);
+        $pdo->prepare('UPDATE epreuve_duels SET p1_score = ? WHERE code = ? AND p1_score IS NULL')->execute([$score, $code]);
     } else {
         if ($duel['p2_pseudo'] !== null) {
             json_error('Ce défi a déjà trouvé son adversaire.', 409);
         }
         $pseudo = frise_prenom($body['pseudo'] ?? null);
-        $pdo->prepare('UPDATE epreuve_duels SET p2_pseudo = ?, p2_score = ? WHERE code = ?')
+        $pdo->prepare('UPDATE epreuve_duels SET p2_pseudo = ?, p2_score = ? WHERE code = ? AND p2_pseudo IS NULL')
             ->execute([$pseudo, $score, $code]);
     }
     epreuve_duel_get($pdo, $code);
@@ -223,10 +223,13 @@ function epreuve_veillee_avancer(PDO $pdo, string $code): never {
         if ((int) $v['carte'] >= $total) {
             $pdo->prepare("UPDATE epreuve_veillees SET phase = 'fin' WHERE code = ?")->execute([$code]);
         } else {
-            $pdo->prepare("UPDATE epreuve_veillees SET phase = 'question', carte = carte + 1 WHERE code = ?")
-                ->execute([$code]);
-            $pdo->prepare('UPDATE epreuve_participants SET reponse = NULL, bon = NULL WHERE code = ?')
-                ->execute([$code]);
+            // Conditionné sur (phase, carte) lues — cf. frise_veillee_avancer.
+            $st = $pdo->prepare("UPDATE epreuve_veillees SET phase = 'question', carte = carte + 1 WHERE code = ? AND phase = 'revele' AND carte = ?");
+            $st->execute([$code, (int) $v['carte']]);
+            if ($st->rowCount() > 0) {
+                $pdo->prepare('UPDATE epreuve_participants SET reponse = NULL, bon = NULL WHERE code = ?')
+                    ->execute([$code]);
+            }
         }
     } else {
         json_error('La veillée est déjà terminée.', 409);
@@ -260,7 +263,7 @@ function epreuve_veillee_reponse(PDO $pdo, string $code): never {
         json_error('Réponse invalide (mauvaise question ou choix).', 400);
     }
     $bon = $choix === (int) $item['bonne'] ? 1 : 0;
-    $pdo->prepare('UPDATE epreuve_participants SET reponse = ?, bon = ?, score = score + ? WHERE id = ?')
+    $pdo->prepare('UPDATE epreuve_participants SET reponse = ?, bon = ?, score = score + ? WHERE id = ? AND reponse IS NULL')
         ->execute([$choix, $bon, $bon, $moi['id']]);
     epreuve_veillee_etat($pdo, $code, $jeton, null);
 }

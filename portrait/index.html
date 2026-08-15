@@ -803,15 +803,18 @@ function render() {
   const vrepform = q1('[data-vrepform]');
   if (vrepform) vrepform.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (online.repEnVol) return; // double-tap / Entrée : une seule réponse en vol
     const texte = (saisie.texte || '').trim();
     if (texte === '') return;
+    online.repEnVol = true;
     try {
       online.etat = await api('veillee/' + online.code + '/reponse',
         { jeton: online.jeton, carte: online.etat.carte, texte: texte });
       online.v = (online.v || 0) + 1;
       saisie.texte = '';
+      online.repEnVol = false;
       render();
-    } catch (err) { render(); }
+    } catch (err) { online.repEnVol = false; render(); } // formulaire frais → réessai possible
   });
 
   const copie = q1('[data-copie]');
