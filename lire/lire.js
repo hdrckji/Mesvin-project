@@ -307,6 +307,12 @@ function loadStore() {
   let raw = null;
   try { const r = localStorage.getItem(STORE_KEY); if (r) raw = JSON.parse(r); } catch (e) {}
   const s = migrate(raw);
+  // Rythme de lecture personnel (mots/minute), mesuré par le passage de
+  // calibrage — null : la moyenne WORDS_PER_MIN. Hors des bornes de
+  // vraisemblance, la valeur est écartée. mpmFait : le passage a déjà été
+  // lu (même si la mesure a été écartée) — on ne le redemande jamais.
+  if (!(typeof s.mpm === 'number' && s.mpm >= 80 && s.mpm <= 280)) s.mpm = null;
+  if (s.mpmFait !== true) s.mpmFait = s.mpm !== null;
   return s;
 }
 function saveStore() { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {} }
@@ -377,7 +383,7 @@ function estimation(plan) {
   if (!plan.minutes) return '';
   const mots = restantMots(plan);
   if (mots === 0) return '';
-  const jours = Math.max(1, Math.ceil(mots / WORDS_PER_MIN / plan.minutes));
+  const jours = Math.max(1, Math.ceil(mots / (store.mpm || WORDS_PER_MIN) / plan.minutes));
   /* Horizon lointain (plus d'un an) : on le dit avec honnêteté et douceur,
      sans date — un long voyage n'a pas besoin d'échéance. */
   if (jours > 365) {
@@ -416,7 +422,7 @@ function go(name, param) { route = { name, param: param === undefined ? null : p
 function render() {
   const views = {
     cfgWhere: viewCfgWhere, cfgBook: viewCfgBook, cfgTime: viewCfgTime,
-    cfgGoal: viewCfgGoal, home: viewHome,
+    cfgGoal: viewCfgGoal, cfgLecture: viewCfgLecture, home: viewHome,
     read: () => viewRead(route.param), chapterDone: () => viewChapterDone(route.param),
     bookDone: () => viewBookDone(route.param), planDone: viewPlanDone
   };
@@ -537,6 +543,69 @@ function viewCfgGoal() {
     <button class="linklike" data-cfg-back="cfgTime">‹ Revenir en arrière</button>`;
 }
 
+/* ============================================================================
+   Le passage de calibrage — lire un texte, l'appli ajuste ses estimations.
+   AUCUN chronomètre visible, aucun verdict : la mesure est silencieuse, mais
+   annoncée noir sur blanc avant la lecture. Une fois suffit (mpmFait) ; la
+   porte « recalibrer » reste ouverte dans l'écran du chemin.
+   ========================================================================== */
+let calib = null; // { goalId|null, texte, mots, debut } — goalId null = recalibrage
+
+function ouvrirCalib(goalId) {
+  calib = { goalId: goalId, texte: null, mots: 0, debut: null };
+  go('cfgLecture');
+  loadBook('luc').then(d => {
+    if (!calib) return;
+    // Luc 15.11-32 : le fils retrouvé — du récit, ni poésie ni généalogie.
+    const versets = d.chapitres[14].slice(10);
+    calib.texte = versets;
+    calib.mots = versets.join(' ').split(/\s+/).length;
+    render();
+  }).catch(() => {
+    // Texte injoignable (hors-ligne…) : pas de calibrage aujourd'hui — on
+    // n'insiste pas, le chemin se crée avec l'estimation moyenne.
+    calibSortie(false);
+  });
+}
+
+/* Fin (mesure = true) ou renoncement doux (mesure = false). */
+function calibSortie(mesure) {
+  if (mesure && calib && calib.debut) {
+    const minutes = (Date.now() - calib.debut) / 60000;
+    const mpm = Math.round(calib.mots / minutes);
+    // Bornes de vraisemblance : l'appel de mamie ou le tapoteur pressé
+    // retombent sur la moyenne, sans message d'échec.
+    if (mpm >= 80 && mpm <= 280) store.mpm = mpm;
+    store.mpmFait = true;
+    saveStore();
+  }
+  const g = calib ? calib.goalId : null;
+  calib = null;
+  if (g) createPlan(g);
+  else go('home');
+}
+
+function viewCfgLecture() {
+  if (!calib || !calib.texte) {
+    return header() + `<p class="muted center" style="padding:40px">Un instant, le passage arrive…</p>`;
+  }
+  calib.debut = calib.debut || Date.now(); // le texte est là : la lecture commence
+  const body = calib.texte.map((v, i) => `<span class="vnum">${i + 11}</span>${esc(v)}`).join(' ');
+  return header() + `<div class="fade">
+    <h2 class="cfg-q">Commençons par lire</h2>
+    <div class="card">
+      <p class="muted" style="margin:0 0 6px">${calib.goalId
+        ? 'Avant de tracer ton chemin, voici un passage — lis-le simplement, à ton rythme de tous les jours.'
+        : 'Voici un passage — lis-le simplement, à ton rythme de tous les jours.'}</p>
+      <p class="muted" style="margin:0 0 16px">Il nous aide à ajuster les estimations de ton plan : rien à réussir, rien à prouver, et il n'y a pas de bon rythme.</p>
+      <div class="scripture">${body}</div>
+      <div class="ref" style="margin-top:18px">Luc 15.11-32 <span class="version">· Louis Segond 1910</span></div>
+    </div>
+    <button class="btn btn-primary btn-block" data-calib-fini="1">J'ai fini ma lecture</button>
+    <button class="linklike" data-calib-plustard="1">Plus tard — garder l'estimation moyenne</button>
+  </div>`;
+}
+
 function createPlan(goalId) {
   const o = goalsFor(draft).find(g => g.id === goalId);
   if (!o) return;
@@ -655,6 +724,9 @@ function viewHome() {
     </div>
     ${others.length || store.plans.length < MAX_PLANS ? '' : ''}
     <button class="linklike" data-remove="${plan.id}" style="margin-top:8px">Ranger ce chemin (ta progression reste gardée)</button>
+    ${plan.minutes ? `<button class="linklike" data-recalib="1" style="margin-top:2px">${store.mpm
+      ? 'Recalibrer mon rythme — relire un passage pour affiner les estimations'
+      : 'Affiner les estimations — lire un passage, à mon rythme'}</button>` : ''}
   </div>`;
 
   return header() + main + gauge + ctx + switcher;
@@ -832,7 +904,14 @@ function wire() {
   });
   on('[data-book]', e => { draft.livre = e.currentTarget.dataset.book; go('cfgTime'); });
   on('[data-min]', e => { draft.minutes = +e.currentTarget.dataset.min; go('cfgGoal'); });
-  on('[data-goal]', e => createPlan(e.currentTarget.dataset.goal));
+  on('[data-goal]', e => {
+    const goalId = e.currentTarget.dataset.goal;
+    if (draft.minutes && !store.mpmFait) ouvrirCalib(goalId);
+    else createPlan(goalId);
+  });
+  on('[data-calib-fini]', () => calibSortie(true));
+  on('[data-calib-plustard]', () => calibSortie(false));
+  on('[data-recalib]', () => ouvrirCalib(null));
   on('[data-cfg-back]', e => go(e.currentTarget.dataset.cfgBack));
   on('[data-new-plan]', startConfig);
   /* chemin */
