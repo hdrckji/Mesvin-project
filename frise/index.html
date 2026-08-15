@@ -810,7 +810,8 @@ function vueSeance() {
   const courante = s.courante
     ? `<div class="acarte"><span class="lbl">${s.participants ? 'Au tour de ' + esc(s.participants[s.tour].nom) + ' — c' : 'C'}arte ${faites + 1} / ${s.total}</span>
         <p class="titre">${esc(s.courante.titre)}</p>
-        ${s.courante.ref ? `<span class="r muted" style="font-size:.82rem">${esc(s.courante.ref)}</span>` : ''}</div>`
+        <!-- pas de référence ici : elle donnerait la réponse — elle
+             apparaît à la révélation, quand la carte rejoint la frise --></div>`
     : '';
   return `<div class="fade">
     <div class="topline"><span>${s.participants ? esc(s.titre) : esc(s.titre) + ' · <b>' + s.score + '</b> bien placée' + (s.score > 1 ? 's' : '')}</span>
