@@ -401,7 +401,7 @@ async function api(chemin, corps) {
   const r = await fetch('../api/epreuve/' + chemin, corps === undefined ? {}
     : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.error || 'Le serveur a répondu ' + r.status + '.');
+  if (!r.ok) { const err = new Error(data.error || 'Le serveur a répondu ' + r.status + '.'); err.status = r.status; throw err; }
   return data;
 }
 
@@ -633,7 +633,19 @@ function pollDemarre() {
       } else {
         pollArret();
       }
-    } catch (err) { /* un raté réseau : la prochaine interrogation retentera */ }
+    } catch (err) {
+      // 404 : la veillée n'existe plus (expirée, ou ménage passé) — on prévient
+      // au lieu de laisser l'écran figé. Tout autre raté : on retentera.
+      if (err && err.status === 404 && (ecran === 'anim' || ecran === 'part' || ecran === 'proj')) {
+        pollArret();
+        el.innerHTML = `<div class="fade" style="text-align:center;padding:48px 22px">`
+          + `<p style="font-size:1.15rem;margin:0 0 6px">Cette veillée n'existe plus.</p>`
+          + `<p class="muted" style="margin:0 0 22px">Elle a peut-être expiré — une veillée ne vit qu'un temps.</p>`
+          + `<button class="btn btn-primary" data-perdu="1">Revenir au début</button></div>`;
+        const b = el.querySelector('[data-perdu]');
+        if (b) b.onclick = () => { location.href = './'; };
+      }
+    }
   }, 2500);
 }
 

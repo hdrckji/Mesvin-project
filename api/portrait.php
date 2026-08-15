@@ -74,8 +74,13 @@ function portrait_deck_propre(mixed $deck): array {
                 $acc[] = portrait_norm($a);
             }
         }
+        // Le genre (personnage/lieu/chose) suit le paquet — sert à la révélation
+        // d'un défi par code (« Ce lieu est bien… ») ; jamais exposé par l'état
+        // d'une veillée. Liste blanche, défaut prudent.
+        $genre = is_array($p) && in_array($p['genre'] ?? null, ['personnage', 'lieu', 'chose'], true)
+            ? $p['genre'] : 'personnage';
         $propre[] = ['reponse' => $reponse, 'accepte' => array_values(array_unique($acc)),
-            'indices' => $inds, 'ref' => $ref === '' ? null : $ref];
+            'indices' => $inds, 'ref' => $ref === '' ? null : $ref, 'genre' => $genre];
     }
     return $propre;
 }
