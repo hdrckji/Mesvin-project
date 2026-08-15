@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM frise_participants LIMIT 1');
+        $pdo->query('SELECT 1 FROM portrait_participants LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -408,6 +408,73 @@ function db_migrate(PDO $pdo): void {
                 created_at DATETIME NOT NULL,
                 INDEX idx_frisep_code (code)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Épreuves à choix (« Qui a dit ça ? », « Écrit… ou pas ? »…) —
+            // mêmes formes que les tables frise_*, mais le paquet porte des
+            // questions à options et l'arbitrage compare des index de choix
+            // (voir api/epreuve.php).
+            'CREATE TABLE IF NOT EXISTS epreuve_duels (
+                code VARCHAR(10) NOT NULL PRIMARY KEY,
+                cle CHAR(32) NOT NULL,
+                mode VARCHAR(40) NOT NULL,
+                deck MEDIUMTEXT NOT NULL,
+                total INT NOT NULL,
+                p1_pseudo VARCHAR(20) NOT NULL,
+                p1_score INT NULL,
+                p2_pseudo VARCHAR(20) NULL,
+                p2_score INT NULL,
+                created_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            'CREATE TABLE IF NOT EXISTS epreuve_veillees (
+                code VARCHAR(10) NOT NULL PRIMARY KEY,
+                cle CHAR(32) NOT NULL,
+                mode VARCHAR(40) NOT NULL,
+                deck MEDIUMTEXT NOT NULL,
+                phase VARCHAR(12) NOT NULL,
+                carte INT NOT NULL DEFAULT 0,
+                created_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            'CREATE TABLE IF NOT EXISTS epreuve_participants (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                code VARCHAR(10) NOT NULL,
+                jeton CHAR(32) NOT NULL,
+                prenom VARCHAR(20) NOT NULL,
+                score INT NOT NULL DEFAULT 0,
+                reponse INT NULL,
+                bon TINYINT NULL,
+                created_at DATETIME NOT NULL,
+                INDEX idx_epreuvep_code (code)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // « De qui parle-t-on ? » — veillées à indices : indice = combien
+            // sont révélés ; reponse des participants en TEXTE libre, points
+            // dégressifs (voir api/portrait.php). Les défis PD- vivent dans
+            // epreuve_duels.
+            'CREATE TABLE IF NOT EXISTS portrait_veillees (
+                code VARCHAR(10) NOT NULL PRIMARY KEY,
+                cle CHAR(32) NOT NULL,
+                mode VARCHAR(40) NOT NULL,
+                deck MEDIUMTEXT NOT NULL,
+                phase VARCHAR(12) NOT NULL,
+                carte INT NOT NULL DEFAULT 0,
+                indice INT NOT NULL DEFAULT 0,
+                created_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            'CREATE TABLE IF NOT EXISTS portrait_participants (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                code VARCHAR(10) NOT NULL,
+                jeton CHAR(32) NOT NULL,
+                prenom VARCHAR(20) NOT NULL,
+                score INT NOT NULL DEFAULT 0,
+                reponse VARCHAR(60) NULL,
+                bon TINYINT NULL,
+                points INT NULL,
+                created_at DATETIME NOT NULL,
+                INDEX idx_portraitp_code (code)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
         ];
     } else {
         $ddl = [
@@ -707,6 +774,64 @@ function db_migrate(PDO $pdo): void {
                 created_at TEXT NOT NULL
             )',
             'CREATE INDEX IF NOT EXISTS idx_frisep_code ON frise_participants (code)',
+
+            // Épreuves à choix — voir le dialecte MySQL ci-dessus.
+            'CREATE TABLE IF NOT EXISTS epreuve_duels (
+                code TEXT NOT NULL PRIMARY KEY,
+                cle TEXT NOT NULL,
+                mode TEXT NOT NULL,
+                deck TEXT NOT NULL,
+                total INTEGER NOT NULL,
+                p1_pseudo TEXT NOT NULL,
+                p1_score INTEGER NULL,
+                p2_pseudo TEXT NULL,
+                p2_score INTEGER NULL,
+                created_at TEXT NOT NULL
+            )',
+            'CREATE TABLE IF NOT EXISTS epreuve_veillees (
+                code TEXT NOT NULL PRIMARY KEY,
+                cle TEXT NOT NULL,
+                mode TEXT NOT NULL,
+                deck TEXT NOT NULL,
+                phase TEXT NOT NULL,
+                carte INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            )',
+            'CREATE TABLE IF NOT EXISTS epreuve_participants (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT NOT NULL,
+                jeton TEXT NOT NULL,
+                prenom TEXT NOT NULL,
+                score INTEGER NOT NULL DEFAULT 0,
+                reponse INTEGER NULL,
+                bon INTEGER NULL,
+                created_at TEXT NOT NULL
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_epreuvep_code ON epreuve_participants (code)',
+
+            // « De qui parle-t-on ? » — voir le dialecte MySQL ci-dessus.
+            'CREATE TABLE IF NOT EXISTS portrait_veillees (
+                code TEXT NOT NULL PRIMARY KEY,
+                cle TEXT NOT NULL,
+                mode TEXT NOT NULL,
+                deck TEXT NOT NULL,
+                phase TEXT NOT NULL,
+                carte INTEGER NOT NULL DEFAULT 0,
+                indice INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            )',
+            'CREATE TABLE IF NOT EXISTS portrait_participants (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT NOT NULL,
+                jeton TEXT NOT NULL,
+                prenom TEXT NOT NULL,
+                score INTEGER NOT NULL DEFAULT 0,
+                reponse TEXT NULL,
+                bon INTEGER NULL,
+                points INTEGER NULL,
+                created_at TEXT NOT NULL
+            )',
+            'CREATE INDEX IF NOT EXISTS idx_portraitp_code ON portrait_participants (code)',
         ];
     }
 

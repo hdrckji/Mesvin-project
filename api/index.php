@@ -28,6 +28,8 @@ require __DIR__ . '/groupes-page.php';
 require __DIR__ . '/duels.php';
 require __DIR__ . '/veillees.php';
 require __DIR__ . '/frise.php';
+require __DIR__ . '/epreuve.php';
+require __DIR__ . '/portrait.php';
 require __DIR__ . '/admin.php';
 require __DIR__ . '/push.php';
 
@@ -252,6 +254,58 @@ if (preg_match('#^/api/frise/veillee/(FV-[A-Z2-9]{5})/reponse$#', $path, $m)) {
 if (preg_match('#^/api/frise/veillee/(FV-[A-Z2-9]{5})/etat$#', $path, $m)) {
     if ($method === 'GET') {
         frise_veillee_etat($pdo, $m[1],
+            is_string($_GET['jeton'] ?? null) ? $_GET['jeton'] : null,
+            is_string($_GET['cle'] ?? null) ? $_GET['cle'] : null);
+    }
+}
+
+/* ---- Épreuves à choix : défis et veillées par code, sans compte ---- */
+if ($path === '/api/epreuve/duel' && $method === 'POST') epreuve_duel_create($pdo);
+if (preg_match('#^/api/epreuve/duel/(ED-[A-Z2-9]{5})$#', $path, $m)) {
+    if ($method === 'GET') epreuve_duel_get($pdo, $m[1]);
+}
+if (preg_match('#^/api/epreuve/duel/(ED-[A-Z2-9]{5})/score$#', $path, $m)) {
+    if ($method === 'POST') epreuve_duel_score($pdo, $m[1]);
+}
+if ($path === '/api/epreuve/veillee' && $method === 'POST') epreuve_veillee_create($pdo);
+if (preg_match('#^/api/epreuve/veillee/(EV-[A-Z2-9]{5})/rejoindre$#', $path, $m)) {
+    if ($method === 'POST') epreuve_veillee_rejoindre($pdo, $m[1]);
+}
+if (preg_match('#^/api/epreuve/veillee/(EV-[A-Z2-9]{5})/avancer$#', $path, $m)) {
+    if ($method === 'POST') epreuve_veillee_avancer($pdo, $m[1]);
+}
+if (preg_match('#^/api/epreuve/veillee/(EV-[A-Z2-9]{5})/reponse$#', $path, $m)) {
+    if ($method === 'POST') epreuve_veillee_reponse($pdo, $m[1]);
+}
+if (preg_match('#^/api/epreuve/veillee/(EV-[A-Z2-9]{5})/etat$#', $path, $m)) {
+    if ($method === 'GET') {
+        epreuve_veillee_etat($pdo, $m[1],
+            is_string($_GET['jeton'] ?? null) ? $_GET['jeton'] : null,
+            is_string($_GET['cle'] ?? null) ? $_GET['cle'] : null);
+    }
+}
+
+/* ---- « De qui parle-t-on ? » : défis (PD-, table epreuve_duels) et veillées à indices ---- */
+if ($path === '/api/portrait/duel' && $method === 'POST') portrait_duel_create($pdo);
+if (preg_match('#^/api/portrait/duel/(PD-[A-Z2-9]{5})$#', $path, $m)) {
+    if ($method === 'GET') epreuve_duel_get($pdo, $m[1]);
+}
+if (preg_match('#^/api/portrait/duel/(PD-[A-Z2-9]{5})/score$#', $path, $m)) {
+    if ($method === 'POST') epreuve_duel_score($pdo, $m[1]);
+}
+if ($path === '/api/portrait/veillee' && $method === 'POST') portrait_veillee_create($pdo);
+if (preg_match('#^/api/portrait/veillee/(PV-[A-Z2-9]{5})/rejoindre$#', $path, $m)) {
+    if ($method === 'POST') portrait_veillee_rejoindre($pdo, $m[1]);
+}
+if (preg_match('#^/api/portrait/veillee/(PV-[A-Z2-9]{5})/avancer$#', $path, $m)) {
+    if ($method === 'POST') portrait_veillee_avancer($pdo, $m[1]);
+}
+if (preg_match('#^/api/portrait/veillee/(PV-[A-Z2-9]{5})/reponse$#', $path, $m)) {
+    if ($method === 'POST') portrait_veillee_reponse($pdo, $m[1]);
+}
+if (preg_match('#^/api/portrait/veillee/(PV-[A-Z2-9]{5})/etat$#', $path, $m)) {
+    if ($method === 'GET') {
+        portrait_veillee_etat($pdo, $m[1],
             is_string($_GET['jeton'] ?? null) ? $_GET['jeton'] : null,
             is_string($_GET['cle'] ?? null) ? $_GET['cle'] : null);
     }

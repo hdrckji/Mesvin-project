@@ -1,0 +1,776 @@
+{
+  "version": 1,
+  "note": "Portraits à indices — à relire contre une Segond 1910 imprimée avant diffusion large.",
+  "items": [
+    {
+      "id": "po-001",
+      "reponse": "Moïse",
+      "accepte": ["moise", "moïse"],
+      "indices": [
+        "Il mourut âgé de cent vingt ans, sans que sa vue fût affaiblie ni sa vigueur passée, et nul ne connaît son sépulcre.",
+        "Il épousa la fille d'un sacrificateur de Madian et faisait paître son troupeau quand il reçut sa mission.",
+        "Se disant lent de bouche et embarrassé de langue, il obtint que son frère parle à sa place devant le roi d'Égypte.",
+        "Bébé, il fut déposé dans une caisse de jonc enduite de bitume et de poix, parmi les roseaux du fleuve.",
+        "Il conduisit Israël hors d'Égypte à travers la mer ouverte en deux, et reçut la loi sur la montagne."
+      ],
+      "reference": "Exode 2–14 ; Deutéronome 34",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-002",
+      "reponse": "David",
+      "accepte": ["david", "roi david"],
+      "indices": [
+        "« Il était blond, avec de beaux yeux et une belle figure. »",
+        "Dans une caverne, il coupa le pan du manteau du roi qui le poursuivait, mais refusa de le tuer.",
+        "Les accords de sa harpe soulageaient un roi tourmenté par un mauvais esprit.",
+        "Berger à Bethléhem, le plus jeune des fils d'Isaï, il fut oint par un prophète au milieu de ses frères.",
+        "Avec une fronde et une pierre, il abattit un géant philistin, puis devint roi d'Israël."
+      ],
+      "reference": "1 Samuel 16–17 ; 24 ; 2 Samuel",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-003",
+      "reponse": "Abraham",
+      "accepte": ["abraham", "abram"],
+      "indices": [
+        "Il arma trois cent dix-huit serviteurs nés dans sa maison pour délivrer son neveu fait prisonnier.",
+        "Il marchanda avec Dieu pour épargner une ville, faisant descendre le compte de cinquante à dix justes.",
+        "Dieu changea son nom et lui promit une descendance nombreuse comme les étoiles, alors que sa femme était stérile.",
+        "Sur l'appel de Dieu, il quitta son pays et sa parenté ; sa famille était sortie d'Ur en Chaldée.",
+        "Au pays de Morija, il leva le couteau sur le fils de la promesse, avant qu'un bélier soit offert à sa place."
+      ],
+      "reference": "Genèse 12–25",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-004",
+      "reponse": "Sara",
+      "accepte": ["sara", "sarah", "sarai"],
+      "indices": [
+        "Elle mourut à Kirjath-Arba, et son mari acheta la caverne de Macpéla pour l'y enterrer.",
+        "Deux fois, son mari la fit passer pour sa sœur devant des rois qui la firent prendre dans leur maison.",
+        "Elle donna sa servante égyptienne à son mari, puis exigea qu'on la chasse avec son fils.",
+        "Dieu changea son nom et annonça que des rois de peuples sortiraient d'elle.",
+        "Elle rit à l'entrée de la tente en entendant qu'elle aurait un fils, et l'enfanta dans sa vieillesse : il fut nommé Isaac."
+      ],
+      "reference": "Genèse 12–23",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-005",
+      "reponse": "Jacob",
+      "accepte": ["jacob", "israel"],
+      "indices": [
+        "À cause de ce qui lui arriva une nuit, les enfants d'Israël ne mangent point le tendon de l'emboîture de la hanche.",
+        "Il servit deux fois sept ans pour obtenir celle qu'il aimait, ayant été trompé au matin des noces.",
+        "En songe, il vit une échelle dressée entre la terre et le ciel, avec des anges qui montaient et descendaient.",
+        "Né en tenant le talon de son frère jumeau, il lui acheta le droit d'aînesse contre un plat de lentilles.",
+        "Après une lutte jusqu'à l'aurore où sa hanche fut démise, il reçut un nouveau nom et devint père de douze fils."
+      ],
+      "reference": "Genèse 25–35",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-006",
+      "reponse": "Joseph (fils de Jacob)",
+      "accepte": ["joseph", "joseph fils de jacob"],
+      "indices": [
+        "Pharaon l'appela du nom de Tsaphnath-Paenéach et lui donna pour femme la fille d'un prêtre d'On.",
+        "Ses ossements furent emportés hors d'Égypte à la sortie du peuple, selon le serment qu'il avait fait prêter.",
+        "En prison, il expliqua les songes d'un échanson et d'un panetier.",
+        "Ses frères, jaloux de sa tunique et de ses songes de gerbes et d'étoiles, le vendirent à des marchands.",
+        "Vendu comme esclave par ses frères, il devint le second du royaume d'Égypte et sauva sa famille de la famine."
+      ],
+      "reference": "Genèse 37–50 ; Exode 13:19",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-007",
+      "reponse": "Noé",
+      "accepte": ["noe", "noé"],
+      "indices": [
+        "Après la catastrophe, il cultiva la terre, planta de la vigne, but du vin et s'enivra sous sa tente.",
+        "Il avait six cents ans lorsque les eaux couvrirent la terre.",
+        "Il lâcha un corbeau, puis une colombe qui revint avec une feuille d'olivier dans le bec.",
+        "Dieu plaça son arc dans la nue en signe d'alliance avec lui et ses fils.",
+        "Sur l'ordre de Dieu, il construisit un immense bateau et y fit entrer les animaux avant le déluge."
+      ],
+      "reference": "Genèse 6–9",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-008",
+      "reponse": "Josué",
+      "accepte": ["josue", "josué"],
+      "indices": [
+        "Il s'appelait d'abord Hosée ; c'est Moïse qui changea son nom.",
+        "Avec un seul compagnon, il rapporta un bon avis sur le pays exploré, contre l'avis de dix autres.",
+        "Devant lui, le soleil s'arrêta au milieu du ciel, près de Gabaon.",
+        "Il déclara au peuple : « Moi et ma maison, nous servirons l'Éternel. »",
+        "Successeur de Moïse, il fit traverser le Jourdain à Israël et prit la ville dont les murailles s'écroulèrent."
+      ],
+      "reference": "Nombres 13–14 ; Josué",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-009",
+      "reponse": "Élie",
+      "accepte": ["elie", "élie"],
+      "indices": [
+        "Découragé, il s'assit sous un genêt et demanda la mort, puis marcha quarante jours jusqu'à Horeb.",
+        "Chez une veuve de Sarepta, la farine du pot et l'huile de la cruche ne s'épuisèrent point.",
+        "Des corbeaux lui apportaient du pain et de la viande près du torrent de Kerith.",
+        "Sur le Carmel, face à quatre cent cinquante prophètes de Baal, le feu du ciel consuma son sacrifice arrosé d'eau.",
+        "Ce prophète ne mourut pas : il monta au ciel dans un tourbillon, avec un char et des chevaux de feu."
+      ],
+      "reference": "1 Rois 17–19 ; 2 Rois 2",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-010",
+      "reponse": "Élisée",
+      "accepte": ["elisee", "élisée"],
+      "indices": [
+        "Quand il fut appelé, il labourait avec douze paires de bœufs devant lui.",
+        "Il fit surnager le fer d'une hache empruntée, tombé dans l'eau.",
+        "Des jeunes gens qui se moquaient de sa tête chauve furent déchirés par deux ours sorties de la forêt.",
+        "Il envoya un chef de l'armée de Syrie, lépreux, se plonger sept fois dans le Jourdain.",
+        "Il ramassa le manteau du prophète enlevé au ciel, ayant demandé une double portion de son esprit."
+      ],
+      "reference": "1 Rois 19:19-21 ; 2 Rois 2–6",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-011",
+      "reponse": "Samuel",
+      "accepte": ["samuel"],
+      "indices": [
+        "Sa mère lui faisait chaque année une petite robe et la lui apportait au sanctuaire.",
+        "Il dressa une pierre nommée Ében-Ézer, en disant : « Jusqu'ici l'Éternel nous a secourus. »",
+        "Il oignit les deux premiers rois d'Israël.",
+        "Enfant voué par sa mère avant sa naissance, il grandit auprès du sacrificateur Éli.",
+        "Appelé une nuit par une voix qu'il prit pour celle du sacrificateur, il répondit : « Parle, car ton serviteur écoute. »"
+      ],
+      "reference": "1 Samuel 1–16",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-012",
+      "reponse": "Saül",
+      "accepte": ["saul", "saül", "roi saul"],
+      "indices": [
+        "Parti chercher les ânesses égarées de son père, il trouva un royaume.",
+        "Le jour où on devait le présenter au peuple, on le trouva caché parmi les bagages.",
+        "De la tribu de Benjamin, il dépassait tout le peuple de la tête.",
+        "La nuit précédant sa dernière bataille, il consulta à En-Dor une femme qui évoquait les morts.",
+        "Premier roi d'Israël, rejeté pour sa désobéissance, il poursuivit de sa jalousie le jeune berger dont la harpe l'apaisait."
+      ],
+      "reference": "1 Samuel 9–31",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-013",
+      "reponse": "Salomon",
+      "accepte": ["salomon"],
+      "indices": [
+        "Il prononça trois mille sentences et composa mille cinq cantiques.",
+        "Sur son grand chantier, ni marteau ni hache ne furent entendus : les pierres arrivaient toutes taillées.",
+        "Une reine venue de loin l'éprouva par des énigmes et resta hors d'elle-même devant ce qu'elle vit.",
+        "En songe à Gabaon, il demanda à Dieu un cœur intelligent plutôt que la richesse ou une longue vie.",
+        "Il ordonna de couper un enfant en deux pour discerner la vraie mère, et bâtit le temple de Jérusalem."
+      ],
+      "reference": "1 Rois 3–10",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-014",
+      "reponse": "Jonas",
+      "accepte": ["jonas"],
+      "indices": [
+        "Fils d'Amitthaï, originaire de Gath-Hépher, il avait prophétisé le rétablissement des limites d'Israël.",
+        "Un ricin poussa pour ombrager sa tête, puis sécha, piqué par un ver envoyé à l'aurore.",
+        "Pendant la tempête, il dormait au fond du navire, et le sort le désigna.",
+        "Il s'irrita de voir Dieu se repentir du mal annoncé contre une grande ville ennemie.",
+        "Fuyant sa mission, il fut jeté à la mer et passa trois jours et trois nuits dans le ventre d'un grand poisson."
+      ],
+      "reference": "Jonas ; 2 Rois 14:25",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-015",
+      "reponse": "Daniel",
+      "accepte": ["daniel"],
+      "indices": [
+        "Le chef des eunuques lui donna le nom de Beltschatsar.",
+        "Il demanda pour lui et ses compagnons dix jours de légumes et d'eau au lieu des mets du roi.",
+        "Pendant un festin, il déchiffra les mots qu'une main avait tracés sur la muraille.",
+        "Trois fois par jour, fenêtres ouvertes du côté de Jérusalem, il priait malgré l'interdiction royale.",
+        "Jeté dans la fosse aux lions, il en sortit sans aucune blessure, car il avait eu confiance en son Dieu."
+      ],
+      "reference": "Daniel 1–6",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-016",
+      "reponse": "Esther",
+      "accepte": ["esther", "hadassa"],
+      "indices": [
+        "Orpheline de père et de mère, elle portait aussi le nom d'Hadassa et fut adoptée par le fils de son oncle.",
+        "Elle demanda trois jours de jeûne avant de paraître devant le roi sans avoir été appelée.",
+        "« Si je péris, je péris » — et le roi lui tendit le sceptre d'or.",
+        "Elle invita deux fois le roi et son ministre à un festin avant de dénoncer celui qui voulait perdre son peuple.",
+        "Devenue reine de Perse à la place de Vasthi, elle sauva les Juifs de l'extermination."
+      ],
+      "reference": "Esther",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-017",
+      "reponse": "Ruth",
+      "accepte": ["ruth"],
+      "indices": [
+        "Les femmes dirent à sa belle-mère qu'elle valait mieux pour elle que sept fils.",
+        "On lui rapporta : « Tu as quitté ton père, ta mère et le pays de ta naissance pour un peuple inconnu. »",
+        "Une nuit, elle alla se coucher aux pieds d'un homme qui dormait dans l'aire de battage.",
+        "Étrangère venue de Moab, elle glanait des épis derrière les moissonneurs à Bethléhem.",
+        "« Ton peuple sera mon peuple, et ton Dieu sera mon Dieu » — elle devint l'arrière-grand-mère du roi David."
+      ],
+      "reference": "Ruth",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-018",
+      "reponse": "Débora",
+      "accepte": ["debora", "déborah", "deborah"],
+      "indices": [
+        "Elle se leva « comme une mère en Israël » et chanta la victoire avec le fils d'Abinoam.",
+        "Elle annonça que l'honneur de la bataille reviendrait à une femme, qui perça la tempe du chef ennemi avec un pieu.",
+        "Elle siégeait sous un palmier, entre Rama et Béthel, et les enfants d'Israël montaient vers elle pour être jugés.",
+        "Le chef de l'armée d'Israël refusa de partir en guerre si elle ne l'accompagnait pas.",
+        "Prophétesse et juge en Israël, elle mena le peuple à la victoire contre une armée aux neuf cents chars de fer."
+      ],
+      "reference": "Juges 4–5",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-019",
+      "reponse": "Rahab",
+      "accepte": ["rahab"],
+      "indices": [
+        "Sa maison était bâtie sur la muraille même de la ville.",
+        "Elle cacha deux hommes sur son toit, sous des tiges de lin qu'elle y avait arrangées.",
+        "Elle figure dans la généalogie de Jésus comme mère de Boaz.",
+        "Un cordon de fil cramoisi attaché à sa fenêtre devait sauver toute sa famille.",
+        "Prostituée de Jéricho, elle fut épargnée lors de la chute de la ville pour avoir caché les espions d'Israël."
+      ],
+      "reference": "Josué 2 ; 6 ; Matthieu 1:5",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-020",
+      "reponse": "Gédéon",
+      "accepte": ["gedeon", "gédéon", "jerubbaal"],
+      "indices": [
+        "Pour avoir renversé de nuit l'autel de Baal, on lui donna le nom de Jerubbaal.",
+        "Il battait du froment au pressoir pour le soustraire aux pillards quand l'ange de l'Éternel lui apparut.",
+        "Parmi ses hommes, seuls furent retenus ceux qui lapèrent l'eau en la portant à la bouche avec la main.",
+        "Par deux fois, il demanda un signe avec une toison de laine et la rosée.",
+        "Avec trois cents hommes, des trompettes et des cruches cachant des flambeaux, il mit en déroute Madian."
+      ],
+      "reference": "Juges 6–8",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-021",
+      "reponse": "Samson",
+      "accepte": ["samson"],
+      "indices": [
+        "Il attrapa trois cents renards et lâcha des flambeaux dans les moissons des Philistins.",
+        "Il tira une énigme d'une carcasse de lion où des abeilles avaient déposé du miel.",
+        "Il arracha de nuit les battants des portes de Gaza et les porta au sommet d'une montagne.",
+        "Avec une mâchoire d'âne, il abattit mille hommes.",
+        "Sa force tenait à sa chevelure jamais rasée ; une femme qu'il aimait le livra en le faisant raser."
+      ],
+      "reference": "Juges 13–16",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-022",
+      "reponse": "Josias",
+      "accepte": ["josias"],
+      "indices": [
+        "Il fit consulter une prophétesse, femme du gardien des vêtements, qui habitait l'autre quartier de Jérusalem.",
+        "Il fut blessé à mort à Meguiddo, face au pharaon Néco.",
+        "Il devint roi à huit ans et régna trente et un ans à Jérusalem.",
+        "Il déchira ses vêtements en entendant lire le livre de la loi retrouvé dans le temple.",
+        "Jeune roi réformateur de Juda, il purifia le pays des idoles et célébra une Pâque comme on n'en avait plus vu."
+      ],
+      "reference": "2 Rois 22–23",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-023",
+      "reponse": "Néhémie",
+      "accepte": ["nehemie", "néhémie"],
+      "indices": [
+        "Sous sa conduite, la muraille fut achevée en cinquante-deux jours, le vingt-cinq du mois d'Élul.",
+        "Sanballat et Tobija se moquaient de son ouvrage de pierres.",
+        "Ses bâtisseurs travaillaient d'une main et tenaient une arme de l'autre.",
+        "Échanson du roi Artaxerxès, il obtint des lettres pour retourner dans la ville des sépulcres de ses pères.",
+        "Il rebâtit les murailles de Jérusalem malgré les moqueries et les complots, et un livre porte son nom."
+      ],
+      "reference": "Néhémie 1–6",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-024",
+      "reponse": "Hulda",
+      "accepte": ["hulda", "houlda"],
+      "indices": [
+        "Elle habitait à Jérusalem, dans l'autre quartier de la ville.",
+        "Elle était femme de Schallum, gardien des vêtements.",
+        "Le sacrificateur Hilkija vint la consulter de la part du roi.",
+        "Elle annonça le malheur sur Juda, mais la paix pour le roi au cœur touché, qui serait recueilli avant de le voir.",
+        "Prophétesse consultée lorsque le livre de la loi fut retrouvé dans le temple, sous le règne de Josias."
+      ],
+      "reference": "2 Rois 22:14-20",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-025",
+      "reponse": "Anne (mère de Samuel)",
+      "accepte": ["anne", "anne mere de samuel"],
+      "indices": [
+        "Sa rivale la mortifiait chaque année quand elle montait à la maison de l'Éternel.",
+        "Un sacrificateur la crut ivre parce que ses lèvres remuaient sans qu'on entende sa voix.",
+        "Elle fit le vœu que le rasoir ne passerait point sur la tête de l'enfant qu'elle demandait.",
+        "Après avoir prêté son premier-né à l'Éternel, elle eut encore trois fils et deux filles.",
+        "Femme stérile exaucée, elle consacra son fils au sanctuaire : il devint le prophète qui oignit les premiers rois."
+      ],
+      "reference": "1 Samuel 1–2",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-026",
+      "reponse": "Marie (mère de Jésus)",
+      "accepte": ["marie", "marie mere de jesus", "vierge marie", "la vierge marie"],
+      "indices": [
+        "Un vieillard lui annonça qu'une épée lui transpercerait l'âme.",
+        "À des noces, elle dit aux serviteurs : « Faites ce qu'il vous dira. »",
+        "Elle chercha son fils pendant trois jours et le trouva dans le temple, au milieu des docteurs.",
+        "Au pied de la croix, elle fut confiée au disciple que Jésus aimait.",
+        "Vierge fiancée à un charpentier, elle reçut la visite de l'ange Gabriel et enfanta à Bethléhem."
+      ],
+      "reference": "Luc 1–2 ; Jean 2 ; 19:25-27",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-027",
+      "reponse": "Marie de Magdala",
+      "accepte": ["marie de magdala", "marie madeleine", "marie-madeleine", "madeleine", "marie magdala"],
+      "indices": [
+        "Elle comptait parmi les femmes qui assistaient Jésus de leurs biens.",
+        "Sept démons étaient sortis d'elle.",
+        "Elle se tenait près de la croix et regarda où le corps était mis.",
+        "Au matin, elle prit le Ressuscité pour le jardinier.",
+        "Première témoin de la résurrection, elle s'entendit appeler par son nom et s'écria : « Rabbouni ! »"
+      ],
+      "reference": "Luc 8:2-3 ; Jean 20:1-18",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-028",
+      "reponse": "Marthe",
+      "accepte": ["marthe", "martha"],
+      "indices": [
+        "C'est à elle que Jésus déclara : « Je suis la résurrection et la vie. »",
+        "Elle fit remarquer qu'après quatre jours, le corps de son frère sentait déjà.",
+        "Lors d'un souper à Béthanie, elle servait, tandis que son frère ressuscité était à table.",
+        "Elle se plaignit que sa sœur la laissât servir seule, assise aux pieds du Seigneur.",
+        "Jésus lui dit qu'elle s'inquiétait de beaucoup de choses, mais que sa sœur avait choisi la bonne part."
+      ],
+      "reference": "Luc 10:38-42 ; Jean 11–12",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-029",
+      "reponse": "Jean-Baptiste",
+      "accepte": ["jean baptiste", "jean-baptiste", "jean le baptiste", "jean le baptiseur"],
+      "indices": [
+        "Son père devint muet pour n'avoir pas cru à l'annonce de sa naissance.",
+        "Il tressaillit dans le sein de sa mère à la salutation d'une visiteuse.",
+        "De sa prison, il envoya demander : « Es-tu celui qui doit venir ? »",
+        "Vêtu de poils de chameau, il se nourrissait de sauterelles et de miel sauvage.",
+        "Il baptisait dans le Jourdain, désigna l'Agneau de Dieu, et fut décapité à cause d'une danse."
+      ],
+      "reference": "Luc 1 ; 7 ; Matthieu 3 ; 14",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-030",
+      "reponse": "Pierre",
+      "accepte": ["pierre", "simon pierre", "cephas", "apotre pierre"],
+      "indices": [
+        "Délivré de prison par un ange, il frappa à une porte qu'une servante nommée Rhode, de joie, oublia d'ouvrir.",
+        "Sur un toit à Joppé, il vit descendre du ciel une nappe pleine d'animaux : « Lève-toi, tue et mange. »",
+        "Il trancha l'oreille droite du serviteur du souverain sacrificateur.",
+        "Il marcha sur les eaux vers son Maître, puis eut peur et commença à enfoncer.",
+        "Pêcheur de Galilée, il renia trois fois son Maître avant le chant du coq, puis prêcha à la Pentecôte."
+      ],
+      "reference": "Matthieu 14 ; Jean 18 ; Actes 2 ; 10 ; 12",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-031",
+      "reponse": "Paul",
+      "accepte": ["paul", "saul de tarse", "apotre paul", "paul de tarse"],
+      "indices": [
+        "On le descendit par une fenêtre, dans une corbeille, le long de la muraille, pour lui sauver la vie.",
+        "Après un naufrage, une vipère sortie des broussailles s'attacha à sa main sans lui faire de mal.",
+        "Faiseur de tentes de métier, il travaillait de ses mains tout en annonçant l'Évangile.",
+        "On déposait les vêtements des lapidateurs du premier martyr aux pieds de ce jeune homme approbateur.",
+        "Persécuteur terrassé par une lumière sur le chemin de Damas, il devint l'apôtre des païens."
+      ],
+      "reference": "Actes 7:58 ; 9 ; 18 ; 28 ; 2 Corinthiens 11:33",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-032",
+      "reponse": "Barnabas",
+      "accepte": ["barnabas", "barnabe", "barnabé"],
+      "indices": [
+        "Lévite originaire de Chypre, il vendit un champ et en apporta le prix aux pieds des apôtres.",
+        "Il s'appelait d'abord Joseph ; son surnom signifie fils d'exhortation.",
+        "À Lystre, la foule voulut l'appeler Jupiter et lui offrir un sacrifice.",
+        "Il se sépara de son compagnon de voyage à cause d'un jeune homme appelé Marc, qu'il voulait reprendre.",
+        "C'est lui qui présenta aux apôtres le persécuteur converti, puis l'amena à Antioche pour enseigner avec lui."
+      ],
+      "reference": "Actes 4:36-37 ; 9:27 ; 11 ; 14–15",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-033",
+      "reponse": "Zachée",
+      "accepte": ["zachee", "zachée"],
+      "indices": [
+        "Il fut dit de lui : « Le salut est entré dans cette maison, parce que celui-ci est aussi un fils d'Abraham. »",
+        "Il était riche, et chef des publicains.",
+        "La foule murmura de voir le Maître loger chez un homme pécheur.",
+        "Il promit la moitié de ses biens aux pauvres et le quadruple à quiconque il aurait fait tort.",
+        "Petit de taille, il monta sur un sycomore à Jéricho pour voir passer Jésus."
+      ],
+      "reference": "Luc 19:1-10",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-034",
+      "reponse": "Lydie",
+      "accepte": ["lydie", "lydia"],
+      "indices": [
+        "« Le Seigneur lui ouvrit le cœur, pour qu'elle fût attentive. »",
+        "On la rencontra au bord d'une rivière, dans un lieu de prière, un jour de sabbat.",
+        "Originaire de la ville de Thyatire, elle vivait à Philippes.",
+        "Après son baptême avec sa famille, elle insista pour loger chez elle les messagers de l'Évangile.",
+        "Marchande de pourpre, elle fut la première convertie de la prédication de Paul en Macédoine."
+      ],
+      "reference": "Actes 16:11-15,40",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-035",
+      "reponse": "Thomas",
+      "accepte": ["thomas", "didyme"],
+      "indices": [
+        "Il dit un jour aux autres disciples : « Allons aussi, afin de mourir avec lui. »",
+        "On l'appelait Didyme.",
+        "Il demanda : « Seigneur, nous ne savons où tu vas ; comment pouvons-nous en savoir le chemin ? »",
+        "Il était absent le soir où le Ressuscité apparut aux disciples réunis.",
+        "Il voulut voir la marque des clous avant de croire, puis s'écria : « Mon Seigneur et mon Dieu ! »"
+      ],
+      "reference": "Jean 11:16 ; 14:5 ; 20:24-29",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-036",
+      "reponse": "Étienne",
+      "accepte": ["etienne", "étienne", "stephane"],
+      "indices": [
+        "Ceux qui siégeaient au sanhédrin virent son visage comme celui d'un ange.",
+        "Il fut choisi parmi sept hommes pleins d'Esprit-Saint et de sagesse pour le service des tables.",
+        "Il vit les cieux ouverts et le Fils de l'homme debout à la droite de Dieu.",
+        "Les témoins déposèrent leurs vêtements aux pieds d'un jeune homme nommé Saul.",
+        "Premier martyr de l'Église, il fut lapidé en priant : « Seigneur, ne leur impute pas ce péché ! »"
+      ],
+      "reference": "Actes 6–7",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-037",
+      "reponse": "Timothée",
+      "accepte": ["timothee", "timothée"],
+      "indices": [
+        "Paul lui conseilla un peu de vin, à cause de son estomac et de ses fréquentes indispositions.",
+        "La foi sincère habita d'abord son aïeule Loïs et sa mère Eunice.",
+        "Dès son enfance, il connaissait les saintes lettres.",
+        "Fils d'une Juive croyante et d'un père grec, il fut circoncis à cause des Juifs de ces contrées.",
+        "Jeune compagnon de Paul et destinataire de deux épîtres : « Que personne ne méprise ta jeunesse. »"
+      ],
+      "reference": "Actes 16:1-3 ; 1–2 Timothée",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-038",
+      "reponse": "Onésime",
+      "accepte": ["onesime", "onésime"],
+      "indices": [
+        "Paul l'appelle son enfant, qu'il a engendré étant dans les chaînes.",
+        "« Qui autrefois t'a été inutile, mais qui maintenant est utile, et à toi et à moi. »",
+        "Paul aurait voulu le retenir auprès de lui, mais ne voulut rien faire sans le consentement de son maître.",
+        "Il fut renvoyé « non plus comme un esclave, mais comme un frère bien-aimé ».",
+        "Esclave de Philémon rencontré auprès de Paul prisonnier, une courte épître tout entière plaide pour lui."
+      ],
+      "reference": "Philémon ; Colossiens 4:9",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-039",
+      "reponse": "Priscille",
+      "accepte": ["priscille", "prisca", "priscilla"],
+      "indices": [
+        "Elle arriva d'Italie parce que Claude avait ordonné à tous les Juifs de sortir de Rome.",
+        "Paul écrit qu'avec son mari, elle a exposé sa tête pour lui sauver la vie.",
+        "Une Église se réunissait dans sa maison.",
+        "Faiseurs de tentes, elle et son mari accueillirent Paul à Corinthe, qui exerçait le même métier.",
+        "Avec Aquilas, elle exposa plus exactement la voie de Dieu à l'éloquent Apollos."
+      ],
+      "reference": "Actes 18 ; Romains 16:3-5",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-040",
+      "reponse": "Tabitha (Dorcas)",
+      "accepte": ["tabitha", "dorcas", "tabitha dorcas"],
+      "indices": [
+        "Après sa mort, on lava son corps et on le déposa dans une chambre haute.",
+        "Elle vivait à Joppé, la ville où Pierre logea ensuite chez un corroyeur nommé Simon.",
+        "Elle faisait beaucoup de bonnes œuvres et d'aumônes.",
+        "Les veuves en pleurs montrèrent les tuniques et les vêtements qu'elle faisait de son vivant.",
+        "Pierre, à genoux, pria et lui ordonna de se lever : cette disciple couturière fut rendue vivante aux saints."
+      ],
+      "reference": "Actes 9:36-42",
+      "genre": "personnage"
+    },
+    {
+      "id": "po-041",
+      "reponse": "Jéricho",
+      "accepte": ["jericho", "jéricho"],
+      "indices": [
+        "Hiel de Béthel la rebâtit au prix de son premier-né et de son plus jeune fils, selon une ancienne parole.",
+        "On l'appelle la ville des palmiers.",
+        "Élisée y assainit les eaux mauvaises avec du sel jeté d'un plat neuf.",
+        "Un chef des publicains y monta sur un sycomore, et un aveugle y fut guéri au bord du chemin.",
+        "Ses murailles s'écroulèrent au septième jour, après sept tours au son des trompettes."
+      ],
+      "reference": "Josué 6 ; 1 Rois 16:34 ; 2 Rois 2 ; Luc 18–19",
+      "genre": "lieu"
+    },
+    {
+      "id": "po-042",
+      "reponse": "Béthanie",
+      "accepte": ["bethanie", "béthanie"],
+      "indices": [
+        "Ce village était près de Jérusalem, à quinze stades environ.",
+        "Dans la maison de Simon le lépreux, une femme y répandit un parfum de grand prix sur la tête de Jésus.",
+        "C'est jusque vers ce lieu que Jésus conduisit les siens avant de les bénir et d'être élevé au ciel.",
+        "Deux sœurs y firent dire à Jésus : « Seigneur, voici, celui que tu aimes est malade. »",
+        "Village de Marthe, de Marie et de Lazare, que Jésus fit sortir du tombeau après quatre jours."
+      ],
+      "reference": "Jean 11–12 ; Matthieu 26:6 ; Luc 24:50",
+      "genre": "lieu"
+    },
+    {
+      "id": "po-043",
+      "reponse": "Le Sinaï",
+      "accepte": ["sinai", "sinaï", "le sinai", "mont sinai", "le mont sinai"],
+      "indices": [
+        "Quiconque toucherait cette montagne devait mourir, homme ou bête.",
+        "Paul écrit qu'elle est en Arabie et qu'Agar lui correspond.",
+        "Elle était toute en fumée, l'Éternel y étant descendu au milieu du feu, et le son de la trompette se renforçait.",
+        "Moïse y demeura quarante jours et quarante nuits, sans manger de pain ni boire d'eau.",
+        "Sur cette montagne du désert furent données les dix paroles, gravées sur des tables de pierre."
+      ],
+      "reference": "Exode 19–34 ; Galates 4:25",
+      "genre": "lieu"
+    },
+    {
+      "id": "po-044",
+      "reponse": "Bethléhem",
+      "accepte": ["bethlehem", "bethléem", "bethleem", "beth lehem"],
+      "indices": [
+        "Rachel mourut et fut enterrée sur le chemin qui y mène ; on l'appelle aussi Éphrata.",
+        "David soupira après l'eau de la citerne qui est à sa porte, et trois vaillants hommes la lui rapportèrent.",
+        "Une étrangère venue de Moab y glana dans les champs et y trouva un époux.",
+        "Un prophète annonça que de cette petite ville sortirait celui qui dominera sur Israël.",
+        "Ville de David où des bergers, avertis par un ange, trouvèrent un nouveau-né couché dans une crèche."
+      ],
+      "reference": "Genèse 35:19 ; Ruth ; Michée 5:1 ; Luc 2",
+      "genre": "lieu"
+    },
+    {
+      "id": "po-045",
+      "reponse": "Babylone",
+      "accepte": ["babylone", "babel"],
+      "indices": [
+        "Son roi fut chassé du milieu des hommes et mangea de l'herbe comme les bœufs.",
+        "Jérémie annonça que l'exil chez elle durerait soixante-dix ans.",
+        "Une fournaise y fut chauffée sept fois plus qu'à l'ordinaire pour trois jeunes hommes restés debout.",
+        "Sur les bords de ses fleuves, les captifs pleuraient en pensant à Sion, leurs harpes suspendues aux saules.",
+        "Capitale de Nebucadnetsar où Juda fut déporté ; l'Apocalypse la nomme « la grande »."
+      ],
+      "reference": "2 Rois 25 ; Psaume 137 ; Daniel 3–4 ; Apocalypse 17–18",
+      "genre": "lieu"
+    },
+    {
+      "id": "po-046",
+      "reponse": "Ninive",
+      "accepte": ["ninive"],
+      "indices": [
+        "Sennachérib y retourna après le désastre de son armée, et y fut frappé par l'épée de ses fils.",
+        "Le prophète Nahum prononça un oracle sur elle.",
+        "Il fallait trois jours de marche pour la parcourir.",
+        "Sur ordre du roi, hommes et bêtes y furent couverts de sacs et privés de nourriture et d'eau.",
+        "Grande ville d'Assyrie qui se repentit à la prédication de Jonas, et Dieu ne la détruisit pas."
+      ],
+      "reference": "Jonas 3 ; Nahum ; 2 Rois 19:36-37",
+      "genre": "lieu"
+    },
+    {
+      "id": "po-047",
+      "reponse": "Capernaüm",
+      "accepte": ["capernaum", "capernaüm", "capharnaum", "capharnaüm"],
+      "indices": [
+        "« Toi qui as été élevée jusqu'au ciel, tu seras abaissée jusqu'au séjour des morts. »",
+        "Un centenier qui avait fait bâtir la synagogue y fit dire : « Je ne suis pas digne que tu entres sous mon toit. »",
+        "La belle-mère de Simon y fut guérie d'une violente fièvre.",
+        "On y découvrit un toit pour descendre un paralytique sur son lit devant Jésus.",
+        "Ville au bord de la mer de Galilée où Jésus vint demeurer et fit beaucoup de miracles."
+      ],
+      "reference": "Matthieu 4:13 ; Marc 1–2 ; Luc 7 ; 10:15",
+      "genre": "lieu"
+    },
+    {
+      "id": "po-048",
+      "reponse": "Jérusalem",
+      "accepte": ["jerusalem", "jérusalem", "sion"],
+      "indices": [
+        "Ses habitants jébusiens disaient : « Tu n'entreras point ici, car les aveugles mêmes et les boiteux te repousseront. »",
+        "David y fit monter l'arche en dansant de toute sa force devant l'Éternel.",
+        "Jésus pleura sur elle : « Si toi aussi, tu connaissais les choses qui appartiennent à ta paix ! »",
+        "« Toi qui tues les prophètes et qui lapides ceux qui te sont envoyés, combien de fois ai-je voulu rassembler tes enfants ! »",
+        "Ville du temple ; l'Apocalypse annonce sa version nouvelle, descendant du ciel comme une épouse parée."
+      ],
+      "reference": "2 Samuel 5–6 ; Matthieu 23:37 ; Luc 19:41 ; Apocalypse 21",
+      "genre": "lieu"
+    },
+    {
+      "id": "po-049",
+      "reponse": "Le Jourdain",
+      "accepte": ["jourdain", "le jourdain", "fleuve jourdain"],
+      "indices": [
+        "Un général syrien s'y plongea sept fois, et sa chair redevint comme celle d'un jeune enfant.",
+        "Le fer d'une hache empruntée y tomba, puis y surnagea.",
+        "Élie le frappa de son manteau roulé, et les eaux se partagèrent des deux côtés.",
+        "Israël le traversa à sec, les sacrificateurs portant l'arche s'étant arrêtés au milieu ; on en tira douze pierres.",
+        "Cours d'eau où Jean baptisait, et où Jésus fut baptisé tandis que les cieux s'ouvraient."
+      ],
+      "reference": "Josué 3–4 ; 2 Rois 2 ; 5–6 ; Matthieu 3",
+      "genre": "lieu"
+    },
+    {
+      "id": "po-050",
+      "reponse": "Emmaüs",
+      "accepte": ["emmaus", "emmaüs"],
+      "indices": [
+        "Ce village était éloigné de Jérusalem de soixante stades.",
+        "En chemin vers lui, un compagnon de route expliqua ce qui le concernait dans Moïse et tous les prophètes.",
+        "« Reste avec nous, car le soir approche, le jour est sur son déclin. »",
+        "« Notre cœur ne brûlait-il pas au dedans de nous, lorsqu'il nous parlait en chemin ? »",
+        "Village vers lequel marchaient deux disciples le jour de la résurrection ; ils reconnurent Jésus à la fraction du pain."
+      ],
+      "reference": "Luc 24:13-35",
+      "genre": "lieu"
+    },
+    {
+      "id": "po-051",
+      "reponse": "L'arche de Noé",
+      "accepte": ["arche de noe", "l'arche de noe", "larche de noe"],
+      "indices": [
+        "Elle fut faite de bois de gopher, disposée en cellules, enduite de poix en dedans et en dehors.",
+        "Ses mesures : trois cents coudées de longueur, cinquante de largeur et trente de hauteur.",
+        "L'Éternel ferma la porte sur celui qui y était entré.",
+        "Le septième mois, elle s'arrêta sur les montagnes d'Ararat.",
+        "Grand vaisseau construit sur l'ordre de Dieu, il porta huit personnes et les animaux à travers le déluge."
+      ],
+      "reference": "Genèse 6–8",
+      "genre": "chose"
+    },
+    {
+      "id": "po-052",
+      "reponse": "La manne",
+      "accepte": ["manne", "la manne"],
+      "indices": [
+        "Un omer en fut mis dans un vase, en souvenir, devant le Témoignage.",
+        "Gardée jusqu'au matin malgré la défense, elle produisait des vers et sentait mauvais.",
+        "Elle ressemblait à de la graine de coriandre, était blanche, et avait le goût d'un gâteau au miel.",
+        "Elle cessa quand le peuple mangea du produit du pays de Canaan, après la Pâque.",
+        "Nourriture tombée chaque matin pendant la traversée du désert ; son nom vient de la question : qu'est-ce ?"
+      ],
+      "reference": "Exode 16 ; Josué 5:12",
+      "genre": "chose"
+    },
+    {
+      "id": "po-053",
+      "reponse": "Le buisson ardent",
+      "accepte": ["buisson ardent", "le buisson ardent", "buisson", "le buisson"],
+      "indices": [
+        "La scène se passe à Horeb, la montagne de Dieu, au delà du désert.",
+        "L'ange de l'Éternel y apparut dans une flamme de feu.",
+        "L'ordre fut donné d'ôter ses souliers, car ce lieu était une terre sainte.",
+        "De là fut prononcé le nom : « Je suis celui qui suis. »",
+        "Arbuste tout en feu qui ne se consumait point, devant lequel un berger reçut la mission de délivrer Israël."
+      ],
+      "reference": "Exode 3",
+      "genre": "chose"
+    },
+    {
+      "id": "po-054",
+      "reponse": "L'arche de l'alliance",
+      "accepte": ["arche de l'alliance", "arche de lalliance", "l'arche de l'alliance", "arche d'alliance", "arche de dieu", "arche de l'eternel"],
+      "indices": [
+        "Uzza mourut pour avoir étendu la main vers elle quand les bœufs la firent pencher.",
+        "Capturée par les Philistins, elle fit tomber Dagon face contre terre devant elle.",
+        "Selon l'épître aux Hébreux, elle renfermait un vase d'or de manne, la verge qui avait fleuri et les tables.",
+        "Deux chérubins d'or se faisaient face sur son couvercle, le propitiatoire.",
+        "Coffre de bois d'acacia couvert d'or, portant les tables de la loi, promené sept jours autour de Jéricho."
+      ],
+      "reference": "Exode 25 ; 1 Samuel 4–6 ; 2 Samuel 6 ; Hébreux 9:4",
+      "genre": "chose"
+    },
+    {
+      "id": "po-055",
+      "reponse": "Le serpent d'airain",
+      "accepte": ["serpent d'airain", "serpent dairain", "le serpent d'airain", "serpent de bronze", "nehuschtan"],
+      "indices": [
+        "Ézéchias le mit en pièces, car on brûlait des parfums devant lui ; on l'appelait Nehuschtan.",
+        "Jésus s'y compara : comme il fut élevé dans le désert, il faut que le Fils de l'homme soit élevé.",
+        "Il fut fabriqué après que des serpents brûlants eurent mordu le peuple qui parlait contre Dieu et contre Moïse.",
+        "Moïse le plaça sur une perche.",
+        "Quiconque avait été mordu et le regardait conservait la vie."
+      ],
+      "reference": "Nombres 21:4-9 ; 2 Rois 18:4 ; Jean 3:14",
+      "genre": "chose"
+    }
+  ]
+}

@@ -58,6 +58,29 @@ Plafond 10 créations/heure/IP (fichier `api/frise.php`).
   participants, moi, frise, enCours, positionJuste, animateur}` — les verdicts
   des autres n'apparaissent qu'en phase `revele`.
 
+## Épreuves à choix (« Qui a dit ça ? » /quiadit/, « Écrit… ou pas ? » /ecritoupas/)
+
+Mêmes principes que la Frise, pour des paquets de QUESTIONS À CHOIX
+`{q, options[2..4], bonne, ref|null, rev|null}` (fichier `api/epreuve.php`).
+Codes `ED-XXXXX` (défis, 7 j) et `EV-XXXXX` (veillées, 24 h). En veillée,
+l'état ne transmet JAMAIS `bonne`/`ref`/`rev` pendant la phase `question` —
+seulement à la révélation. Routes : `POST /api/epreuve/duel`,
+`GET/POST /api/epreuve/duel/{code}[/score]`, `POST /api/epreuve/veillee`,
+`POST …/{code}/rejoindre|avancer|reponse` (`{jeton, carte, choix}`),
+`GET …/{code}/etat`. Les banques vivent côté client
+(`quiadit/data/banque.json`, `ecritoupas/data/banque.json`).
+
+## « De qui parle-t-on ? » (/portrait/) — le portrait à indices
+
+Défis `PD-XXXXX` (table epreuve_duels, score max = 5 points × portraits) et
+veillées `PV-XXXXX` (fichier `api/portrait.php`) : l'animateur révèle les
+indices UN À UN (`avancer` avec `action: 'indice'|'reveler'|'suivant'`),
+chacun répond en TEXTE LIBRE une seule fois par portrait
+(`reponse {jeton, carte, texte}` — correspondance tolérante, points
+dégressifs 5→1 selon l'indice courant). L'état n'expose que les indices déjà
+révélés ; la réponse et la référence n'arrivent qu'à la révélation.
+Banque : `portrait/data/banque.json`.
+
 ## Authentification
 
 ### POST /api/auth/request-code

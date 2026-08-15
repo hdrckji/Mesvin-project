@@ -23,6 +23,10 @@ COPY icon-180.png icon-192.png icon-512.png icon-maskable-512.png og-image.png r
 # adresse d'essai, qui redirige vers /frise/.
 COPY frise/ ./frise/
 COPY frise-essai.html ./
+# Les épreuves de Sonder (chacune : page + banque dans data/).
+COPY quiadit/ ./quiadit/
+COPY ecritoupas/ ./ecritoupas/
+COPY portrait/ ./portrait/
 # Pages d'accueil thématiques (référencement — voir sitemap.xml).
 COPY quiz-biblique/ ./quiz-biblique/
 COPY plan-lecture-bible/ ./plan-lecture-bible/

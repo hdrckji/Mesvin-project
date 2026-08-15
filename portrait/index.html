@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- ============================================================================
+     Qui a dit ça ? — épreuve de Sonder. PAGE ENGENDRÉE : ne pas retoucher à la
+     main, modifier le gabarit gen-epreuve.py (les jumelles /quiadit/ et
+     /ecritoupas/ partagent le même moteur). Modes : solo, à plusieurs sur un
+     téléphone, défi à distance par code et veillée en direct avec grand
+     écran (endpoints /api/epreuve/*, sans compte — voir API-CONTRAT.md).
+     ========================================================================== -->
+<title>De qui parle-t-on ? — Bible Horizon</title>
+<meta name="description" content="Les indices tombent un à un : plus tu devines tôt, plus tu marques. Personnages, lieux et objets de la Bible. Seul, à plusieurs, par code ou en veillée. Gratuit." />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Bible Horizon" />
+<meta property="og:locale" content="fr_FR" />
+<meta property="og:title" content="De qui parle-t-on ? — Bible Horizon" />
+<meta property="og:description" content="Les indices tombent un à un : plus tu devines tôt, plus tu marques. Personnages, lieux et objets de la Bible. Seul, à plusieurs, par code ou en veillée. Gratuit." />
+<meta property="og:url" content="https://biblehorizon.fr/portrait/" />
+<meta property="og:image" content="https://biblehorizon.fr/og-image.png" />
+<meta name="theme-color" content="#f7f3ea" />
+<script>
+  /* Anti-flash : applique le thème choisi AVANT le rendu — même mécanique
+     que les autres modules. */
+  (function () {
+    try {
+      var choix = localStorage.getItem('graine.theme');
+      if (choix === 'clair' || choix === 'sombre' || choix === 'sepia') {
+        document.documentElement.setAttribute('data-theme', choix);
+      }
+      var fonds = { clair: '#f7f3ea', sombre: '#141b28', sepia: '#f2e6cf' };
+      var mq = window.matchMedia('(prefers-color-scheme: dark)');
+      var maj = function () {
+        var t = document.documentElement.getAttribute('data-theme') || (mq.matches ? 'sombre' : 'clair');
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', fonds[t] || fonds.clair);
+      };
+      maj();
+      if (mq.addEventListener) mq.addEventListener('change', maj);
+    } catch (e) { /* stockage indisponible : on suit le système */ }
+  })();
+</script>
+<link rel="icon" href="../icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="../icon-180.png" />
+<style>
+  :root {
+    --bg: #f7f3ea; --surface: #fffdf8; --surface-2: #f0e9da;
+    --ink: #24303f; --ink-soft: #5b6675; --line: #e2d9c6;
+    --accent: #b98a2e; --accent-ink: #7a5a15;
+    --grow: #3f6c49; --grow-soft: #e4efe4; --danger: #a34a24;
+    --on-accent: #241a05;
+    --shadow: 0 6px 24px rgba(40, 34, 20, .10); --radius: 18px;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --bg: #141b28; --surface: #1b2434; --surface-2: #232f43;
+      --ink: #f2f5fa; --ink-soft: #aebfd4; --line: #2c3a52;
+      --accent: #d9b45f; --accent-ink: #e7c987;
+      --grow: #7cbb89; --grow-soft: #22322a; --danger: #e89880;
+      --on-accent: #241a05;
+      --shadow: 0 8px 28px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="sombre"] {
+    --bg: #141b28; --surface: #1b2434; --surface-2: #232f43;
+    --ink: #f2f5fa; --ink-soft: #aebfd4; --line: #2c3a52;
+    --accent: #d9b45f; --accent-ink: #e7c987;
+    --grow: #7cbb89; --grow-soft: #22322a; --danger: #e89880;
+    --on-accent: #241a05;
+    --shadow: 0 8px 28px rgba(0, 0, 0, .35);
+  }
+  :root[data-theme="sepia"] {
+    --bg: #f2e6cf; --surface: #faf3e2; --surface-2: #e9d9b7;
+    --ink: #3b2f1b; --ink-soft: #6d5a39; --line: #d9c49a;
+    --accent: #a87e22; --accent-ink: #77500e;
+    --grow: #3c6845; --grow-soft: #dde5c8; --danger: #9c4220;
+    --on-accent: #241a05;
+    --shadow: 0 6px 24px rgba(84, 62, 22, .14);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans);
+    -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 18px 16px 40px; }
+  .wrap.proj { max-width: 1150px; }
+  h1 { font-family: var(--serif); font-size: 1.5rem; margin: 6px 0 2px; }
+  h1 .seed { color: var(--accent); }
+  .muted { color: var(--ink-soft); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 18px; margin: 12px 0; }
+  .btn { display: block; width: 100%; border: 0; border-radius: 14px; padding: 14px 16px;
+    font: inherit; font-weight: 700; cursor: pointer; margin-top: 10px; }
+  .btn-primary { background: var(--accent); color: var(--on-accent); }
+  .btn-grow { background: var(--grow); color: #fff; }
+  .btn-ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--line); }
+  .hub-card { display: flex; align-items: center; gap: 16px; width: 100%;
+    padding: 20px 18px; cursor: pointer; font: inherit; color: inherit;
+    text-align: left; text-decoration: none; border: 1px solid var(--line); }
+  .hub-card .hub-ic { color: var(--accent-ink); width: 54px; height: 54px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-2); border-radius: 16px; }
+  .hub-card .hub-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+  .hub-card .hub-title { font-family: var(--serif); font-size: 1.25rem; font-weight: 650; }
+  .hub-card .hub-sub { color: var(--ink-soft); font-size: .92rem; }
+  .hub-card .chev { color: var(--ink-soft); font-size: 1.5rem; padding-left: 4px; }
+  .mode-title { font-family: var(--serif); font-size: 1.1rem; font-weight: 650; margin: 0 0 4px; }
+  .choix-row { display: flex; gap: 8px; margin-top: 12px; }
+  .choix-row .btn { margin-top: 0; font-size: .92rem; padding: 11px 8px; }
+  .topline { display: flex; justify-content: space-between; align-items: center;
+    font-size: .85rem; color: var(--ink-soft); margin-bottom: 8px; }
+  .topline b { color: var(--ink); }
+  .quit { background: none; border: 0; font: inherit; color: var(--ink-soft);
+    cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 4px; }
+  .consigne { text-align: center; font-weight: 650; margin: 6px 0 10px; }
+  .enonce { font-family: var(--serif); font-size: 1.18rem; line-height: 1.55; text-align: center;
+    margin: 4px 0 16px; }
+  .opt { display: block; width: 100%; font: inherit; text-align: center; font-weight: 600;
+    background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 12px; padding: 13px 12px; margin: 8px 0; cursor: pointer; }
+  .opt:disabled { cursor: default; }
+  .opt.bon { background: var(--grow-soft); border-color: var(--grow); color: var(--grow); font-weight: 700; }
+  .opt.faux { background: transparent; border-color: var(--danger); color: var(--danger); }
+  .opts.revele .opt:not(.bon):not(.faux) { opacity: .4; }
+  .verdict { text-align: center; font-weight: 650; margin: 12px 0 0; }
+  .verdict.ok { color: var(--grow); }
+  .verdict.faux { color: var(--danger); }
+  .revelation { font-size: .95rem; color: var(--ink-soft); background: var(--surface-2);
+    border-radius: 12px; padding: 12px 14px; margin-top: 12px; }
+  .revelation b { color: var(--ink); }
+  .refline { text-align: center; font-size: .88rem; color: var(--accent-ink); font-weight: 650;
+    margin-top: 10px; letter-spacing: .02em; }
+  .deckrow { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    border-radius: 999px; font: inherit; font-size: .88rem; padding: 8px 14px; cursor: pointer; }
+  .pill.on { background: var(--grow-soft); border-color: var(--grow); color: var(--grow); font-weight: 700; }
+  .pin { display: block; width: 100%; font: inherit; padding: 11px 12px; margin: 8px 0 0;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); }
+  .pin:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  .pchips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+  .pchip { font-size: .82rem; border: 1px solid var(--line); border-radius: 999px;
+    padding: 4px 10px; color: var(--ink-soft); background: var(--surface); }
+  .pchip.on { background: var(--grow-soft); border-color: var(--grow); color: var(--grow); font-weight: 700; }
+  .pchip.faux { background: transparent; border-color: var(--danger); color: var(--danger); font-weight: 700; }
+  .frow { display: flex; justify-content: space-between; padding: 9px 4px;
+    border-top: 1px solid var(--line); text-align: left; }
+  .frow.tete { color: var(--grow); font-weight: 650; }
+  .code-big { font-family: var(--serif); font-size: 1.9rem; font-weight: 700; letter-spacing: .12em;
+    color: var(--accent-ink); background: var(--surface-2); border: 1px dashed var(--accent);
+    border-radius: 12px; padding: 10px 6px; margin: 6px 0 2px; }
+  .feedback { text-align: center; font-size: .92rem; font-weight: 650; margin: 10px 2px; min-height: 1.3em; }
+  .feedback.ok { color: var(--grow); }
+  .feedback.faux { color: var(--danger); }
+  .fin { text-align: center; padding: 26px 16px; }
+  .fin .score { font-family: var(--serif); font-size: 2rem; color: var(--grow); font-weight: 700; }
+  /* projection */
+  .proj-code { font-family: var(--serif); font-size: clamp(3rem, 9vw, 6rem); font-weight: 700;
+    letter-spacing: .14em; color: var(--accent-ink); background: var(--surface-2);
+    border: 3px dashed var(--accent); border-radius: 22px; padding: 18px 10px; text-align: center; }
+  .proj-invite { text-align: center; font-size: clamp(1.05rem, 2.6vw, 1.6rem); color: var(--ink-soft); margin: 18px 0 6px; }
+  .proj-invite b { color: var(--ink); }
+  .proj-carte { border: 3px solid var(--accent); border-radius: 22px; background: var(--surface);
+    box-shadow: var(--shadow); text-align: center; padding: 22px 18px; margin: 14px 0; }
+  .proj-carte .lbl { font-size: clamp(.85rem, 1.6vw, 1.1rem); letter-spacing: .08em;
+    text-transform: uppercase; color: var(--accent-ink); font-weight: 700; }
+  .proj-carte .titre { font-family: var(--serif); font-size: clamp(1.3rem, 3.4vw, 2.2rem);
+    font-weight: 650; margin: 8px 0 0; }
+  .proj-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 14px 0; }
+  .proj-opts .opt { font-size: clamp(1rem, 2.2vw, 1.5rem); margin: 0; padding: 16px 12px; }
+  .proj-etat { text-align: center; font-size: clamp(1.05rem, 2.4vw, 1.5rem); font-weight: 650; margin: 10px 0; }
+  .proj-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 14px 0; }
+  .proj-chips .pchip { font-size: clamp(.95rem, 2vw, 1.3rem); padding: 8px 16px; }
+  .proj-rev { max-width: 760px; margin: 10px auto; font-size: clamp(1rem, 2vw, 1.3rem); }
+  .proj-classement { max-width: 640px; margin: 0 auto; }
+  .proj-classement .frow { font-size: clamp(1.1rem, 2.6vw, 1.7rem); padding: 14px 8px; }
+  .indices { margin: 4px 0 10px; }
+  .indice { display: flex; gap: 10px; align-items: flex-start; background: var(--surface-2);
+    border-radius: 12px; padding: 10px 12px; margin: 8px 0; font-size: .98rem; }
+  .indice .inum { flex-shrink: 0; width: 1.6em; height: 1.6em; display: flex; align-items: center;
+    justify-content: center; background: var(--accent); color: var(--on-accent);
+    border-radius: 50%; font-weight: 700; font-size: .85rem; }
+  .enjeu { text-align: center; color: var(--accent-ink); font-size: .95rem; margin: 10px 0 4px; }
+  .proj-indices { text-align: left; margin-top: 12px; }
+  .proj-indices .indice { font-size: clamp(1rem, 2.2vw, 1.5rem); }
+  .fade { animation: fade .35s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script src="../icons.js"></script>
+<script>
+'use strict';
+if (!window.icon) window.icon = function () { return ''; };
+
+const TITRE = "De qui parle-t-on ?";
+const PORTRAITS_PAR_SEANCE = 6;
+const NB_INDICES = 5;
+
+/* ---------- Aides ---------- */
+const el = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function shuffle(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; }
+/* Correspondance tolérante — la MÊME règle que le serveur (portrait_norm). */
+function norm(s) {
+  return String(s).toLowerCase().trim()
+    .replace(/œ/g, 'oe').replace(/æ/g, 'ae')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[’'-]/g, ' ')
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ').trim();
+}
+
+let BANQUE = null;
+async function chargerBanque() {
+  if (BANQUE) return BANQUE;
+  const r = await fetch('data/banque.json', { cache: 'no-cache' });
+  if (!r.ok) throw new Error("La banque de l'épreuve n'a pas pu être chargée.");
+  const brut = await r.json();
+  BANQUE = (brut.items || []).map(it => ({
+    reponse: it.reponse,
+    accepte: [norm(it.reponse)].concat((it.accepte || []).map(norm)),
+    indices: it.indices, ref: it.reference || null, genre: it.genre || 'personnage',
+  }));
+  return BANQUE;
+}
+const tirage = n => shuffle(BANQUE).slice(0, n);
+function bienDit(genre) {
+  return genre === 'lieu' ? 'Ce lieu est' : genre === 'chose' ? "C'est" : 'Ce personnage est';
+}
+
+/* ---------- État ---------- */
+let ecran = 'accueil';
+let seance = null;   // { items, idx, k, phase:'devine'|'revele', gagne, score,
+                     //   participants|null, tour, enLigne|null, envoye, texte }
+let config = { noms: ['', ''] };
+let online = null;
+let saisie = { pseudo: '', code: '' };
+let minuterie = null;
+
+/* ---------- Séance (solo, tablée, défi) ---------- */
+function demarrer(noms, enLigne, itemsServis) {
+  const n = noms ? noms.length : 0;
+  const parTete = noms ? Math.max(2, Math.min(3, Math.floor(BANQUE.length / n))) : 0;
+  const items = itemsServis || tirage(noms ? parTete * n : PORTRAITS_PAR_SEANCE);
+  seance = {
+    items: items, idx: 0, k: 1, phase: 'devine', gagne: 0, texte: '',
+    score: 0, total: items.length,
+    participants: noms ? noms.map(nom => ({ nom: nom, score: 0 })) : null, tour: 0,
+    enLigne: enLigne || null, envoye: false,
+  };
+  ecran = 'seance';
+  render();
+}
+function indiceSuivant() {
+  const s = seance;
+  if (s.phase !== 'devine' || s.k >= NB_INDICES) return;
+  s.k++;
+  render();
+}
+function repondre() {
+  const s = seance;
+  if (s.phase !== 'devine' || s.texte.trim() === '') return;
+  const item = s.items[s.idx];
+  const bon = item.accepte.includes(norm(s.texte));
+  s.gagne = bon ? (NB_INDICES + 1 - s.k) : 0;
+  if (s.participants) s.participants[s.tour].score += s.gagne; else s.score += s.gagne;
+  s.phase = 'revele';
+  render();
+}
+function suivante() {
+  const s = seance;
+  s.idx++;
+  s.k = 1; s.phase = 'devine'; s.texte = ''; s.gagne = 0;
+  if (s.participants) s.tour = (s.tour + 1) % s.participants.length;
+  if (s.idx >= s.items.length) ecran = 'fin';
+  render();
+}
+function quitter() { seance = null; online = null; pollArret(); ecran = 'accueil'; render(); }
+
+/* ---------- Écrans ---------- */
+function vueAccueil() {
+  return `<div class="fade">
+    <button class="quit" data-retour-defi="1">‹ Défi</button>
+    <h1 style="margin-top:10px">De qui parle-t-on <span class="seed">?</span></h1>
+    <p class="muted" style="margin:4px 0 16px">Les indices tombent un à un — plus tu devines tôt, plus tu marques. Personnages, lieux et objets de la Bible.</p>
+
+    <button class="card hub-card" data-solo="1">
+      <span class="hub-ic">${icon('seul', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">Seul</span>
+        <span class="hub-sub">${PORTRAITS_PAR_SEANCE} portraits — jusqu'à 5 points chacun si tu oses répondre dès le premier indice.</span></span>
+      <span class="chev">›</span>
+    </button>
+    <button class="card hub-card" data-multi="1">
+      <span class="hub-ic">${icon('groupe', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">À plusieurs, ici</span>
+        <span class="hub-sub">Le téléphone passe de main en main : chacun son portrait, chacun son audace. De 2 à 6 participants.</span></span>
+      <span class="chev">›</span>
+    </button>
+    <button class="card hub-card" data-duelcfg="1">
+      <span class="hub-ic">${icon('epees', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">Défier un ami</span>
+        <span class="hub-sub">À distance, par code : les mêmes portraits pour vous deux — qui osera répondre le plus tôt ?</span></span>
+      <span class="chev">›</span>
+    </button>
+    <button class="card hub-card" data-veilcfg="1">
+      <span class="hub-ic">${icon('ecranDirect', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">En direct, dans ton église</span>
+        <span class="hub-sub">L'animateur révèle les indices un à un sur grand écran — chacun verrouille sa réponse quand il ose.</span></span>
+      <span class="chev">›</span>
+    </button>
+    <button class="btn btn-ghost" data-join="1" style="margin-top:14px">J'ai reçu un code (PD- ou PV-)</button>
+  </div>`;
+}
+
+function vueConfig() {
+  const c = config;
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ ${TITRE}</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">À plusieurs, ici</h1>
+    <p class="muted" style="margin:4px 0 0">Chacun son tour reçoit un portrait entier : à lui de choisir quand oser répondre.</p>
+    <div class="card">
+      <p class="mode-title" style="margin-top:0">Les participants</p>
+      ${c.noms.map((n, i) => `<input class="pin" data-nom="${i}" maxlength="14" placeholder="Prénom ${i + 1}" value="${esc(n)}">`).join('')}
+      <div class="choix-row">
+        <button class="btn btn-ghost" data-addp="1" ${c.noms.length >= 6 ? 'disabled' : ''}>+ Ajouter</button>
+        <button class="btn btn-ghost" data-delp="1" ${c.noms.length <= 2 ? 'disabled' : ''}>− Retirer</button>
+      </div>
+      <button class="btn btn-grow" data-multistart="1">Commencer</button>
+    </div>
+  </div>`;
+}
+
+function htmlIndices(indices, k) {
+  return `<div class="indices">${indices.slice(0, k).map((ind, i) =>
+    `<div class="indice fade"><span class="inum">${i + 1}</span><span>${esc(ind)}</span></div>`).join('')}</div>`;
+}
+
+function vueSeance() {
+  const s = seance;
+  const item = s.items[s.idx];
+  const revele = s.phase === 'revele';
+  const tablee = s.participants
+    ? `<div class="pchips">${s.participants.map((p, i) =>
+        `<span class="pchip ${i === s.tour ? 'on' : ''}">${esc(p.nom)} · ${p.score}</span>`).join('')}</div>`
+    : '';
+  const lbl = s.participants
+    ? `Au tour de ${esc(s.participants[s.tour].nom)} — portrait ${s.idx + 1} / ${s.total}`
+    : `Portrait ${s.idx + 1} / ${s.total}`;
+  let corps;
+  if (!revele) {
+    corps = `
+      ${htmlIndices(item.indices, s.k)}
+      <p class="enjeu">Répondre maintenant : <b>${NB_INDICES + 1 - s.k} point${NB_INDICES + 1 - s.k > 1 ? 's' : ''}</b></p>
+      <form data-repform="1">
+        <input class="pin" id="in-texte" maxlength="40" placeholder="Ta réponse…" value="${esc(s.texte)}" autocomplete="off">
+        <div class="choix-row">
+          <button type="button" class="btn btn-ghost" data-indice="1" ${s.k >= NB_INDICES ? 'disabled' : ''}>Indice suivant</button>
+          <button type="submit" class="btn btn-primary">Je réponds</button>
+        </div>
+      </form>`;
+  } else {
+    corps = `
+      ${htmlIndices(item.indices, NB_INDICES)}
+      <p class="verdict ${s.gagne > 0 ? 'ok' : 'faux'}">${s.gagne > 0
+        ? `${bienDit(item.genre)} bien <b>${esc(item.reponse)}</b> — +${s.gagne} point${s.gagne > 1 ? 's' : ''} !`
+        : `${bienDit(item.genre)} <b>${esc(item.reponse)}</b> — tu le retiendras 🙂`}</p>
+      ${item.ref ? `<p class="refline">${esc(item.ref)} · Segond 1910</p>` : ''}
+      <button class="btn btn-grow" data-suiv="1">${s.idx + 1 >= s.total ? 'Voir le résultat' : 'Portrait suivant'}</button>`;
+  }
+  return `<div class="fade">
+    <div class="topline"><span>${TITRE}${s.participants ? '' : ' · <b>' + s.score + '</b> pt' + (s.score > 1 ? 's' : '')}</span>
+      <button class="quit" data-quit="1">Quitter</button></div>
+    ${tablee}
+    <div class="card">
+      <p class="muted" style="text-align:center;font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;margin:0 0 10px">${lbl}</p>
+      ${corps}
+    </div>
+  </div>`;
+}
+
+function envoyerScoreDuel() {
+  const s = seance;
+  s.envoye = true;
+  const corps = s.enLigne.cle
+    ? { score: s.score, cle: s.enLigne.cle }
+    : { score: s.score, pseudo: s.enLigne.pseudo };
+  api('duel/' + s.enLigne.code + '/score', corps)
+    .then(r => { online = { code: s.enLigne.code, resultat: r, erreur: null }; ecran = 'dres'; render(); })
+    .catch(e => { online = { code: s.enLigne.code, resultat: null, erreur: e.message }; ecran = 'dres'; render(); });
+}
+
+function vueFin() {
+  const s = seance;
+  if (s.enLigne) {
+    if (!s.envoye) envoyerScoreDuel();
+    return `<div class="card fin fade"><div class="score">${s.score} pts</div>
+      <p class="muted" style="margin:10px 0 0">On envoie ton score…</p></div>`;
+  }
+  if (s.participants) {
+    const cls = s.participants.slice().sort((a, b) => b.score - a.score);
+    const top = cls[0].score;
+    const gagnants = cls.filter(p => p.score === top);
+    const mot = gagnants.length > 1 ? 'Ex æquo en tête — une prochaine fois les départagera 🙂'
+      : `${esc(gagnants[0].nom)} a l'œil 🏅`;
+    return `<div class="card fin fade">
+      <p style="margin:0 0 12px;font-weight:650">${mot}</p>
+      ${cls.map((p, i) => `<div class="frow ${p.score === top ? 'tete' : ''}"><span>${i + 1}. ${esc(p.nom)}</span><b>${p.score} pt${p.score > 1 ? 's' : ''}</b></div>`).join('')}
+      <button class="btn btn-primary" data-encore="1">Rejouer la tablée</button>
+      <button class="btn btn-ghost" data-quit="1">Revenir à l'accueil</button>
+    </div>`;
+  }
+  const max = s.total * NB_INDICES;
+  const mot = s.score >= max * 0.8 ? 'Un œil de prophète ✨' : s.score >= max * 0.4 ? 'Belle séance 🌱'
+    : "Chaque portrait t'a ramené à un visage de la Bible — c'est comme ça qu'on apprend 🌱";
+  return `<div class="card fin fade">
+    <div class="score">${s.score} / ${max} pts</div>
+    <p style="margin:14px 0 0">${mot}</p>
+    <button class="btn btn-primary" data-encore="1">Refaire une séance</button>
+    <button class="btn btn-ghost" data-quit="1">Changer de mode</button>
+  </div>`;
+}
+
+/* ---------- À distance ---------- */
+async function api(chemin, corps) {
+  const r = await fetch('../api/portrait/' + chemin, corps === undefined ? {}
+    : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || 'Le serveur a répondu ' + r.status + '.');
+  return data;
+}
+/* Le paquet au format serveur (les accepte normalisés y repartent tels quels). */
+function deckServeur(n) {
+  return tirage(n).map(p => ({ reponse: p.reponse, accepte: p.accepte, indices: p.indices, ref: p.ref }));
+}
+/* Un paquet servi → forme de séance locale. */
+function deckLocal(deck) {
+  return deck.map(p => ({ reponse: p.reponse, accepte: p.accepte.map(norm), indices: p.indices, ref: p.ref, genre: 'personnage' }));
+}
+
+function vueDuelConfig() {
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ ${TITRE}</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">Défier un ami</h1>
+    <p class="muted" style="margin:4px 0 0">Tu devines maintenant, tu reçois un code — ton ami affrontera exactement les mêmes portraits, quand il voudra.</p>
+    <div class="card">
+      <p class="mode-title" style="margin-top:0">Ton prénom</p>
+      <input class="pin" id="in-pseudo" maxlength="20" placeholder="Prénom" value="${esc(saisie.pseudo)}">
+      <button class="btn btn-primary" data-duelgo="1">Créer le défi et commencer</button>
+      <p class="feedback faux" id="err-ligne"></p>
+    </div>
+  </div>`;
+}
+
+function vueJoin() {
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ ${TITRE}</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">J'ai reçu un code</h1>
+    <p class="muted" style="margin:4px 0 0">Un code PD- ouvre un défi, un code PV- rejoint une veillée en direct.</p>
+    <div class="card">
+      <input class="pin" id="in-code" maxlength="8" placeholder="Code (PD-XXXXX ou PV-XXXXX)" value="${esc(saisie.code)}" autocapitalize="characters">
+      <input class="pin" id="in-pseudo" maxlength="20" placeholder="Ton prénom" value="${esc(saisie.pseudo)}">
+      <button class="btn btn-primary" data-joingo="1">Rejoindre</button>
+      <button class="btn btn-ghost" data-projgo="1">Grand écran (projection d'une veillée)</button>
+      <p class="feedback faux" id="err-ligne"></p>
+    </div>
+  </div>`;
+}
+
+function vueDuelResultat() {
+  const o = online;
+  const r = o.resultat;
+  let corps = '';
+  if (o.erreur) corps = `<p class="feedback faux">${esc(o.erreur)}</p>`;
+  else if (r) {
+    const ligne = j => j ? `<div class="frow"><span>${esc(j.pseudo)}</span><b>${j.score === null ? 'pas encore terminé' : j.score + ' pts'}</b></div>` : '';
+    let verdict = '';
+    if (r.p1 && r.p2 && r.p1.score !== null && r.p2.score !== null) {
+      verdict = r.p1.score === r.p2.score ? '<p style="font-weight:650;margin:12px 0 0">Égalité parfaite 🙂</p>'
+        : `<p style="font-weight:650;margin:12px 0 0">${esc(r.p1.score > r.p2.score ? r.p1.pseudo : r.p2.pseudo)} a l'œil 🏅</p>`;
+    } else if (!r.p2) {
+      verdict = '<p class="muted" style="margin:12px 0 0">En attente de ton adversaire — partage-lui le code ci-dessus.</p>';
+    }
+    corps = ligne(r.p1) + ligne(r.p2) + verdict;
+  } else corps = '<p class="muted">Un instant…</p>';
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ Accueil</button>
+    <div class="card fin">
+      <p class="muted" style="margin:0 0 4px">Le code du défi — à partager tel quel :</p>
+      <div class="code-big">${esc(o.code)}</div>
+      <button class="btn btn-ghost" data-copie="${esc(o.code)}">Copier le code</button>
+      ${corps}
+    </div>
+  </div>`;
+}
+
+function vueVeilleeConfig() {
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ ${TITRE}</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">En direct, dans ton église</h1>
+    <p class="muted" style="margin:4px 0 0">Tu révèles les indices un à un — chacun verrouille sa réponse quand il ose. Plus tôt, plus de points.</p>
+    <div class="card">
+      <button class="btn btn-grow" data-veilgo="1" style="margin-top:4px">Ouvrir la veillée</button>
+      <p class="feedback faux" id="err-ligne"></p>
+    </div>
+  </div>`;
+}
+
+function vueAnim() {
+  const o = online;
+  const e = o.etat;
+  if (!e) return `<div class="card" style="padding:30px;text-align:center"><p class="muted" style="margin:0">Un instant…</p></div>`;
+  const repondu = e.participants.filter(p => p.aRepondu).length;
+  let controle = '';
+  if (e.phase === 'attente') {
+    controle = `<p class="muted">${e.participants.length} participant${e.participants.length > 1 ? 's' : ''} dans la salle.</p>
+      <button class="btn btn-grow" data-avancer="lancer" ${e.participants.length === 0 ? 'disabled' : ''}>Lancer le premier portrait</button>`;
+  } else if (e.phase === 'portrait') {
+    controle = `<p class="muted">${repondu} / ${e.participants.length} ont verrouillé leur réponse.</p>
+      <div class="choix-row">
+        <button class="btn btn-ghost" data-avancer="indice" ${e.enCours.indice >= e.enCours.nbIndices ? 'disabled' : ''}>Indice suivant</button>
+        <button class="btn btn-grow" data-avancer="reveler">Révéler</button>
+      </div>`;
+  } else if (e.phase === 'revele') {
+    controle = `<button class="btn btn-grow" data-avancer="suivant">${e.carte >= e.total ? 'Terminer la veillée' : 'Portrait suivant'}</button>`;
+  }
+  const carte = e.enCours && e.phase !== 'fin'
+    ? `<div class="card"><p class="muted" style="text-align:center;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px">Portrait ${e.carte} / ${e.total} · indice ${e.enCours.indice} / ${e.enCours.nbIndices}</p>
+        ${htmlIndices(e.enCours.indices, e.enCours.indices.length)}
+        ${e.phase === 'revele' ? `<p class="verdict ok">C'était <b>${esc(e.enCours.reponse)}</b></p>
+          ${e.enCours.ref ? `<p class="refline">${esc(e.enCours.ref)} · Segond 1910</p>` : ''}` : ''}</div>`
+    : '';
+  const participants = e.participants.length
+    ? `<div class="pchips">${e.participants.map(p =>
+        `<span class="pchip ${p.bon === true ? 'on' : ''}${p.bon === false ? ' faux' : ''}">${esc(p.prenom)} · ${p.score}${e.phase === 'portrait' && p.aRepondu ? ' 🔒' : ''}${p.bon === true ? ' +' + p.points : ''}${p.bon === false ? ' ✗' : ''}</span>`).join('')}</div>`
+    : '';
+  const fin = e.phase === 'fin'
+    ? `<div class="card fin"><p style="font-weight:650;margin:0 0 8px">La veillée est terminée 🌱</p>
+        ${e.participants.map((p, i) => `<div class="frow ${i === 0 ? 'tete' : ''}"><span>${i + 1}. ${esc(p.prenom)}</span><b>${p.score} pt${p.score > 1 ? 's' : ''}</b></div>`).join('')}</div>`
+    : '';
+  const lienProj = location.origin + location.pathname + '?direct=' + o.code;
+  return `<div class="fade">
+    <div class="topline"><span>Veillée · ${TITRE}</span><button class="quit" data-quit="1">Fermer</button></div>
+    <div class="card" style="text-align:center">
+      <p class="muted" style="margin:0 0 4px">Le code de la salle :</p>
+      <div class="code-big">${esc(o.code)}</div>
+      <button class="btn btn-ghost" data-copie="${esc(o.code)}">Copier le code</button>
+      ${controle}
+      <p class="muted" style="font-size:.85rem;margin:14px 2px 0">Grand écran : sur l'ordinateur relié au projecteur, ouvre cette adresse.</p>
+      <div style="font-size:.82rem;overflow-wrap:anywhere;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:8px"><code>${esc(lienProj)}</code></div>
+      <button class="btn btn-ghost" data-copie-lien="${esc(lienProj)}">Copier l'adresse du grand écran</button>
+    </div>
+    ${participants}
+    ${carte}
+    ${fin}
+  </div>`;
+}
+
+function vuePart() {
+  const o = online;
+  const e = o.etat;
+  if (!e) return `<div class="card" style="padding:30px;text-align:center"><p class="muted" style="margin:0">Un instant…</p></div>`;
+  const moi = e.moi || { score: 0, aRepondu: false, bon: null, points: null };
+  let corps = '';
+  if (e.phase === 'attente') {
+    corps = `<div class="card fin"><p style="margin:0">Te voilà dans la salle, ${esc(o.prenom)} 🙂</p>
+      <p class="muted" style="margin:8px 0 0">${e.participants.length} participant${e.participants.length > 1 ? 's' : ''} — l'animateur va lancer le premier portrait.</p></div>`;
+  } else if (e.phase === 'portrait' && e.enCours) {
+    const enjeu = NB_INDICES + 1 - e.enCours.indice;
+    const entete = `<p class="muted" style="text-align:center;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px">Portrait ${e.carte} / ${e.total}</p>
+      ${htmlIndices(e.enCours.indices, e.enCours.indices.length)}`;
+    if (!moi.aRepondu) {
+      corps = `<div class="card">${entete}
+        <p class="enjeu">Verrouiller maintenant : <b>${enjeu} point${enjeu > 1 ? 's' : ''}</b></p>
+        <form data-vrepform="1">
+          <input class="pin" id="in-texte" maxlength="40" placeholder="Ta réponse…" value="${esc(saisie.texte || '')}" autocomplete="off">
+          <button type="submit" class="btn btn-primary">Je verrouille ma réponse</button>
+        </form>
+      </div>`;
+    } else {
+      corps = `<div class="card">${entete}
+        <p class="feedback ok">Réponse verrouillée 🔒 — on attend la révélation (${e.participants.filter(p => p.aRepondu).length} / ${e.participants.length}).</p>
+      </div>`;
+    }
+  } else if (e.phase === 'revele' && e.enCours) {
+    corps = `<div class="card">
+      ${htmlIndices(e.enCours.indices, e.enCours.indices.length)}
+      <p class="verdict ${moi.bon ? 'ok' : 'faux'}">${moi.bon
+        ? `C'était bien <b>${esc(e.enCours.reponse)}</b> — +${moi.points} point${moi.points > 1 ? 's' : ''} !`
+        : `C'était <b>${esc(e.enCours.reponse)}</b>${moi.aRepondu ? '' : ' — tu n\'avais pas verrouillé'}.`}</p>
+      ${e.enCours.ref ? `<p class="refline">${esc(e.enCours.ref)} · Segond 1910</p>` : ''}
+    </div>`;
+  } else if (e.phase === 'fin') {
+    corps = `<div class="card fin"><p style="font-weight:650;margin:0 0 8px">La veillée est terminée 🌱</p>
+      ${e.participants.map((p, i) => `<div class="frow ${i === 0 ? 'tete' : ''}"><span>${i + 1}. ${esc(p.prenom)}</span><b>${p.score} pt${p.score > 1 ? 's' : ''}</b></div>`).join('')}</div>`;
+  }
+  return `<div class="fade">
+    <div class="topline"><span>Veillée · ${TITRE} · <b>${moi.score}</b> pt${moi.score > 1 ? 's' : ''}</span>
+      <button class="quit" data-quit="1">Quitter</button></div>
+    ${corps}
+  </div>`;
+}
+
+function vueProj() {
+  const o = online;
+  const e = o.etat;
+  if (!e) return `<div class="card" style="padding:40px;text-align:center"><p class="muted" style="margin:0">Un instant…</p></div>`;
+  const repondu = e.participants.filter(p => p.aRepondu).length;
+  const chips = (marquer) => e.participants.length
+    ? `<div class="proj-chips">${e.participants.map(p =>
+        `<span class="pchip ${marquer && p.bon === true ? 'on' : ''}${marquer && p.bon === false ? ' faux' : ''}">${esc(p.prenom)} · ${p.score}${!marquer && p.aRepondu ? ' 🔒' : ''}${marquer && p.bon === true ? ' +' + p.points : ''}${marquer && p.bon === false ? ' ✗' : ''}</span>`).join('')}</div>`
+    : '';
+  const indicesProj = inds => `<div class="proj-indices">${inds.map((ind, i) =>
+    `<div class="indice fade"><span class="inum">${i + 1}</span><span>${esc(ind)}</span></div>`).join('')}</div>`;
+  if (e.phase === 'attente') {
+    return `<div class="fade" style="padding-top:24px">
+      <p class="proj-invite">Pour rejoindre : <b>biblehorizon.fr/portrait</b> → « J'ai reçu un code »</p>
+      <div class="proj-code">${esc(o.code)}</div>
+      <p class="proj-etat" style="color:var(--ink-soft)">${e.participants.length === 0 ? 'La salle est ouverte — à vos téléphones !' : e.participants.length + ' déjà là — on attend les retardataires…'}</p>
+      ${chips(false)}
+    </div>`;
+  }
+  if (e.phase === 'portrait' && e.enCours) {
+    const enjeu = NB_INDICES + 1 - e.enCours.indice;
+    return `<div class="fade">
+      <p class="proj-invite" style="margin-top:8px">${TITRE} · code <b>${esc(o.code)}</b></p>
+      <div class="proj-carte"><span class="lbl">Portrait ${e.carte} / ${e.total} — répondre maintenant vaut ${enjeu} point${enjeu > 1 ? 's' : ''}</span>
+        ${indicesProj(e.enCours.indices)}</div>
+      <p class="proj-etat">${repondu} / ${e.participants.length} ont verrouillé…</p>
+      ${chips(false)}
+    </div>`;
+  }
+  if (e.phase === 'revele' && e.enCours) {
+    return `<div class="fade">
+      <p class="proj-invite" style="margin-top:8px">${TITRE} · code <b>${esc(o.code)}</b></p>
+      <div class="proj-carte"><span class="lbl">Portrait ${e.carte} / ${e.total} — la réponse</span>
+        <p class="titre">${esc(e.enCours.reponse)}</p>
+        ${e.enCours.ref ? `<p class="refline" style="font-size:clamp(.95rem,2vw,1.3rem)">${esc(e.enCours.ref)} · Segond 1910</p>` : ''}</div>
+      ${chips(true)}
+      ${indicesProj(e.enCours.indices)}
+    </div>`;
+  }
+  return `<div class="fade" style="padding-top:20px">
+    <p class="proj-invite"><b>${TITRE}</b> — la veillée est terminée 🌱</p>
+    <div class="card proj-classement">
+      ${e.participants.map((p, i) => `<div class="frow ${i === 0 ? 'tete' : ''}"><span>${i + 1}. ${esc(p.prenom)}</span><b>${p.score} pt${p.score > 1 ? 's' : ''}</b></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* ---------- L'interrogation régulière ---------- */
+function pollArret() { if (minuterie) { clearInterval(minuterie); minuterie = null; } }
+function pollDemarre() {
+  pollArret();
+  minuterie = setInterval(async () => {
+    try {
+      if (ecran === 'dres' && online && !online.erreur) {
+        const r = await api('duel/' + online.code);
+        if (JSON.stringify(r) !== JSON.stringify(online.resultat)) { online.resultat = r; render(); }
+        if (r.p1 && r.p2 && r.p1.score !== null && r.p2.score !== null) pollArret();
+      } else if ((ecran === 'anim' || ecran === 'part' || ecran === 'proj') && online) {
+        const vAvant = online.v || 0;
+        const q = ecran === 'anim' ? 'cle=' + online.cle : ecran === 'part' ? 'jeton=' + online.jeton : '';
+        const e = await api('veillee/' + online.code + '/etat' + (q ? '?' + q : ''));
+        if (online && (online.v || 0) === vAvant
+            && JSON.stringify(e) !== JSON.stringify(online.etat)) { online.etat = e; render(); }
+      } else {
+        pollArret();
+      }
+    } catch (err) { /* raté réseau : la prochaine interrogation retentera */ }
+  }, 2500);
+}
+
+/* ---------- Rendu & câblage ---------- */
+function render() {
+  el.classList.toggle('proj', ecran === 'proj');
+  el.innerHTML = ecran === 'seance' ? vueSeance() : ecran === 'fin' ? vueFin()
+    : ecran === 'config' ? vueConfig()
+    : ecran === 'dcfg' ? vueDuelConfig() : ecran === 'join' ? vueJoin()
+    : ecran === 'dres' ? vueDuelResultat() : ecran === 'vcfg' ? vueVeilleeConfig()
+    : ecran === 'anim' ? vueAnim() : ecran === 'part' ? vuePart()
+    : ecran === 'proj' ? vueProj()
+    : vueAccueil();
+
+  const q1 = el.querySelector.bind(el);
+  const versEcran = e => () => { ecran = e; render(); };
+  const erreurLigne = msg => { const n = q1('#err-ligne'); if (n) n.textContent = msg; };
+  const avecBanque = fn => async (ev) => {
+    const b = ev.currentTarget;
+    b.disabled = true;
+    try { await chargerBanque(); fn(); }
+    catch (e) { b.disabled = false; alert("La banque de l'épreuve n'a pas pu être chargée — vérifie ta connexion."); }
+  };
+
+  if (q1('[data-retour-defi]')) q1('[data-retour-defi]').addEventListener('click', () => { location.href = '../defi/'; });
+  if (q1('[data-solo]')) q1('[data-solo]').addEventListener('click', avecBanque(() => demarrer(null, null, null)));
+  if (q1('[data-multi]')) q1('[data-multi]').addEventListener('click', versEcran('config'));
+  if (q1('[data-duelcfg]')) q1('[data-duelcfg]').addEventListener('click', versEcran('dcfg'));
+  if (q1('[data-veilcfg]')) q1('[data-veilcfg]').addEventListener('click', versEcran('vcfg'));
+  if (q1('[data-join]')) q1('[data-join]').addEventListener('click', versEcran('join'));
+  if (q1('[data-quit]')) q1('[data-quit]').addEventListener('click', quitter);
+
+  if (q1('[data-indice]')) q1('[data-indice]').addEventListener('click', indiceSuivant);
+  const repform = q1('[data-repform]');
+  if (repform) repform.addEventListener('submit', e => { e.preventDefault(); repondre(); });
+  const inTexte = q1('#in-texte');
+  if (inTexte) {
+    inTexte.addEventListener('input', () => {
+      if (ecran === 'seance') seance.texte = inTexte.value; else saisie.texte = inTexte.value;
+    });
+    if (ecran === 'seance' || (ecran === 'part' && online && online.etat && online.etat.phase === 'portrait')) inTexte.focus();
+  }
+  if (q1('[data-suiv]')) q1('[data-suiv]').addEventListener('click', suivante);
+  if (q1('[data-encore]')) q1('[data-encore]').addEventListener('click', () =>
+    demarrer(seance.participants ? seance.participants.map(p => p.nom) : null, null, null));
+
+  el.querySelectorAll('[data-nom]').forEach(inp => inp.addEventListener('input', () => {
+    config.noms[+inp.dataset.nom] = inp.value;
+  }));
+  if (q1('[data-addp]')) q1('[data-addp]').addEventListener('click', () => { if (config.noms.length < 6) { config.noms.push(''); render(); } });
+  if (q1('[data-delp]')) q1('[data-delp]').addEventListener('click', () => { if (config.noms.length > 2) { config.noms.pop(); render(); } });
+  if (q1('[data-multistart]')) q1('[data-multistart]').addEventListener('click', avecBanque(() => {
+    demarrer(config.noms.map((n, i) => n.trim() !== '' ? n.trim() : 'Participant ' + (i + 1)), null, null);
+  }));
+
+  const inPseudo = q1('#in-pseudo');
+  if (inPseudo) inPseudo.addEventListener('input', () => { saisie.pseudo = inPseudo.value; });
+  const inCode = q1('#in-code');
+  if (inCode) inCode.addEventListener('input', () => { saisie.code = inCode.value; });
+
+  const duelgo = q1('[data-duelgo]');
+  if (duelgo) duelgo.addEventListener('click', async () => {
+    const pseudo = saisie.pseudo.trim();
+    if (pseudo === '') { erreurLigne('Ton prénom, pour que ton ami sache qui le défie 🙂'); return; }
+    duelgo.disabled = true;
+    try {
+      await chargerBanque();
+      const deck = deckServeur(PORTRAITS_PAR_SEANCE);
+      const r = await api('duel', { pseudo: pseudo, deck: deck });
+      demarrer(null, { code: r.code, cle: r.cle }, deckLocal(deck));
+    } catch (e) { duelgo.disabled = false; erreurLigne(e.message); }
+  });
+
+  const joingo = q1('[data-joingo]');
+  if (joingo) joingo.addEventListener('click', async () => {
+    const code = saisie.code.trim().toUpperCase();
+    const prenom = saisie.pseudo.trim();
+    if (prenom === '') { erreurLigne('Ton prénom, pour le classement 🙂'); return; }
+    joingo.disabled = true;
+    try {
+      if (code.startsWith('PD-')) {
+        const r = await api('duel/' + code);
+        if (r.p2) throw new Error('Ce défi a déjà trouvé son adversaire.');
+        demarrer(null, { code: code, pseudo: prenom }, deckLocal(r.deck));
+      } else if (code.startsWith('PV-')) {
+        const r = await api('veillee/' + code + '/rejoindre', { prenom: prenom });
+        online = { code: code, jeton: r.jeton, prenom: prenom, etat: null };
+        ecran = 'part'; render(); pollDemarre();
+      } else {
+        throw new Error('Un code commence par PD- (défi) ou PV- (veillée).');
+      }
+    } catch (e) { joingo.disabled = false; erreurLigne(e.message); }
+  });
+
+  const projgo = q1('[data-projgo]');
+  if (projgo) projgo.addEventListener('click', async () => {
+    const code = saisie.code.trim().toUpperCase();
+    if (!code.startsWith('PV-')) { erreurLigne('Le grand écran affiche une veillée : il faut un code PV-.'); return; }
+    projgo.disabled = true;
+    try {
+      await api('veillee/' + code + '/etat');
+      online = { code: code, projection: true, etat: null };
+      ecran = 'proj'; render(); pollDemarre();
+    } catch (e) { projgo.disabled = false; erreurLigne(e.message); }
+  });
+
+  const veilgo = q1('[data-veilgo]');
+  if (veilgo) veilgo.addEventListener('click', async () => {
+    veilgo.disabled = true;
+    try {
+      await chargerBanque();
+      const deck = deckServeur(PORTRAITS_PAR_SEANCE);
+      const r = await api('veillee', { deck: deck });
+      online = { code: r.code, cle: r.cle, etat: null };
+      ecran = 'anim'; render(); pollDemarre();
+    } catch (e) { veilgo.disabled = false; erreurLigne(e.message); }
+  });
+
+  el.querySelectorAll('[data-avancer]').forEach(b => b.addEventListener('click', async () => {
+    if (online.enVol) return;
+    online.enVol = true;
+    b.disabled = true;
+    try {
+      online.etat = await api('veillee/' + online.code + '/avancer',
+        { cle: online.cle, action: b.dataset.avancer });
+      online.v = (online.v || 0) + 1;
+      online.enVol = false;
+      render();
+    } catch (e) { online.enVol = false; render(); }
+  }));
+
+  const vrepform = q1('[data-vrepform]');
+  if (vrepform) vrepform.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const texte = (saisie.texte || '').trim();
+    if (texte === '') return;
+    try {
+      online.etat = await api('veillee/' + online.code + '/reponse',
+        { jeton: online.jeton, carte: online.etat.carte, texte: texte });
+      online.v = (online.v || 0) + 1;
+      saisie.texte = '';
+      render();
+    } catch (err) { render(); }
+  });
+
+  const copie = q1('[data-copie]');
+  if (copie) copie.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(copie.dataset.copie); copie.textContent = 'Code copié ✓'; }
+    catch (e) { copie.textContent = 'Copie impossible — note-le à la main'; }
+    setTimeout(() => { copie.textContent = 'Copier le code'; }, 2400);
+  });
+  const copieLien = q1('[data-copie-lien]');
+  if (copieLien) copieLien.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(copieLien.dataset.copieLien); copieLien.textContent = 'Adresse copiée ✓'; }
+    catch (e) { copieLien.textContent = 'Copie impossible — recopie-la à la main'; }
+    setTimeout(() => { copieLien.textContent = "Copier l'adresse du grand écran"; }, 2400);
+  });
+
+  if (ecran === 'dres' && online && !online.erreur && !minuterie) pollDemarre();
+}
+
+/* Arrivée directe sur le grand écran : ?direct=PV-XXXXX. */
+const direct = new URLSearchParams(location.search).get('direct');
+if (direct && /^PV-[A-Z2-9]{5}$/.test(direct.toUpperCase())) {
+  online = { code: direct.toUpperCase(), projection: true, etat: null };
+  ecran = 'proj';
+  pollDemarre();
+}
+render();
+</script>
+</body>
+</html>

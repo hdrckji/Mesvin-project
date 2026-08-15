@@ -1,0 +1,1046 @@
+{
+ "version": 1,
+ "note": "Paroles à attribuer — à relire contre une Segond 1910 imprimée avant diffusion large.",
+ "items": [
+  {
+   "id": "qd-001",
+   "parole": "Je suis le chemin, la vérité, et la vie. Nul ne vient au Père que par moi.",
+   "options": [
+    "Jésus",
+    "Jean-Baptiste",
+    "Pierre",
+    "Paul"
+   ],
+   "bonne": 0,
+   "reference": "Jean 14.6",
+   "contexte": "Réponse à Thomas, lors du dernier entretien avec ses disciples."
+  },
+  {
+   "id": "qd-002",
+   "parole": "Que la lumière soit!",
+   "options": [
+    "Moïse",
+    "Un ange",
+    "Élie",
+    "Dieu"
+   ],
+   "bonne": 3,
+   "reference": "Genèse 1.3",
+   "contexte": "Parole prononcée au commencement, lors de la création."
+  },
+  {
+   "id": "qd-003",
+   "parole": "Tu es le Christ, le Fils du Dieu vivant.",
+   "options": [
+    "Jean",
+    "Thomas",
+    "Pierre",
+    "André"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 16.16",
+   "contexte": "Réponse à la question de Jésus, à Césarée de Philippe."
+  },
+  {
+   "id": "qd-004",
+   "parole": "Je suis la résurrection et la vie. Celui qui croit en moi vivra, quand même il serait mort…",
+   "options": [
+    "Élie",
+    "Jésus",
+    "Pierre",
+    "Paul"
+   ],
+   "bonne": 1,
+   "reference": "Jean 11.25",
+   "contexte": "Dit à Marthe, à Béthanie, avant que Lazare ne sorte du tombeau."
+  },
+  {
+   "id": "qd-005",
+   "parole": "Où es-tu?",
+   "options": [
+    "L'Éternel Dieu",
+    "Le serpent",
+    "Ève",
+    "Un chérubin"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 3.9",
+   "contexte": "Question adressée à Adam, caché dans le jardin d'Éden après la faute."
+  },
+  {
+   "id": "qd-006",
+   "parole": "Venez à moi, vous tous qui êtes fatigués et chargés, et je vous donnerai du repos.",
+   "options": [
+    "Moïse",
+    "Salomon",
+    "Jean-Baptiste",
+    "Jésus"
+   ],
+   "bonne": 3,
+   "reference": "Matthieu 11.28",
+   "contexte": "Invitation lancée aux foules de Galilée."
+  },
+  {
+   "id": "qd-007",
+   "parole": "Je n'ai ni argent, ni or; mais ce que j'ai, je te le donne: au nom de Jésus-Christ de Nazareth, lève-toi et marche.",
+   "options": [
+    "Jean",
+    "Paul",
+    "Pierre",
+    "Étienne"
+   ],
+   "bonne": 2,
+   "reference": "Actes 3.6",
+   "contexte": "Dit à un boiteux, à la porte du temple appelée la Belle, à Jérusalem."
+  },
+  {
+   "id": "qd-008",
+   "parole": "Je ne sais pas; suis-je le gardien de mon frère?",
+   "options": [
+    "Ésaü",
+    "Caïn",
+    "Jacob",
+    "Lémec"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 4.9",
+   "contexte": "Réponse à l'Éternel, qui demandait où était Abel."
+  },
+  {
+   "id": "qd-009",
+   "parole": "Je suis la lumière du monde; celui qui me suit ne marchera pas dans les ténèbres, mais il aura la lumière de la vie.",
+   "options": [
+    "Jésus",
+    "Jean-Baptiste",
+    "Ésaïe",
+    "Pierre"
+   ],
+   "bonne": 0,
+   "reference": "Jean 8.12",
+   "contexte": "Déclaration faite dans le temple de Jérusalem, devant les pharisiens."
+  },
+  {
+   "id": "qd-010",
+   "parole": "Seigneur, sauve-moi!",
+   "options": [
+    "Thomas",
+    "Jean",
+    "André",
+    "Pierre"
+   ],
+   "bonne": 3,
+   "reference": "Matthieu 14.30",
+   "contexte": "Cri poussé en enfonçant dans les eaux, après avoir marché vers Jésus."
+  },
+  {
+   "id": "qd-011",
+   "parole": "Je suis le bon berger. Le bon berger donne sa vie pour ses brebis.",
+   "options": [
+    "David",
+    "Ézéchiel",
+    "Jésus",
+    "Pierre"
+   ],
+   "bonne": 2,
+   "reference": "Jean 10.11",
+   "contexte": "Discours adressé aux Juifs, à Jérusalem."
+  },
+  {
+   "id": "qd-012",
+   "parole": "Mon fils, Dieu se pourvoira lui-même de l'agneau pour l'holocauste.",
+   "options": [
+    "Isaac",
+    "Abraham",
+    "Jacob",
+    "Moïse"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 22.8",
+   "contexte": "Réponse à Isaac, en montant vers le lieu du sacrifice."
+  },
+  {
+   "id": "qd-013",
+   "parole": "Je puis tout par celui qui me fortifie.",
+   "options": [
+    "Paul",
+    "Pierre",
+    "Jacques",
+    "Jean"
+   ],
+   "bonne": 0,
+   "reference": "Philippiens 4.13",
+   "contexte": "Écrit dans la lettre aux Philippiens, rédigée alors qu'il était prisonnier."
+  },
+  {
+   "id": "qd-014",
+   "parole": "Je suis le pain de vie. Celui qui vient à moi n'aura jamais faim, et celui qui croit en moi n'aura jamais soif.",
+   "options": [
+    "Moïse",
+    "Élie",
+    "Pierre",
+    "Jésus"
+   ],
+   "bonne": 3,
+   "reference": "Jean 6.35",
+   "contexte": "Dit à la foule, après la multiplication des pains."
+  },
+  {
+   "id": "qd-015",
+   "parole": "Je ne te laisserai point aller, que tu ne m'aies béni.",
+   "options": [
+    "Ésaü",
+    "Abraham",
+    "Jacob",
+    "Moïse"
+   ],
+   "bonne": 2,
+   "reference": "Genèse 32.26",
+   "contexte": "Dit à celui qui luttait avec lui, pendant la nuit, avant la rencontre avec Ésaü."
+  },
+  {
+   "id": "qd-016",
+   "parole": "Suivez-moi, et je vous ferai pêcheurs d'hommes.",
+   "options": [
+    "Jean-Baptiste",
+    "Jésus",
+    "Pierre",
+    "Paul"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 4.19",
+   "contexte": "Appel adressé à Simon et à André, au bord de la mer de Galilée."
+  },
+  {
+   "id": "qd-017",
+   "parole": "J'ai combattu le bon combat, j'ai achevé la course, j'ai gardé la foi.",
+   "options": [
+    "Paul",
+    "Pierre",
+    "Étienne",
+    "Timothée"
+   ],
+   "bonne": 0,
+   "reference": "2 Timothée 4.7",
+   "contexte": "Écrit à Timothée, dans sa seconde lettre, alors que son départ approchait."
+  },
+  {
+   "id": "qd-018",
+   "parole": "Vous aviez médité de me faire du mal: Dieu l'a changé en bien, pour accomplir ce qui arrive aujourd'hui, pour sauver la vie à un peuple nombreux.",
+   "options": [
+    "Jacob",
+    "Juda",
+    "Moïse",
+    "Joseph"
+   ],
+   "bonne": 3,
+   "reference": "Genèse 50.20",
+   "contexte": "Dit à ses frères, en Égypte, après la mort de leur père Jacob."
+  },
+  {
+   "id": "qd-019",
+   "parole": "Et moi, je te dis que tu es Pierre, et que sur cette pierre je bâtirai mon Église, et que les portes du séjour des morts ne prévaudront point contre elle.",
+   "options": [
+    "Jean-Baptiste",
+    "Paul",
+    "Jésus",
+    "Jacques"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 16.18",
+   "contexte": "Réponse à Simon Pierre, dans le territoire de Césarée de Philippe."
+  },
+  {
+   "id": "qd-020",
+   "parole": "Maintenant donc ces trois choses demeurent: la foi, l'espérance, la charité; mais la plus grande de ces choses, c'est la charité.",
+   "options": [
+    "Jean",
+    "Paul",
+    "Pierre",
+    "Jacques"
+   ],
+   "bonne": 1,
+   "reference": "1 Corinthiens 13.13",
+   "contexte": "Écrit dans la première lettre aux Corinthiens."
+  },
+  {
+   "id": "qd-021",
+   "parole": "Arrière de moi, Satan! tu m'es en scandale; car tes pensées ne sont pas les pensées de Dieu, mais celles des hommes.",
+   "options": [
+    "Jésus",
+    "Pierre",
+    "Paul",
+    "Michée"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 16.23",
+   "contexte": "Adressé à Pierre, qui venait de le reprendre après l'annonce de ses souffrances."
+  },
+  {
+   "id": "qd-022",
+   "parole": "Je suis celui qui suis.",
+   "options": [
+    "Moïse",
+    "Aaron",
+    "Un ange",
+    "Dieu"
+   ],
+   "bonne": 3,
+   "reference": "Exode 3.14",
+   "contexte": "Réponse à Moïse, qui demandait son nom, au buisson ardent."
+  },
+  {
+   "id": "qd-023",
+   "parole": "Crois au Seigneur Jésus, et tu seras sauvé, toi et ta famille.",
+   "options": [
+    "Pierre et Jean",
+    "Barnabas et Marc",
+    "Paul et Silas",
+    "Aquilas et Priscille"
+   ],
+   "bonne": 2,
+   "reference": "Actes 16.31",
+   "contexte": "Réponse au gardien de la prison de Philippes, après le tremblement de terre."
+  },
+  {
+   "id": "qd-024",
+   "parole": "Aimez vos ennemis, bénissez ceux qui vous maudissent, faites du bien à ceux qui vous haïssent…",
+   "options": [
+    "Moïse",
+    "Jésus",
+    "Paul",
+    "Salomon"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 5.44",
+   "contexte": "Enseignement donné sur la montagne, devant les disciples et la foule."
+  },
+  {
+   "id": "qd-025",
+   "parole": "Qui est l'Éternel, pour que j'obéisse à sa voix, en laissant aller Israël? Je ne connais point l'Éternel, et je ne laisserai point aller Israël.",
+   "options": [
+    "Pharaon",
+    "Nebucadnetsar",
+    "Goliath",
+    "Achab"
+   ],
+   "bonne": 0,
+   "reference": "Exode 5.2",
+   "contexte": "Réponse à Moïse et à Aaron, venus demander le départ du peuple d'Égypte."
+  },
+  {
+   "id": "qd-026",
+   "parole": "Cherchez premièrement le royaume et la justice de Dieu; et toutes ces choses vous seront données par-dessus.",
+   "options": [
+    "Salomon",
+    "Paul",
+    "Jean-Baptiste",
+    "Jésus"
+   ],
+   "bonne": 3,
+   "reference": "Matthieu 6.33",
+   "contexte": "Enseignement sur la montagne, au sujet des inquiétudes."
+  },
+  {
+   "id": "qd-027",
+   "parole": "Je suis la servante du Seigneur; qu'il me soit fait selon ta parole!",
+   "options": [
+    "Élisabeth",
+    "Anne",
+    "Marie",
+    "Marthe"
+   ],
+   "bonne": 2,
+   "reference": "Luc 1.38",
+   "contexte": "Réponse à l'ange Gabriel, à Nazareth, lors de l'annonce de la naissance de Jésus."
+  },
+  {
+   "id": "qd-028",
+   "parole": "Ne craignez rien, restez en place, et regardez la délivrance que l'Éternel va vous accorder en ce jour…",
+   "options": [
+    "Aaron",
+    "Moïse",
+    "Josué",
+    "Caleb"
+   ],
+   "bonne": 1,
+   "reference": "Exode 14.13",
+   "contexte": "Dit au peuple effrayé devant la mer, poursuivi par les chars de Pharaon."
+  },
+  {
+   "id": "qd-029",
+   "parole": "Demandez, et l'on vous donnera; cherchez, et vous trouverez; frappez, et l'on vous ouvrira.",
+   "options": [
+    "Jésus",
+    "Salomon",
+    "Ésaïe",
+    "Jacques"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 7.7",
+   "contexte": "Enseignement donné sur la montagne."
+  },
+  {
+   "id": "qd-030",
+   "parole": "Faites ce qu'il vous dira.",
+   "options": [
+    "Marthe",
+    "Marie de Magdala",
+    "Salomé",
+    "Marie"
+   ],
+   "bonne": 3,
+   "reference": "Jean 2.5",
+   "contexte": "Dit aux serviteurs, lors des noces de Cana, en Galilée."
+  },
+  {
+   "id": "qd-031",
+   "parole": "Rendez donc à César ce qui est à César, et à Dieu ce qui est à Dieu.",
+   "options": [
+    "Pilate",
+    "Paul",
+    "Jésus",
+    "Jean-Baptiste"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 22.21",
+   "contexte": "Réponse aux pharisiens et aux hérodiens qui l'interrogeaient sur le tribut."
+  },
+  {
+   "id": "qd-032",
+   "parole": "Que t'ai je fait, pour que tu m'aies frappée déjà trois fois?",
+   "options": [
+    "Balaam",
+    "L'ânesse de Balaam",
+    "L'ange de l'Éternel",
+    "Balak"
+   ],
+   "bonne": 1,
+   "reference": "Nombres 22.28",
+   "contexte": "Parole adressée à Balaam, sur le chemin, après que l'Éternel lui eut ouvert la bouche."
+  },
+  {
+   "id": "qd-033",
+   "parole": "Voici l'Agneau de Dieu, qui ôte le péché du monde.",
+   "options": [
+    "Jean-Baptiste",
+    "André",
+    "Pierre",
+    "Zacharie"
+   ],
+   "bonne": 0,
+   "reference": "Jean 1.29",
+   "contexte": "Dit en voyant Jésus venir à lui, près du Jourdain."
+  },
+  {
+   "id": "qd-034",
+   "parole": "Rassurez-vous, c'est moi; n'ayez pas peur!",
+   "options": [
+    "Un ange",
+    "Moïse",
+    "Élie",
+    "Jésus"
+   ],
+   "bonne": 3,
+   "reference": "Matthieu 14.27",
+   "contexte": "Dit aux disciples effrayés, en marchant vers eux sur la mer."
+  },
+  {
+   "id": "qd-035",
+   "parole": "Moi et ma maison, nous servirons l'Éternel.",
+   "options": [
+    "Moïse",
+    "Caleb",
+    "Josué",
+    "Samuel"
+   ],
+   "bonne": 2,
+   "reference": "Josué 24.15",
+   "contexte": "Déclaration devant les tribus d'Israël assemblées à Sichem."
+  },
+  {
+   "id": "qd-036",
+   "parole": "Mon Père, s'il est possible, que cette coupe s'éloigne de moi! Toutefois, non pas ce que je veux, mais ce que tu veux.",
+   "options": [
+    "David",
+    "Jésus",
+    "Élie",
+    "Pierre"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 26.39",
+   "contexte": "Prière à Gethsémané, la nuit de son arrestation."
+  },
+  {
+   "id": "qd-037",
+   "parole": "Il faut qu'il croisse, et que je diminue.",
+   "options": [
+    "Jean-Baptiste",
+    "Pierre",
+    "Paul",
+    "André"
+   ],
+   "bonne": 0,
+   "reference": "Jean 3.30",
+   "contexte": "Dit à ses disciples, au sujet de Jésus, alors que tous allaient à lui."
+  },
+  {
+   "id": "qd-038",
+   "parole": "Seigneur Éternel! souviens-toi de moi, je te prie; ô Dieu! donne-moi de la force seulement cette fois…",
+   "options": [
+    "Gédéon",
+    "Saül",
+    "David",
+    "Samson"
+   ],
+   "bonne": 3,
+   "reference": "Juges 16.28",
+   "contexte": "Prière prononcée entre les colonnes de la maison de Dagon, chez les Philistins."
+  },
+  {
+   "id": "qd-039",
+   "parole": "Allez, faites de toutes les nations des disciples, les baptisant au nom du Père, du Fils et du Saint-Esprit…",
+   "options": [
+    "Pierre",
+    "Paul",
+    "Jésus",
+    "Un ange"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 28.19",
+   "contexte": "Dit aux onze disciples, sur une montagne de Galilée, après sa résurrection."
+  },
+  {
+   "id": "qd-040",
+   "parole": "Je suis innocent du sang de ce juste. Cela vous regarde.",
+   "options": [
+    "Hérode",
+    "Pilate",
+    "Caïphe",
+    "Le centenier"
+   ],
+   "bonne": 1,
+   "reference": "Matthieu 27.24",
+   "contexte": "Dit en se lavant les mains devant la foule, à Jérusalem."
+  },
+  {
+   "id": "qd-041",
+   "parole": "Silence! tais-toi!",
+   "options": [
+    "Jésus",
+    "Moïse",
+    "Élie",
+    "Jonas"
+   ],
+   "bonne": 0,
+   "reference": "Marc 4.39",
+   "contexte": "Ordre adressé au vent et à la mer, pendant une tempête sur le lac."
+  },
+  {
+   "id": "qd-042",
+   "parole": "Où tu iras j'irai, où tu demeureras je demeurerai; ton peuple sera mon peuple, et ton Dieu sera mon Dieu…",
+   "options": [
+    "Orpa",
+    "Naomi",
+    "Esther",
+    "Ruth"
+   ],
+   "bonne": 3,
+   "reference": "Ruth 1.16",
+   "contexte": "Dit à Naomi, sa belle-mère, sur le chemin du pays de Juda."
+  },
+  {
+   "id": "qd-043",
+   "parole": "Ce que j'ai écrit, je l'ai écrit.",
+   "options": [
+    "Hérode",
+    "Caïphe",
+    "Pilate",
+    "Un scribe"
+   ],
+   "bonne": 2,
+   "reference": "Jean 19.22",
+   "contexte": "Réponse aux principaux sacrificateurs, au sujet de l'écriteau placé sur la croix."
+  },
+  {
+   "id": "qd-044",
+   "parole": "Ne crains pas, crois seulement.",
+   "options": [
+    "Un ange",
+    "Jésus",
+    "Élisée",
+    "Pierre"
+   ],
+   "bonne": 1,
+   "reference": "Marc 5.36",
+   "contexte": "Dit à Jaïrus, chef de la synagogue, après l'annonce de la mort de sa fille."
+  },
+  {
+   "id": "qd-045",
+   "parole": "Parle, car ton serviteur écoute.",
+   "options": [
+    "Samuel",
+    "David",
+    "Moïse",
+    "Ésaïe"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 3.10",
+   "contexte": "Réponse à l'Éternel, qui l'appelait de nuit, du temps du sacrificateur Éli."
+  },
+  {
+   "id": "qd-046",
+   "parole": "Laissez venir à moi les petits enfants, et ne les en empêchez pas; car le royaume de Dieu est pour ceux qui leur ressemblent.",
+   "options": [
+    "Jean-Baptiste",
+    "Pierre",
+    "Salomon",
+    "Jésus"
+   ],
+   "bonne": 3,
+   "reference": "Marc 10.14",
+   "contexte": "Adressé aux disciples, qui écartaient ceux qui amenaient des enfants."
+  },
+  {
+   "id": "qd-047",
+   "parole": "Mon Seigneur et mon Dieu!",
+   "options": [
+    "Pierre",
+    "Jean",
+    "Thomas",
+    "Philippe"
+   ],
+   "bonne": 2,
+   "reference": "Jean 20.28",
+   "contexte": "Dit devant Jésus ressuscité, qui lui montrait ses mains et son côté."
+  },
+  {
+   "id": "qd-048",
+   "parole": "Tu marches contre moi avec l'épée, la lance et le javelot; et moi, je marche contre toi au nom de l'Éternel des armées…",
+   "options": [
+    "Saül",
+    "David",
+    "Jonathan",
+    "Samson"
+   ],
+   "bonne": 1,
+   "reference": "1 Samuel 17.45",
+   "contexte": "Adressé au Philistin Goliath, avant le combat."
+  },
+  {
+   "id": "qd-049",
+   "parole": "Zachée, hâte-toi de descendre; car il faut que je demeure aujourd'hui dans ta maison.",
+   "options": [
+    "Jésus",
+    "Pierre",
+    "Jean-Baptiste",
+    "Un ange"
+   ],
+   "bonne": 0,
+   "reference": "Luc 19.5",
+   "contexte": "À Jéricho, à un chef des publicains monté sur un sycomore."
+  },
+  {
+   "id": "qd-050",
+   "parole": "Seigneur, nous ne savons où tu vas; comment pouvons-nous en savoir le chemin?",
+   "options": [
+    "Philippe",
+    "André",
+    "Nathanaël",
+    "Thomas"
+   ],
+   "bonne": 3,
+   "reference": "Jean 14.5",
+   "contexte": "Question posée lors du dernier entretien de Jésus avec ses disciples."
+  },
+  {
+   "id": "qd-051",
+   "parole": "Père, pardonne-leur, car ils ne savent ce qu'ils font.",
+   "options": [
+    "Étienne",
+    "Pierre",
+    "Jésus",
+    "Jean-Baptiste"
+   ],
+   "bonne": 2,
+   "reference": "Luc 23.34",
+   "contexte": "Parole prononcée sur la croix, au sujet de ceux qui le crucifiaient."
+  },
+  {
+   "id": "qd-052",
+   "parole": "Tu es cet homme-là!",
+   "options": [
+    "Samuel",
+    "Nathan",
+    "Élie",
+    "Gad"
+   ],
+   "bonne": 1,
+   "reference": "2 Samuel 12.7",
+   "contexte": "Dit au roi David, après la parabole de la brebis du pauvre."
+  },
+  {
+   "id": "qd-053",
+   "parole": "Oui, Seigneur, je crois que tu es le Christ, le Fils de Dieu, qui devait venir dans le monde.",
+   "options": [
+    "Marthe",
+    "Marie de Magdala",
+    "La femme samaritaine",
+    "Salomé"
+   ],
+   "bonne": 0,
+   "reference": "Jean 11.27",
+   "contexte": "Dit à Jésus, à Béthanie, avant que Lazare ne sorte du tombeau."
+  },
+  {
+   "id": "qd-054",
+   "parole": "Je te le dis en vérité, aujourd'hui tu seras avec moi dans le paradis.",
+   "options": [
+    "Un ange",
+    "Pierre",
+    "Abraham",
+    "Jésus"
+   ],
+   "bonne": 3,
+   "reference": "Luc 23.43",
+   "contexte": "Réponse au malfaiteur crucifié à côté de lui."
+  },
+  {
+   "id": "qd-055",
+   "parole": "Accorde donc à ton serviteur un coeur intelligent pour juger ton peuple, pour discerner le bien du mal!",
+   "options": [
+    "David",
+    "Josias",
+    "Salomon",
+    "Ézéchias"
+   ],
+   "bonne": 2,
+   "reference": "1 Rois 3.9",
+   "contexte": "Demande adressée à Dieu, apparu en songe au début de son règne."
+  },
+  {
+   "id": "qd-056",
+   "parole": "Marthe, Marthe, tu t'inquiètes et tu t'agites pour beaucoup de choses. Une seule chose est nécessaire. Marie a choisi la bonne part, qui ne lui sera point ôtée.",
+   "options": [
+    "Lazare",
+    "Jésus",
+    "Pierre",
+    "Jean"
+   ],
+   "bonne": 1,
+   "reference": "Luc 10.41-42",
+   "contexte": "Dit dans le village où Marthe le recevait, pendant que Marie écoutait sa parole."
+  },
+  {
+   "id": "qd-057",
+   "parole": "Assurément, cet homme était Fils de Dieu.",
+   "options": [
+    "Le centenier",
+    "Pilate",
+    "Joseph d'Arimathée",
+    "Simon de Cyrène"
+   ],
+   "bonne": 0,
+   "reference": "Marc 15.39",
+   "contexte": "Dit en face de la croix, en voyant comment Jésus avait expiré."
+  },
+  {
+   "id": "qd-058",
+   "parole": "Jusqu'à quand clocherez-vous des deux côtés? Si l'Éternel est Dieu, allez après lui; si c'est Baal, allez après lui!",
+   "options": [
+    "Élisée",
+    "Ésaïe",
+    "Josué",
+    "Élie"
+   ],
+   "bonne": 3,
+   "reference": "1 Rois 18.21",
+   "contexte": "Adressé à tout le peuple rassemblé sur le mont Carmel."
+  },
+  {
+   "id": "qd-059",
+   "parole": "Ôtez cela d'ici, ne faites pas de la maison de mon Père une maison de trafic.",
+   "options": [
+    "Jean-Baptiste",
+    "Pierre",
+    "Jésus",
+    "Jérémie"
+   ],
+   "bonne": 2,
+   "reference": "Jean 2.16",
+   "contexte": "Adressé aux vendeurs de pigeons, dans le temple de Jérusalem."
+  },
+  {
+   "id": "qd-060",
+   "parole": "Souviens-toi de moi, quand tu viendras dans ton règne.",
+   "options": [
+    "Le centenier",
+    "Un des malfaiteurs crucifiés",
+    "Simon de Cyrène",
+    "Barabbas"
+   ],
+   "bonne": 1,
+   "reference": "Luc 23.42",
+   "contexte": "Adressé à Jésus, depuis une croix voisine de la sienne."
+  },
+  {
+   "id": "qd-061",
+   "parole": "Que celui de vous qui est sans péché jette le premier la pierre contre elle.",
+   "options": [
+    "Jésus",
+    "Moïse",
+    "Pierre",
+    "Jean-Baptiste"
+   ],
+   "bonne": 0,
+   "reference": "Jean 8.7",
+   "contexte": "Réponse aux scribes et aux pharisiens qui amenaient une femme surprise en adultère."
+  },
+  {
+   "id": "qd-062",
+   "parole": "Qu'il y ait sur moi, je te prie, une double portion de ton esprit!",
+   "options": [
+    "Élie",
+    "Guéhazi",
+    "Jonas",
+    "Élisée"
+   ],
+   "bonne": 3,
+   "reference": "2 Rois 2.9",
+   "contexte": "Demande faite à Élie, juste avant que celui-ci ne soit enlevé."
+  },
+  {
+   "id": "qd-063",
+   "parole": "Voici, je vois les cieux ouverts, et le Fils de l'homme debout à la droite de Dieu.",
+   "options": [
+    "Pierre",
+    "Paul",
+    "Étienne",
+    "Philippe"
+   ],
+   "bonne": 2,
+   "reference": "Actes 7.56",
+   "contexte": "Dit devant le sanhédrin, juste avant d'être lapidé."
+  },
+  {
+   "id": "qd-064",
+   "parole": "Je vous donne un commandement nouveau: Aimez-vous les uns les autres; comme je vous ai aimés, vous aussi, aimez-vous les uns les autres.",
+   "options": [
+    "Paul",
+    "Jésus",
+    "Jean",
+    "Moïse"
+   ],
+   "bonne": 1,
+   "reference": "Jean 13.34",
+   "contexte": "Dit aux disciples, après le lavement des pieds, la nuit où il fut livré."
+  },
+  {
+   "id": "qd-065",
+   "parole": "Je suis sorti nu du sein de ma mère, et nu je retournerai dans le sein de la terre. L'Éternel a donné, et l'Éternel a ôté; que le nom de l'Éternel soit béni!",
+   "options": [
+    "Job",
+    "Éliphaz",
+    "Bildad",
+    "David"
+   ],
+   "bonne": 0,
+   "reference": "Job 1.21",
+   "contexte": "Dit après l'annonce de la perte de ses biens et de ses enfants."
+  },
+  {
+   "id": "qd-066",
+   "parole": "Remets ton épée dans le fourreau. Ne boirai-je pas la coupe que le Père m'a donnée à boire?",
+   "options": [
+    "Un ange",
+    "Jean",
+    "Judas",
+    "Jésus"
+   ],
+   "bonne": 3,
+   "reference": "Jean 18.11",
+   "contexte": "Adressé à Pierre, lors de l'arrestation dans le jardin, au delà du torrent du Cédron."
+  },
+  {
+   "id": "qd-067",
+   "parole": "L'Éternel est mon berger: je ne manquerai de rien.",
+   "options": [
+    "Salomon",
+    "Asaph",
+    "David",
+    "Moïse"
+   ],
+   "bonne": 2,
+   "reference": "Psaumes 23.1",
+   "contexte": "Ouverture d'un cantique attribué à David dans le livre des Psaumes."
+  },
+  {
+   "id": "qd-068",
+   "parole": "Maintenant, Seigneur, tu laisses ton serviteur S'en aller en paix, selon ta parole. Car mes yeux ont vu ton salut…",
+   "options": [
+    "Zacharie",
+    "Siméon",
+    "Joseph",
+    "Anne la prophétesse"
+   ],
+   "bonne": 1,
+   "reference": "Luc 2.29-30",
+   "contexte": "Dit dans le temple de Jérusalem, en tenant l'enfant Jésus dans ses bras."
+  },
+  {
+   "id": "qd-069",
+   "parole": "Tout est accompli.",
+   "options": [
+    "Jésus",
+    "Étienne",
+    "Paul",
+    "Le centenier"
+   ],
+   "bonne": 0,
+   "reference": "Jean 19.30",
+   "contexte": "Parole prononcée sur la croix, après avoir pris le vinaigre."
+  },
+  {
+   "id": "qd-070",
+   "parole": "Me voici, envoie-moi.",
+   "options": [
+    "Jérémie",
+    "Moïse",
+    "Jonas",
+    "Ésaïe"
+   ],
+   "bonne": 3,
+   "reference": "Ésaïe 6.8",
+   "contexte": "Réponse à la voix du Seigneur, lors de la vision dans le temple."
+  },
+  {
+   "id": "qd-071",
+   "parole": "Parce que tu m'as vu, tu as cru. Heureux ceux qui n'ont pas vu, et qui ont cru!",
+   "options": [
+    "Pierre",
+    "Jean",
+    "Jésus",
+    "Un ange"
+   ],
+   "bonne": 2,
+   "reference": "Jean 20.29",
+   "contexte": "Dit à Thomas, huit jours après la résurrection."
+  },
+  {
+   "id": "qd-072",
+   "parole": "Ah! Seigneur Éternel! voici, je ne sais point parler, car je suis un enfant.",
+   "options": [
+    "Samuel",
+    "Jérémie",
+    "Ésaïe",
+    "Élisée"
+   ],
+   "bonne": 1,
+   "reference": "Jérémie 1.6",
+   "contexte": "Réponse à l'Éternel, au moment de son appel comme prophète."
+  },
+  {
+   "id": "qd-073",
+   "parole": "Parce qu'ils ont enlevé mon Seigneur, et je ne sais où ils l'ont mis.",
+   "options": [
+    "Marie de Magdala",
+    "Marthe",
+    "Marie, mère de Jésus",
+    "Salomé"
+   ],
+   "bonne": 0,
+   "reference": "Jean 20.13",
+   "contexte": "Réponse aux deux anges, près du sépulcre vide."
+  },
+  {
+   "id": "qd-074",
+   "parole": "Simon, fils de Jonas, m'aimes-tu plus que ne m'aiment ceux-ci?",
+   "options": [
+    "Jean",
+    "André",
+    "Jacques",
+    "Jésus"
+   ],
+   "bonne": 3,
+   "reference": "Jean 21.15",
+   "contexte": "Question posée à Simon Pierre, au bord de la mer de Tibériade, après un repas."
+  },
+  {
+   "id": "qd-075",
+   "parole": "Voici, notre Dieu que nous servons peut nous délivrer de la fournaise ardente, et il nous délivrera de ta main, ô roi. Sinon, sache, ô roi, que nous ne servirons pas tes dieux…",
+   "options": [
+    "Daniel",
+    "Esdras",
+    "Schadrac, Méschac et Abed-Nego",
+    "Néhémie"
+   ],
+   "bonne": 2,
+   "reference": "Daniel 3.17-18",
+   "contexte": "Réponse au roi Nebucadnetsar, qui exigeait l'adoration de la statue d'or."
+  },
+  {
+   "id": "qd-076",
+   "parole": "Saul, Saul, pourquoi me persécutes-tu?",
+   "options": [
+    "Étienne",
+    "Jésus",
+    "Ananias",
+    "Un ange"
+   ],
+   "bonne": 1,
+   "reference": "Actes 9.4",
+   "contexte": "Voix entendue par Saul, tombé à terre sur le chemin de Damas."
+  },
+  {
+   "id": "qd-077",
+   "parole": "Maintenant, Éternel, prends-moi donc la vie, car la mort m'est préférable à la vie.",
+   "options": [
+    "Jonas",
+    "Jérémie",
+    "Job",
+    "Ézéchiel"
+   ],
+   "bonne": 0,
+   "reference": "Jonas 4.3",
+   "contexte": "Prière prononcée après que Dieu eut épargné la ville de Ninive."
+  },
+  {
+   "id": "qd-078",
+   "parole": "Je crois! viens au secours de mon incrédulité!",
+   "options": [
+    "Jaïrus",
+    "Bartimée",
+    "Le centenier de Capernaüm",
+    "Le père de l'enfant"
+   ],
+   "bonne": 3,
+   "reference": "Marc 9.24",
+   "contexte": "Cri adressé à Jésus, au sujet de son fils possédé d'un esprit muet."
+  },
+  {
+   "id": "qd-079",
+   "parole": "Voici, je me tiens à la porte, et je frappe. Si quelqu'un entend ma voix et ouvre la porte, j'entrerai chez lui, je souperai avec lui, et lui avec moi.",
+   "options": [
+    "Un ange",
+    "Jean",
+    "Jésus",
+    "Paul"
+   ],
+   "bonne": 2,
+   "reference": "Apocalypse 3.20",
+   "contexte": "Message à l'Église de Laodicée, rapporté par Jean dans l'Apocalypse."
+  },
+  {
+   "id": "qd-080",
+   "parole": "Va, rassemble tous les Juifs qui se trouvent à Suse, et jeûnez pour moi… puis j'entrerai chez le roi, malgré la loi; et si je dois périr, je périrai.",
+   "options": [
+    "Ruth",
+    "Esther",
+    "Débora",
+    "Abigaïl"
+   ],
+   "bonne": 1,
+   "reference": "Esther 4.16",
+   "contexte": "Message envoyé à Mardochée, à Suse, avant de paraître devant le roi."
+  }
+ ]
+}

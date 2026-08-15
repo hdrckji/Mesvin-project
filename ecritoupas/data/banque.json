@@ -1,0 +1,706 @@
+{
+  "version": 1,
+  "note": "Affirmations écrit/pas écrit — à relire contre une Segond 1910 imprimée avant diffusion large.",
+  "items": [
+    {
+      "id": "eo-001",
+      "phrase": "Charité bien ordonnée commence par soi-même.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Proverbe français issu d'une maxime latine médiévale ; il ne figure dans aucun verset."
+    },
+    {
+      "id": "eo-002",
+      "phrase": "Une bonne réputation vaut mieux que le bon parfum, et le jour de la mort que le jour de la naissance.",
+      "ecrit": true,
+      "reference": "Ecclésiaste 7.1",
+      "precision": "La seconde moitié du verset surprend souvent plus que la première ; les deux sont bien dans le texte."
+    },
+    {
+      "id": "eo-003",
+      "phrase": "A chaque jour suffit sa peine.",
+      "ecrit": true,
+      "reference": "Matthieu 6.34",
+      "precision": "Le dicton français vient mot pour mot de la fin de ce verset du sermon sur la montagne."
+    },
+    {
+      "id": "eo-004",
+      "phrase": "L'argent est la racine de tous les maux.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "1 Timothée 6.10 dit « l'amour de l'argent est une racine de tous les maux » — c'est l'amour de l'argent, pas l'argent."
+    },
+    {
+      "id": "eo-005",
+      "phrase": "Je puis tout par celui qui me fortifie.",
+      "ecrit": true,
+      "reference": "Philippiens 4.13",
+      "precision": "Écrit par Paul depuis sa captivité, à propos de savoir vivre aussi bien dans l'abondance que dans la disette."
+    },
+    {
+      "id": "eo-006",
+      "phrase": "L'homme propose, et Dieu dispose.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Formule de Thomas a Kempis dans L'Imitation de Jésus-Christ (XVe siècle) ; le plus proche est Proverbes 16.9."
+    },
+    {
+      "id": "eo-007",
+      "phrase": "Tu ne mentiras point.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Le Décalogue dit « Tu ne porteras point de faux témoignage contre ton prochain » (Exode 20.16) ; ce commandement n'existe pas sous cette forme."
+    },
+    {
+      "id": "eo-008",
+      "phrase": "Jonas fut englouti par une baleine.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Le texte dit « un grand poisson » (Jonas 2.1) ; le mot « baleine » n'apparaît nulle part dans la Segond 1910."
+    },
+    {
+      "id": "eo-009",
+      "phrase": "Nul ne peut servir deux maîtres.",
+      "ecrit": true,
+      "reference": "Matthieu 6.24",
+      "precision": "Début du verset qui se conclut par « Vous ne pouvez servir Dieu et Mamon »."
+    },
+    {
+      "id": "eo-010",
+      "phrase": "La propreté est proche de la piété.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Proverbe anglais (« Cleanliness is next to godliness ») repris dans un sermon de John Wesley au XVIIIe siècle."
+    },
+    {
+      "id": "eo-011",
+      "phrase": "Ève cueillit une pomme et en donna à Adam.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Genèse 3 parle d'un « fruit », jamais d'une pomme ; l'idée de la pomme vient du latin, où malum signifie à la fois « mal » et « pomme »."
+    },
+    {
+      "id": "eo-012",
+      "phrase": "…ce sont des aveugles qui conduisent des aveugles; si un aveugle conduit un aveugle, ils tomberont tous deux dans une fosse.",
+      "ecrit": true,
+      "reference": "Matthieu 15.14",
+      "precision": "Dit à propos des pharisiens ; l'expression « des aveugles qui conduisent des aveugles » vient de là."
+    },
+    {
+      "id": "eo-013",
+      "phrase": "La vengeance est un plat qui se mange froid.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Proverbe ; le texte dit tout autre chose : « A moi la vengeance... dit le Seigneur » (Romains 12.19)."
+    },
+    {
+      "id": "eo-014",
+      "phrase": "Jonas, dans le ventre du poisson, pria l'Eternel, son Dieu.",
+      "ecrit": true,
+      "reference": "Jonas 2.1",
+      "precision": "Le texte dit bien « poisson » — le mot « baleine » n'apparaît nulle part dans la Segond 1910."
+    },
+    {
+      "id": "eo-015",
+      "phrase": "Heureux l'homme qui retient sa langue au jour de la colère, car la paix habitera sous son toit.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Phrase de facture biblique, mais introuvable dans le texte — pastiche pur."
+    },
+    {
+      "id": "eo-016",
+      "phrase": "Tes dents sont comme un troupeau de brebis tondues, Qui remontent de l'abreuvoir…",
+      "ecrit": true,
+      "reference": "Cantique des cantiques 4.2",
+      "precision": "Compliment amoureux du Cantique des cantiques ; la suite précise qu'aucune dent ne manque : « Toutes portent des jumeaux »."
+    },
+    {
+      "id": "eo-017",
+      "phrase": "Faute avouée est à moitié pardonnée.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Proverbe français ; malgré son parfum de confession, aucun verset ne le contient."
+    },
+    {
+      "id": "eo-018",
+      "phrase": "Ainsi, parce que tu es tiède, et que tu n'es ni froid ni bouillant, je te vomirai de ma bouche.",
+      "ecrit": true,
+      "reference": "Apocalypse 3.16",
+      "precision": "Adressé à l'église de Laodicée, dans les sept lettres qui ouvrent l'Apocalypse."
+    },
+    {
+      "id": "eo-019",
+      "phrase": "Gloire à Dieu au plus haut des cieux, et paix sur la terre aux hommes de bonne volonté.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Formulation héritée de la Vulgate latine ; la Segond 1910 (Luc 2.14) écrit « paix sur la terre parmi les hommes qu'il agrée »."
+    },
+    {
+      "id": "eo-020",
+      "phrase": "Vanité des vanités, dit l'Ecclésiaste, vanité des vanités, tout est vanité.",
+      "ecrit": true,
+      "reference": "Ecclésiaste 1.2",
+      "precision": "Deuxième verset du livre ; le mot hébreu traduit par « vanité » signifie littéralement « buée, souffle »."
+    },
+    {
+      "id": "eo-021",
+      "phrase": "Quand Dieu ferme une porte, il ouvre une fenêtre.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Dicton populaire, notamment répandu par le film La Mélodie du bonheur (1965) ; aucun verset ne le contient."
+    },
+    {
+      "id": "eo-022",
+      "phrase": "L'insensé même, quand il se tait, passe pour sage; Celui qui ferme ses lèvres est un homme intelligent.",
+      "ecrit": true,
+      "reference": "Proverbes 17.28",
+      "precision": "Le proverbe biblique le plus proche du dicton « le silence est d'or » — dicton qui, lui, n'y figure pas."
+    },
+    {
+      "id": "eo-023",
+      "phrase": "…oeil pour oeil, dent pour dent, main pour main, pied pour pied…",
+      "ecrit": true,
+      "reference": "Exode 21.24",
+      "precision": "La loi du talion ; Matthieu 5.38 cite la formule « oeil pour oeil, et dent pour dent »."
+    },
+    {
+      "id": "eo-024",
+      "phrase": "La colombe revint vers Noé avec un rameau de laurier.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Genèse 8.11 parle d'« une feuille d'olivier arrachée » ; le laurier appartient aux traditions gréco-romaines."
+    },
+    {
+      "id": "eo-025",
+      "phrase": "Un ami fidèle est un baume de vie.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Phrase du Siracide (Ecclésiastique 6.16), livre deutérocanonique absent de la Segond 1910."
+    },
+    {
+      "id": "eo-026",
+      "phrase": "On fait des repas pour se divertir, le vin rend la vie joyeuse, et l'argent répond à tout.",
+      "ecrit": true,
+      "reference": "Ecclésiaste 10.19",
+      "precision": "Oui, « l'argent répond à tout » figure bien dans le texte, au fil des observations désabusées de l'Ecclésiaste."
+    },
+    {
+      "id": "eo-027",
+      "phrase": "Priez sans cesse.",
+      "ecrit": true,
+      "reference": "1 Thessaloniciens 5.17",
+      "precision": "Deux mots au milieu des consignes finales de la lettre — l'un des versets les plus courts de la Bible."
+    },
+    {
+      "id": "eo-028",
+      "phrase": "Au commencement était le Verbe.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Traduction issue de la Vulgate (Verbum) ; la Segond 1910 (Jean 1.1) dit « Au commencement était la Parole »."
+    },
+    {
+      "id": "eo-029",
+      "phrase": "Réjouissez-vous avec ceux qui se réjouissent; pleurez avec ceux qui pleurent.",
+      "ecrit": true,
+      "reference": "Romains 12.15",
+      "precision": "Dans la série de recommandations pratiques qui conclut l'épître aux Romains."
+    },
+    {
+      "id": "eo-030",
+      "phrase": "Au commencement, Dieu créa les cieux et la terre.",
+      "ecrit": true,
+      "reference": "Genèse 1.1",
+      "precision": "La toute première phrase de la Bible, ouverture du récit de la création."
+    },
+    {
+      "id": "eo-031",
+      "phrase": "Les mages s'appelaient Gaspard, Melchior et Balthazar.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Ces noms viennent de traditions médiévales (vers le VIe siècle) ; le texte ne nomme aucun mage."
+    },
+    {
+      "id": "eo-032",
+      "phrase": "Cela aussi passera.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Sentence d'origine persane, rattachée au roi Salomon par la légende seulement ; elle est absente du texte."
+    },
+    {
+      "id": "eo-033",
+      "phrase": "La foi déplace les montagnes.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Condensé de 1 Corinthiens 13.2, qui écrit « la foi jusqu'à transporter des montagnes » ; la phrase telle quelle n'y est pas."
+    },
+    {
+      "id": "eo-034",
+      "phrase": "L'arrogance précède la ruine, Et l'orgueil précède la chute.",
+      "ecrit": true,
+      "reference": "Proverbes 16.18",
+      "precision": "C'est la source de l'expression courante « l'orgueil précède la chute »."
+    },
+    {
+      "id": "eo-035",
+      "phrase": "L'Eternel est mon berger: je ne manquerai de rien.",
+      "ecrit": true,
+      "reference": "Psaumes 23.1",
+      "precision": "Ouverture du psaume 23, attribué à David par sa suscription."
+    },
+    {
+      "id": "eo-036",
+      "phrase": "Que celui qui n'a jamais péché lui jette la première pierre.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "La Segond 1910 (Jean 8.7) écrit « Que celui de vous qui est sans péché jette le premier la pierre contre elle »."
+    },
+    {
+      "id": "eo-037",
+      "phrase": "Va vers la fourmi, paresseux; Considère ses voies, et deviens sage.",
+      "ecrit": true,
+      "reference": "Proverbes 6.6",
+      "precision": "La fourmi donnée en exemple d'ardeur au travail — bien avant la fourmi de La Fontaine."
+    },
+    {
+      "id": "eo-038",
+      "phrase": "Les voies du Seigneur sont impénétrables.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Romains 11.33 dit « ses voies incompréhensibles » ; « impénétrables » vient d'autres traductions et de l'usage courant."
+    },
+    {
+      "id": "eo-039",
+      "phrase": "Il n'est pas bon que l'homme soit seul; je lui ferai une aide semblable à lui.",
+      "ecrit": true,
+      "reference": "Genèse 2.18",
+      "precision": "Prononcé juste avant la création de la femme, dans le second récit de création."
+    },
+    {
+      "id": "eo-040",
+      "phrase": "Trois rois mages vinrent d'Orient adorer l'enfant.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Matthieu 2.1 dit « des mages d'Orient » : ni rois, ni au nombre de trois — le chiffre a été déduit des trois présents."
+    },
+    {
+      "id": "eo-041",
+      "phrase": "Chacun récolte ce qu'il a semé.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Dicton ; Galates 6.7 écrit « Ce qu'un homme aura semé, il le moissonnera aussi » — l'idée y est, pas la phrase."
+    },
+    {
+      "id": "eo-042",
+      "phrase": "Ne réponds pas à l'insensé selon sa folie, De peur que tu ne lui ressembles toi-même.",
+      "ecrit": true,
+      "reference": "Proverbes 26.4",
+      "precision": "Le verset suivant recommande exactement l'inverse : les deux conseils se suivent volontairement."
+    },
+    {
+      "id": "eo-043",
+      "phrase": "Le vin est moqueur, les boissons fortes sont tumultueuses; Quiconque en fait excès n'est pas sage.",
+      "ecrit": true,
+      "reference": "Proverbes 20.1",
+      "precision": "Le même livre conseille ailleurs de donner du vin « à celui qui a l'amertume dans l'âme » (31.6)."
+    },
+    {
+      "id": "eo-044",
+      "phrase": "Il est plus facile à un chameau de passer par le trou d'une aiguille qu'à un riche d'entrer dans le royaume de Dieu.",
+      "ecrit": true,
+      "reference": "Marc 10.25",
+      "precision": "La phrase figure aussi, presque à l'identique, en Matthieu 19.24 et Luc 18.25."
+    },
+    {
+      "id": "eo-045",
+      "phrase": "L'homme est un loup pour l'homme.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Formule de Plaute (Asinaria), rendue célèbre par Hobbes ; absente du texte."
+    },
+    {
+      "id": "eo-046",
+      "phrase": "Vous ne ferez point d'incisions dans votre chair pour un mort, et vous n'imprimerez point de figures sur vous.",
+      "ecrit": true,
+      "reference": "Lévitique 19.28",
+      "precision": "Le verset invoqué dans les discussions sur le tatouage se trouve dans la loi de sainteté du Lévitique."
+    },
+    {
+      "id": "eo-047",
+      "phrase": "Qui sème le vent récolte la tempête.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Dicton tiré d'Osée 8.7, qui écrit « Puisqu'ils ont semé du vent, ils moissonneront la tempête »."
+    },
+    {
+      "id": "eo-048",
+      "phrase": "Le lion habitera avec l'agneau.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Ésaïe 11.6 dit « Le loup habitera avec l'agneau » ; le lion de la citation courante a remplacé le loup."
+    },
+    {
+      "id": "eo-049",
+      "phrase": "Ne continue pas à ne boire que de l'eau; mais fais usage d'un peu de vin, à cause de ton estomac et de tes fréquentes indispositions.",
+      "ecrit": true,
+      "reference": "1 Timothée 5.23",
+      "precision": "Conseil personnel de Paul à Timothée, glissé au milieu de consignes générales."
+    },
+    {
+      "id": "eo-050",
+      "phrase": "L'enfer est pavé de bonnes intentions.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Proverbe attribué à Bernard de Clairvaux et popularisé en anglais par Samuel Johnson."
+    },
+    {
+      "id": "eo-051",
+      "phrase": "Comme un chien qui retourne à ce qu'il a vomi, Ainsi est un insensé qui revient à sa folie.",
+      "ecrit": true,
+      "reference": "Proverbes 26.11",
+      "precision": "L'image du chien retournant à son vomi est reprise presque telle quelle en 2 Pierre 2.22."
+    },
+    {
+      "id": "eo-052",
+      "phrase": "La raison du plus fort est toujours la meilleure.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Premier vers du « Loup et l'Agneau » de La Fontaine."
+    },
+    {
+      "id": "eo-053",
+      "phrase": "Aide-toi, le ciel t'aidera.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "C'est la morale du « Chartier embourbé » de La Fontaine (1668) ; la phrase est absente de la Segond 1910."
+    },
+    {
+      "id": "eo-054",
+      "phrase": "Le paradis se trouve aux pieds des mères.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Parole attribuée à Mahomet (hadith), transmise par la tradition musulmane."
+    },
+    {
+      "id": "eo-055",
+      "phrase": "Aimez vos ennemis, bénissez ceux qui vous maudissent, faites du bien à ceux qui vous haïssent…",
+      "ecrit": true,
+      "reference": "Matthieu 5.44",
+      "precision": "Sermon sur la montagne, dans la série des « Vous avez appris qu'il a été dit... Mais moi, je vous dis »."
+    },
+    {
+      "id": "eo-056",
+      "phrase": "A moi la vengeance, à moi la rétribution, dit le Seigneur.",
+      "ecrit": true,
+      "reference": "Romains 12.19",
+      "precision": "Paul cite Deutéronome 32.35 pour dissuader ses lecteurs de se venger eux-mêmes."
+    },
+    {
+      "id": "eo-057",
+      "phrase": "Dieu aide ceux qui s'aident eux-mêmes.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Formule popularisée par Benjamin Franklin dans l'Almanach du pauvre Richard ; aucun verset ne la contient."
+    },
+    {
+      "id": "eo-058",
+      "phrase": "Demandez, et l'on vous donnera; cherchez, et vous trouverez; frappez, et l'on vous ouvrira.",
+      "ecrit": true,
+      "reference": "Matthieu 7.7",
+      "precision": "Sermon sur la montagne ; la phrase revient presque à l'identique en Luc 11.9."
+    },
+    {
+      "id": "eo-059",
+      "phrase": "Jésus pleura.",
+      "ecrit": true,
+      "reference": "Jean 11.35",
+      "precision": "Le verset le plus court des évangiles : Jésus pleure devant le tombeau de son ami Lazare."
+    },
+    {
+      "id": "eo-060",
+      "phrase": "Ne vous y trompez pas: les mauvaises compagnies corrompent les bonnes moeurs.",
+      "ecrit": true,
+      "reference": "1 Corinthiens 15.33",
+      "precision": "Paul cite ici un vers du poète comique grec Ménandre, passé en proverbe à son époque."
+    },
+    {
+      "id": "eo-061",
+      "phrase": "Cet enfant naîtra le 25 décembre.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Aucun évangile ne date la naissance de Jésus ; le 25 décembre a été fixé par l'Église au IVe siècle."
+    },
+    {
+      "id": "eo-062",
+      "phrase": "La vérité sort de la bouche des enfants.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Dicton français ; le Psaume 8.2 dit autre chose : « Par la bouche des enfants... Tu as fondé ta gloire »."
+    },
+    {
+      "id": "eo-063",
+      "phrase": "Dieu a créé l'homme à son image, et l'homme le lui a bien rendu.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Mot attribué à Voltaire ; seule la première moitié fait écho à Genèse 1.27."
+    },
+    {
+      "id": "eo-064",
+      "phrase": "L'Eternel a donné, et l'Eternel a ôté; que le nom de l'Eternel soit béni!",
+      "ecrit": true,
+      "reference": "Job 1.21",
+      "precision": "Réponse de Job le jour où il apprend la perte de ses biens et de ses enfants."
+    },
+    {
+      "id": "eo-065",
+      "phrase": "Donnez des liqueurs fortes à celui qui périt, Et du vin à celui qui a l'amertume dans l'âme…",
+      "ecrit": true,
+      "reference": "Proverbes 31.6",
+      "precision": "Extrait des paroles du roi Lemuel ; le verset suivant poursuit : « Qu'il boive et oublie sa pauvreté »."
+    },
+    {
+      "id": "eo-066",
+      "phrase": "Qui donne au pauvre prête à Dieu.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Vers de Victor Hugo (« Pour les pauvres »), démarquant Proverbes 19.17 : « Celui qui a pitié du pauvre prête à l'Eternel »."
+    },
+    {
+      "id": "eo-067",
+      "phrase": "Celui qui ménage sa verge hait son fils, Mais celui qui l'aime cherche à le corriger.",
+      "ecrit": true,
+      "reference": "Proverbes 13.24",
+      "precision": "Le verset qui a inspiré le dicton « Qui aime bien châtie bien » — dicton qui, lui, n'est pas dans le texte."
+    },
+    {
+      "id": "eo-068",
+      "phrase": "Heureux qui saisit tes enfants, Et les écrase sur le roc!",
+      "ecrit": true,
+      "reference": "Psaumes 137.9",
+      "precision": "Dernier verset du psaume 137, chant des exilés au bord des fleuves de Babylone ; la phrase s'adresse à la ville ennemie."
+    },
+    {
+      "id": "eo-069",
+      "phrase": "Toute peine mérite salaire.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Proverbe français ; Luc 10.7 dit « l'ouvrier mérite son salaire » — la généralisation est venue après."
+    },
+    {
+      "id": "eo-070",
+      "phrase": "Il y a plus de bonheur à donner qu'à recevoir.",
+      "ecrit": true,
+      "reference": "Actes 20.35",
+      "precision": "Parole de Jésus rapportée par Paul aux anciens d'Éphèse — elle ne figure dans aucun des quatre évangiles."
+    },
+    {
+      "id": "eo-071",
+      "phrase": "L'habit ne fait pas le moine.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Proverbe français attesté au Moyen Âge — les moines eux-mêmes sont d'ailleurs absents de la Bible."
+    },
+    {
+      "id": "eo-072",
+      "phrase": "Si l'on bénit son prochain à haute voix et de grand matin, Cela est envisagé comme une malédiction.",
+      "ecrit": true,
+      "reference": "Proverbes 27.14",
+      "precision": "Un des proverbes les plus concrets du livre : même une bénédiction, criée trop tôt, passe mal."
+    },
+    {
+      "id": "eo-073",
+      "phrase": "Car mes pensées ne sont pas vos pensées, Et vos voies ne sont pas mes voies, Dit l'Eternel.",
+      "ecrit": true,
+      "reference": "Ésaïe 55.8",
+      "precision": "Souvent confondu avec « les voies impénétrables » — formule qui, elle, n'est pas dans la Segond 1910."
+    },
+    {
+      "id": "eo-074",
+      "phrase": "Réponds à l'insensé selon sa folie, Afin qu'il ne se regarde pas comme sage.",
+      "ecrit": true,
+      "reference": "Proverbes 26.5",
+      "precision": "Contredit mot à mot le verset précédent — le couple 26.4-26.5 est célèbre pour cette tension assumée."
+    },
+    {
+      "id": "eo-075",
+      "phrase": "Œil pour œil, et le monde finira aveugle.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Sentence attribuée à Gandhi ; seul « oeil pour oeil, dent pour dent » figure dans le texte (Exode 21.24)."
+    },
+    {
+      "id": "eo-076",
+      "phrase": "Celui qui trouve une femme trouve le bonheur; C'est une grâce qu'il obtient de l'Eternel.",
+      "ecrit": true,
+      "reference": "Proverbes 18.22",
+      "precision": "À mettre en regard des proverbes voisins sur la femme querelleuse — le même livre contient les deux."
+    },
+    {
+      "id": "eo-077",
+      "phrase": "Il y a sept péchés capitaux.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "La liste des péchés capitaux vient de la théologie médiévale (Grégoire le Grand) ; l'expression est absente du texte."
+    },
+    {
+      "id": "eo-078",
+      "phrase": "N'oubliez pas l'hospitalité; car, en l'exerçant, quelques-uns ont logé des anges, sans le savoir.",
+      "ecrit": true,
+      "reference": "Hébreux 13.2",
+      "precision": "Allusion probable aux trois visiteurs reçus par Abraham en Genèse 18."
+    },
+    {
+      "id": "eo-079",
+      "phrase": "Nulle contrainte en religion.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Phrase du Coran, sourate 2 (La Vache), verset 256."
+    },
+    {
+      "id": "eo-080",
+      "phrase": "Croissez et multipliez, et remplissez la terre.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Formule des traductions anciennes ; la Segond 1910 (Genèse 1.28) écrit « Soyez féconds, multipliez, remplissez la terre »."
+    },
+    {
+      "id": "eo-081",
+      "phrase": "Mieux vaut habiter à l'angle d'un toit, Que de partager la demeure d'une femme querelleuse.",
+      "ecrit": true,
+      "reference": "Proverbes 21.9",
+      "precision": "Le proverbe revient mot pour mot en 25.24 — il figure donc deux fois dans le même livre."
+    },
+    {
+      "id": "eo-082",
+      "phrase": "…des petits garçons sortirent de la ville, et se moquèrent de lui. Ils lui disaient: Monte, chauve! monte, chauve!",
+      "ecrit": true,
+      "reference": "2 Rois 2.23",
+      "precision": "Les moqueurs du prophète Élisée ; au verset suivant, deux ours sortent de la forêt et déchirent quarante-deux de ces enfants."
+    },
+    {
+      "id": "eo-083",
+      "phrase": "Un anneau d'or au nez d'un pourceau, C'est une femme belle et dépourvue de sens.",
+      "ecrit": true,
+      "reference": "Proverbes 11.22",
+      "precision": "L'anneau au nez était une parure féminine courante au Proche-Orient ancien, d'où la comparaison."
+    },
+    {
+      "id": "eo-084",
+      "phrase": "Bien mal acquis ne profite jamais.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Proverbe français ; Proverbes 10.2 écrit « Les trésors de la méchanceté ne profitent pas »."
+    },
+    {
+      "id": "eo-085",
+      "phrase": "Dieu ne vous enverra jamais plus que vous ne pouvez supporter.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "1 Corinthiens 10.13 parle de tentation, non d'épreuves, et promet surtout « le moyen d'en sortir »."
+    },
+    {
+      "id": "eo-086",
+      "phrase": "…et même un chien vivant vaut mieux qu'un lion mort.",
+      "ecrit": true,
+      "reference": "Ecclésiaste 9.4",
+      "precision": "Fin du verset qui commence par « Pour tous ceux qui vivent il y a de l'espérance »."
+    },
+    {
+      "id": "eo-087",
+      "phrase": "La parole est d'argent, mais le silence est d'or.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Proverbe ; le plus proche dans le texte est Proverbes 17.28, sur l'insensé qui se tait et passe pour sage."
+    },
+    {
+      "id": "eo-088",
+      "phrase": "Connais-toi toi-même.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Inscription du temple de Delphes, reprise par Socrate ; elle ne figure dans aucun verset."
+    },
+    {
+      "id": "eo-089",
+      "phrase": "…il n'y a rien de nouveau sous le soleil.",
+      "ecrit": true,
+      "reference": "Ecclésiaste 1.9",
+      "precision": "Fin du verset qui commence par « Ce qui a été, c'est ce qui sera » — l'expression courante vient de là."
+    },
+    {
+      "id": "eo-090",
+      "phrase": "Marie coucha l'enfant dans une étable, entre le boeuf et l'âne.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Luc 2.7 parle d'une crèche (mangeoire) ; ni étable, ni boeuf, ni âne dans les évangiles — ces animaux viennent de traditions postérieures."
+    },
+    {
+      "id": "eo-091",
+      "phrase": "Je ne te condamne pas non plus: va, et ne pèche plus.",
+      "ecrit": true,
+      "reference": "Jean 8.11",
+      "precision": "Conclusion de l'épisode de la femme adultère, juste après le départ des accusateurs."
+    },
+    {
+      "id": "eo-092",
+      "phrase": "L'Eternel bénit la maison de celui qui se lève avant l'aurore.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Pastiche ; le Psaume 127.2 dit presque l'inverse : « En vain vous levez-vous matin »."
+    },
+    {
+      "id": "eo-093",
+      "phrase": "Remets ton épée à sa place; car tous ceux qui prendront l'épée périront par l'épée.",
+      "ecrit": true,
+      "reference": "Matthieu 26.52",
+      "precision": "Dit lors de l'arrestation à Gethsémané, juste après qu'un compagnon a tranché l'oreille d'un serviteur."
+    },
+    {
+      "id": "eo-094",
+      "phrase": "Que celui de vous qui est sans péché jette le premier la pierre contre elle.",
+      "ecrit": true,
+      "reference": "Jean 8.7",
+      "precision": "La formulation exacte de la Segond 1910 — l'expression « la première pierre » de la citation courante n'y est pas."
+    },
+    {
+      "id": "eo-095",
+      "phrase": "Tu enfanteras dans la douleur.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "La Segond 1910 (Genèse 3.16) écrit « tu enfanteras avec douleur » ; la formule courante vient d'autres versions."
+    },
+    {
+      "id": "eo-096",
+      "phrase": "Père, pardonne-leur, car ils ne savent ce qu'ils font.",
+      "ecrit": true,
+      "reference": "Luc 23.34",
+      "precision": "Prononcé depuis la croix ; seul l'évangile de Luc rapporte cette parole."
+    },
+    {
+      "id": "eo-097",
+      "phrase": "Dieu est plus près de l'homme que sa veine jugulaire.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Phrase du Coran, sourate 50 (Qaf), verset 16."
+    },
+    {
+      "id": "eo-098",
+      "phrase": "Comme l'aigle couvre son nid de ses ailes, ainsi l'Eternel couvre ceux qui le craignent.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Pastiche assemblé d'images de Deutéronome 32.11 et du Psaume 91.4 ; la phrase n'existe pas telle quelle."
+    },
+    {
+      "id": "eo-099",
+      "phrase": "Car je connais les projets que j'ai formés sur vous, dit l'Eternel, projets de paix et non de malheur, afin de vous donner un avenir et de l'espérance.",
+      "ecrit": true,
+      "reference": "Jérémie 29.11",
+      "precision": "Extrait d'une lettre de Jérémie envoyée aux exilés de Babylone."
+    },
+    {
+      "id": "eo-100",
+      "phrase": "Qui aime bien châtie bien.",
+      "ecrit": false,
+      "reference": null,
+      "precision": "Proverbe français ; l'idée voisine se lit en Proverbes 13.24 et Hébreux 12.6, mais pas cette phrase."
+    }
+  ]
+}

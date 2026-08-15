@@ -735,7 +735,7 @@ function renderAccueil() {
     <button class="back-link" id="btn-retour-accueil">‹ Accueil</button>
     <div class="topbar">
       <div class="brand">
-        <h1 class="app-title">Défi <span class="seed">•</span> <span class="muted">deux épreuves</span></h1>
+        <h1 class="app-title">Défi <span class="seed">•</span> <span class="muted">cinq épreuves</span></h1>
       </div>
     </div>
 
@@ -758,11 +758,41 @@ function renderAccueil() {
       </span>
       <span class="chev">›</span>
     </button>
+
+    <button class="card hub-card" id="btn-quiadit">
+      <span class="hub-ic">${icon('parchemin', 26)}</span>
+      <span class="hub-txt">
+        <span class="hub-title">Qui a dit ça ?</span>
+        <span class="hub-sub">Une parole, quatre voix possibles — sauras-tu reconnaître la sienne ?</span>
+      </span>
+      <span class="chev">›</span>
+    </button>
+
+    <button class="card hub-card" id="btn-ecritoupas">
+      <span class="hub-ic">${icon('lecture', 26)}</span>
+      <span class="hub-txt">
+        <span class="hub-title">Écrit… ou pas ?</span>
+        <span class="hub-sub">Cette phrase est-elle vraiment dans la Bible ? Méfie-toi des citations trop célèbres…</span>
+      </span>
+      <span class="chev">›</span>
+    </button>
+
+    <button class="card hub-card" id="btn-portrait">
+      <span class="hub-ic">${icon('moi', 26)}</span>
+      <span class="hub-txt">
+        <span class="hub-title">De qui parle-t-on ?</span>
+        <span class="hub-sub">Les indices tombent un à un — plus tu devines tôt, plus tu marques.</span>
+      </span>
+      <span class="chev">›</span>
+    </button>
   </div>`;
 
   document.getElementById('btn-retour-accueil').onclick = () => { location.href = '../index.html'; };
   document.getElementById('btn-quiz').onclick = () => { vue = { ecran: 'quiz' }; render(); };
   document.getElementById('btn-avantapres').onclick = () => { location.href = '../frise/'; };
+  document.getElementById('btn-quiadit').onclick = () => { location.href = '../quiadit/'; };
+  document.getElementById('btn-ecritoupas').onclick = () => { location.href = '../ecritoupas/'; };
+  document.getElementById('btn-portrait').onclick = () => { location.href = '../portrait/'; };
 
   // Badge discret si au moins un duel m'attend (silencieux hors-ligne).
   majBadgeDuels();

@@ -6,7 +6,7 @@
    bloc (tout ou rien) ; la Bible complète suit en best-effort : un livre qui
    rate ne prive pas du hors-ligne de base, il se rattrapera à l'usage. */
 
-const CACHE = 'graine-v31';
+const CACHE = 'graine-v32';
 // La coquille : le minimum pour que l'appli s'ouvre et vive hors-ligne.
 const SHELL = [
   '.', 'index.html', 'app.css', 'app.js', 'icons.js', 'api-client.js', 'pierres.js',
@@ -15,7 +15,10 @@ const SHELL = [
   'lire/', 'lire/index.html', 'lire/lire.css', 'lire/lire.js',
   'defi/', 'defi/index.html', 'defi/defi.css', 'defi/defi.js',
   'defi/data/questions.json',
-  'frise/', 'frise/index.html'
+  'frise/', 'frise/index.html',
+  'quiadit/', 'quiadit/index.html', 'quiadit/data/banque.json',
+  'ecritoupas/', 'ecritoupas/index.html', 'ecritoupas/data/banque.json',
+  'portrait/', 'portrait/index.html', 'portrait/data/banque.json'
 ];
 // La Bible complète (66 livres, ~4,4 Mo) — pré-cachée en arrière-plan pour un
 // hors-ligne total ; à l'écran, chaque livre reste chargé à la demande.
