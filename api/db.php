@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM portrait_participants LIMIT 1');
+        $pdo->query('SELECT 1 FROM push_defis LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -475,6 +475,14 @@ function db_migrate(PDO $pdo): void {
                 created_at DATETIME NOT NULL,
                 INDEX idx_portraitp_code (code)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Défis (duels entre amis) déjà signalés par notification : une
+            // ligne = « on a prévenu l'adversaire, une fois, jamais plus » —
+            // voir push_defis_en_attente() dans push.php.
+            'CREATE TABLE IF NOT EXISTS push_defis (
+                duel_id INT UNSIGNED NOT NULL PRIMARY KEY,
+                notified_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
         ];
     } else {
         $ddl = [
@@ -832,6 +840,12 @@ function db_migrate(PDO $pdo): void {
                 created_at TEXT NOT NULL
             )',
             'CREATE INDEX IF NOT EXISTS idx_portraitp_code ON portrait_participants (code)',
+
+            // Défis déjà signalés — voir le dialecte MySQL ci-dessus.
+            'CREATE TABLE IF NOT EXISTS push_defis (
+                duel_id INTEGER NOT NULL PRIMARY KEY,
+                notified_at TEXT NOT NULL
+            )',
         ];
     }
 

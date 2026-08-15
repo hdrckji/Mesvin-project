@@ -233,6 +233,14 @@
 
 /* review : les questions justes aussi (avec leur référence) */
 .defi-missed.ok .a { color: var(--grow); }
+/* Retour de terrain (deux fois, indépendamment) : l'œil doit trouver ses
+   erreurs d'un regard. Les fausses sont encadrées et teintées, les bonnes
+   s'estompent — elles restent là pour leurs références. */
+.defi-missed.faux { border-left: 3px solid var(--danger); background: color-mix(in srgb, var(--danger) 7%, transparent);
+  border-radius: 10px; padding: 10px 12px; }
+.defi-missed.faux .q { font-weight: 650; }
+.defi-missed.faux .m { color: var(--danger); }
+.defi-missed.ok { opacity: .62; }
 .defi-missed .m { font-size: .92rem; color: var(--ink-soft); font-weight: 600; margin-top: 2px; }
 .defi-missed:first-child { border-top: 0; padding-top: 2px; margin-top: 4px; }
 

@@ -231,6 +231,9 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.01em; margin: 0; }
   display: inline-block; max-width: 100%; vertical-align: bottom;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .verse-item .vi-main { min-width: 0; flex: 1; }
+/* description longue (options, explications) : elle se lit en entier, quitte
+   à passer à la ligne — l'ellipse est pour les aperçus, pas pour les choix. */
+.verse-item .vi-text-long { white-space: normal; overflow: visible; text-overflow: clip; }
 .badge-due { margin-left: auto; font-size: .72rem; font-weight: 700;
   color: var(--grow); background: var(--grow-soft); padding: 3px 8px; border-radius: 999px; }
 

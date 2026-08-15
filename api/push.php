@@ -566,5 +566,54 @@ function handle_cron_notify(PDO $pdo): never {
             }
         }
     }
-    json_out(['ok' => true, 'envoyes' => $envoyes, 'supprimes' => $supprimes]);
+    // Les défis entre amis restés sans réponse : la notification PATIENTE.
+    $defis = push_defis_en_attente($pdo, $cfg);
+    json_out(['ok' => true, 'envoyes' => $envoyes, 'supprimes' => $supprimes, 'defis' => $defis]);
+}
+
+/* ---- Les défis qui attendent ------------------------------------------------
+   Voulu ainsi (décision produit) : JAMAIS de notification à chaud — si
+   l'adversaire vient de lui-même dans l'heure, il n'est jamais dérangé.
+   Passé ce délai, UNE seule notification (table push_defis, marquée avant
+   l'envoi : un cron rejoué ne renvoie rien), et jamais de relance. La
+   notification propose, elle ne réclame pas. Ne concerne que les duels
+   entre amis (comptes) : les défis par code sont anonymes. */
+function push_defis_en_attente(PDO $pdo, array $cfg): int {
+    $envoyes = 0;
+    $st = $pdo->prepare(
+        'SELECT d.id, d.opponent_id, u.pseudo AS challenger
+         FROM duels d
+         JOIN users u ON u.id = d.challenger_id
+         WHERE d.opponent_answers IS NULL AND d.created_at < ?
+           AND NOT EXISTS (SELECT 1 FROM push_defis p WHERE p.duel_id = d.id)'
+    );
+    $st->execute([now_sql_plus(-3600)]);
+    foreach ($st->fetchAll() as $defi) {
+        // Marqué AVANT tout envoi : une seule chance, même si le cron rejoue
+        // ou si l'adversaire n'a pas (encore) activé les notifications —
+        // rater une notification vaut mieux que harceler.
+        $pdo->prepare('INSERT INTO push_defis (duel_id, notified_at) VALUES (?, ?)')
+            ->execute([$defi['id'], now_sql()]);
+
+        $payload = (string) json_encode([
+            'title' => '🌱 Un défi t\'attend',
+            'body'  => $defi['challenger'] . ' te propose un défi biblique — quand tu veux, rien ne presse.',
+            'url'   => '/defi/',
+            'tag'   => 'defi-attente',
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        $abos = $pdo->prepare('SELECT * FROM push_abonnements WHERE user_id = ?');
+        $abos->execute([$defi['opponent_id']]);
+        foreach ($abos->fetchAll() as $abo) {
+            $res = push_send($abo, $payload, $cfg);
+            if ($res['ok']) {
+                $envoyes++;
+            } elseif ($res['gone']) {
+                $pdo->prepare('DELETE FROM push_abonnements WHERE id = ?')->execute([$abo['id']]);
+            }
+            // échec passager : tant pis pour cette fois — le compteur
+            // d'échecs de l'abonnement vit dans la boucle quotidienne.
+        }
+    }
+    return $envoyes;
 }

@@ -659,10 +659,10 @@ function viewMemo() {
   // Situer le verset, mode expert : après chaque exercice réussi, l'appli
   // demande déjà le livre ; en expert, elle demande aussi chapitre et numéro.
   progress += `<button class="verse-item fade" data-situer-expert="1">
-      <span class="stage">${icon('cible', 20)}</span><span class="vi-main"><span class="vi-ref">Situer mes versets — mode expert ${store.situerExpert ? '<span class="mini-badge">activé</span>' : ''}</span><br>
-      <span class="vi-text">${store.situerExpert
-        ? 'Après chaque exercice réussi : le livre, puis le chapitre et le verset. Touche pour revenir au mode simple.'
-        : 'Après chaque exercice réussi, tu situes déjà le livre. En expert : le chapitre et le numéro aussi.'}</span></span>
+      <span class="stage">${icon('cible', 20)}</span><span class="vi-main"><span class="vi-ref">Mode expert ${store.situerExpert ? '<span class="mini-badge">activé</span>' : ''}</span><br>
+      <span class="vi-text vi-text-long">${store.situerExpert
+        ? 'Situer chaque verset : le livre, puis le chapitre et le numéro. Touche pour revenir au mode simple.'
+        : 'Tu situes déjà le livre de chaque verset réussi. En expert : le chapitre et le numéro aussi.'}</span></span>
       <span class="chev">${store.situerExpert ? '✓' : '›'}</span></button>`;
 
   return topbar() + head + actions + objective + progress;
@@ -1109,6 +1109,13 @@ function viewAbout() {
       <p>${icon('cadenas', 16)} <b>Vie privée d'abord.</b> Tout fonctionne hors-ligne, sans compte. Le compte est facultatif (e-mail + pseudo, rien d'autre) et se supprime en un geste.</p>
       <p>${icon('memorisation', 16)} <b>Encourager, pas culpabiliser.</b> Pas de « retard », pas de reproche.</p>
       <p>${icon('lecture', 16)} <b>Respect du texte.</b> Versets ${esc(LIB_VERSION)} (domaine public).</p></div>
+    <div class="section-title">Soutenir Bible Horizon</div>
+    <div class="card">
+      <p>L'appli est gratuite, sans publicité, sans compte obligatoire — et elle le restera. Ce n'est pas un modèle économique, c'est une conviction : <b>la Parole ne se vend pas</b>.</p>
+      <p>Alors si Bible Horizon te fait du bien et que tu veux donner quelque chose en retour, voici la plus belle rémunération que tu puisses nous offrir : <b>fais-la découvrir</b>. Un message à un ami, un mot dans ton groupe de jeunes, une annonce dans ton église — chaque personne qui s'ancre dans la Parole grâce à toi vaut plus que n'importe quel prix d'achat.</p>
+      <p>Et si tu veux aller plus loin : <a href="mailto:contact@biblehorizon.fr?subject=Mon%20retour%20sur%20Bible%20Horizon" style="color:var(--accent-ink)">raconte-nous</a> ce que l'appli change pour toi, et ce qui lui manque. Vos retours la font grandir — celle que tu utilises aujourd'hui est déjà pleine des idées de ses premiers utilisateurs.</p>
+      <button class="btn btn-primary btn-block" data-invite="1" style="margin-top:6px">Faire découvrir Bible Horizon</button>
+    </div>
     <div class="section-title">Pour les églises</div>
     <div class="card">
       <p>${icon('eglise', 16)} <b>Pasteur, responsable d'église ou de jeunesse ?</b> Tu aimerais utiliser Bible Horizon avec ton assemblée — quiz sur grand écran, groupes, suivi ? Écris-nous : on regardera ensemble comment l'adapter au mieux à tes besoins.</p>

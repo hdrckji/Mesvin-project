@@ -1559,11 +1559,11 @@ function renderDuelReview() {
     ${review.length ? `
     <div class="section-title">Pour retourner au texte</div>
     <div class="card">
-      ${review.map((r, i) => {
+      ${review.slice().sort((a, b) => (a.mine === a.bonne) - (b.mine === b.bonne)).map((r, i) => {
         const t = texteDe(r, i);
         const ok = r.mine === r.bonne;
         return `
-        <div class="defi-missed ${ok ? 'ok' : ''}">
+        <div class="defi-missed ${ok ? 'ok' : 'faux'}">
           <div class="q">${esc(t.question)}</div>
           ${ok
             ? `<div class="a">✓ Ta réponse : ${esc(t.bonne ?? '')}</div>`
