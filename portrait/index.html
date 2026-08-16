@@ -204,6 +204,7 @@
 <body>
 <div class="wrap" id="app"></div>
 <script src="../icons.js"></script>
+<script src="../visite.js" defer></script>
 <script>
 'use strict';
 if (!window.icon) window.icon = function () { return ''; };
@@ -224,6 +225,44 @@ function norm(s) {
     .replace(/[’'-]/g, ' ')
     .replace(/[^a-z0-9 ]/g, '')
     .replace(/\s+/g, ' ').trim();
+}
+/* Distance de Levenshtein bornée à 1 : si l'écart de longueur dépasse déjà 1,
+   réponse directe sans calcul — on ne cherche jamais plus loin qu'une faute. */
+function portraitProche(a, b) {
+  if (Math.abs(a.length - b.length) > 1) return false;
+  if (a === b) return true;
+  let prev = [];
+  for (let j = 0; j <= b.length; j++) prev[j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[b.length] <= 1;
+}
+/* La saisie vaut-elle le portrait idx du paquet ? Une faute de frappe est
+   tolérée, JAMAIS une confusion : la saisie est bonne si, après normalisation,
+     1. elle est exactement dans `accepte` (comportement historique) ; OU
+     2. elle est à distance de Levenshtein ≤ 1 d'une entrée `accepte` d'au
+        moins 5 caractères (les cibles courtes — Paul, Saül, Élie, Sara… —
+        restent en correspondance exacte), ET elle n'est à distance ≤ 1
+        d'aucune entrée `accepte` d'un AUTRE portrait du paquet (si c'est
+        ambigu, on refuse — on ne devine jamais).
+   MÊME RÈGLE que portrait_correspond() côté serveur (api/portrait.php) :
+   toute retouche ici doit y être reportée à l'identique. */
+function portraitCorrespond(texte, items, idx) {
+  const n = norm(texte);
+  const accepte = items[idx].accepte;
+  if (accepte.includes(n)) return true;
+  // Garde-fou miroir du serveur : hors de [a-z0-9 ], exacte seulement.
+  if (n === '' || /[^a-z0-9 ]/.test(n)) return false;
+  if (!accepte.some(a => a.length >= 5 && portraitProche(n, a))) return false;
+  for (let i = 0; i < items.length; i++) {
+    if (i !== idx && items[i].accepte.some(a => portraitProche(n, a))) return false; // ambigu
+  }
+  return true;
 }
 
 let BANQUE = null;
@@ -285,8 +324,7 @@ function indiceSuivant() {
 function repondre() {
   const s = seance;
   if (s.phase !== 'devine' || s.texte.trim() === '') return;
-  const item = s.items[s.idx];
-  const bon = item.accepte.includes(norm(s.texte));
+  const bon = portraitCorrespond(s.texte, s.items, s.idx);
   s.gagne = bon ? (NB_INDICES + 1 - s.k) : 0;
   if (s.participants) s.participants[s.tour].score += s.gagne; else s.score += s.gagne;
   s.phase = 'revele';

@@ -13,7 +13,8 @@
    portrait — plus tôt c'est, plus ça rapporte. L'état ne transmet que les
    indices déjà révélés ; la réponse et la référence n'apparaissent qu'à la
    révélation. La correspondance des réponses est TOLÉRANTE (minuscules,
-   accents, traits d'union ignorés) contre la liste `accepte` du portrait.
+   accents, traits d'union ignorés, une faute de frappe pardonnée — jamais
+   une confusion) contre la liste `accepte` du portrait.
 
    - POST /api/portrait/duel                     → {code, cle}
    - GET  /api/portrait/duel/{code}
@@ -42,6 +43,55 @@ function portrait_norm(string $s): string {
         'ç' => 'c', 'œ' => 'oe', 'æ' => 'ae', '’' => ' ', "'" => ' ', '-' => ' ',
     ]);
     return trim(preg_replace('/\s+/', ' ', preg_replace('/[^a-z0-9 ]/', '', $s)) ?? '');
+}
+
+/**
+ * La saisie d'un participant vaut-elle le portrait $idx du paquet ?
+ * Une faute de frappe est tolérée, JAMAIS une confusion : la saisie est bonne
+ * si, après normalisation,
+ *   1. elle est exactement dans `accepte` (comportement historique) ; OU
+ *   2. elle est à distance de Levenshtein ≤ 1 d'une entrée `accepte` d'au
+ *      moins 5 caractères (les cibles courtes — Paul, Saül, Élie, Sara… —
+ *      restent en correspondance exacte), ET elle n'est à distance ≤ 1
+ *      d'aucune entrée `accepte` d'un AUTRE portrait du paquet (si c'est
+ *      ambigu, on refuse — on ne devine jamais).
+ * MÊME RÈGLE que portraitCorrespond() côté client (portrait/index.html) :
+ * toute retouche ici doit y être reportée à l'identique.
+ */
+function portrait_correspond(string $texte, array $deck, int $idx): bool {
+    $n = portrait_norm($texte);
+    $accepte = $deck[$idx]['accepte'];
+    if (in_array($n, $accepte, true)) {
+        return true;
+    }
+    // levenshtein() de PHP compte les OCTETS, pas les caractères : c'est sans
+    // danger ici UNIQUEMENT parce que portrait_norm ne laisse que [a-z0-9 ]
+    // (un octet par caractère). Garde-fou : si autre chose s'est glissé dans
+    // la chaîne normalisée, correspondance exacte seulement.
+    if ($n === '' || preg_match('/[^a-z0-9 ]/', $n)) {
+        return false;
+    }
+    $proche = false;
+    foreach ($accepte as $a) {
+        if (strlen($a) >= 5 && abs(strlen($a) - strlen($n)) <= 1 && levenshtein($n, $a) <= 1) {
+            $proche = true;
+            break;
+        }
+    }
+    if (!$proche) {
+        return false;
+    }
+    foreach ($deck as $i => $p) {
+        if ($i === $idx) {
+            continue;
+        }
+        foreach ($p['accepte'] as $a) {
+            if (abs(strlen($a) - strlen($n)) <= 1 && levenshtein($n, $a) <= 1) {
+                return false; // ambigu avec un autre portrait du paquet
+            }
+        }
+    }
+    return true;
 }
 
 /** Valide le paquet de portraits → [{reponse, accepte[], indices[5], ref}]. */
@@ -236,8 +286,7 @@ function portrait_veillee_reponse(PDO $pdo, string $code): never {
         json_error('Réponse invalide.', 400);
     }
     $deck = json_decode((string) $v['deck'], true);
-    $portrait = $deck[$carte - 1];
-    $bon = in_array(portrait_norm($texte), $portrait['accepte'], true) ? 1 : 0;
+    $bon = portrait_correspond($texte, $deck, $carte - 1) ? 1 : 0;
     $points = $bon ? (PORTRAIT_INDICES + 1 - (int) $v['indice']) : 0;
     $pdo->prepare('UPDATE portrait_participants SET reponse = ?, bon = ?, points = ?, score = score + ? WHERE id = ? AND reponse IS NULL')
         ->execute([$texte, $bon, $points, $points, $moi['id']]);
