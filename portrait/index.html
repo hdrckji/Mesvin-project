@@ -315,6 +315,12 @@ function vueAccueil() {
     <h1 style="margin-top:10px">De qui parle-t-on <span class="seed">?</span></h1>
     <p class="muted" style="margin:4px 0 16px">Les indices tombent un à un — plus tu devines tôt, plus tu marques. Personnages, lieux et objets de la Bible.</p>
 
+    <button class="card hub-card" data-join="1">
+      <span class="hub-ic">${icon('rejoindre', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">J'ai reçu un code</span>
+        <span class="hub-sub">Un défi lancé par un ami, ou une veillée en direct : le code ouvre l'un ou l'autre — ton prénom suffit.</span></span>
+      <span class="chev">›</span>
+    </button>
     <button class="card hub-card" data-solo="1">
       <span class="hub-ic">${icon('seul', 26)}</span>
       <span class="hub-txt"><span class="hub-title">Seul</span>
@@ -339,7 +345,6 @@ function vueAccueil() {
         <span class="hub-sub">L'animateur révèle les indices un à un sur grand écran — chacun verrouille sa réponse quand il ose.</span></span>
       <span class="chev">›</span>
     </button>
-    <button class="btn btn-ghost" data-join="1" style="margin-top:14px">J'ai reçu un code (PD- ou PV-)</button>
   </div>`;
 }
 

@@ -301,6 +301,12 @@ function vueAccueil() {
     <h1 style="margin-top:10px">Écrit… ou pas <span class="seed">?</span></h1>
     <p class="muted" style="margin:4px 0 16px">Cette phrase se trouve-t-elle vraiment dans la Bible ? Certaines « citations » célèbres n'y ont jamais mis les pieds…</p>
 
+    <button class="card hub-card" data-join="1">
+      <span class="hub-ic">${icon('rejoindre', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">J'ai reçu un code</span>
+        <span class="hub-sub">Un défi lancé par un ami, ou une veillée en direct : le code ouvre l'un ou l'autre — ton prénom suffit.</span></span>
+      <span class="chev">›</span>
+    </button>
     <button class="card hub-card" data-solo="1">
       <span class="hub-ic">${icon('seul', 26)}</span>
       <span class="hub-txt"><span class="hub-title">Seul</span>
@@ -325,7 +331,6 @@ function vueAccueil() {
         <span class="hub-sub">Un grand écran pour tous, chacun tranche sur son téléphone — et c'est l'animateur qui rythme.</span></span>
       <span class="chev">›</span>
     </button>
-    <button class="btn btn-ghost" data-join="1" style="margin-top:14px">J'ai reçu un code (ED- ou EV-)</button>
   </div>`;
 }
 
