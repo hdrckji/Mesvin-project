@@ -258,7 +258,8 @@ check "2 participants visibles"         2   "$(jval .veillee.nPlayers)"
 # Présent DÈS L'ARRIVÉE : sans ça, quelqu'un qui vient de rejoindre mais n'a pas
 # encore sondé compterait comme absent et la révélation partirait sans lui.
 check "2 présents dès l'arrivée"        2   "$(jval .veillee.nPresent)"
-check "chaque arrivant est présent"     2   "$(jval '[.veillee.players[] | select(.present)] | length')"
+# Compté sur un état ANONYME : ne peut passer que si `join` horodate lui-même.
+check "présents sans avoir sondé"       2   "$(jval .veillee.nPresent)"
 # Prénoms à apostrophe : sans eux, N'Golo ou M'Barka resteraient à la porte.
 check "apostrophe droite → 201"         201 "$(api POST "/api/veillees/$VCODE/join" '' "{\"prenom\":\"N'Golo\"}")"
 check "apostrophe typographique → 201"  201 "$(api POST "/api/veillees/$VCODE/join" '' "{\"prenom\":\"M’Barka\"}")"
@@ -292,8 +293,9 @@ check "plus personne n'est compté présent" 0 "$(jval .veillee.nPresent)"
 # dans l'état qu'il reçoit (sinon la révélation partirait une question trop tôt).
 api GET "/api/veillees/$VCODE/state?player=$PKEY1" > /dev/null
 check "celui qui sonde redevient présent" 1    "$(jval .veillee.nPresent)"
-check "Marc présent"                      true "$(jval '.veillee.players[] | select(.prenom == "Marc") | .present')"
-check "Léa, silencieuse, absente"         false "$(jval '.veillee.players[] | select(.prenom == "Léa") | .present')"
+# La présence n'est donnée qu'en total : /state est public, et dire QUI a
+# fermé son téléphone exposerait chacun sans rien apporter à personne.
+check "la présence n'est pas nominative"  false "$(jval '.veillee.players[0] | has("present")')"
 # Un absent n'est pas un partant définitif : il garde sa place et peut revenir.
 check "nPlayers garde son sens"           4    "$(jval .veillee.nPlayers)"
 check "le classement garde les absents"   4    "$(jval '.veillee.players | length')"
@@ -317,6 +319,21 @@ check "clé inconnue → 401"              401 "$(api POST "/api/veillees/$VCODE
 api GET "/api/veillees/$VCODE/state?player=$PKEY1" > /dev/null
 check "1 réponse comptée"               1    "$(jval .veillee.nAnswered)"
 check "me.answered = true"              true "$(jval .veillee.me.answered)"
+check "Marc, présent, a répondu"        1    "$(jval .veillee.nPresentRepondu)"
+# Marc a répondu PUIS rangé son téléphone. nAnswered le compte toujours,
+# nPresentRepondu non — sans cette distinction, comparer nAnswered à nPresent
+# franchirait le seuil et couperait la parole à ceux qui réfléchissent encore.
+php -r '
+$pdo = new PDO("sqlite:" . $argv[1]);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$pdo->prepare(
+  "UPDATE veillee_presence SET last_seen = ?
+   WHERE veillee_id IN (SELECT id FROM veillees WHERE code = ?)"
+)->execute([gmdate("Y-m-d H:i:s", time() - 60), $argv[2]]);
+' "$ROOT/api/data/dev.sqlite" "$VCODE" 2>>"$TMP/presence.log"
+api GET "/api/veillees/$VCODE/state" > /dev/null
+check "sa réponse reste dans nAnswered" 1    "$(jval .veillee.nAnswered)"
+check "mais plus dans les présents"     0    "$(jval .veillee.nPresentRepondu)"
 
 say "Veillée — révélation puis fin"
 check "u1 révèle → 200"                 200 "$(api POST "/api/veillees/$VCODE/advance" "$TOKEN1" '{"action":"reveal"}')"

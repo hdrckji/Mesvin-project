@@ -1672,6 +1672,13 @@ async function vlPoll() {
     const stable = { ...etat };
     delete stable.remaining;
     delete stable.nAnswered;
+    // La présence bouge sans arrêt : un téléphone qui s'endort une minute
+    // sort du compte puis y revient. Sans ces deux-là, chaque bascule
+    // re-rendait tout — un fondu du grand écran en pleine révélation,
+    // pendant que l'animateur commente le verset. Ils sont vivants comme
+    // nAnswered, donc mis à jour en place par vlPatch.
+    delete stable.nPresent;
+    delete stable.nPresentRepondu;
     const j = JSON.stringify(stable);
     const change = j !== vl.lastJson;
     vl.lastJson = j;
@@ -1693,6 +1700,13 @@ async function vlPoll() {
 function vlNbPresents(e) {
   return e.nPresent ?? e.nPlayers;
 }
+/* Combien de PRÉSENTS ont répondu. À ne surtout pas confondre avec nAnswered,
+   qui compte aussi ceux qui ont répondu puis rangé leur téléphone : comparer
+   nAnswered au nombre de présents mêlerait deux populations et couperait la
+   parole à quelqu'un qui réfléchit encore. */
+function vlNbRepondu(e) {
+  return e.nPresentRepondu ?? e.nAnswered;
+}
 /* Met à jour les chiffres vivants sans re-rendre (pas de clignotement).
    Le compteur s'écrit ici ET dans renderVeilleeHost : les deux doivent dire la
    même chose, sinon l'affichage sauterait d'une valeur à l'autre entre deux
@@ -1701,7 +1715,7 @@ function vlPatch() {
   const e = vl && vl.etat;
   if (!e) return;
   const rep = document.getElementById('vl-nb-rep');
-  if (rep) rep.textContent = `${e.nAnswered}/${vlNbPresents(e)} ont répondu`;
+  if (rep) rep.textContent = `${vlNbRepondu(e)}/${vlNbPresents(e)} ont répondu`;
 }
 function vlRestant() {
   if (!vl || !vl.etat || vl.etat.statut !== 'question') return 0;
@@ -1728,7 +1742,7 @@ function vlAutoReveal() {
   // écrans en veille) ne déclenche rien : seul le chrono tranche alors, sinon
   // la veillée défilerait toute seule.
   const nPresents = vlNbPresents(e);
-  const tousOntRepondu = nPresents > 0 && e.nAnswered >= nPresents;
+  const tousOntRepondu = nPresents > 0 && vlNbRepondu(e) >= nPresents;
   if (vlRestant() <= 0 || tousOntRepondu) vlAvancer('reveal');
 }
 async function vlAvancer(action) {
@@ -2013,7 +2027,7 @@ function renderVeilleeHost() {
       <div class="vl-options">
         ${e.question.options.map((o, i) => `<div class="vl-opt"><span class="vl-letter">${lettres[i]}</span>${esc(o)}</div>`).join('')}
       </div>
-      <p class="vl-nb" id="vl-nb-rep">${e.nAnswered}/${vlNbPresents(e)} ont répondu</p>
+      <p class="vl-nb" id="vl-nb-rep">${vlNbRepondu(e)}/${vlNbPresents(e)} ont répondu</p>
     </div>
     <div class="defi-actions vl-actions">
       <button class="btn btn-soft btn-block" id="btn-vl-reveal" ${vl.busy ? 'disabled' : ''}>${vlRestant() > 0 ? 'Révéler sans attendre' : 'Révéler la réponse'}</button>

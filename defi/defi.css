@@ -348,9 +348,9 @@ body.quiz-proj #app { padding-bottom: 24px; }
    Sur grand écran, « En tête » passe à droite de la question : l'animateur
    voit d'un coup l'œil la bonne réponse, la distribution et les scores.
    Sur téléphone (une seule colonne), on garde l'empilement d'origine. */
-.vl-reveal { display: grid; gap: 14px; }
-.vl-reveal > * { min-width: 0; } /* une colonne ne s'élargit pas sur son contenu */
-.vl-reveal .section-title { margin-top: 0; } /* l'écart vient de la grille */
+body.quiz-proj .vl-reveal { display: grid; gap: 14px; }
+body.quiz-proj .vl-reveal > * { min-width: 0; } /* une colonne ne s'élargit pas sur son contenu */
+body.quiz-proj .vl-reveal .section-title { margin-top: 0; } /* l'écart vient de la grille */
 /* Sous le seuil des deux colonnes, la jauge des votes (180 px imposés) poussait
    l'option hors de l'écran par la droite. Grille plutôt que rangée : la
    pastille et la réponse gardent leur ligne, la jauge s'étale juste dessous. */

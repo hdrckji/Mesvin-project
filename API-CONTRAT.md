@@ -193,16 +193,21 @@ petite que `nb`).
 
 ### GET /api/veillees/{code}/state?player={playerKey}
 Public, pollable. → `{ "veillee": { "code", "statut", "qIndex", "qTotal",
-"seconds", "nPlayers", "nPresent", "players": [ { "prenom", "score", "rang",
-"present" } ], … } }`
+"seconds", "nPlayers", "nPresent", "players": [ { "prenom", "score", "rang" } ],
+… } }`
 - `nPlayers` = tous ceux qui ont rejoint ; `nPresent` = ceux vus il y a moins
   de 30 s (sonder `/state` vaut signe de présence, et rejoindre marque déjà
   présent). Un participant parti garde son score et son rang au classement —
-  il n'est simplement plus attendu pour révéler la réponse ;
+  il n'est simplement plus attendu pour révéler la réponse. La présence n'est
+  donnée qu'en total : dire publiquement QUI a fermé son téléphone
+  exposerait chacun sans rien apporter ;
 - veillée liée à une église : + `"eglise": "<nom du groupe>"` (pour le
   grand écran) — rien d'autre du groupe ne transparaît ;
 - en phase `question` : + `question` (SANS `bonne` ni `reference`),
-  `remaining` (secondes restantes), `nAnswered` ;
+  `remaining` (secondes restantes), `nAnswered`, `nPresentRepondu` ;
+- `nAnswered` compte TOUTES les réponses, `nPresentRepondu` seulement celles
+  des présents. C'est ce dernier qu'il faut comparer à `nPresent` : mêler les
+  deux populations couperait la parole à quelqu'un qui réfléchit encore ;
 - en phase `reveal`/`done` : + `question.bonne`, `question.reference`,
   `distribution` (nombre de réponses par option) ;
 - avec `player` : + `me` (`answered`, puis `answer`, `correct`, `points`,

@@ -40,7 +40,7 @@ const VEILLEE_POINTS_SPEED      = 50;
 
 /* ---- Aides ------------------------------------------------------------------ */
 
-/** Balaye les veillées (joueurs, réponses, présences) de plus de 24 h. */
+/** Balaye les veillées (participants, réponses, présences) de plus de 24 h. */
 function veillee_cleanup(PDO $pdo): void {
     $limit = now_sql_plus(-VEILLEE_TTL_SECONDS);
     $st = $pdo->prepare('SELECT id FROM veillees WHERE created_at < ?');
@@ -180,19 +180,29 @@ function veillee_players(PDO $pdo, int $veilleeId): array {
  * simplement sur l'UPDATE.
  */
 function veillee_marquer_present(PDO $pdo, int $veilleeId, int $playerId): void {
+    // UPDATE d'abord : la ligne existe déjà à tous les sondages sauf le
+    // premier, et c'est appelé toutes les 2 s par participant. Sonder l'état
+    // avant d'écrire doublerait les allers-retours pour rien.
+    $st = $pdo->prepare('UPDATE veillee_presence SET last_seen = ? WHERE veillee_id = ? AND player_id = ?');
+    $st->execute([now_sql(), $veilleeId, $playerId]);
+    if ($st->rowCount() > 0) {
+        return;
+    }
+    // rowCount() à 0 ne prouve pas l'absence : MySQL compte les lignes
+    // MODIFIÉES, et deux sondages dans la même seconde réécrivent la même
+    // heure. On vérifie donc avant d'insérer, sur ce chemin rare seulement.
     $st = $pdo->prepare('SELECT 1 FROM veillee_presence WHERE veillee_id = ? AND player_id = ?');
     $st->execute([$veilleeId, $playerId]);
-    if ($st->fetch() === false) {
-        try {
-            $pdo->prepare('INSERT INTO veillee_presence (veillee_id, player_id, last_seen) VALUES (?, ?, ?)')
-                ->execute([$veilleeId, $playerId, now_sql()]);
-            return;
-        } catch (PDOException $e) {
-            // Ligne créée entre-temps : on tombe sur l'UPDATE ci-dessous.
-        }
+    if ($st->fetch() !== false) {
+        return;
     }
-    $pdo->prepare('UPDATE veillee_presence SET last_seen = ? WHERE veillee_id = ? AND player_id = ?')
-        ->execute([now_sql(), $veilleeId, $playerId]);
+    try {
+        $pdo->prepare('INSERT INTO veillee_presence (veillee_id, player_id, last_seen) VALUES (?, ?, ?)')
+            ->execute([$veilleeId, $playerId, now_sql()]);
+    } catch (PDOException $e) {
+        // Ligne créée entre-temps par un sondage simultané du même téléphone :
+        // elle porte déjà l'heure du moment, il n'y a rien à rattraper.
+    }
 }
 
 /**
@@ -232,13 +242,10 @@ function veillee_state_payload(PDO $pdo, array $v, ?array $me): array {
         'seconds'  => (int) $v['seconds'],
         'nPlayers' => count($players),
         'nPresent' => count($presents),
+        // Pas de `present` par participant : rien ne l'affiche, et l'exposer
+        // dirait publiquement qui a fermé son téléphone. Seul le total sert.
         'players'  => array_map(
-            fn (array $p): array => [
-                'prenom'  => $p['prenom'],
-                'score'   => (int) $p['score'],
-                'rang'    => $p['rang'],
-                'present' => isset($presents[(int) $p['id']]),
-            ],
+            fn (array $p): array => ['prenom' => $p['prenom'], 'score' => (int) $p['score'], 'rang' => $p['rang']],
             $players
         ),
     ];
@@ -271,6 +278,15 @@ function veillee_state_payload(PDO $pdo, array $v, ?array $me): array {
         $st->execute([(int) $v['id'], $qIndex]);
         $answers = $st->fetchAll();
         $out['nAnswered'] = count($answers);
+        // Combien de PRÉSENTS ont répondu. Comparer nAnswered à nPresent
+        // mêlerait deux populations : quelqu'un qui répond puis range son
+        // téléphone reste compté dans nAnswered tout en sortant de nPresent,
+        // et le seuil se franchirait alors qu'un présent réfléchit encore —
+        // on lui couperait la parole en pleine question.
+        $out['nPresentRepondu'] = count(array_filter(
+            $answers,
+            static fn (array $a): bool => isset($presents[(int) $a['player_id']])
+        ));
 
         if ($statut === 'question') {
             $out['remaining'] = veillee_remaining($v);
