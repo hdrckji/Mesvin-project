@@ -1686,12 +1686,22 @@ async function vlPoll() {
     // hors-ligne passager : on garde l'écran tel quel, le prochain tour retentera
   }
 }
-/* Met à jour les chiffres vivants sans re-rendre (pas de clignotement). */
+/* Combien de participants sont ENCORE là : c'est sur eux qu'on attend les
+   réponses, pas sur ceux qui ont quitté la veillée en cours de route. Un client
+   servi depuis un cache plus ancien que le serveur n'a pas nPresent : on
+   retombe alors sur l'ancien comportement plutôt que de tout bloquer. */
+function vlNbPresents(e) {
+  return e.nPresent ?? e.nPlayers;
+}
+/* Met à jour les chiffres vivants sans re-rendre (pas de clignotement).
+   Le compteur s'écrit ici ET dans renderVeilleeHost : les deux doivent dire la
+   même chose, sinon l'affichage sauterait d'une valeur à l'autre entre deux
+   sondages. */
 function vlPatch() {
   const e = vl && vl.etat;
   if (!e) return;
   const rep = document.getElementById('vl-nb-rep');
-  if (rep) rep.textContent = `${e.nAnswered}/${e.nPlayers} ont répondu`;
+  if (rep) rep.textContent = `${e.nAnswered}/${vlNbPresents(e)} ont répondu`;
 }
 function vlRestant() {
   if (!vl || !vl.etat || vl.etat.statut !== 'question') return 0;
@@ -1712,7 +1722,13 @@ function vlTick() {
 function vlAutoReveal() {
   const e = vl.etat;
   if (!e || e.statut !== 'question' || vl.busy) return;
-  const tousOntRepondu = e.nPlayers > 0 && e.nAnswered >= e.nPlayers;
+  // On attend les PRÉSENTS : un participant parti en cours de veillée gardait
+  // le compte à jamais incomplet (16 réponses pour 17 inscrits), et l'animateur
+  // subissait le décompte entier à chaque question. Zéro présent (tous les
+  // écrans en veille) ne déclenche rien : seul le chrono tranche alors, sinon
+  // la veillée défilerait toute seule.
+  const nPresents = vlNbPresents(e);
+  const tousOntRepondu = nPresents > 0 && e.nAnswered >= nPresents;
   if (vlRestant() <= 0 || tousOntRepondu) vlAvancer('reveal');
 }
 async function vlAvancer(action) {
@@ -1997,7 +2013,7 @@ function renderVeilleeHost() {
       <div class="vl-options">
         ${e.question.options.map((o, i) => `<div class="vl-opt"><span class="vl-letter">${lettres[i]}</span>${esc(o)}</div>`).join('')}
       </div>
-      <p class="vl-nb" id="vl-nb-rep">${e.nAnswered}/${e.nPlayers} ont répondu</p>
+      <p class="vl-nb" id="vl-nb-rep">${e.nAnswered}/${vlNbPresents(e)} ont répondu</p>
     </div>
     <div class="defi-actions vl-actions">
       <button class="btn btn-soft btn-block" id="btn-vl-reveal" ${vl.busy ? 'disabled' : ''}>${vlRestant() > 0 ? 'Révéler sans attendre' : 'Révéler la réponse'}</button>

@@ -30,12 +30,17 @@ const VEILLEE_DEFAULT_SECONDS   = 25;
 const VEILLEE_MAX_PLAYERS       = 100;
 const VEILLEE_GRACE_SECONDS     = 2;   // tolérance réseau après le décompte
 const VEILLEE_TTL_SECONDS       = 86400;
+// Vu il y a moins de 30 s = encore là. Les clients sondent l'état toutes les
+// 2 s : c'est ~15 sondages manqués — assez large pour un téléphone qui met
+// l'écran en veille une seconde, assez court pour qu'un participant parti ne
+// retienne pas la veillée entière derrière lui.
+const VEILLEE_PRESENCE_SECONDS  = 30;
 const VEILLEE_POINTS_BASE       = 100;
 const VEILLEE_POINTS_SPEED      = 50;
 
 /* ---- Aides ------------------------------------------------------------------ */
 
-/** Balaye les veillées (et leurs joueurs/réponses) de plus de 24 h. */
+/** Balaye les veillées (joueurs, réponses, présences) de plus de 24 h. */
 function veillee_cleanup(PDO $pdo): void {
     $limit = now_sql_plus(-VEILLEE_TTL_SECONDS);
     $st = $pdo->prepare('SELECT id FROM veillees WHERE created_at < ?');
@@ -43,6 +48,7 @@ function veillee_cleanup(PDO $pdo): void {
     $ids = array_column($st->fetchAll(), 'id');
     foreach ($ids as $id) {
         $pdo->prepare('DELETE FROM veillee_answers WHERE veillee_id = ?')->execute([$id]);
+        $pdo->prepare('DELETE FROM veillee_presence WHERE veillee_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM veillee_players WHERE veillee_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM veillee_groupes WHERE veillee_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM veillees WHERE id = ?')->execute([$id]);
@@ -167,6 +173,44 @@ function veillee_players(PDO $pdo, int $veilleeId): array {
 }
 
 /**
+ * Note qu'un participant vient d'être vu (arrivée ou sondage de l'état).
+ * INSERT puis UPDATE explicites : les syntaxes d'écrasement (ON DUPLICATE KEY,
+ * ON CONFLICT) ne s'écrivent pas pareil en MySQL et en SQLite. Deux sondages
+ * simultanés du même téléphone peuvent se croiser : le doublon retombe alors
+ * simplement sur l'UPDATE.
+ */
+function veillee_marquer_present(PDO $pdo, int $veilleeId, int $playerId): void {
+    $st = $pdo->prepare('SELECT 1 FROM veillee_presence WHERE veillee_id = ? AND player_id = ?');
+    $st->execute([$veilleeId, $playerId]);
+    if ($st->fetch() === false) {
+        try {
+            $pdo->prepare('INSERT INTO veillee_presence (veillee_id, player_id, last_seen) VALUES (?, ?, ?)')
+                ->execute([$veilleeId, $playerId, now_sql()]);
+            return;
+        } catch (PDOException $e) {
+            // Ligne créée entre-temps : on tombe sur l'UPDATE ci-dessous.
+        }
+    }
+    $pdo->prepare('UPDATE veillee_presence SET last_seen = ? WHERE veillee_id = ? AND player_id = ?')
+        ->execute([now_sql(), $veilleeId, $playerId]);
+}
+
+/**
+ * Les participants ENCORE présents, en table [id du participant => true].
+ * Absent = plus aucun sondage depuis VEILLEE_PRESENCE_SECONDS ; il garde sa
+ * place au classement et redevient présent dès qu'il resonde.
+ */
+function veillee_presents(PDO $pdo, int $veilleeId): array {
+    $st = $pdo->prepare('SELECT player_id FROM veillee_presence WHERE veillee_id = ? AND last_seen >= ?');
+    $st->execute([$veilleeId, now_sql_plus(-VEILLEE_PRESENCE_SECONDS)]);
+    $ids = [];
+    foreach ($st->fetchAll() as $r) {
+        $ids[(int) $r['player_id']] = true;
+    }
+    return $ids;
+}
+
+/**
  * L'état complet vu par un client (joueur, animateur ou grand écran).
  * La bonne réponse et la référence n'apparaissent qu'aux phases reveal/done.
  */
@@ -175,6 +219,10 @@ function veillee_state_payload(PDO $pdo, array $v, ?array $me): array {
     $players = veillee_players($pdo, (int) $v['id']);
     $statut = (string) $v['statut'];
     $qIndex = (int) $v['current_q'];
+    // nPlayers = tous ceux qui ont rejoint un jour (sens inchangé, le
+    // classement les garde tous) ; nPresent = ceux qui sondent encore, c'est
+    // sur eux que l'animateur attend les réponses.
+    $presents = veillee_presents($pdo, (int) $v['id']);
 
     $out = [
         'code'     => $v['code'],
@@ -183,8 +231,14 @@ function veillee_state_payload(PDO $pdo, array $v, ?array $me): array {
         'qTotal'   => count($questions),
         'seconds'  => (int) $v['seconds'],
         'nPlayers' => count($players),
+        'nPresent' => count($presents),
         'players'  => array_map(
-            fn (array $p): array => ['prenom' => $p['prenom'], 'score' => (int) $p['score'], 'rang' => $p['rang']],
+            fn (array $p): array => [
+                'prenom'  => $p['prenom'],
+                'score'   => (int) $p['score'],
+                'rang'    => $p['rang'],
+                'present' => isset($presents[(int) $p['id']]),
+            ],
             $players
         ),
     ];
@@ -378,6 +432,11 @@ function handle_veillees_state(PDO $pdo, string $code): never {
         $st = $pdo->prepare('SELECT * FROM veillee_players WHERE veillee_id = ? AND player_key = ?');
         $st->execute([(int) $v['id'], $key]);
         $me = $st->fetch() ?: null;
+        // Sonder l'état, c'est être là : ce passage EST le signe de présence
+        // (et il précède le calcul, pour qu'on se compte soi-même).
+        if ($me !== null) {
+            veillee_marquer_present($pdo, (int) $v['id'], (int) $me['id']);
+        }
     }
     json_out(['veillee' => veillee_state_payload($pdo, $v, $me)]);
 }
@@ -412,6 +471,10 @@ function handle_veillees_join(PDO $pdo, string $code): never {
          VALUES (?, ?, ?, 0, ?)'
     );
     $st->execute([(int) $v['id'], $playerKey, $prenom, now_sql()]);
+    // Présent dès l'arrivée : sans ça, quelqu'un qui vient de rejoindre mais
+    // n'a pas encore sondé compterait comme absent et la révélation partirait
+    // sans lui.
+    veillee_marquer_present($pdo, (int) $v['id'], (int) $pdo->lastInsertId());
     veillee_touch($pdo, (int) $v['id']);
 
     json_out(['playerKey' => $playerKey, 'prenom' => $prenom], 201);

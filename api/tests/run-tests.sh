@@ -53,6 +53,27 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# db_migrate() sort aussitôt si la table qu'elle sonde existe déjà. Sur une base
+# DÉJÀ DÉPLOYÉE, une sonde restée sur une table plus ancienne ferait manquer la
+# dernière ajoutée — sans le moindre message. On simule exactement ce cas : base
+# complète, puis on retire la table la plus récente ; la migration doit la
+# remettre. À TENIR À JOUR : la liste ci-dessous suit la sonde de db_migrate().
+say "Migration sur une base déjà déployée (la sonde porte sur la table la plus récente)"
+MIG="$(php -r '
+define("GRAINE_API", 1);
+require $argv[1] . "/api/db.php";
+$pdo = new PDO("sqlite:" . $argv[2]);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+db_migrate($pdo);
+$recentes = ["veillee_presence"];
+foreach ($recentes as $t) { $pdo->exec("DROP TABLE " . $t); }
+db_migrate($pdo);
+$tables = $pdo->query("SELECT name FROM sqlite_master WHERE type = \"table\"")->fetchAll(PDO::FETCH_COLUMN);
+echo array_diff($recentes, $tables) === [] ? "oui" : "non";
+' "$ROOT" "$TMP/deja-deploye.sqlite" 2>>"$TMP/migration.log")"
+check "la table la plus récente est (re)créée" oui "$MIG"
+
+# ---------------------------------------------------------------------------
 say "Démarrage du serveur de test (php -S, SQLite, mode dev)"
 rm -f "$ROOT"/api/data/dev.sqlite "$ROOT"/api/data/dev.sqlite-*
 cd "$ROOT"
@@ -234,11 +255,49 @@ check "Léa rejoint → 201"               201 "$(api POST "/api/veillees/$VCODE
 PKEY2="$(jval .playerKey)"
 api GET "/api/veillees/$VCODE/state" > /dev/null
 check "2 participants visibles"         2   "$(jval .veillee.nPlayers)"
+# Présent DÈS L'ARRIVÉE : sans ça, quelqu'un qui vient de rejoindre mais n'a pas
+# encore sondé compterait comme absent et la révélation partirait sans lui.
+check "2 présents dès l'arrivée"        2   "$(jval .veillee.nPresent)"
+check "chaque arrivant est présent"     2   "$(jval '[.veillee.players[] | select(.present)] | length')"
 # Prénoms à apostrophe : sans eux, N'Golo ou M'Barka resteraient à la porte.
 check "apostrophe droite → 201"         201 "$(api POST "/api/veillees/$VCODE/join" '' "{\"prenom\":\"N'Golo\"}")"
 check "apostrophe typographique → 201"  201 "$(api POST "/api/veillees/$VCODE/join" '' "{\"prenom\":\"M’Barka\"}")"
 check "apostrophe seule → 422"          422 "$(api POST "/api/veillees/$VCODE/join" '' "{\"prenom\":\"'\"}")"
 check "prénom d'un caractère → 422"     422 "$(api POST "/api/veillees/$VCODE/join" '' '{"prenom":"A"}')"
+
+# Le vrai souci d'une veillée à 17 : quelqu'un s'en va, « tous ont répondu » ne
+# devient jamais vrai et l'animateur subit le décompte entier à chaque question.
+# La présence se déduit du sondage de l'état (~2 s côté client).
+say "Veillée — présence : on n'attend plus que ceux qui sont ENCORE là"
+api GET "/api/veillees/$VCODE/state" > /dev/null
+check "4 participants au total"         4 "$(jval .veillee.nPlayers)"
+check "4 présents"                      4 "$(jval .veillee.nPresent)"
+# Vieillir l'horodatage en base plutôt qu'attendre 30 s : la suite doit rester
+# rapide. Les quatre lignes touchées prouvent au passage que veillee_presence
+# est bien écrite, une par participant.
+VIEILLIS="$(php -r '
+$pdo = new PDO("sqlite:" . $argv[1]);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$st = $pdo->prepare(
+  "UPDATE veillee_presence SET last_seen = ?
+   WHERE veillee_id IN (SELECT id FROM veillees WHERE code = ?)"
+);
+$st->execute([gmdate("Y-m-d H:i:s", time() - 60), $argv[2]]);
+echo $st->rowCount();
+' "$ROOT/api/data/dev.sqlite" "$VCODE" 2>>"$TMP/presence.log")"
+check "1 ligne de présence par participant" 4 "$VIEILLIS"
+api GET "/api/veillees/$VCODE/state" > /dev/null
+check "plus personne n'est compté présent" 0 "$(jval .veillee.nPresent)"
+# Marc resonde : le sondage lui-même vaut signe de présence, et il se compte
+# dans l'état qu'il reçoit (sinon la révélation partirait une question trop tôt).
+api GET "/api/veillees/$VCODE/state?player=$PKEY1" > /dev/null
+check "celui qui sonde redevient présent" 1    "$(jval .veillee.nPresent)"
+check "Marc présent"                      true "$(jval '.veillee.players[] | select(.prenom == "Marc") | .present')"
+check "Léa, silencieuse, absente"         false "$(jval '.veillee.players[] | select(.prenom == "Léa") | .present')"
+# Un absent n'est pas un partant définitif : il garde sa place et peut revenir.
+check "nPlayers garde son sens"           4    "$(jval .veillee.nPlayers)"
+check "le classement garde les absents"   4    "$(jval '.veillee.players | length')"
+check "un absent garde son rang"          true "$(jval '.veillee.players[] | select(.prenom == "Léa") | .rang >= 1')"
 
 say "Veillée — pilotage (animateur seul)"
 check "u3 pilote → 403"                 403 "$(api POST "/api/veillees/$VCODE/advance" "$TOKEN3" '{"action":"start"}')"

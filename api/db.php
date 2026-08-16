@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM push_defis LIMIT 1');
+        $pdo->query('SELECT 1 FROM veillee_presence LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -483,6 +483,17 @@ function db_migrate(PDO $pdo): void {
                 duel_id INT UNSIGNED NOT NULL PRIMARY KEY,
                 notified_at DATETIME NOT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Présence aux veillées : une ligne par participant, réécrite à
+            // chaque sondage de l'état (~2 s). Elle dit qui est ENCORE là —
+            // sans elle, quelqu'un parti en cours de veillée resterait attendu
+            // et l'animateur subirait le décompte entier à chaque question.
+            'CREATE TABLE IF NOT EXISTS veillee_presence (
+                veillee_id INT UNSIGNED NOT NULL,
+                player_id INT UNSIGNED NOT NULL,
+                last_seen DATETIME NOT NULL,
+                PRIMARY KEY (veillee_id, player_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
         ];
     } else {
         $ddl = [
@@ -845,6 +856,14 @@ function db_migrate(PDO $pdo): void {
             'CREATE TABLE IF NOT EXISTS push_defis (
                 duel_id INTEGER NOT NULL PRIMARY KEY,
                 notified_at TEXT NOT NULL
+            )',
+
+            // Présence aux veillées — voir le dialecte MySQL ci-dessus.
+            'CREATE TABLE IF NOT EXISTS veillee_presence (
+                veillee_id INTEGER NOT NULL,
+                player_id INTEGER NOT NULL,
+                last_seen TEXT NOT NULL,
+                PRIMARY KEY (veillee_id, player_id)
             )',
         ];
     }

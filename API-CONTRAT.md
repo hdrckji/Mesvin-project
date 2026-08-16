@@ -193,7 +193,12 @@ petite que `nb`).
 
 ### GET /api/veillees/{code}/state?player={playerKey}
 Public, pollable. → `{ "veillee": { "code", "statut", "qIndex", "qTotal",
-"seconds", "nPlayers", "players": [ { "prenom", "score", "rang" } ], … } }`
+"seconds", "nPlayers", "nPresent", "players": [ { "prenom", "score", "rang",
+"present" } ], … } }`
+- `nPlayers` = tous ceux qui ont rejoint ; `nPresent` = ceux vus il y a moins
+  de 30 s (sonder `/state` vaut signe de présence, et rejoindre marque déjà
+  présent). Un participant parti garde son score et son rang au classement —
+  il n'est simplement plus attendu pour révéler la réponse ;
 - veillée liée à une église : + `"eglise": "<nom du groupe>"` (pour le
   grand écran) — rien d'autre du groupe ne transparaît ;
 - en phase `question` : + `question` (SANS `bonne` ni `reference`),
