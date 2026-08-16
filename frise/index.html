@@ -300,6 +300,15 @@ let seance = null;     // { titre, placees:[], courante, pioche:[], score, total
 let config = { mode: 'evenements', portee: 'tout', noms: ['', ''], niveau: 1 }; // écran « à plusieurs »
 let online = null;  // duel : { code, cle?, resultat } · veillée : { code, cle?, jeton?, prenom?, etat }
 let saisie = { pseudo: '', code: '' }; // champs des écrans en ligne (survivent aux re-rendus)
+let repriseAnim = null; // veillée animée retrouvée au chargement : { code, cle }
+
+/* Reprise d'animation : la clé de l'animateur ne vit plus seulement dans
+   l'onglet — on la garde sur l'appareil pour qu'un rechargement (ou une mise
+   en veille du téléphone) ne fige plus la veillée pour toute la salle. */
+const ANIM_KEY = 'graine.frise.anim.v1';
+function animEcrire(o) { try { localStorage.setItem(ANIM_KEY, JSON.stringify(o)); } catch (e) {} }
+function animLire() { try { return JSON.parse(localStorage.getItem(ANIM_KEY) || 'null'); } catch (e) { return null; } }
+function animOubli() { try { localStorage.removeItem(ANIM_KEY); } catch (e) {} }
 let minuterie = null; // l'interrogation régulière du serveur (écrans en ligne)
 
 /* ---- Réseau : les points d'entrée dédiés /api/frise/* (sans compte) ---- */
@@ -445,6 +454,12 @@ function quitter() { seance = null; online = null; pollArret(); ecran = 'accueil
 function vueAccueil() {
   return `<div class="fade">
     <button class="quit" data-retour-defi="1">‹ Défi</button>
+    ${repriseAnim ? `<button class="card hub-card" data-reprise="1" style="border:1px solid var(--accent)">
+      <span class="hub-ic">${icon('ecranDirect', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">Reprendre l'animation</span>
+        <span class="hub-sub">Ta veillée en cours t'attend — reprends la main sur le grand écran.</span></span>
+      <span class="chev">›</span>
+    </button>` : ''}
     <h1 style="margin-top:10px">Avant ou après <span class="seed">?</span></h1>
     <p class="muted" style="margin:4px 0 16px">Chaque carte doit trouver sa place dans la frise : les livres dans l'ordre de la Bible, les événements dans l'ordre où elle les raconte.</p>
 
@@ -783,6 +798,7 @@ function pollDemarre() {
         const e = await api('veillee/' + online.code + '/etat' + (q ? '?' + q : ''));
         if (online && (online.v || 0) === vAvant
             && JSON.stringify(e) !== JSON.stringify(online.etat)) { online.etat = e; render(); }
+        if (online && online.cle && e && e.phase === 'fin') animOubli(); // veillée finie : plus rien à reprendre
       } else {
         pollArret();
       }
@@ -948,6 +964,14 @@ function render() {
   if (multi) multi.addEventListener('click', () => { ecran = 'config'; render(); });
   const retourDefi = el.querySelector('[data-retour-defi]');
   if (retourDefi) retourDefi.addEventListener('click', () => { location.href = '../defi/'; });
+  const reprise = el.querySelector('[data-reprise]');
+  if (reprise) reprise.addEventListener('click', async () => {
+    if (!repriseAnim) return;
+    online = { code: repriseAnim.code, cle: repriseAnim.cle, etat: null };
+    ecran = 'anim'; render();
+    try { online.etat = await api('veillee/' + online.code + '/etat?cle=' + online.cle); render(); } catch (e) {}
+    pollDemarre();
+  });
   el.querySelectorAll('[data-deck]').forEach(b => b.addEventListener('click', () => {
     const [m, p] = b.dataset.deck.split(':');
     config.mode = m; config.portee = p; render();
@@ -1024,6 +1048,7 @@ function render() {
       const deck = deckServeur(config.mode, config.portee, CARTES_PAR_SEANCE);
       const r = await api('veillee', { mode: titrePaquet(config.mode, config.portee), deck: deck });
       online = { code: r.code, cle: r.cle, etat: null };
+      animEcrire({ code: r.code, cle: r.cle, ts: Date.now() });
       ecran = 'anim'; render(); pollDemarre();
     } catch (e) { veilgo.disabled = false; erreurLigne(e.message); }
   });
@@ -1092,6 +1117,17 @@ function render() {
 }
 /* Arrivée directe sur le grand écran : ?direct=FV-XXXXX (l'adresse que
    l'animateur copie pour l'ordinateur du projecteur). */
+async function verifierRepriseAnim() {
+  const a = animLire();
+  if (!a || !a.code || !a.cle) return;
+  if (Date.now() - (a.ts || 0) > 86400000) { animOubli(); return; } // >24 h : le ménage serveur est passé
+  try {
+    const etat = await api('veillee/' + a.code + '/etat?cle=' + a.cle);
+    if (etat && etat.phase && etat.phase !== 'fin') { repriseAnim = { code: a.code, cle: a.cle }; if (ecran === 'accueil') render(); }
+    else animOubli();
+  } catch (e) { if (e && e.status === 404) animOubli(); } // veillée disparue : on oublie
+}
+
 const direct = new URLSearchParams(location.search).get('direct');
 if (direct && /^FV-[A-Z2-9]{5}$/.test(direct.toUpperCase())) {
   online = { code: direct.toUpperCase(), projection: true, etat: null };
@@ -1099,6 +1135,7 @@ if (direct && /^FV-[A-Z2-9]{5}$/.test(direct.toUpperCase())) {
   pollDemarre();
 }
 render();
+if (!online) verifierRepriseAnim(); // pas de projection en cours : propose la reprise si besoin
 </script>
 </body>
 </html>

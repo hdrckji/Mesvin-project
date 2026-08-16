@@ -237,6 +237,15 @@ let seance = null;   // { items, idx, k, phase:'devine'|'revele', gagne, score,
 let config = { noms: ['', ''] };
 let online = null;
 let saisie = { pseudo: '', code: '' };
+let repriseAnim = null; // veillée animée retrouvée au chargement : { code, cle }
+
+/* Reprise d'animation : la clé de l'animateur ne vit plus seulement dans
+   l'onglet — on la garde sur l'appareil pour qu'un rechargement (ou une mise
+   en veille du téléphone) ne fige plus la veillée pour toute la salle. */
+const ANIM_KEY = 'graine.portrait.anim.v1';
+function animEcrire(o) { try { localStorage.setItem(ANIM_KEY, JSON.stringify(o)); } catch (e) {} }
+function animLire() { try { return JSON.parse(localStorage.getItem(ANIM_KEY) || 'null'); } catch (e) { return null; } }
+function animOubli() { try { localStorage.removeItem(ANIM_KEY); } catch (e) {} }
 let minuterie = null;
 
 /* ---------- Séance (solo, tablée, défi) ---------- */
@@ -283,6 +292,12 @@ function quitter() { seance = null; online = null; pollArret(); ecran = 'accueil
 function vueAccueil() {
   return `<div class="fade">
     <button class="quit" data-retour-defi="1">‹ Défi</button>
+    ${repriseAnim ? `<button class="card hub-card" data-reprise="1" style="border:1px solid var(--accent)">
+      <span class="hub-ic">${icon('ecranDirect', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">Reprendre l'animation</span>
+        <span class="hub-sub">Ta veillée en cours t'attend — reprends la main sur le grand écran.</span></span>
+      <span class="chev">›</span>
+    </button>` : ''}
     <h1 style="margin-top:10px">De qui parle-t-on <span class="seed">?</span></h1>
     <p class="muted" style="margin:4px 0 16px">Les indices tombent un à un — plus tu devines tôt, plus tu marques. Personnages, lieux et objets de la Bible.</p>
 
@@ -667,6 +682,7 @@ function pollDemarre() {
         const e = await api('veillee/' + online.code + '/etat' + (q ? '?' + q : ''));
         if (online && (online.v || 0) === vAvant
             && JSON.stringify(e) !== JSON.stringify(online.etat)) { online.etat = e; render(); }
+        if (online && online.cle && e && e.phase === 'fin') animOubli(); // veillée finie : plus rien à reprendre
       } else {
         pollArret();
       }
@@ -708,6 +724,13 @@ function render() {
   };
 
   if (q1('[data-retour-defi]')) q1('[data-retour-defi]').addEventListener('click', () => { location.href = '../defi/'; });
+  if (q1('[data-reprise]')) q1('[data-reprise]').addEventListener('click', async () => {
+    if (!repriseAnim) return;
+    online = { code: repriseAnim.code, cle: repriseAnim.cle, etat: null };
+    ecran = 'anim'; render();
+    try { online.etat = await api('veillee/' + online.code + '/etat?cle=' + online.cle); render(); } catch (e) {}
+    pollDemarre();
+  });
   if (q1('[data-solo]')) q1('[data-solo]').addEventListener('click', avecBanque(() => demarrer(null, null, null)));
   if (q1('[data-multi]')) q1('[data-multi]').addEventListener('click', versEcran('config'));
   if (q1('[data-duelcfg]')) q1('[data-duelcfg]').addEventListener('click', versEcran('dcfg'));
@@ -797,6 +820,7 @@ function render() {
       const deck = deckServeur(PORTRAITS_PAR_SEANCE);
       const r = await api('veillee', { deck: deck });
       online = { code: r.code, cle: r.cle, etat: null };
+      animEcrire({ code: r.code, cle: r.cle, ts: Date.now() });
       ecran = 'anim'; render(); pollDemarre();
     } catch (e) { veilgo.disabled = false; erreurLigne(e.message); }
   });
@@ -847,6 +871,19 @@ function render() {
   if (ecran === 'dres' && online && !online.erreur && !minuterie) pollDemarre();
 }
 
+/* Une veillée animée traîne-t-elle sur cet appareil ? Si elle existe encore
+   côté serveur et n'est pas finie, on propose de reprendre la main. */
+async function verifierRepriseAnim() {
+  const a = animLire();
+  if (!a || !a.code || !a.cle) return;
+  if (Date.now() - (a.ts || 0) > 86400000) { animOubli(); return; } // >24 h : le ménage serveur est passé
+  try {
+    const etat = await api('veillee/' + a.code + '/etat?cle=' + a.cle);
+    if (etat && etat.phase && etat.phase !== 'fin') { repriseAnim = { code: a.code, cle: a.cle }; if (ecran === 'accueil') render(); }
+    else animOubli();
+  } catch (e) { if (e && e.status === 404) animOubli(); } // veillée disparue : on oublie
+}
+
 /* Arrivée directe sur le grand écran : ?direct=PV-XXXXX. */
 const direct = new URLSearchParams(location.search).get('direct');
 if (direct && /^PV-[A-Z2-9]{5}$/.test(direct.toUpperCase())) {
@@ -855,6 +892,7 @@ if (direct && /^PV-[A-Z2-9]{5}$/.test(direct.toUpperCase())) {
   pollDemarre();
 }
 render();
+if (!online) verifierRepriseAnim(); // pas de projection en cours : propose la reprise si besoin
 </script>
 </body>
 </html>
