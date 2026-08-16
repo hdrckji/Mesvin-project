@@ -1616,13 +1616,17 @@ function renderDuelReview() {
    2 s et on ne re-rend l'écran que s'il a changé. Le décompte, lui, est animé
    localement (une petite horloge à 500 ms qui ne touche que la barre).
    ========================================================================== */
-const VEILLEE_KEY = 'graine.defi.veillee.v1'; // reprise : { code, playerKey?, prenom?, host?, ecrans?, ts }
-/* Le grand écran a SA PROPRE clé, et surtout pas celle-ci. Un animateur qui
-   ouvre « Grand écran » sur son téléphone pour comprendre à quoi ça ressemble
-   écraserait sinon sa sauvegarde d'animation : plus aucun écran ne ramène aux
-   commandes, la veillée reste ouverte sans personne pour la mener, et les
-   participants attendent jusqu'au ménage serveur. Deux rôles, deux clés. */
-const VEILLEE_PROJ_KEY = 'graine.defi.veillee.proj.v1'; // reprise : { code, ts }
+/* UNE CLÉ PAR RÔLE, jamais une pour deux. Sur un même appareil on peut
+   successivement animer, rejoindre et projeter — et chaque rôle écrivait
+   au même endroit, donc écrasait le précédent. Le dégât n'est pas
+   symétrique : perdre sa sauvegarde d'ANIMATEUR est irréparable côté
+   interface (« Animer » ne sait que créer une NOUVELLE veillée), la veillée
+   reste ouverte sans personne pour la mener et les participants attendent
+   jusqu'au ménage serveur. Perdre celle de PARTICIPANT coûte son score, son
+   prénom restant pris. Trois rôles, trois clés. */
+const VEILLEE_KEY = 'graine.defi.veillee.v1';           // animateur : { code, host, ecrans?, ts }
+const VEILLEE_PLAYER_KEY = 'graine.defi.veillee.part.v1'; // participant : { code, playerKey, prenom, ts }
+const VEILLEE_PROJ_KEY = 'graine.defi.veillee.proj.v1';   // grand écran : { code, ts }
 
 let vl = null;                 // état local de l'écran veillée
 let vlPollTimer = null, vlTickTimer = null;
@@ -1636,12 +1640,19 @@ function vlSauvegardeDe(cle) {
   const s = lireJSON(cle);
   return (s && s.code && s.ts && Date.now() - s.ts < 12 * 3600 * 1000) ? s : null;
 }
-/* Animer ou participer d'abord, projeter ensuite : perdre la main sur une
-   veillée qu'on mène est irréparable, alors qu'un grand écran se rouvre en
-   retapant le code. */
+/* Ordre de préférence : animer, puis participer, puis projeter — du plus
+   coûteux à perdre au plus facile à retrouver. Un grand écran se rouvre en
+   retapant le code ; la main sur une veillée qu'on mène, non.
+   Les sauvegardes de participant d'avant ce découpage vivaient dans
+   VEILLEE_KEY : on les y lit encore, sinon quelqu'un perdrait sa place au
+   déploiement. */
 function vlSauvegarde() {
-  return vlSauvegardeDe(VEILLEE_KEY)
-    || (() => { const p = vlSauvegardeDe(VEILLEE_PROJ_KEY); return p ? { ...p, proj: true } : null; })();
+  const ancienne = vlSauvegardeDe(VEILLEE_KEY);
+  if (ancienne && ancienne.host) return ancienne;
+  const part = vlSauvegardeDe(VEILLEE_PLAYER_KEY) || (ancienne && ancienne.playerKey ? ancienne : null);
+  if (part) return part;
+  const proj = vlSauvegardeDe(VEILLEE_PROJ_KEY);
+  return proj ? { ...proj, proj: true } : null;
 }
 
 /* Un seul écran, ou deux ? Choix de l'animateur au paramétrage, PUREMENT
@@ -1666,7 +1677,18 @@ function vlQuitter(notice) {
   vlArreterPolling();
   // On n'efface que le rôle qu'on quitte : fermer le grand écran ne doit pas
   // faire perdre l'animation en cours sur le même appareil, et l'inverse non plus.
-  try { localStorage.removeItem(vl && vl.mode === 'proj' ? VEILLEE_PROJ_KEY : VEILLEE_KEY); } catch (e) {}
+  // On n'efface que le rôle qu'on quitte : fermer le grand écran ou sortir
+  // d'une veillée où l'on participait ne doit pas faire perdre l'animation
+  // en cours sur le même appareil.
+  const m = vl && vl.mode;
+  try {
+    localStorage.removeItem(m === 'proj' ? VEILLEE_PROJ_KEY : m === 'player' ? VEILLEE_PLAYER_KEY : VEILLEE_KEY);
+    // Sauvegarde de participant d'avant le découpage : elle vivait dans
+    // VEILLEE_KEY. On ne l'y efface QUE si c'en est bien une — sinon on
+    // détruirait l'animation en cours, c'est-à-dire le bug qu'on répare.
+    const reste = m === 'player' ? lireJSON(VEILLEE_KEY) : null;
+    if (reste && reste.playerKey && !reste.host) localStorage.removeItem(VEILLEE_KEY);
+  } catch (e) {}
   vl = { mode: 'menu', notice: notice || null };
   if (vue.ecran === 'veillee') render();
 }
@@ -1687,17 +1709,29 @@ function vlPierreAnimateur(avant, etat) {
    projecteur : branché, écran allumé. En deux écrans, c'est un téléphone posé
    dans une salle sombre — et quand il se verrouille, le système suspend les
    minuteries : plus de sondage, plus de révélation automatique, et le grand
-   écran se fige sur la question pour toute l'assemblée. On demande donc à
-   garder l'écran éveillé pendant qu'on mène ou qu'on projette. L'API n'existe
-   pas partout (Safari ancien) : c'est un confort, pas une garantie — d'où le
-   rattrapage au retour de visibilité juste en dessous. */
-let vlVeilleEcran = null;
+   écran se fige sur la question pour toute l'assemblée. On garde donc l'écran
+   éveillé quand on MÈNE ou qu'on PROJETTE — les deux rôles dont l'endormissement
+   pénalise les autres. Pas pour un participant : c'est sa batterie, et son
+   téléphone qui s'endort ne gêne que lui (il est alors compté absent, ce qui
+   est exact). L'API n'existe pas partout : c'est un confort, pas une garantie
+   — le vrai filet est le rattrapage au retour de visibilité, juste dessous. */
+let vlVeilleEcran = null, vlVeilleGen = 0;
 async function vlGarderEveille() {
   if (!('wakeLock' in navigator) || vlVeilleEcran) return;
-  try { vlVeilleEcran = await navigator.wakeLock.request('screen'); }
-  catch (e) { vlVeilleEcran = null; } // refusé (onglet caché, batterie faible) : tant pis
+  if (!vl || (vl.mode !== 'host' && vl.mode !== 'proj')) return;
+  // Jeton de génération : la demande est asynchrone, et un relâchement peut
+  // passer pendant qu'elle est en vol. Sans ce garde, le verrou arriverait
+  // après coup sans personne pour le relâcher — écran allumé indéfiniment,
+  // batterie vidée, hors veillée.
+  const gen = ++vlVeilleGen;
+  try {
+    const v = await navigator.wakeLock.request('screen');
+    if (gen !== vlVeilleGen) { try { v.release(); } catch (e) {} return; }
+    vlVeilleEcran = v;
+  } catch (e) { /* refusé (onglet caché, batterie faible) : tant pis */ }
 }
 function vlRelacherEveil() {
+  vlVeilleGen++; // annule une demande encore en vol
   if (!vlVeilleEcran) return;
   try { vlVeilleEcran.release(); } catch (e) {}
   vlVeilleEcran = null;
@@ -1890,7 +1924,7 @@ async function vlRejoindre() {
   try {
     const r = await GraineAPI.joinVeillee(code, prenom);
     vl = { mode: 'player', code, playerKey: r.playerKey, prenom: r.prenom, etat: null, lastJson: '', maReponse: null, busy: false, error: null };
-    ecrireJSON(VEILLEE_KEY, { code, playerKey: r.playerKey, prenom: r.prenom, ts: Date.now() });
+    ecrireJSON(VEILLEE_PLAYER_KEY, { code, playerKey: r.playerKey, prenom: r.prenom, ts: Date.now() });
     vlDemarrerPolling();
   } catch (e) {
     vl.busy = false; vl.error = messageDoux(e);
