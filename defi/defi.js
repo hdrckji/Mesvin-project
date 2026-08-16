@@ -710,9 +710,13 @@ async function revanche(opponent) {
    Rendu
    ========================================================================== */
 function render() {
-  // Le grand écran de l'animateur (veillée « host ») se projette : on le
-  // signale au <body> pour casser la largeur mobile et tout agrandir (CSS).
-  document.body.classList.toggle('quiz-proj', vue.ecran === 'veillee' && !!vl && vl.mode === 'host');
+  // Ce qui se projette se signale au <body> pour casser la largeur mobile et
+  // tout agrandir (CSS). Deux écrans peuvent le porter : l'écran de
+  // l'animateur quand il EST la projection (mode « un seul écran »), et le
+  // grand écran autonome. En mode « deux écrans », l'appareil de l'animateur
+  // n'est plus qu'une télécommande : surtout pas de projection dessus.
+  document.body.classList.toggle('quiz-proj', vue.ecran === 'veillee' && !!vl
+    && ((vl.mode === 'host' && vlUnSeulEcran()) || vl.mode === 'proj'));
   if (vue.ecran === 'solo') return renderSolo();
   if (vue.ecran === 'question') return renderQuestion();
   if (vue.ecran === 'fin') return renderFin();
@@ -1612,7 +1616,7 @@ function renderDuelReview() {
    2 s et on ne re-rend l'écran que s'il a changé. Le décompte, lui, est animé
    localement (une petite horloge à 500 ms qui ne touche que la barre).
    ========================================================================== */
-const VEILLEE_KEY = 'graine.defi.veillee.v1'; // reprise : { code, playerKey?, prenom?, host?, ts }
+const VEILLEE_KEY = 'graine.defi.veillee.v1'; // reprise : { code, playerKey?, prenom?, host?, proj?, ecrans?, ts }
 
 let vl = null;                 // état local de l'écran veillée
 let vlPollTimer = null, vlTickTimer = null;
@@ -1625,6 +1629,22 @@ function ouvrirVeillee() {
 function vlSauvegarde() {
   const s = lireJSON(VEILLEE_KEY);
   return (s && s.code && s.ts && Date.now() - s.ts < 12 * 3600 * 1000) ? s : null;
+}
+
+/* Un seul écran, ou deux ? Choix de l'animateur au paramétrage, PUREMENT
+   local : il ne dit que ce que SON appareil affiche, le serveur n'en sait rien
+   et n'a pas à en savoir. Toutes les églises n'ont pas de vidéoprojecteur —
+   « un seul écran » reste donc le défaut, y compris pour une veillée reprise
+   d'avant ce choix (sauvegarde sans `ecrans`). */
+function vlUnSeulEcran() { return !vl || vl.ecrans !== 'deux'; }
+/* Le vidéoprojecteur lâche en pleine veillée, ou l'animateur en déniche un :
+   on bascule d'un mode à l'autre sans rien perdre — même code, même veillée,
+   seul l'affichage de cet appareil change. */
+function vlBasculerEcrans() {
+  vl.ecrans = vlUnSeulEcran() ? 'deux' : 'un';
+  const s = lireJSON(VEILLEE_KEY);
+  if (s && s.code === vl.code) ecrireJSON(VEILLEE_KEY, { ...s, ecrans: vl.ecrans });
+  render();
 }
 function vlQuitter(notice) {
   vlArreterPolling();
@@ -1656,7 +1676,10 @@ function vlArreterPolling() {
   if (vlTickTimer) { clearInterval(vlTickTimer); vlTickTimer = null; }
 }
 async function vlPoll() {
-  if (vue.ecran !== 'veillee' || !vl || (vl.mode !== 'host' && vl.mode !== 'player')) {
+  // Le grand écran ('proj') sonde comme les autres — mais SANS clé : il lit
+  // l'état public, il ne se compte pas parmi les participants et il n'a aucun
+  // moyen de piloter quoi que ce soit.
+  if (vue.ecran !== 'veillee' || !vl || (vl.mode !== 'host' && vl.mode !== 'player' && vl.mode !== 'proj')) {
     vlArreterPolling();
     return;
   }
@@ -1732,7 +1755,11 @@ function vlTick() {
   if (vl.mode === 'host') vlAutoReveal();
 }
 /* L'animateur révèle automatiquement quand le temps est écoulé ou que tout le
-   monde a répondu — il peut aussi appuyer sur le bouton sans attendre. */
+   monde a répondu — il peut aussi appuyer sur le bouton sans attendre.
+   Appelée UNIQUEMENT depuis l'appareil de l'animateur (vlPoll et vlTick la
+   gardent derrière `vl.mode === 'host'`) : le grand écran n'a ni compte ni
+   clé, `advance` lui serait refusé, et surtout la salle ne pilote pas la
+   veillée. */
 function vlAutoReveal() {
   const e = vl.etat;
   if (!e || e.statut !== 'question' || vl.busy) return;
@@ -1767,17 +1794,39 @@ async function vlAvancer(action) {
 /* ---------- Actions ---------- */
 async function vlCreer() {
   if (vl.busy) return;
+  // `ecrans` n'entre PAS dans opts : c'est un réglage d'affichage local, le
+  // serveur n'a rien à en faire.
   const opts = { nb: vl.nb, seconds: vl.seconds };
   if (vl.categorie) opts.categorie = vl.categorie;
   if (vl.niveau) opts.niveau = vl.niveau;
+  const ecrans = vl.ecrans === 'deux' ? 'deux' : 'un';
   vl.busy = true; vl.error = null; render();
   try {
     const etat = await GraineAPI.createVeillee(opts);
-    vl = { mode: 'host', code: etat.code, etat, lastJson: JSON.stringify(etat), remainingAt: Date.now(), busy: false, error: null };
-    ecrireJSON(VEILLEE_KEY, { code: etat.code, host: true, ts: Date.now() });
+    vl = { mode: 'host', ecrans, code: etat.code, etat, lastJson: JSON.stringify(etat), remainingAt: Date.now(), busy: false, error: null };
+    ecrireJSON(VEILLEE_KEY, { code: etat.code, host: true, ecrans, ts: Date.now() });
     vlDemarrerPolling();
   } catch (e) {
     vl.busy = false; vl.error = messageDoux(e);
+  }
+  render();
+}
+/* Le grand écran : un client de plus, qui ne fait que lire l'état public. On
+   vérifie le code d'un premier sondage — même code de 4 caractères que les
+   participants, un seul pour toute la salle. */
+async function vlGrandEcran() {
+  if (vl.busy) return;
+  const code = (vl.code || '').trim().toUpperCase();
+  if (!/^[A-Z0-9]{4}$/.test(code)) { vl.error = 'Le code fait 4 lettres ou chiffres — c\'est celui de l\'animateur.'; render(); return; }
+  vl.busy = true; vl.error = null; render();
+  try {
+    const etat = await GraineAPI.veilleeState(code); // sans clé : lecture seule
+    vl = { mode: 'proj', code, etat, lastJson: JSON.stringify(etat), remainingAt: Date.now(), busy: false, error: null };
+    ecrireJSON(VEILLEE_KEY, { code, proj: true, ts: Date.now() });
+    vlDemarrerPolling();
+  } catch (e) {
+    vl.busy = false;
+    vl.error = (e && e.status === 404) ? 'Aucun quiz à ce code — vérifie auprès de l\'animateur.' : messageDoux(e);
   }
   render();
 }
@@ -1801,8 +1850,11 @@ async function vlRejoindre() {
 function vlReprendre() {
   const s = vlSauvegarde();
   if (!s) { vl = { mode: 'menu' }; render(); return; }
-  if (s.host) {
-    vl = { mode: 'host', code: s.code, etat: null, lastJson: '', busy: false, error: null };
+  if (s.proj) {
+    vl = { mode: 'proj', code: s.code, etat: null, lastJson: '', busy: false, error: null };
+  } else if (s.host) {
+    // `ecrans` absent = sauvegarde d'avant ce choix : un seul écran, comme avant.
+    vl = { mode: 'host', ecrans: s.ecrans === 'deux' ? 'deux' : 'un', code: s.code, etat: null, lastJson: '', busy: false, error: null };
   } else {
     vl = { mode: 'player', code: s.code, playerKey: s.playerKey, prenom: s.prenom, etat: null, lastJson: '', maReponse: null, busy: false, error: null };
   }
@@ -1829,7 +1881,11 @@ function renderVeillee() {
   if (vl.mode === 'compte') return renderVeilleeCompte();
   if (vl.mode === 'creer') return renderVeilleeCreer();
   if (vl.mode === 'join') return renderVeilleeJoin();
-  if (vl.mode === 'host') return renderVeilleeHost();
+  if (vl.mode === 'ecran') return renderVeilleeEcranCode();
+  if (vl.mode === 'proj') return renderVeilleeProj();
+  // Un seul écran : l'appareil de l'animateur EST la projection (le chemin
+  // d'origine, inchangé). Deux écrans : il devient une télécommande.
+  if (vl.mode === 'host') return vlUnSeulEcran() ? renderVeilleeHost() : renderVeilleeTelecommande();
   if (vl.mode === 'player') return renderVeilleePlayer();
   renderVeilleeMenu();
 }
@@ -1851,7 +1907,9 @@ function renderVeilleeMenu() {
       <span class="hub-ic">${icon('reprendre', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Reprendre</span>
-        <span class="hub-sub">${reprise.host ? `Tu animais le quiz <b>${esc(reprise.code)}</b>.` : `Tu étais <b>${esc(reprise.prenom || '')}</b> dans le quiz <b>${esc(reprise.code)}</b>.`}</span>
+        <span class="hub-sub">${reprise.proj
+          ? `Cet écran projetait le quiz <b>${esc(reprise.code)}</b>.`
+          : reprise.host ? `Tu animais le quiz <b>${esc(reprise.code)}</b>.` : `Tu étais <b>${esc(reprise.prenom || '')}</b> dans le quiz <b>${esc(reprise.code)}</b>.`}</span>
       </span>
       <span class="chev">›</span>
     </button>` : ''}
@@ -1869,7 +1927,16 @@ function renderVeilleeMenu() {
       <span class="hub-ic">${icon('microphone', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Animer</span>
-        <span class="hub-sub">Crée le quiz et projette cet écran — pour toute l'assemblée.</span>
+        <span class="hub-sub">Crée le quiz et mène-le — cet écran projeté, ou en télécommande.</span>
+      </span>
+      <span class="chev">›</span>
+    </button>
+
+    <button class="card hub-card" id="btn-vl-ecran">
+      <span class="hub-ic">${icon('ecranDirect', 26)}</span>
+      <span class="hub-txt">
+        <span class="hub-title">Grand écran</span>
+        <span class="hub-sub">Sur l'ordinateur du vidéoprojecteur — avec le même code que les participants. Cet écran ne fait qu'afficher.</span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -1881,10 +1948,11 @@ function renderVeilleeMenu() {
   document.getElementById('btn-vl-rejoindre').onclick = () => { vl = { mode: 'join', code: '', prenom: '', busy: false, error: null }; render(); };
   document.getElementById('btn-vl-animer').onclick = () => {
     vl = connecte()
-      ? { mode: 'creer', nb: 10, seconds: 25, categorie: null, niveau: null, busy: false, error: null }
+      ? { mode: 'creer', nb: 10, seconds: 25, categorie: null, niveau: null, ecrans: 'un', busy: false, error: null }
       : { mode: 'compte' };
     render();
   };
+  document.getElementById('btn-vl-ecran').onclick = () => { vl = { mode: 'ecran', code: '', busy: false, error: null }; render(); };
 }
 
 function renderVeilleeCompte() {
@@ -1935,6 +2003,15 @@ function renderVeilleeCreer() {
         ${[1, 2, 3].map(n => `<button class="pill ${vl.niveau === n ? 'on' : ''}" data-niv="${n}">${NIVEAUX[n]}</button>`).join('')}
       </div>
 
+      <label class="lbl">Écrans</label>
+      <div class="pill-row" id="vl-pills-ecrans">
+        <button class="pill ${vlUnSeulEcran() ? 'on' : ''}" data-ecrans="un">Un seul écran</button>
+        <button class="pill ${vlUnSeulEcran() ? '' : 'on'}" data-ecrans="deux">Deux écrans</button>
+      </div>
+      <p class="prepa-note">${vlUnSeulEcran()
+        ? 'Cet appareil affichera le quiz en grand — c\'est lui qu\'on projette ou qu\'on montre, commandes comprises.'
+        : 'Cet appareil devient ta télécommande, dans le creux de la main. Sur l\'ordinateur du vidéoprojecteur, ouvre « Grand écran » et saisis le même code.'}</p>
+
       <p class="prepa-note">≈ ${Math.max(2, Math.round(vl.nb * (vl.seconds + 15) / 60))} min, échanges compris. Les questions sont tirées par le site, personne ne les connaît d'avance — pas même toi.</p>
       ${vl.error ? `<p class="field-error">${esc(vl.error)}</p>` : ''}
       <div class="defi-actions">
@@ -1948,6 +2025,7 @@ function renderVeilleeCreer() {
   document.querySelectorAll('#vl-pills-sec .pill').forEach(b => { b.onclick = () => { vl.seconds = Number(b.dataset.sec); render(); }; });
   document.querySelectorAll('#vl-pills-cat .pill').forEach(b => { b.onclick = () => { vl.categorie = b.dataset.cat || null; render(); }; });
   document.querySelectorAll('#vl-pills-niv .pill').forEach(b => { b.onclick = () => { vl.niveau = b.dataset.niv ? Number(b.dataset.niv) : null; render(); }; });
+  document.querySelectorAll('#vl-pills-ecrans .pill').forEach(b => { b.onclick = () => { vl.ecrans = b.dataset.ecrans; render(); }; });
   document.getElementById('btn-vl-creer').onclick = vlCreer;
 }
 
@@ -1979,6 +2057,17 @@ function renderVeilleeJoin() {
   document.getElementById('vl-code').oninput = e => { vl.code = e.target.value.toUpperCase(); };
   document.getElementById('vl-prenom').oninput = e => { vl.prenom = e.target.value; };
   document.getElementById('vl-join-form').onsubmit = e => { e.preventDefault(); vlRejoindre(); };
+}
+
+/* Le va-et-vient entre un et deux écrans, discret, en haut de l'écran de
+   l'animateur : le vidéoprojecteur peut lâcher en pleine veillée, ou
+   apparaître à la dernière minute. La veillée en cours n'en sait rien. */
+function vlBasculeHTML() {
+  return `<button class="linkbtn" id="btn-vl-ecrans">${vlUnSeulEcran() ? 'Deux écrans' : 'Un seul écran'}</button>`;
+}
+function vlBasculeBind() {
+  const b = document.getElementById('btn-vl-ecrans');
+  if (b) b.onclick = vlBasculerEcrans;
 }
 
 /* Barre de décompte partagée (grand écran et téléphone). */
@@ -2093,12 +2182,16 @@ function renderVeilleeHost() {
     <div class="vl-topline">
       <button class="back-link" id="btn-vl-quitter" style="margin:0">‹ Quitter</button>
       ${e.statut !== 'done' && e.statut !== 'lobby' ? `<span class="vl-code-mini">Quiz ${esc(e.code)}</span>` : ''}
-      ${e.statut !== 'done' ? `<button class="linkbtn" id="btn-vl-end">Clore le quiz</button>` : ''}
+      <span class="vl-liens">
+        ${vlBasculeHTML()}
+        ${e.statut !== 'done' ? `<button class="linkbtn" id="btn-vl-end">Clore le quiz</button>` : ''}
+      </span>
     </div>
     ${vl.error ? `<p class="field-error" style="margin:0 4px 10px">${esc(vl.error)}</p>` : ''}
     ${corps}
   </div>`;
 
+  vlBasculeBind();
   document.getElementById('btn-vl-quitter').onclick = () => {
     if (e.statut === 'done' || confirm('Quitter l\'écran d\'animation ? Le quiz reste ouvert : tu pourras le reprendre depuis « Quiz dans ton église ».')) {
       vlArreterPolling(); vl = { mode: 'menu' }; render();
@@ -2116,6 +2209,270 @@ function renderVeilleeHost() {
   if (nx) nx.onclick = () => vlAvancer('next');
   const fm = document.getElementById('btn-vl-fermer');
   if (fm) fm.onclick = () => vlQuitter();
+}
+
+/* ---------- Télécommande de l'animateur (mode deux écrans) ----------
+   Ici, pas de `body.quiz-proj` : c'est l'inverse d'une projection. La salle
+   regarde le grand écran ; l'animateur, lui, tient son téléphone dans une
+   salle sombre et veut tout d'un coup d'œil — le code pour les retardataires,
+   la question en petit, le compte des réponses, le classement entier et ses
+   commandes sous le pouce. Aucune information de plus que ce que le serveur
+   envoie déjà : la bonne réponse n'arrive qu'à la révélation, et c'est voulu. */
+function renderVeilleeTelecommande() {
+  const e = vl.etat;
+  if (!e) {
+    el.innerHTML = `<div class="card center" style="padding:40px"><p class="muted" style="margin:0">Un instant…</p></div>`;
+    return;
+  }
+  const lettres = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+  // Le code reste sous les yeux de l'animateur : un retardataire arrive
+  // toujours en pleine question, quand le grand écran ne l'affiche plus.
+  const entete = `
+  <div class="card tc-head">
+    <span class="tc-code-lbl">Code de la salle</span>
+    <div class="tc-code">${esc(e.code)}</div>
+    <p class="tc-invite">${esc(location.host)} › Sonder › Quiz dans ton église › Rejoindre</p>
+  </div>`;
+
+  const classement = e.players.length ? `
+  <div class="section-title">Classement</div>
+  <div class="card tc-classement">
+    ${e.players.map(p => `
+      <div class="rang-row ${p.rang === 1 ? 'top' : ''}">
+        <span class="rang">${rangLabel(p.rang)}</span>
+        <span class="rnom">${esc(p.prenom)}</span>
+        <span class="rscore">${p.score}</span>
+      </div>`).join('')}
+  </div>` : '';
+
+  let corps = '';
+  if (e.statut === 'lobby') {
+    corps = `
+    ${entete}
+    <div class="card">
+      <p class="tc-nb">${e.nPlayers === 0 ? 'En attente des premiers participants…' : `${e.nPlayers} participant${e.nPlayers > 1 ? 's' : ''}`}</p>
+      <div class="vl-chips">${e.players.map(p => `<span class="vl-chip">${esc(p.prenom)}</span>`).join('')}</div>
+      <p class="tc-aide">Le grand écran affiche le même code — il suffit d'ouvrir « Grand écran » sur l'ordinateur du vidéoprojecteur.</p>
+    </div>
+    <div class="defi-actions tc-actions">
+      <button class="btn btn-primary btn-block" id="btn-vl-start" ${e.nPlayers === 0 || vl.busy ? 'disabled' : ''}>Lancer le quiz</button>
+      <button class="btn btn-soft btn-block" id="btn-vl-partager">Partager le code</button>
+    </div>`;
+  } else if (e.statut === 'question') {
+    corps = `
+    ${entete}
+    <div class="defi-meta"><span>Question ${e.qIndex + 1}/${e.qTotal}</span><span>${esc(e.question.categorie)} · ${NIVEAUX[e.question.niveau] || ''}</span></div>
+    ${vlTimerHTML()}
+    <div class="card">
+      <p class="tc-q">${esc(e.question.question)}</p>
+      <div class="vl-options tc-liste">
+        ${e.question.options.map((o, i) => `<div class="vl-opt"><span class="vl-letter">${lettres[i]}</span>${esc(o)}</div>`).join('')}
+      </div>
+      <p class="tc-nb" id="vl-nb-rep">${vlNbRepondu(e)}/${vlNbPresents(e)} ont répondu</p>
+    </div>
+    ${classement}
+    <div class="defi-actions tc-actions">
+      <button class="btn btn-soft btn-block" id="btn-vl-reveal" ${vl.busy ? 'disabled' : ''}>${vlRestant() > 0 ? 'Révéler sans attendre' : 'Révéler la réponse'}</button>
+    </div>`;
+  } else if (e.statut === 'reveal') {
+    const derniere = e.qIndex + 1 >= e.qTotal;
+    const total = Math.max(1, e.nAnswered);
+    corps = `
+    ${entete}
+    <div class="defi-meta"><span>Question ${e.qIndex + 1}/${e.qTotal}</span><span>${esc(e.question.categorie)} · ${NIVEAUX[e.question.niveau] || ''}</span></div>
+    <div class="card">
+      <p class="tc-q">${esc(e.question.question)}</p>
+      <!-- La référence passe AVANT les options, à l'inverse de la projection :
+           c'est ce que l'animateur va commenter à voix haute, elle ne doit pas
+           se retrouver sous la barre collante à l'instant précis où il en a
+           besoin. Sur le grand écran, elle reste en bas — la salle la lit
+           après avoir vu la réponse. -->
+      <p class="defi-ref-line" style="margin-top:2px"><span class="arrow">→</span>${esc(e.question.reference)} <span class="muted">· à commenter, Bible ouverte</span></p>
+      <div class="vl-options tc-liste">
+        ${e.question.options.map((o, i) => `
+        <div class="vl-opt ${i === e.question.bonne ? 'good' : 'dim'}">
+          <span class="vl-letter">${lettres[i]}</span>${esc(o)}
+          <span class="vl-dist"><i style="width:${Math.round(100 * (e.distribution[i] || 0) / total)}%"></i><b>${e.distribution[i] || 0}</b></span>
+        </div>`).join('')}
+      </div>
+    </div>
+    ${classement}
+    <div class="defi-actions tc-actions">
+      <button class="btn btn-primary btn-block" id="btn-vl-next" ${vl.busy ? 'disabled' : ''}>${derniere ? 'Voir le podium' : 'Question suivante'}</button>
+    </div>`;
+  } else { // done
+    corps = `
+    <div class="card center done-screen" style="padding:22px 18px">
+      <div class="seal">🌾</div>
+      <h2 style="font-family:var(--serif);margin:8px 0 4px">Beau moment ensemble !</h2>
+      ${e.bilan ? `<p class="defi-lead" style="margin:0">Ensemble, vous avez trouvé <b>${e.bilan.bonnes}</b> bonne${e.bilan.bonnes > 1 ? 's' : ''} réponse${e.bilan.bonnes > 1 ? 's' : ''} sur ${e.bilan.reponses}.</p>` : ''}
+    </div>
+    ${classement}
+    <div class="defi-actions tc-actions">
+      <button class="btn btn-ghost btn-block" id="btn-vl-fermer">Fermer</button>
+    </div>`;
+  }
+
+  el.innerHTML = `
+  <div class="fade">
+    <div class="vl-topline">
+      <button class="back-link" id="btn-vl-quitter" style="margin:0">‹ Quitter</button>
+      <span class="vl-code-mini">Télécommande</span>
+      <span class="vl-liens">
+        ${vlBasculeHTML()}
+        ${e.statut !== 'done' ? `<button class="linkbtn" id="btn-vl-end">Clore le quiz</button>` : ''}
+      </span>
+    </div>
+    ${vl.error ? `<p class="field-error" style="margin:0 4px 10px">${esc(vl.error)}</p>` : ''}
+    ${corps}
+  </div>`;
+
+  vlBasculeBind();
+  document.getElementById('btn-vl-quitter').onclick = () => {
+    if (e.statut === 'done' || confirm('Quitter l\'écran d\'animation ? Le quiz reste ouvert : tu pourras le reprendre depuis « Quiz dans ton église ».')) {
+      vlArreterPolling(); vl = { mode: 'menu' }; render();
+    }
+  };
+  const endB = document.getElementById('btn-vl-end');
+  if (endB) endB.onclick = () => { if (confirm('Clore le quiz pour tout le monde ?')) vlAvancer('end'); };
+  const s = document.getElementById('btn-vl-start');
+  if (s) s.onclick = () => vlAvancer('start');
+  const pc = document.getElementById('btn-vl-partager');
+  if (pc) pc.onclick = () => partager(texteCodeQuiz(e.code));
+  const rv = document.getElementById('btn-vl-reveal');
+  if (rv) rv.onclick = () => vlAvancer('reveal');
+  const nx = document.getElementById('btn-vl-next');
+  if (nx) nx.onclick = () => vlAvancer('next');
+  const fm = document.getElementById('btn-vl-fermer');
+  if (fm) fm.onclick = () => vlQuitter();
+}
+
+/* ---------- Grand écran autonome : saisie du code ----------
+   Le même code de 4 caractères que les participants : un seul code pour toute
+   la salle, vidéoprojecteur compris. Aucun compte, aucun prénom — cet écran
+   n'est pas un participant, il ne fait que regarder. */
+function renderVeilleeEcranCode() {
+  el.innerHTML = `
+  <div class="fade">
+    <button class="back-link" id="btn-vl-retour">‹ Quiz</button>
+    <div class="topbar"><div class="brand">
+      <h1 class="app-title">Grand écran <span class="seed">•</span> <span class="muted">pour la salle</span></h1>
+    </div></div>
+
+    <div class="card">
+      <form id="vl-ecran-form" novalidate>
+        <label class="lbl" for="vl-code">Le code du quiz</label>
+        <input class="field code-field vl-code-field" type="text" id="vl-code" maxlength="4" autocomplete="off"
+               autocapitalize="characters" spellcheck="false" placeholder="ABCD" value="${esc(vl.code)}">
+        <p class="muted" style="font-size:.85rem;margin:8px 2px 0">Celui que l'animateur t'a donné — le même que les participants saisissent. Cet écran affiche seulement : il ne pilote rien.</p>
+        ${vl.error ? `<p class="field-error">${esc(vl.error)}</p>` : ''}
+        <div class="defi-actions">
+          <button class="btn btn-primary" type="submit" ${vl.busy ? 'disabled' : ''}>${vl.busy ? 'Un instant…' : 'Afficher'}</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+
+  document.getElementById('btn-vl-retour').onclick = () => { vl = { mode: 'menu' }; render(); };
+  document.getElementById('vl-code').oninput = e => { vl.code = e.target.value.toUpperCase(); };
+  document.getElementById('vl-ecran-form').onsubmit = e => { e.preventDefault(); vlGrandEcran(); };
+}
+
+/* ---------- Grand écran autonome : ce que la salle voit ----------
+   Un client de plus, en lecture seule : il sonde l'état public et affiche.
+   Aucune commande, aucun appel authentifié, aucune révélation automatique —
+   sinon la salle piloterait la veillée. Il réutilise `body.quiz-proj` et les
+   styles de projection : c'est exactement leur usage. */
+function renderVeilleeProj() {
+  const e = vl.etat;
+  if (!e) {
+    el.innerHTML = `<div class="card center" style="padding:40px"><p class="muted" style="margin:0">Un instant…</p></div>`;
+    return;
+  }
+  const lettres = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+  let corps = '';
+  if (e.statut === 'lobby') {
+    corps = `
+    <div class="card vl-proj">
+      <p class="vl-invite">Sur vos téléphones : <b>${esc(location.host)}</b> › Sonder › Quiz dans ton église › <b>Rejoindre</b></p>
+      <div class="vl-code-big">${esc(e.code)}</div>
+      <p class="vl-nb">${e.nPlayers === 0 ? 'En attente des premiers participants…' : `${e.nPlayers} participant${e.nPlayers > 1 ? 's' : ''}`}</p>
+      <div class="vl-chips">${e.players.map(p => `<span class="vl-chip">${esc(p.prenom)}</span>`).join('')}</div>
+    </div>`;
+  } else if (e.statut === 'question') {
+    corps = `
+    <div class="defi-meta"><span>Question ${e.qIndex + 1}/${e.qTotal}</span><span>${esc(e.question.categorie)} · ${NIVEAUX[e.question.niveau] || ''}</span></div>
+    ${vlTimerHTML()}
+    <div class="card vl-proj">
+      <p class="vl-question">${esc(e.question.question)}</p>
+      <div class="vl-options">
+        ${e.question.options.map((o, i) => `<div class="vl-opt"><span class="vl-letter">${lettres[i]}</span>${esc(o)}</div>`).join('')}
+      </div>
+      <p class="vl-nb" id="vl-nb-rep">${vlNbRepondu(e)}/${vlNbPresents(e)} ont répondu</p>
+    </div>`;
+  } else if (e.statut === 'reveal') {
+    const total = Math.max(1, e.nAnswered);
+    corps = `
+    <div class="defi-meta"><span>Question ${e.qIndex + 1}/${e.qTotal}</span><span>${esc(e.question.categorie)} · ${NIVEAUX[e.question.niveau] || ''}</span></div>
+    <div class="vl-reveal${e.players.length ? ' duo' : ''}">
+      <div class="vl-reveal-main">
+        <div class="card vl-proj">
+          <p class="vl-question">${esc(e.question.question)}</p>
+          <div class="vl-options">
+            ${e.question.options.map((o, i) => `
+            <div class="vl-opt ${i === e.question.bonne ? 'good' : 'dim'}">
+              <span class="vl-letter">${lettres[i]}</span>${esc(o)}
+              <span class="vl-dist"><i style="width:${Math.round(100 * (e.distribution[i] || 0) / total)}%"></i><b>${e.distribution[i] || 0}</b></span>
+            </div>`).join('')}
+          </div>
+          <p class="defi-ref-line"><span class="arrow">→</span>${esc(e.question.reference)} <span class="muted">· à retrouver dans vos Bibles</span></p>
+        </div>
+      </div>
+      ${e.players.length ? `
+      <div class="vl-reveal-side">
+        <div class="section-title">En tête</div>
+        <div class="card">
+          ${e.players.slice(0, 5).map(p => `
+            <div class="rang-row ${p.rang === 1 ? 'top' : ''}">
+              <span class="rang">${rangLabel(p.rang)}</span>
+              <span class="rnom">${esc(p.prenom)}</span>
+              <span class="rscore">${p.score}</span>
+            </div>`).join('')}
+        </div>
+      </div>` : ''}
+    </div>`;
+  } else { // done
+    const podium = e.players.slice(0, 3);
+    corps = `
+    <div class="card vl-proj done-screen">
+      <div class="seal">🌾</div>
+      <h2 style="font-family:var(--serif)">Beau moment ensemble !</h2>
+      ${e.bilan ? `<p class="defi-word">Ensemble, vous avez trouvé <b>${e.bilan.bonnes}</b> bonne${e.bilan.bonnes > 1 ? 's' : ''} réponse${e.bilan.bonnes > 1 ? 's' : ''} sur ${e.bilan.reponses}. Chaque référence est une porte vers le texte.</p>` : ''}
+      <div class="vl-podium">
+        ${podium.map(p => `<div class="vl-pod r${p.rang}"><span class="medal">${['🥇', '🥈', '🥉'][p.rang - 1] || '🌱'}</span><b>${esc(p.prenom)}</b><span class="pts">${p.score} pts</span></div>`).join('')}
+      </div>
+    </div>
+    ${e.players.length > 3 ? `
+    <div class="card">
+      ${e.players.slice(3).map(p => `
+        <div class="rang-row"><span class="rang">${rangLabel(p.rang)}</span><span class="rnom">${esc(p.prenom)}</span><span class="rscore">${p.score}</span></div>`).join('')}
+    </div>` : ''}`;
+  }
+
+  el.innerHTML = `
+  <div class="fade">
+    <div class="vl-topline">
+      <button class="back-link" id="btn-vl-quitter" style="margin:0">‹ Quitter</button>
+      ${e.statut !== 'lobby' ? `<span class="vl-code-mini">Quiz ${esc(e.code)}</span>` : ''}
+    </div>
+    ${corps}
+  </div>`;
+
+  document.getElementById('btn-vl-quitter').onclick = () => {
+    if (confirm('Fermer le grand écran ? Le quiz continue — l\'animateur garde la main.')) vlQuitter();
+  };
 }
 
 /* ---------- Téléphone (participant) ---------- */

@@ -248,8 +248,13 @@
    Veillée en direct — grand écran projeté + téléphones des participants.
    ========================================================================== */
 
-.vl-topline { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+/* La bascule un écran / deux écrans s'ajoute à cette ligne : à l'étroit, elle
+   passe à deux rangs plutôt que d'écraser « Clore le quiz ». */
+.vl-topline { display: flex; align-items: center; justify-content: space-between; gap: 6px 10px; margin-bottom: 10px; flex-wrap: wrap; }
 .vl-code-mini { font-size: .82rem; font-weight: 700; letter-spacing: .08em; color: var(--ink-soft); }
+/* Les liens de commande restent groupés et à droite : s'ils passent au rang
+   suivant, ils y descendent ensemble plutôt que d'échouer seuls à gauche. */
+.vl-liens { display: flex; align-items: center; gap: 12px; margin-left: auto; }
 
 /* projection : tout est plus grand, lisible du fond de la salle */
 .vl-proj { text-align: center; padding: 26px 20px; }
@@ -384,6 +389,55 @@ body.quiz-proj .vl-reveal .section-title { margin-top: 0; } /* l'écart vient de
   body.quiz-proj .vl-reveal.duo .vl-question { font-size: clamp(1.7rem, 2.9vw, 2.8rem); margin: 4px 0 20px; }
   body.quiz-proj .vl-reveal.duo .vl-proj { padding: 26px 28px; }
   body.quiz-proj .vl-reveal.duo .rang-row { font-size: clamp(1.2rem, 2vw, 1.9rem); padding: 12px 6px; }
+}
+
+/* ============================================================================
+   Télécommande de l'animateur — le mode « deux écrans »
+   ----------------------------------------------------------------------------
+   Exactement l'inverse de la projection : la salle a son grand écran, et
+   l'animateur tient un téléphone dans une salle sombre. Ni `body.quiz-proj`,
+   ni rien de géant : du texte à taille normale, dense, pour que le code, la
+   question, le compte des réponses et le classement entier tiennent ensemble
+   sous les yeux. Aucune de ces règles ne s'applique au mode un seul écran.
+   ========================================================================== */
+.tc-head { text-align: center; padding: 14px 16px; }
+.tc-code-lbl { font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+.tc-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 2.4rem; font-weight: 800; letter-spacing: .22em;
+  color: var(--accent-ink); line-height: 1.1; margin: 2px 0 0; padding-left: .22em;
+}
+.tc-invite { font-size: .8rem; color: var(--ink-soft); margin: 6px 0 0; word-break: break-word; }
+.tc-aide { font-size: .82rem; color: var(--ink-soft); margin: 12px 0 0; }
+/* la question : lisible, mais elle ne mange pas l'écran — la salle l'a en grand */
+.tc-q { font-family: var(--serif); font-size: 1.05rem; font-weight: 700; line-height: 1.35; margin: 0 0 12px; }
+/* les options en liste serrée : l'animateur les relit, il ne les projette pas */
+.tc-liste { gap: 6px; }
+.tc-liste .vl-opt {
+  display: grid; grid-template-columns: auto minmax(0, 1fr);
+  align-items: center; gap: 6px 10px;
+  font-size: .95rem; padding: 9px 11px; border-radius: 10px; border-width: 1px;
+}
+.tc-liste .vl-letter { width: 26px; height: 26px; flex-basis: 26px; font-size: .82rem; }
+/* la jauge des votes prend sa propre ligne : sinon elle chasse la réponse hors du téléphone */
+.tc-liste .vl-dist { grid-column: 1 / -1; margin-left: 0; min-width: 0; }
+.tc-liste .vl-dist i { height: 6px; }
+.tc-liste .vl-dist b { font-size: .85rem; }
+/* le compteur vivant, patché en place par vlPatch — même texte que sur la projection */
+.tc-nb { text-align: center; font-weight: 650; color: var(--ink-soft); margin: 12px 0 0; }
+.tc-classement { max-height: 42vh; overflow-y: auto; }
+/* les commandes restent sous le pouce, comme la barre collante de la projection */
+.tc-actions {
+  position: sticky; bottom: 0; z-index: 5;
+  margin-top: 14px;
+  padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+.tc-actions::before {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 100%;
+  height: 24px; pointer-events: none;
+  background: linear-gradient(to top, var(--bg), transparent);
 }
 
 /* décompte : la barre existante, plus épaisse, avec le chiffre à côté */
