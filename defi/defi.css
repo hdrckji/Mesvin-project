@@ -316,6 +316,76 @@ body.quiz-proj .done-screen h2 { font-size: clamp(2.1rem, 4vw, 3.4rem); }
 body.quiz-proj .done-screen .seal { font-size: clamp(3rem, 6vw, 5rem); }
 body.quiz-proj .defi-word { font-size: clamp(1.3rem, 2.3vw, 2rem); line-height: 1.4; }
 
+/* ---------- Commandes de l'animateur : toujours sous la main ----------
+   Retour de terrain : sous quatre options géantes, « Révéler sans attendre »
+   et « Question suivante » tombaient hors de l'écran — l'animateur devait
+   défiler, ou subissait le chrono faute d'avoir jamais vu le bouton. La barre
+   se colle donc en bas du champ de vision, avec un fond opaque et un dégradé
+   qui la détache du contenu qui passe dessous. Collante, pas fixe : elle
+   marche à l'identique sur vidéoprojecteur et sur téléphone. */
+body.quiz-proj .vl-actions {
+  position: sticky; bottom: 0; z-index: 5;
+  margin-top: 18px;
+  padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+body.quiz-proj .vl-actions::before {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 100%;
+  height: 28px; pointer-events: none;
+  background: linear-gradient(to top, var(--bg), transparent);
+}
+/* la barre porte son propre souffle : la marge basse de #app n'a plus lieu d'être */
+body.quiz-proj #app { padding-bottom: 24px; }
+/* projeté, les deux boutons de l'attente tiennent côte à côte : moins de hauteur volée */
+@media (min-width: 900px) {
+  body.quiz-proj .vl-actions { display: flex; gap: 14px; }
+  body.quiz-proj .vl-actions .btn { flex: 1 1 0; min-width: 0; }
+  body.quiz-proj .vl-actions .btn + .btn { margin-top: 0; }
+}
+
+/* ---------- Révélation projetée : le classement à côté, pas dessous ----------
+   Sur grand écran, « En tête » passe à droite de la question : l'animateur
+   voit d'un coup l'œil la bonne réponse, la distribution et les scores.
+   Sur téléphone (une seule colonne), on garde l'empilement d'origine. */
+.vl-reveal { display: grid; gap: 14px; }
+.vl-reveal > * { min-width: 0; } /* une colonne ne s'élargit pas sur son contenu */
+.vl-reveal .section-title { margin-top: 0; } /* l'écart vient de la grille */
+/* Sous le seuil des deux colonnes, la jauge des votes (180 px imposés) poussait
+   l'option hors de l'écran par la droite. Grille plutôt que rangée : la
+   pastille et la réponse gardent leur ligne, la jauge s'étale juste dessous. */
+@media (max-width: 899px) {
+  body.quiz-proj .vl-opt {
+    display: grid; grid-template-columns: auto minmax(0, 1fr);
+    align-items: center; gap: 12px 18px;
+  }
+  /* margin-left:auto rétrécirait la jauge dans la grille : elle doit s'étaler */
+  body.quiz-proj .vl-dist { grid-column: 1 / -1; margin-left: 0; min-width: 0; }
+}
+/* Téléphone (l'église sans vidéoprojecteur anime depuis un téléphone) : on
+   rétrécit l'habillage — pastille, marges — jamais le texte des options, qui
+   reste à sa taille de projection. */
+@media (max-width: 640px) {
+  body.quiz-proj .vl-proj { padding: 20px 16px; }
+  body.quiz-proj .vl-opt { gap: 10px 12px; padding: 14px; }
+  body.quiz-proj .vl-letter { width: 40px; height: 40px; flex-basis: 40px; font-size: 1.1rem; }
+}
+/* `duo` = le classement est bien là (sinon la question garde toute la largeur) */
+@media (min-width: 900px) {
+  body.quiz-proj .vl-reveal.duo {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 24px; align-items: start;
+  }
+  /* colonne plus étroite : une seule colonne d'options, et l'échelle ajustée
+     pour que la question, les votes et les scores tiennent d'un seul écran */
+  body.quiz-proj .vl-reveal.duo .vl-options { grid-template-columns: 1fr; }
+  body.quiz-proj .vl-reveal.duo .vl-opt { font-size: clamp(1.3rem, 2vw, 2.2rem); padding: 16px 22px; }
+  body.quiz-proj .vl-reveal.duo .vl-letter { width: 50px; height: 50px; flex-basis: 50px; font-size: 1.4rem; }
+  body.quiz-proj .vl-reveal.duo .vl-question { font-size: clamp(1.7rem, 2.9vw, 2.8rem); margin: 4px 0 20px; }
+  body.quiz-proj .vl-reveal.duo .vl-proj { padding: 26px 28px; }
+  body.quiz-proj .vl-reveal.duo .rang-row { font-size: clamp(1.2rem, 2vw, 1.9rem); padding: 12px 6px; }
+}
+
 /* décompte : la barre existante, plus épaisse, avec le chiffre à côté */
 .vl-timer-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .vl-timer-row .defi-progress { flex: 1; height: 10px; margin: 0; }

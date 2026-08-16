@@ -1960,7 +1960,13 @@ function vlTimerHTML() {
   </div>`;
 }
 
-/* ---------- Grand écran (animateur) ---------- */
+/* ---------- Grand écran (animateur) ----------
+   Retour de terrain (veillée à 17 participants) : l'animateur ne voyait ni
+   « Révéler sans attendre » ni « Question suivante », relégués sous quatre
+   options géantes — il fallait défiler, et il a subi le chrono à chaque
+   question. Toutes les commandes portent donc la classe `vl-actions` : une
+   barre collante en bas d'écran (defi.css), atteignable sans défiler,
+   projecteur comme téléphone. */
 function renderVeilleeHost() {
   const e = vl.etat;
   if (!e) {
@@ -1978,9 +1984,9 @@ function renderVeilleeHost() {
       <p class="vl-nb">${e.nPlayers === 0 ? 'En attente des premiers participants…' : `${e.nPlayers} participant${e.nPlayers > 1 ? 's' : ''}`}</p>
       <div class="vl-chips">${e.players.map(p => `<span class="vl-chip">${esc(p.prenom)}</span>`).join('')}</div>
     </div>
-    <div class="defi-actions">
+    <div class="defi-actions vl-actions">
       <button class="btn btn-primary btn-block" id="btn-vl-start" ${e.nPlayers === 0 || vl.busy ? 'disabled' : ''}>Lancer le quiz</button>
-      <button class="btn btn-soft btn-block" id="btn-vl-partager" style="margin-top:8px">Partager le code</button>
+      <button class="btn btn-soft btn-block" id="btn-vl-partager">Partager le code</button>
     </div>`;
   } else if (e.statut === 'question') {
     corps = `
@@ -1993,36 +1999,42 @@ function renderVeilleeHost() {
       </div>
       <p class="vl-nb" id="vl-nb-rep">${e.nAnswered}/${e.nPlayers} ont répondu</p>
     </div>
-    <div class="defi-actions">
-      <button class="btn btn-soft btn-block" id="btn-vl-reveal" ${vl.busy ? 'disabled' : ''}>Révéler sans attendre</button>
+    <div class="defi-actions vl-actions">
+      <button class="btn btn-soft btn-block" id="btn-vl-reveal" ${vl.busy ? 'disabled' : ''}>${vlRestant() > 0 ? 'Révéler sans attendre' : 'Révéler la réponse'}</button>
     </div>`;
   } else if (e.statut === 'reveal') {
     const derniere = e.qIndex + 1 >= e.qTotal;
     const total = Math.max(1, e.nAnswered);
     corps = `
     <div class="defi-meta"><span>Question ${e.qIndex + 1}/${e.qTotal}</span><span>${esc(e.question.categorie)} · ${NIVEAUX[e.question.niveau] || ''}</span></div>
-    <div class="card vl-proj">
-      <p class="vl-question">${esc(e.question.question)}</p>
-      <div class="vl-options">
-        ${e.question.options.map((o, i) => `
-        <div class="vl-opt ${i === e.question.bonne ? 'good' : 'dim'}">
-          <span class="vl-letter">${lettres[i]}</span>${esc(o)}
-          <span class="vl-dist"><i style="width:${Math.round(100 * (e.distribution[i] || 0) / total)}%"></i><b>${e.distribution[i] || 0}</b></span>
-        </div>`).join('')}
+    <div class="vl-reveal${e.players.length ? ' duo' : ''}">
+      <div class="vl-reveal-main">
+        <div class="card vl-proj">
+          <p class="vl-question">${esc(e.question.question)}</p>
+          <div class="vl-options">
+            ${e.question.options.map((o, i) => `
+            <div class="vl-opt ${i === e.question.bonne ? 'good' : 'dim'}">
+              <span class="vl-letter">${lettres[i]}</span>${esc(o)}
+              <span class="vl-dist"><i style="width:${Math.round(100 * (e.distribution[i] || 0) / total)}%"></i><b>${e.distribution[i] || 0}</b></span>
+            </div>`).join('')}
+          </div>
+          <p class="defi-ref-line"><span class="arrow">→</span>${esc(e.question.reference)} <span class="muted">· à retrouver dans vos Bibles</span></p>
+        </div>
       </div>
-      <p class="defi-ref-line"><span class="arrow">→</span>${esc(e.question.reference)} <span class="muted">· à retrouver dans vos Bibles</span></p>
+      ${e.players.length ? `
+      <div class="vl-reveal-side">
+        <div class="section-title">En tête</div>
+        <div class="card">
+          ${e.players.slice(0, 5).map(p => `
+            <div class="rang-row ${p.rang === 1 ? 'top' : ''}">
+              <span class="rang">${rangLabel(p.rang)}</span>
+              <span class="rnom">${esc(p.prenom)}</span>
+              <span class="rscore">${p.score}</span>
+            </div>`).join('')}
+        </div>
+      </div>` : ''}
     </div>
-    ${e.players.length ? `
-    <div class="section-title">En tête</div>
-    <div class="card">
-      ${e.players.slice(0, 5).map(p => `
-        <div class="rang-row ${p.rang === 1 ? 'top' : ''}">
-          <span class="rang">${rangLabel(p.rang)}</span>
-          <span class="rnom">${esc(p.prenom)}</span>
-          <span class="rscore">${p.score}</span>
-        </div>`).join('')}
-    </div>` : ''}
-    <div class="defi-actions">
+    <div class="defi-actions vl-actions">
       <button class="btn btn-primary btn-block" id="btn-vl-next" ${vl.busy ? 'disabled' : ''}>${derniere ? 'Voir le podium' : 'Question suivante'}</button>
     </div>`;
   } else { // done
@@ -2041,7 +2053,7 @@ function renderVeilleeHost() {
       ${e.players.slice(3).map(p => `
         <div class="rang-row"><span class="rang">${rangLabel(p.rang)}</span><span class="rnom">${esc(p.prenom)}</span><span class="rscore">${p.score}</span></div>`).join('')}
     </div>` : ''}
-    <div class="defi-actions">
+    <div class="defi-actions vl-actions">
       <button class="btn btn-ghost btn-block" id="btn-vl-fermer">Fermer</button>
     </div>`;
   }
