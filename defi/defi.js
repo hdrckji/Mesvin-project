@@ -710,6 +710,9 @@ async function revanche(opponent) {
    Rendu
    ========================================================================== */
 function render() {
+  // Le grand écran de l'animateur (veillée « host ») se projette : on le
+  // signale au <body> pour casser la largeur mobile et tout agrandir (CSS).
+  document.body.classList.toggle('quiz-proj', vue.ecran === 'veillee' && !!vl && vl.mode === 'host');
   if (vue.ecran === 'solo') return renderSolo();
   if (vue.ecran === 'question') return renderQuestion();
   if (vue.ecran === 'fin') return renderFin();
