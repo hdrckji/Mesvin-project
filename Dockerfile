@@ -18,7 +18,7 @@ RUN rm -rf /app/public && mkdir -p /app/public
 # du site doit être ajouté ici, sinon il n'existe pas en production.
 WORKDIR /app/public
 COPY index.html app.css app.js icons.js pierres.js api-client.js sw.js manifest.webmanifest icon.svg ./
-COPY icon-180.png icon-192.png icon-512.png icon-maskable-512.png og-image.png robots.txt sitemap.xml ./
+COPY icon-180.png icon-192.png icon-512.png icon-maskable-512.png badge-96.png og-image.png robots.txt sitemap.xml ./
 # « Avant ou après ? » (l'épreuve de la frise, reliée à Sonder) — et l'ancienne
 # adresse d'essai, qui redirige vers /frise/.
 COPY frise/ ./frise/

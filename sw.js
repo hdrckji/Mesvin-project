@@ -6,12 +6,12 @@
    bloc (tout ou rien) ; la Bible complète suit en best-effort : un livre qui
    rate ne prive pas du hors-ligne de base, il se rattrapera à l'usage. */
 
-const CACHE = 'graine-v38';
+const CACHE = 'graine-v39';
 // La coquille : le minimum pour que l'appli s'ouvre et vive hors-ligne.
 const SHELL = [
   '.', 'index.html', 'app.css', 'app.js', 'icons.js', 'api-client.js', 'pierres.js',
   'data/verses.json', 'data/collections.json', 'icon.svg', 'manifest.webmanifest',
-  'icon-180.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png',
+  'icon-180.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'badge-96.png',
   'lire/', 'lire/index.html', 'lire/lire.css', 'lire/lire.js',
   'defi/', 'defi/index.html', 'defi/defi.css', 'defi/defi.js',
   'defi/data/questions.json',
@@ -107,7 +107,7 @@ self.addEventListener('push', e => {
     body: data.body || '',
     // PNG obligatoire : Android n'affiche pas les icônes SVG de notification.
     icon: 'icon-192.png',
-    badge: 'icon-192.png',
+    badge: 'badge-96.png',
     tag: data.tag || 'verset-offert',
     data: { url: data.url || '/' }
   }));
