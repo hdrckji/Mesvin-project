@@ -234,6 +234,11 @@ check "Léa rejoint → 201"               201 "$(api POST "/api/veillees/$VCODE
 PKEY2="$(jval .playerKey)"
 api GET "/api/veillees/$VCODE/state" > /dev/null
 check "2 participants visibles"         2   "$(jval .veillee.nPlayers)"
+# Prénoms à apostrophe : sans eux, N'Golo ou M'Barka resteraient à la porte.
+check "apostrophe droite → 201"         201 "$(api POST "/api/veillees/$VCODE/join" '' "{\"prenom\":\"N'Golo\"}")"
+check "apostrophe typographique → 201"  201 "$(api POST "/api/veillees/$VCODE/join" '' "{\"prenom\":\"M’Barka\"}")"
+check "apostrophe seule → 422"          422 "$(api POST "/api/veillees/$VCODE/join" '' "{\"prenom\":\"'\"}")"
+check "prénom d'un caractère → 422"     422 "$(api POST "/api/veillees/$VCODE/join" '' '{"prenom":"A"}')"
 
 say "Veillée — pilotage (animateur seul)"
 check "u3 pilote → 403"                 403 "$(api POST "/api/veillees/$VCODE/advance" "$TOKEN3" '{"action":"start"}')"

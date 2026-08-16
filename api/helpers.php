@@ -224,7 +224,10 @@ function user_payload(array $user): array {
 
 /**
  * Valide un pseudo : 2 à 20 caractères, lettres (accents inclus), chiffres,
- * espaces et tirets, avec au moins une lettre ou un chiffre.
+ * espaces, tirets et apostrophes, avec au moins une lettre ou un chiffre.
+ * Les apostrophes — droite et typographique, comme pour les noms de groupe —
+ * sont admises : sans elles, N'Golo, M'Barka ou D'Amico ne pourraient pas
+ * rejoindre une veillée.
  * Retourne le pseudo nettoyé, ou null s'il est invalide.
  */
 function validate_pseudo(mixed $pseudo): ?string {
@@ -236,7 +239,7 @@ function validate_pseudo(mixed $pseudo): ?string {
     if ($length < 2 || $length > 20) {
         return null;
     }
-    if (!preg_match('/^[\p{L}\p{N} \-]+$/u', $pseudo) || !preg_match('/[\p{L}\p{N}]/u', $pseudo)) {
+    if (!preg_match("/^[\p{L}\p{N} '’\-]+\$/u", $pseudo) || !preg_match('/[\p{L}\p{N}]/u', $pseudo)) {
         return null;
     }
     return $pseudo;

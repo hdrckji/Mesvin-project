@@ -391,7 +391,7 @@ function handle_veillees_join(PDO $pdo, string $code): never {
     }
     $prenom = validate_pseudo(read_json_body()['prenom'] ?? null);
     if ($prenom === null) {
-        json_error('Ton prénom : 2 à 20 caractères (lettres, chiffres, espaces ou tirets).', 422);
+        json_error('Ton prénom : 2 à 20 caractères (lettres, chiffres, espaces, tirets ou apostrophes).', 422);
     }
 
     $st = $pdo->prepare('SELECT COUNT(*) AS n FROM veillee_players WHERE veillee_id = ?');

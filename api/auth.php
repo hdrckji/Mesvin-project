@@ -156,7 +156,7 @@ function handle_auth_verify(PDO $pdo): never {
         $pseudo = validate_pseudo($body['pseudo'] ?? null);
         if ($pseudo === null) {
             json_error(
-                'Choisis un pseudo : 2 à 20 caractères (lettres, chiffres, espaces ou tirets).',
+                'Choisis un pseudo : 2 à 20 caractères (lettres, chiffres, espaces, tirets ou apostrophes).',
                 422,
                 ['needPseudo' => true]
             );
@@ -268,7 +268,7 @@ function handle_auth_google(PDO $pdo): never {
         $pseudo = validate_pseudo($body['pseudo'] ?? null) ?? google_derive_pseudo($info);
         if ($pseudo === null) {
             json_error(
-                'Choisis un pseudo : 2 à 20 caractères (lettres, chiffres, espaces ou tirets).',
+                'Choisis un pseudo : 2 à 20 caractères (lettres, chiffres, espaces, tirets ou apostrophes).',
                 422,
                 ['needPseudo' => true]
             );
@@ -301,7 +301,7 @@ function handle_me_pseudo(PDO $pdo): never {
     $user = require_user($pdo);
     $pseudo = validate_pseudo(read_json_body()['pseudo'] ?? null);
     if ($pseudo === null) {
-        json_error('Pseudo invalide : 2 à 20 caractères (lettres, chiffres, espaces ou tirets).', 422);
+        json_error('Pseudo invalide : 2 à 20 caractères (lettres, chiffres, espaces, tirets ou apostrophes).', 422);
     }
     $st = $pdo->prepare('UPDATE users SET pseudo = ? WHERE id = ?');
     $st->execute([$pseudo, $user['id']]);
