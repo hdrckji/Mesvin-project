@@ -133,6 +133,7 @@
     // Onglet « Activité » : le journal serveur, et les événements vus par Brevo.
     async adminJournal() { return call('GET', '/api/admin/journal'); },
     async adminBrevo() { return call('GET', '/api/admin/brevo'); },
+    async adminVisites() { return call('GET', '/api/admin/visites'); },
 
     /* ---- veillées en direct ---- */
     async createVeillee(opts) { return (await call('POST', '/api/veillees', opts || {})).veillee; },

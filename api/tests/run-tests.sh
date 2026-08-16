@@ -65,7 +65,7 @@ require $argv[1] . "/api/db.php";
 $pdo = new PDO("sqlite:" . $argv[2]);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 db_migrate($pdo);
-$recentes = ["veillee_presence"];
+$recentes = ["visites"];
 foreach ($recentes as $t) { $pdo->exec("DROP TABLE " . $t); }
 db_migrate($pdo);
 $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type = \"table\"")->fetchAll(PDO::FETCH_COLUMN);
@@ -352,6 +352,55 @@ api GET "/api/veillees/$VCODE/state?player=$PKEY2" > /dev/null
 check "bilan collectif présent"         true "$(jval '.veillee | has("bilan")')"
 check "Léa a un rang"                   true "$(jval '.veillee.me.rang >= 1')"
 check "rejoindre une veillée close → 410" 410 "$(api POST "/api/veillees/$VCODE/join" '' '{"prenom":"Paul"}')"
+
+# ---------------------------------------------------------------------------
+# « De qui parle-t-on ? » — veillée PV- : la correspondance des réponses
+# tolère UNE faute de frappe (Levenshtein ≤ 1) sur une cible d'au moins
+# 5 caractères, jamais une confusion : cible courte (Saül) en exacte
+# seulement, et saisie ambiguë entre deux portraits du paquet refusée.
+# Jubal et Tubal (Genèse 4) se ressemblent à une lettre près : parfaits
+# pour prouver qu'on ne devine jamais.
+say "Portrait — veillée PV- : une faute tolérée, jamais une confusion"
+IND5='["Indice un","Indice deux","Indice trois","Indice quatre","Indice cinq"]'
+PDECK="[{\"reponse\":\"Moïse\",\"accepte\":[],\"indices\":$IND5},
+        {\"reponse\":\"Saül\",\"accepte\":[],\"indices\":$IND5},
+        {\"reponse\":\"Jubal\",\"accepte\":[],\"indices\":$IND5},
+        {\"reponse\":\"Tubal\",\"accepte\":[],\"indices\":$IND5}]"
+check "ouvrir la veillée → 200"         200 "$(api POST /api/portrait/veillee '' "{\"deck\":$PDECK}")"
+PCODE="$(jval .code)"
+PCLE="$(jval .cle)"
+check "code au format PV-XXXXX"         PV  "${PCODE%-*}"
+api POST "/api/portrait/veillee/$PCODE/rejoindre" '' '{"prenom":"Marc"}' > /dev/null
+PJ1="$(jval .jeton)"
+api POST "/api/portrait/veillee/$PCODE/rejoindre" '' '{"prenom":"Léa"}' > /dev/null
+PJ2="$(jval .jeton)"
+check "lancer le premier portrait → 200" 200 "$(api POST "/api/portrait/veillee/$PCODE/avancer" '' "{\"cle\":\"$PCLE\",\"action\":\"indice\"}")"
+
+say "Portrait — faute tolérée sur nom long (Moïse), deux fautes refusées"
+check "« Moisse » (1 faute) → 200"      200  "$(api POST "/api/portrait/veillee/$PCODE/reponse" '' "{\"jeton\":\"$PJ1\",\"carte\":1,\"texte\":\"Moisse\"}")"
+check "→ accepté (bon = true)"          true "$(jval .moi.bon)"
+check "→ 5 points au premier indice"    5    "$(jval .moi.points)"
+check "« Msoe » (2 fautes) → 200"       200  "$(api POST "/api/portrait/veillee/$PCODE/reponse" '' "{\"jeton\":\"$PJ2\",\"carte\":1,\"texte\":\"Msoe\"}")"
+check "→ refusé (bon = false)"          false "$(jval .moi.bon)"
+api POST "/api/portrait/veillee/$PCODE/avancer" '' "{\"cle\":\"$PCLE\",\"action\":\"reveler\"}" > /dev/null
+api POST "/api/portrait/veillee/$PCODE/avancer" '' "{\"cle\":\"$PCLE\",\"action\":\"suivant\"}" > /dev/null
+
+say "Portrait — nom court (Saül) : correspondance exacte seulement"
+check "« Paul » pour Saül → 200"        200   "$(api POST "/api/portrait/veillee/$PCODE/reponse" '' "{\"jeton\":\"$PJ1\",\"carte\":2,\"texte\":\"Paul\"}")"
+check "→ refusé (jamais de confusion)"  false "$(jval .moi.bon)"
+check "« Saül » exact → 200"            200   "$(api POST "/api/portrait/veillee/$PCODE/reponse" '' "{\"jeton\":\"$PJ2\",\"carte\":2,\"texte\":\"Saül\"}")"
+check "→ accepté"                       true  "$(jval .moi.bon)"
+api POST "/api/portrait/veillee/$PCODE/avancer" '' "{\"cle\":\"$PCLE\",\"action\":\"reveler\"}" > /dev/null
+api POST "/api/portrait/veillee/$PCODE/avancer" '' "{\"cle\":\"$PCLE\",\"action\":\"suivant\"}" > /dev/null
+
+say "Portrait — ambigu entre deux portraits du paquet : on refuse, on ne devine pas"
+check "« Zubal » (proche de Jubal ET Tubal) → 200" 200 "$(api POST "/api/portrait/veillee/$PCODE/reponse" '' "{\"jeton\":\"$PJ1\",\"carte\":3,\"texte\":\"Zubal\"}")"
+check "→ refusé (ambigu)"               false "$(jval .moi.bon)"
+check "« Jubal » exact malgré le voisin Tubal → 200" 200 "$(api POST "/api/portrait/veillee/$PCODE/reponse" '' "{\"jeton\":\"$PJ2\",\"carte\":3,\"texte\":\"Jubal\"}")"
+check "→ accepté (l'exactitude prime)"  true  "$(jval .moi.bon)"
+api GET "/api/portrait/veillee/$PCODE/etat" > /dev/null
+check "classement : Léa devant (10 pts)" "Léa 10" "$(jval '"\(.participants[0].prenom) \(.participants[0].score)"')"
+check "Marc garde ses 5 points"          5 "$(jval '.participants[] | select(.prenom == "Marc") | .score')"
 
 # ---------------------------------------------------------------------------
 # Groupes d'église (fondations serveur — aucune interface encore).
@@ -684,6 +733,17 @@ ALICE_ID="$(jval '.users[] | select(.email == "alice@example.org") | .id')"
 check "alice se supprime elle-même → 400" 400 "$(api DELETE "/api/admin/users/$ALICE_ID" "$TOKEN1")"
 check "id inexistant → 404"             404 "$(api DELETE /api/admin/users/999999 "$TOKEN1")"
 check "suppression par non-admin → 403" 403 "$(api DELETE "/api/admin/users/$ALICE_ID" "$TOKEN3")"
+
+say "Fréquentation — compteurs anonymes"
+check "signal accepté → 200"            200 "$(api POST /api/visite '' '{"page":"lire"}')"
+check "second signal → 200"             200 "$(api POST /api/visite '' '{"page":"lire"}')"
+check "page hors liste : avalée → 200"  200 "$(api POST /api/visite '' '{"page":"nimporte"}')"
+check "rapport sans compte → 401"       401 "$(api GET /api/admin/visites)"
+check "rapport non-admin → 403"         403 "$(api GET /api/admin/visites "$TOKEN3")"
+check "rapport admin → 200"             200 "$(api GET /api/admin/visites "$TOKEN1")"
+check "2 ouvertures comptées sur lire"  2   "$(jval '.parPage[] | select(.page == "lire") | .n')"
+check "la page hors liste n'existe pas" ""  "$(jval '.parPage[] | select(.page == "nimporte") | .n')"
+check "le jour du signal est là"        true "$(jval '.parJour | length >= 1')"
 
 say "Administration — suppression totale d'un compte (u4 jetable)"
 api POST /api/auth/request-code '' '{"email":"david@example.org"}' > /dev/null

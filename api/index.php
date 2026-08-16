@@ -31,6 +31,7 @@ require __DIR__ . '/frise.php';
 require __DIR__ . '/epreuve.php';
 require __DIR__ . '/portrait.php';
 require __DIR__ . '/admin.php';
+require __DIR__ . '/visites.php';
 require __DIR__ . '/push.php';
 
 set_exception_handler(function (Throwable $e): void {
@@ -211,6 +212,7 @@ if ($path === '/api/cron/notify'      && $method === 'GET')  handle_cron_notify(
 if ($path === '/api/admin/users'   && $method === 'GET') handle_admin_users($pdo);
 if ($path === '/api/admin/log'     && $method === 'GET') handle_admin_log_get($pdo);
 if ($path === '/api/admin/journal' && $method === 'GET') handle_admin_journal($pdo);
+if ($path === '/api/admin/visites' && $method === 'GET') handle_admin_visites($pdo);
 if ($path === '/api/admin/brevo'   && $method === 'GET') handle_admin_brevo($pdo);
 if (preg_match('#^/api/admin/users/([0-9]+)$#', $path, $m) && $method === 'DELETE') {
     handle_admin_user_delete($pdo, (int) $m[1]);
@@ -224,6 +226,9 @@ if (preg_match('#^/api/admin/questions/([A-Za-z0-9-]{1,40})/restore$#', $path, $
 }
 
 /* ---- Veillées en direct -------------------------------------------------------- */
+/* ---- Fréquentation : le signal anonyme (visites.php) ---- */
+if ($path === '/api/visite' && $method === 'POST') handle_visite_post($pdo);
+
 if ($path === '/api/veillees' && $method === 'POST') handle_veillees_create($pdo);
 if (preg_match('#^/api/veillees/([A-Za-z0-9]{4})/(state|join|answer|advance)$#', $path, $m)) {
     $code = strtoupper($m[1]);

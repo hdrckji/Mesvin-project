@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM veillee_presence LIMIT 1');
+        $pdo->query('SELECT 1 FROM visites LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -494,6 +494,16 @@ function db_migrate(PDO $pdo): void {
                 last_seen DATETIME NOT NULL,
                 PRIMARY KEY (veillee_id, player_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Fréquentation : de simples compteurs par jour et par page —
+            // AUCUN identifiant, aucune adresse, aucun cookie. On sait
+            // « combien d'ouvertures », jamais qui. Voir api/visites.php.
+            'CREATE TABLE IF NOT EXISTS visites (
+                jour CHAR(10) NOT NULL,
+                page VARCHAR(30) NOT NULL,
+                n INT UNSIGNED NOT NULL DEFAULT 0,
+                PRIMARY KEY (jour, page)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
         ];
     } else {
         $ddl = [
@@ -864,6 +874,14 @@ function db_migrate(PDO $pdo): void {
                 player_id INTEGER NOT NULL,
                 last_seen TEXT NOT NULL,
                 PRIMARY KEY (veillee_id, player_id)
+            )',
+
+            // Fréquentation — voir le dialecte MySQL ci-dessus.
+            'CREATE TABLE IF NOT EXISTS visites (
+                jour TEXT NOT NULL,
+                page TEXT NOT NULL,
+                n INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (jour, page)
             )',
         ];
     }
