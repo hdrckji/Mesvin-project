@@ -176,6 +176,20 @@
   .proj-classement .frow { font-size: clamp(1.1rem, 2.6vw, 1.7rem); padding: 14px 8px; }
   .fade { animation: fade .35s ease; }
   @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+  /* ---- Projection : tout plus grand pour le fond de la salle (harmonisé avec
+     le grand écran du quiz). Ne touche que la vue projetée (.wrap.proj). ---- */
+  .wrap.proj { max-width: min(1550px, 95vw); }
+  .wrap.proj .proj-carte .titre { font-size: clamp(1.9rem, 4.4vw, 3.4rem); }
+  .wrap.proj .proj-carte .lbl { font-size: clamp(1rem, 1.8vw, 1.5rem); }
+  .wrap.proj .proj-opts { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 18px; }
+  .wrap.proj .proj-opts .opt { font-size: clamp(1.5rem, 2.8vw, 2.6rem); padding: 22px 24px; }
+  .wrap.proj .proj-etat { font-size: clamp(1.4rem, 2.8vw, 2.3rem); }
+  .wrap.proj .proj-invite { font-size: clamp(1.3rem, 2.6vw, 2rem); }
+  .wrap.proj .proj-chips .pchip { font-size: clamp(1.2rem, 2.2vw, 1.8rem); }
+  .wrap.proj .proj-rev { max-width: 1100px; font-size: clamp(1.3rem, 2.2vw, 2rem); }
+  .wrap.proj .proj-classement { max-width: 920px; }
+  .wrap.proj .proj-classement .frow { font-size: clamp(1.4rem, 2.6vw, 2.3rem); }
 </style>
 </head>
 <body>
