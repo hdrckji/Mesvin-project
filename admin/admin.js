@@ -46,6 +46,8 @@ let onglet = 'questions';   // 'questions' | 'users' | 'activite' | 'systeme'
 let sys = null, sysErreur = null; // onglet Système : état du serveur
 let actJournal = null, actJournalErreur = null; // onglet Activité : journal serveur
 let actBrevo = null, actBrevoErreur = null;     // onglet Activité : côté Brevo
+let actVisites = null, actVisitesErreur = null; // onglet Activité : fréquentation
+let actOuverts = { visites: false, journal: false, brevo: false }; // sections dépliées (survit au re-rendu)
 let categories = [];        // catégories du fichier (ordre d'affichage, et du select)
 let qListe = null;          // [{ q, etat }] — null tant que rien n'est chargé
 let qRecherche = '';
@@ -220,10 +222,14 @@ function heureLocale(iso) {
 async function chargerActivite() {
   actJournal = null; actJournalErreur = null;
   actBrevo = null; actBrevoErreur = null;
+  actVisites = null; actVisitesErreur = null;
   render();
-  // Les deux sections en parallèle, chacune avec son propre filet : un souci
-  // d'un côté (Brevo, par exemple) ne prive pas de l'autre.
+  // Les sections en parallèle, chacune avec son propre filet : un souci
+  // d'un côté (Brevo, par exemple) ne prive pas des autres.
   await Promise.all([
+    GraineAPI.adminVisites()
+      .then(r => { actVisites = r; })
+      .catch(e => { actVisitesErreur = messageDoux(e); }),
     GraineAPI.adminJournal()
       .then(r => { actJournal = r; })
       .catch(e => { actJournalErreur = messageDoux(e); }),
@@ -245,8 +251,82 @@ function actBadge(table, evt) {
   return `<span class="act-evt ${classe}">${esc(info.label)}</span>`;
 }
 
+/* Résumé d'un journal pour l'intitulé de sa section repliée : nombre
+   d'événements et heure du plus récent — l'essentiel sans avoir à ouvrir. */
+function actResume(donnees, erreur) {
+  if (erreur) return 'chargement impossible';
+  if (!donnees) return 'chargement…';
+  const evts = donnees.events || [];
+  if (!evts.length) return "rien pour l'instant";
+  const dernier = evts.reduce((max, e) => (e.ts && (!max || e.ts > max) ? e.ts : max), null);
+  return `${evts.length} événement${evts.length > 1 ? 's' : ''} · dernier : ${heureLocale(dernier)}`;
+}
+
+/* Une section repliable de l'onglet Activité. L'erreur éventuelle reste HORS
+   du <details> : elle doit se voir sans avoir à ouvrir la section.
+   `resume` remplace le résumé standard quand les données ne sont pas un
+   journal d'événements (la fréquentation, par exemple). */
+function htmlSectionActivite(cle, titre, donnees, erreur, corps, resume) {
+  return `
+    <details class="act-repli" data-cle="${cle}" ${actOuverts[cle] ? 'open' : ''}>
+      <summary>${esc(titre)} <span class="act-resume">— ${esc(resume ?? actResume(donnees, erreur))}</span></summary>
+      ${corps}
+    </details>
+    ${erreur ? `<div class="card"><p class="field-error" style="margin:0">${esc(erreur)}</p></div>` : ''}`;
+}
+
+/* ---------- Fréquentation : les compteurs anonymes (api/visites.php) ---------- */
+
+/* Les noms montrés à l'administrateur — la liste blanche VISITE_PAGES, côté humain. */
+const VISITE_LIBELLES = {
+  accueil: 'Accueil', lire: 'Lire', defi: 'Sonder (défi)', frise: 'Avant ou après ?',
+  quiadit: 'Qui a dit ça ?', ecritoupas: 'Écrit… ou pas ?',
+  portrait: 'De qui parle-t-on ?', memoriser: 'Mémoriser des versets',
+};
+
+function visitesResume() {
+  if (actVisitesErreur) return 'chargement impossible';
+  if (!actVisites) return 'chargement…';
+  const total = (actVisites.parJour || []).reduce((s, j) => s + j.n, 0);
+  if (!total) return "rien pour l'instant";
+  return `${total} ouverture${total > 1 ? 's' : ''} sur 30 jours · ${actVisites.aujourdhui} aujourd'hui`;
+}
+
+function htmlVisites() {
+  if (actVisitesErreur) return ''; // l'erreur est affichée hors du repli
+  if (!actVisites) return `<div class="card center" style="padding:22px"><p class="muted" style="margin:0">Chargement…</p></div>`;
+  const jours = actVisites.parJour || [];
+  const pages = actVisites.parPage || [];
+  const maxJour = Math.max(1, ...jours.map(j => j.n));
+  const lignesPages = pages.map(p => `
+    <tr>
+      <td>${esc(VISITE_LIBELLES[p.page] || p.page)}</td>
+      <td class="act-heure" style="text-align:right">${p.n}</td>
+    </tr>`).join('');
+  const barresJours = jours.map(j => `
+    <div class="vis-jour">
+      <span class="vis-date">${esc(j.jour.slice(5))}</span>
+      <span class="vis-barre"><i style="width:${Math.round(100 * j.n / maxJour)}%"></i></span>
+      <span class="vis-n">${j.n}</span>
+    </div>`).join('');
+  return `
+    <div class="card" style="padding:12px 14px">
+      <p class="muted" style="margin:0 0 10px">Des compteurs anonymes : aucune adresse, aucun identifiant, aucun
+        cookie. L'appli vivant hors-ligne, une ouverture sans réseau n'envoie rien — ces chiffres
+        sous-estiment, et donnent un ordre de grandeur plus qu'une mesure.</p>
+      ${jours.length ? `<div class="vis-jours">${barresJours}</div>` : `<p class="muted" style="margin:0">Aucune ouverture comptée pour l'instant.</p>`}
+      ${pages.length ? `
+      <div class="adm-table-wrap" style="margin-top:12px">
+        <table class="adm-table">
+          <thead><tr><th>Page</th><th style="text-align:right">Ouvertures (30 j)</th></tr></thead>
+          <tbody>${lignesPages}</tbody>
+        </table>
+      </div>` : ''}
+    </div>`;
+}
+
 function htmlJournalServeur() {
-  if (actJournalErreur) return `<div class="card"><p class="field-error" style="margin:0">${esc(actJournalErreur)}</p></div>`;
+  if (actJournalErreur) return ''; // l'erreur est affichée hors du repli
   if (!actJournal) return `<div class="card center" style="padding:22px"><p class="muted" style="margin:0">Chargement…</p></div>`;
   const lignes = (actJournal.events || []).map(e => `
     <tr>
@@ -267,7 +347,7 @@ function htmlJournalServeur() {
 }
 
 function htmlChezBrevo() {
-  if (actBrevoErreur) return `<div class="card"><p class="field-error" style="margin:0">${esc(actBrevoErreur)}</p></div>`;
+  if (actBrevoErreur) return ''; // l'erreur est affichée hors du repli
   if (!actBrevo) return `<div class="card center" style="padding:22px"><p class="muted" style="margin:0">Chargement…</p></div>`;
   const note = actBrevo.note ? `<p class="muted" style="margin:2px 2px 10px">${esc(actBrevo.note)}</p>` : '';
   const lignes = (actBrevo.events || []).map(e => {
@@ -296,15 +376,19 @@ function htmlActivite() {
   const enCours = actJournal === null && !actJournalErreur;
   return `
     <button class="btn btn-soft btn-block" id="btn-act-actualiser" style="margin-bottom:14px" ${enCours ? 'disabled' : ''}>Actualiser</button>
-    <div class="section-title">Journal du serveur</div>
-    ${htmlJournalServeur()}
-    <div class="section-title" style="margin-top:18px">Chez Brevo</div>
-    ${htmlChezBrevo()}`;
+    ${htmlSectionActivite('visites', 'Fréquentation', actVisites, actVisitesErreur, htmlVisites(), visitesResume())}
+    ${htmlSectionActivite('journal', 'Journal du serveur', actJournal, actJournalErreur, htmlJournalServeur())}
+    ${htmlSectionActivite('brevo', 'Chez Brevo', actBrevo, actBrevoErreur, htmlChezBrevo())}`;
 }
 
 function brancherActivite() {
   const b = document.getElementById('btn-act-actualiser');
   if (b) b.onclick = chargerActivite;
+  // Mémorise l'état déplié/replié : « Actualiser » re-rend tout l'écran, et
+  // une section ouverte doit le rester après le re-rendu.
+  document.querySelectorAll('details.act-repli').forEach(d => {
+    d.addEventListener('toggle', () => { actOuverts[d.dataset.cle] = d.open; });
+  });
 }
 
 /* ---------- Système : état du serveur et adresse du cron ---------- */

@@ -52,6 +52,21 @@
 
 
 /* ---------- Onglet Activité ---------- */
+
+/* journaux repliés par défaut — même langage que .revoir (defi/defi.css) :
+   marker natif masqué, chevron '›'/'⌄' en ::before. L'intitulé garde
+   l'allure d'un .section-title, le résumé reste en bas de casse. */
+.act-repli { margin-top: 18px; }
+.act-repli summary {
+  cursor: pointer; list-style: none; padding: 2px 0; margin: 0 4px 10px;
+  font-size: .82rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+.act-repli summary::-webkit-details-marker { display: none; }
+.act-repli summary::before { content: '› '; color: var(--ink-soft); }
+.act-repli[open] summary::before { content: '⌄ '; }
+.act-repli .act-resume { text-transform: none; letter-spacing: normal; font-weight: 600; }
+
 .act-evt {
   display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .02em;
   padding: 2px 8px; border-radius: 999px;
@@ -73,3 +88,12 @@
 .sys-bon { color: var(--grow); }
 .sys-var { font-size: .78rem; color: var(--ink-soft); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; margin-left: 4px; white-space: nowrap; }
 .sys-cron { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: .85rem; overflow-wrap: anywhere; }
+
+/* ---------- Fréquentation (onglet Activité) ---------- */
+/* Un jour par ligne : la date, une barre proportionnelle au plus fort jour
+   des 30 derniers, le compte. Sobre — pas de bibliothèque de graphiques. */
+.vis-jour { display: flex; align-items: center; gap: 10px; padding: 2px 0; }
+.vis-date { font-size: .78rem; color: var(--ink-soft); min-width: 3.2em; white-space: nowrap; }
+.vis-barre { flex: 1; height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.vis-barre i { display: block; height: 100%; background: var(--grow); border-radius: 999px; }
+.vis-n { font-size: .82rem; font-weight: 650; min-width: 2.4em; text-align: right; }
