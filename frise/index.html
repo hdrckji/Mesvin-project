@@ -615,7 +615,7 @@ function vueDuelConfig() {
     ['livres', 'nt', 'Livres · Nouveau T.'],
   ];
   return `<div class="fade">
-    <button class="quit" data-vers="dmenu">‹ Retour</button>
+    <button class="quit" data-vers="dmenu">‹ Défier un ami</button>
     <h1 style="font-size:1.25rem;margin-top:10px">Créer un défi</h1>
     <p class="muted" style="margin:4px 0 0">Tu fais ta frise maintenant, tu reçois un code — ton ami fera exactement la même, quand il voudra.</p>
     <div class="card">
@@ -636,7 +636,7 @@ function vueDuelConfig() {
    emmène au bon endroit plutôt que de renvoyer quelqu'un à l'entrée. */
 function vueJoin(veillee) {
   return `<div class="fade">
-    <button class="quit" data-vers="${veillee ? 'vmenu' : 'dmenu'}">‹ Retour</button>
+    <button class="quit" data-vers="${veillee ? 'vmenu' : 'dmenu'}">${veillee ? "‹ En direct, dans ton église" : "‹ Défier un ami"}</button>
     <h1 style="font-size:1.25rem;margin-top:10px">${veillee ? 'Rejoindre la veillée' : "J'ai reçu un code"}</h1>
     <p class="muted" style="margin:4px 0 0">${veillee
       ? "Le code s'affiche sur le grand écran — ton prénom suffit, aucun compte."
@@ -652,7 +652,7 @@ function vueJoin(veillee) {
 
 function vueProjection() {
   return `<div class="fade">
-    <button class="quit" data-vers="vmenu">‹ Retour</button>
+    <button class="quit" data-vers="vmenu">‹ En direct, dans ton église</button>
     <h1 style="font-size:1.25rem;margin-top:10px">Grand écran</h1>
     <p class="muted" style="margin:4px 0 0">Sur l'ordinateur relié au projecteur : le code de la veillée, et la frise s'affiche en grand pour toute la salle.</p>
     <div class="card">
@@ -702,7 +702,7 @@ function vueVeilleeConfig() {
     ['livres', 'nt', 'Livres · Nouveau T.'],
   ];
   return `<div class="fade">
-    <button class="quit" data-vers="vmenu">‹ Retour</button>
+    <button class="quit" data-vers="vmenu">‹ En direct, dans ton église</button>
     <h1 style="font-size:1.25rem;margin-top:10px">Animer la veillée</h1>
     <p class="muted" style="margin:4px 0 0">Tu ouvres la salle et tu donnes le code : chacun rejoint sur son téléphone, tout le monde voit la même carte au même moment, et c'est toi qui rythmes.</p>
     <div class="card">

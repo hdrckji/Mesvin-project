@@ -1616,7 +1616,13 @@ function renderDuelReview() {
    2 s et on ne re-rend l'écran que s'il a changé. Le décompte, lui, est animé
    localement (une petite horloge à 500 ms qui ne touche que la barre).
    ========================================================================== */
-const VEILLEE_KEY = 'graine.defi.veillee.v1'; // reprise : { code, playerKey?, prenom?, host?, proj?, ecrans?, ts }
+const VEILLEE_KEY = 'graine.defi.veillee.v1'; // reprise : { code, playerKey?, prenom?, host?, ecrans?, ts }
+/* Le grand écran a SA PROPRE clé, et surtout pas celle-ci. Un animateur qui
+   ouvre « Grand écran » sur son téléphone pour comprendre à quoi ça ressemble
+   écraserait sinon sa sauvegarde d'animation : plus aucun écran ne ramène aux
+   commandes, la veillée reste ouverte sans personne pour la mener, et les
+   participants attendent jusqu'au ménage serveur. Deux rôles, deux clés. */
+const VEILLEE_PROJ_KEY = 'graine.defi.veillee.proj.v1'; // reprise : { code, ts }
 
 let vl = null;                 // état local de l'écran veillée
 let vlPollTimer = null, vlTickTimer = null;
@@ -1626,9 +1632,16 @@ function ouvrirVeillee() {
   vue = { ecran: 'veillee' };
   render();
 }
-function vlSauvegarde() {
-  const s = lireJSON(VEILLEE_KEY);
+function vlSauvegardeDe(cle) {
+  const s = lireJSON(cle);
   return (s && s.code && s.ts && Date.now() - s.ts < 12 * 3600 * 1000) ? s : null;
+}
+/* Animer ou participer d'abord, projeter ensuite : perdre la main sur une
+   veillée qu'on mène est irréparable, alors qu'un grand écran se rouvre en
+   retapant le code. */
+function vlSauvegarde() {
+  return vlSauvegardeDe(VEILLEE_KEY)
+    || (() => { const p = vlSauvegardeDe(VEILLEE_PROJ_KEY); return p ? { ...p, proj: true } : null; })();
 }
 
 /* Un seul écran, ou deux ? Choix de l'animateur au paramétrage, PUREMENT
@@ -1642,13 +1655,18 @@ function vlUnSeulEcran() { return !vl || vl.ecrans !== 'deux'; }
    seul l'affichage de cet appareil change. */
 function vlBasculerEcrans() {
   vl.ecrans = vlUnSeulEcran() ? 'deux' : 'un';
+  // La sauvegarde est réécrite quoi qu'il arrive : la retrouver à l'identique
+  // n'est pas garanti (première bascule, sauvegarde expirée), et sans ça le
+  // rechargement suivant ramènerait sournoisement l'ancien mode.
   const s = lireJSON(VEILLEE_KEY);
-  if (s && s.code === vl.code) ecrireJSON(VEILLEE_KEY, { ...s, ecrans: vl.ecrans });
+  ecrireJSON(VEILLEE_KEY, { ...(s && s.code === vl.code ? s : {}), code: vl.code, host: true, ecrans: vl.ecrans, ts: Date.now() });
   render();
 }
 function vlQuitter(notice) {
   vlArreterPolling();
-  try { localStorage.removeItem(VEILLEE_KEY); } catch (e) {}
+  // On n'efface que le rôle qu'on quitte : fermer le grand écran ne doit pas
+  // faire perdre l'animation en cours sur le même appareil, et l'inverse non plus.
+  try { localStorage.removeItem(vl && vl.mode === 'proj' ? VEILLEE_PROJ_KEY : VEILLEE_KEY); } catch (e) {}
   vl = { mode: 'menu', notice: notice || null };
   if (vue.ecran === 'veillee') render();
 }
@@ -1665,15 +1683,47 @@ function vlPierreAnimateur(avant, etat) {
 }
 
 /* ---------- Polling & décompte ---------- */
+/* Veille de l'écran. En un seul écran, l'appareil de l'animateur EST le
+   projecteur : branché, écran allumé. En deux écrans, c'est un téléphone posé
+   dans une salle sombre — et quand il se verrouille, le système suspend les
+   minuteries : plus de sondage, plus de révélation automatique, et le grand
+   écran se fige sur la question pour toute l'assemblée. On demande donc à
+   garder l'écran éveillé pendant qu'on mène ou qu'on projette. L'API n'existe
+   pas partout (Safari ancien) : c'est un confort, pas une garantie — d'où le
+   rattrapage au retour de visibilité juste en dessous. */
+let vlVeilleEcran = null;
+async function vlGarderEveille() {
+  if (!('wakeLock' in navigator) || vlVeilleEcran) return;
+  try { vlVeilleEcran = await navigator.wakeLock.request('screen'); }
+  catch (e) { vlVeilleEcran = null; } // refusé (onglet caché, batterie faible) : tant pis
+}
+function vlRelacherEveil() {
+  if (!vlVeilleEcran) return;
+  try { vlVeilleEcran.release(); } catch (e) {}
+  vlVeilleEcran = null;
+}
+/* Au retour à l'écran : le verrou d'éveil a été relâché par le système, et les
+   minuteries ont pu dériver ou s'arrêter. On reprend tout de suite plutôt que
+   d'attendre le prochain tour. */
+function vlRetourVisibilite() {
+  if (document.visibilityState !== 'visible') { vlRelacherEveil(); return; }
+  if (vue.ecran !== 'veillee' || !vl || !vlPollTimer) return;
+  vlGarderEveille();
+  vlPoll();
+}
+document.addEventListener('visibilitychange', vlRetourVisibilite);
+
 function vlDemarrerPolling() {
   vlArreterPolling();
   vlPollTimer = setInterval(vlPoll, 2000);
   vlTickTimer = setInterval(vlTick, 500);
+  vlGarderEveille();
   vlPoll();
 }
 function vlArreterPolling() {
   if (vlPollTimer) { clearInterval(vlPollTimer); vlPollTimer = null; }
   if (vlTickTimer) { clearInterval(vlTickTimer); vlTickTimer = null; }
+  vlRelacherEveil();
 }
 async function vlPoll() {
   // Le grand écran ('proj') sonde comme les autres — mais SANS clé : il lit
@@ -1822,7 +1872,7 @@ async function vlGrandEcran() {
   try {
     const etat = await GraineAPI.veilleeState(code); // sans clé : lecture seule
     vl = { mode: 'proj', code, etat, lastJson: JSON.stringify(etat), remainingAt: Date.now(), busy: false, error: null };
-    ecrireJSON(VEILLEE_KEY, { code, proj: true, ts: Date.now() });
+    ecrireJSON(VEILLEE_PROJ_KEY, { code, ts: Date.now() });
     vlDemarrerPolling();
   } catch (e) {
     vl.busy = false;
@@ -2067,7 +2117,16 @@ function vlBasculeHTML() {
 }
 function vlBasculeBind() {
   const b = document.getElementById('btn-vl-ecrans');
-  if (b) b.onclick = vlBasculerEcrans;
+  // En un seul écran, ce lien est PROJETÉ : il s'affiche sur le mur, à portée
+  // d'un clic distrait sur l'ordinateur du vidéoprojecteur. Un tel clic
+  // réduirait la projection à une télécommande de la taille d'un téléphone,
+  // devant toute l'assemblée. On demande donc confirmation dans ce sens-là —
+  // pas dans l'autre, où l'on quitte un écran que personne ne regarde.
+  if (b) b.onclick = () => {
+    if (vlUnSeulEcran()
+      && !confirm("Passer en deux écrans ? Cet appareil cessera d'afficher la veillée en grand et deviendra une télécommande.")) return;
+    vlBasculerEcrans();
+  };
 }
 
 /* Barre de décompte partagée (grand écran et téléphone). */

@@ -425,7 +425,10 @@ body.quiz-proj .vl-reveal .section-title { margin-top: 0; } /* l'écart vient de
 .tc-liste .vl-dist b { font-size: .85rem; }
 /* le compteur vivant, patché en place par vlPatch — même texte que sur la projection */
 .tc-nb { text-align: center; font-weight: 650; color: var(--ink-soft); margin: 12px 0 0; }
-.tc-classement { max-height: 42vh; overflow-y: auto; }
+/* Pas de zone de défilement imbriquée : sous une barre collante, sur un
+   téléphone tenu d'une main, viser la bonne des deux au doigt est pénible.
+   Le classement s'étire, la page défile — une seule chose qui bouge. */
+.tc-classement { }
 /* les commandes restent sous le pouce, comme la barre collante de la projection */
 .tc-actions {
   position: sticky; bottom: 0; z-index: 5;
