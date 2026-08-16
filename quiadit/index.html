@@ -290,21 +290,9 @@ function quitter() { seance = null; online = null; pollArret(); ecran = 'accueil
 function vueAccueil() {
   return `<div class="fade">
     <button class="quit" data-retour-defi="1">‹ Défi</button>
-    ${repriseAnim ? `<button class="card hub-card" data-reprise="1" style="border:1px solid var(--accent)">
-      <span class="hub-ic">${icon('ecranDirect', 26)}</span>
-      <span class="hub-txt"><span class="hub-title">Reprendre l'animation</span>
-        <span class="hub-sub">Ta veillée en cours t'attend — reprends la main sur le grand écran.</span></span>
-      <span class="chev">›</span>
-    </button>` : ''}
     <h1 style="margin-top:10px">Qui a dit ça <span class="seed">?</span></h1>
     <p class="muted" style="margin:4px 0 16px">Une parole, quatre voix possibles — sauras-tu reconnaître la sienne ? Chaque réponse ramène vers le texte.</p>
 
-    <button class="card hub-card" data-join="1">
-      <span class="hub-ic">${icon('rejoindre', 26)}</span>
-      <span class="hub-txt"><span class="hub-title">J'ai reçu un code</span>
-        <span class="hub-sub">Un défi lancé par un ami, ou une veillée en direct : le code ouvre l'un ou l'autre — ton prénom suffit.</span></span>
-      <span class="chev">›</span>
-    </button>
     <button class="card hub-card" data-solo="1">
       <span class="hub-ic">${icon('seul', 26)}</span>
       <span class="hub-txt"><span class="hub-title">Seul</span>
@@ -317,13 +305,13 @@ function vueAccueil() {
         <span class="hub-sub">Le téléphone passe de main en main : chacun son tour reconnaît une voix. De 2 à 6 participants.</span></span>
       <span class="chev">›</span>
     </button>
-    <button class="card hub-card" data-duelcfg="1">
+    <button class="card hub-card" data-vers="dmenu">
       <span class="hub-ic">${icon('epees', 26)}</span>
       <span class="hub-txt"><span class="hub-title">Défier un ami</span>
         <span class="hub-sub">À distance, par code à partager : les mêmes paroles pour vous deux, chacun quand il veut.</span></span>
       <span class="chev">›</span>
     </button>
-    <button class="card hub-card" data-veilcfg="1">
+    <button class="card hub-card" data-vers="vmenu">
       <span class="hub-ic">${icon('ecranDirect', 26)}</span>
       <span class="hub-txt"><span class="hub-title">En direct, dans ton église</span>
         <span class="hub-sub">Un grand écran pour tous, chacun répond sur son téléphone — et c'est l'animateur qui rythme.</span></span>
@@ -439,10 +427,65 @@ async function api(chemin, corps) {
   return data;
 }
 
-function vueDuelConfig() {
+/* ---------- À distance : deux sous-menus, sur le modèle du quiz ----------
+   Depuis l'accueil on choisit d'abord ce qu'on vient faire, puis on ne voit
+   que l'écran qui va avec. */
+function vueDuelMenu() {
   return `<div class="fade">
     <button class="quit" data-quit="1">‹ Qui a dit ça ?</button>
     <h1 style="font-size:1.25rem;margin-top:10px">Défier un ami</h1>
+    <p class="muted" style="margin:4px 0 16px">Les mêmes questions pour vous deux, chacun quand il veut — tout passe par un code à partager.</p>
+    <button class="card hub-card" data-vers="dcfg">
+      <span class="hub-ic">${icon('epees', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">Créer un défi</span>
+        <span class="hub-sub">Tu réponds maintenant et tu reçois le code à envoyer à ton ami.</span></span>
+      <span class="chev">›</span>
+    </button>
+    <button class="card hub-card" data-vers="djoin">
+      <span class="hub-ic">${icon('rejoindre', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">J'ai reçu un code</span>
+        <span class="hub-sub">Un ami t'a envoyé le sien : les mêmes questions t'attendent, ton prénom suffit.</span></span>
+      <span class="chev">›</span>
+    </button>
+  </div>`;
+}
+
+function vueVeilleeMenu() {
+  return `<div class="fade">
+    <button class="quit" data-quit="1">‹ Qui a dit ça ?</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">En direct, dans ton église</h1>
+    <p class="muted" style="margin:4px 0 16px">L'animateur projette un grand écran ; chacun rejoint avec un code et répond depuis son téléphone.</p>
+    ${repriseAnim ? `<button class="card hub-card" data-reprise="1" style="border:1px solid var(--accent)">
+      <span class="hub-ic">${icon('reprendre', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">Reprendre</span>
+        <span class="hub-sub">Tu animais la veillée <b>${esc(repriseAnim.code)}</b> — reprends la main sur le grand écran.</span></span>
+      <span class="chev">›</span>
+    </button>` : ''}
+    <button class="card hub-card" data-vers="vjoin">
+      <span class="hub-ic">${icon('rejoindre', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">Rejoindre</span>
+        <span class="hub-sub">Avec le code affiché sur le grand écran — ton prénom suffit, aucun compte.</span></span>
+      <span class="chev">›</span>
+    </button>
+    <button class="card hub-card" data-vers="vcfg">
+      <span class="hub-ic">${icon('microphone', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">Animer</span>
+        <span class="hub-sub">Ouvre la veillée, donne le code — et c'est toi qui rythmes.</span></span>
+      <span class="chev">›</span>
+    </button>
+    <button class="card hub-card" data-vers="vproj">
+      <span class="hub-ic">${icon('ecranDirect', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">Grand écran</span>
+        <span class="hub-sub">Sur l'ordinateur du projecteur : les questions s'affichent en grand pour toute la salle.</span></span>
+      <span class="chev">›</span>
+    </button>
+  </div>`;
+}
+
+function vueDuelConfig() {
+  return `<div class="fade">
+    <button class="quit" data-vers="dmenu">‹ Défier un ami</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">Créer un défi</h1>
     <p class="muted" style="margin:4px 0 0">Tu réponds maintenant, tu reçois un code — ton ami affrontera exactement les mêmes questions, quand il voudra.</p>
     <div class="card">
       <p class="mode-title" style="margin-top:0">Ton prénom</p>
@@ -453,16 +496,33 @@ function vueDuelConfig() {
   </div>`;
 }
 
-function vueJoin() {
+/* Un seul écran de saisie pour deux portes d'entrée : le titre et les
+   messages changent, mais le code est toujours accueilli — ED- ou EV-, on
+   emmène au bon endroit plutôt que de renvoyer quelqu'un à l'entrée. */
+function vueJoin(veillee) {
   return `<div class="fade">
-    <button class="quit" data-quit="1">‹ Qui a dit ça ?</button>
-    <h1 style="font-size:1.25rem;margin-top:10px">J'ai reçu un code</h1>
-    <p class="muted" style="margin:4px 0 0">Un code ED- ouvre un défi, un code EV- rejoint une veillée en direct.</p>
+    <button class="quit" data-vers="${veillee ? 'vmenu' : 'dmenu'}">‹ ${veillee ? 'En direct, dans ton église' : 'Défier un ami'}</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">${veillee ? 'Rejoindre la veillée' : "J'ai reçu un code"}</h1>
+    <p class="muted" style="margin:4px 0 0">${veillee
+      ? "Le code s'affiche sur le grand écran — ton prénom suffit, aucun compte."
+      : 'Le code du défi commence par ED- — ton prénom suffit, aucun compte.'}</p>
     <div class="card">
-      <input class="pin" id="in-code" maxlength="8" placeholder="Code (ED-XXXXX ou EV-XXXXX)" value="${esc(saisie.code)}" autocapitalize="characters">
+      <input class="pin" id="in-code" maxlength="8" placeholder="Code (${veillee ? 'EV' : 'ED'}-XXXXX)" value="${esc(saisie.code)}" autocapitalize="characters">
       <input class="pin" id="in-pseudo" maxlength="20" placeholder="Ton prénom" value="${esc(saisie.pseudo)}">
-      <button class="btn btn-primary" data-joingo="1">Rejoindre</button>
-      <button class="btn btn-ghost" data-projgo="1">Grand écran (projection d'une veillée)</button>
+      <button class="btn btn-primary" data-joingo="${veillee ? 'veillee' : 'defi'}">Rejoindre</button>
+      <p class="feedback faux" id="err-ligne"></p>
+    </div>
+  </div>`;
+}
+
+function vueProjection() {
+  return `<div class="fade">
+    <button class="quit" data-vers="vmenu">‹ En direct, dans ton église</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">Grand écran</h1>
+    <p class="muted" style="margin:4px 0 0">Sur l'ordinateur relié au projecteur : le code de la veillée, et les questions s'affichent en grand pour toute la salle.</p>
+    <div class="card">
+      <input class="pin" id="in-code" maxlength="8" placeholder="Code (EV-XXXXX)" value="${esc(saisie.code)}" autocapitalize="characters">
+      <button class="btn btn-primary" data-projgo="1">Afficher la veillée</button>
       <p class="feedback faux" id="err-ligne"></p>
     </div>
   </div>`;
@@ -497,8 +557,8 @@ function vueDuelResultat() {
 
 function vueVeilleeConfig() {
   return `<div class="fade">
-    <button class="quit" data-quit="1">‹ Qui a dit ça ?</button>
-    <h1 style="font-size:1.25rem;margin-top:10px">En direct, dans ton église</h1>
+    <button class="quit" data-vers="vmenu">‹ En direct, dans ton église</button>
+    <h1 style="font-size:1.25rem;margin-top:10px">Animer la veillée</h1>
     <p class="muted" style="margin:4px 0 0">Tu ouvres la salle et tu donnes le code : tout le monde voit la même question au même moment, et c'est toi qui rythmes.</p>
     <div class="card">
       <button class="btn btn-grow" data-veilgo="1" style="margin-top:4px">Ouvrir la veillée</button>
@@ -689,7 +749,9 @@ function render() {
   el.classList.toggle('proj', ecran === 'proj');
   el.innerHTML = ecran === 'seance' ? vueSeance() : ecran === 'fin' ? vueFin()
     : ecran === 'config' ? vueConfig()
-    : ecran === 'dcfg' ? vueDuelConfig() : ecran === 'join' ? vueJoin()
+    : ecran === 'dmenu' ? vueDuelMenu() : ecran === 'vmenu' ? vueVeilleeMenu()
+    : ecran === 'dcfg' ? vueDuelConfig() : ecran === 'djoin' ? vueJoin(false)
+    : ecran === 'vjoin' ? vueJoin(true) : ecran === 'vproj' ? vueProjection()
     : ecran === 'dres' ? vueDuelResultat() : ecran === 'vcfg' ? vueVeilleeConfig()
     : ecran === 'anim' ? vueAnim() : ecran === 'part' ? vuePart()
     : ecran === 'proj' ? vueProj()
@@ -715,9 +777,8 @@ function render() {
   });
   if (q1('[data-solo]')) q1('[data-solo]').addEventListener('click', avecBanque(() => demarrer(null, null, null)));
   if (q1('[data-multi]')) q1('[data-multi]').addEventListener('click', versEcran('config'));
-  if (q1('[data-duelcfg]')) q1('[data-duelcfg]').addEventListener('click', versEcran('dcfg'));
-  if (q1('[data-veilcfg]')) q1('[data-veilcfg]').addEventListener('click', versEcran('vcfg'));
-  if (q1('[data-join]')) q1('[data-join]').addEventListener('click', versEcran('join'));
+  // sous-menus et retours : la carte (ou le lien) porte l'écran où elle mène
+  el.querySelectorAll('[data-vers]').forEach(b => b.addEventListener('click', versEcran(b.dataset.vers)));
   if (q1('[data-quit]')) q1('[data-quit]').addEventListener('click', quitter);
 
   el.querySelectorAll('[data-rep]').forEach(b => b.addEventListener('click', () => repondre(+b.dataset.rep)));
@@ -767,8 +828,10 @@ function render() {
         const r = await api('veillee/' + code + '/rejoindre', { prenom: prenom });
         online = { code: code, jeton: r.jeton, prenom: prenom, etat: null };
         ecran = 'part'; render(); pollDemarre();
+      } else if (joingo.dataset.joingo === 'veillee') {
+        throw new Error("Le code de la veillée s'affiche sur le grand écran : il commence par EV- (un code ED- ouvre un défi).");
       } else {
-        throw new Error('Un code commence par ED- (défi) ou EV- (veillée).');
+        throw new Error('Un code de défi commence par ED- (et un code EV- rejoint une veillée en direct).');
       }
     } catch (e) { joingo.disabled = false; erreurLigne(e.message); }
   });
@@ -843,7 +906,7 @@ async function verifierRepriseAnim() {
   if (Date.now() - (a.ts || 0) > 86400000) { animOubli(); return; } // >24 h : le ménage serveur est passé
   try {
     const etat = await api('veillee/' + a.code + '/etat?cle=' + a.cle);
-    if (etat && etat.phase && etat.phase !== 'fin') { repriseAnim = { code: a.code, cle: a.cle }; if (ecran === 'accueil') render(); }
+    if (etat && etat.phase && etat.phase !== 'fin') { repriseAnim = { code: a.code, cle: a.cle }; if (ecran === 'vmenu') render(); }
     else animOubli();
   } catch (e) { if (e && e.status === 404) animOubli(); } // veillée disparue : on oublie
 }
