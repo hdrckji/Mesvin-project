@@ -2155,7 +2155,14 @@ function renderVeilleePlayer() {
 (async function init() {
   try {
     await chargerBanque();
-    render();
+    // Arrivée depuis la carte « Défi du jour » de l'accueil : on lance
+    // directement, et on nettoie le hash pour ne pas relancer à un reload.
+    if (location.hash === '#jour') {
+      history.replaceState(null, '', location.pathname);
+      demarrer('jour');
+    } else {
+      render();
+    }
   } catch (e) {
     el.innerHTML = `
     <div class="card">

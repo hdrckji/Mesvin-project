@@ -544,6 +544,17 @@ function tabbar() {
   return `<nav class="tabbar">${tab('home', icon('accueil', 21), 'Accueil')}${tab('moi', icon('moi', 21), 'Moi')}${tab('about', icon('apropos', 21), 'À propos')}</nav>`;
 }
 
+/* Le défi du jour vit dans le module Sonder (localStorage 'graine.defi.v1').
+   On le lit ici seulement pour l'afficher sur l'accueil — on n'y touche pas. */
+function defiDuJourFait() {
+  try {
+    const d = JSON.parse(localStorage.getItem('graine.defi.v1'));
+    const t = new Date(), p = n => String(n).padStart(2, '0');
+    const auj = `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}`;
+    return !!(d && d.jour && d.jour.date === auj);
+  } catch (e) { return false; }
+}
+
 /* ---------- Accueil : hub des trois modules ---------- */
 function viewHome() {
   const due = dueCards();
@@ -573,6 +584,11 @@ function viewHome() {
       <span class="hub-ic">${icon('defi', 26)}</span>
       <span class="hub-txt"><span class="hub-title">Sonder</span>
         <span class="hub-sub">Des questions pour tester ta connaissance de la Bible, seul ou entre amis</span></span>
+      <span class="chev">›</span></a>
+    <a class="card hub-card fade home-daily" href="defi/#jour">
+      <span class="hub-ic">${icon('soleil', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">Défi du jour</span>
+        <span class="hub-sub">${defiDuJourFait() ? 'Relevé aujourd\'hui ✓ — reviens demain' : 'Ton rendez-vous quotidien, le même pour tous'}</span></span>
       <span class="chev">›</span></a>`;
 
   return topbar(true) + hero + hub;

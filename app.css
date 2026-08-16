@@ -469,6 +469,9 @@ a.verse-item { text-decoration: none; }
 .hub-card .hub-title { font-family: var(--serif); font-size: 1.25rem; font-weight: 650; }
 .hub-card .hub-sub { color: var(--ink-soft); font-size: .92rem; }
 .hub-card .chev { color: var(--ink-soft); font-size: 1.5rem; padding-left: 4px; }
+/* Le rendez-vous du jour : une carte de l'accueil marquée d'une fine bordure
+   dorée (le soleil du jour) pour la distinguer des trois modules. */
+.hub-card.home-daily { border: 1px solid var(--accent); }
 
 /* page d'étude (série de versets avant le quiz d'introduction) */
 .study-note {
