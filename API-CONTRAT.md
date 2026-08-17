@@ -245,11 +245,37 @@ Toutes les routes exigent une session (`Authorization: Bearer …`). Le payload
 du demandeur), "nbMembres", "verset": { "reference", "texte", "depuis": "ISO" } | null }`.
 
 ### POST /api/groupes
-Corps : `{ "nom": "..." }` — 2 à 40 caractères : lettres (accents compris),
-chiffres, espaces, tirets et apostrophes (droite ou typographique).
-Le créateur devient **responsable** du groupe. Garde-fou : 5 groupes au plus
-par responsable (400 au-delà).
-→ 201 `{ "groupe": { … } }`
+FERMÉE : la création directe répond désormais **403** — l'ouverture d'un
+groupe passe par une demande validée par l'administration (ci-dessous).
+
+### POST /api/groupes/demande
+Compte requis. Corps : `{ "nom": "..." }` — mêmes règles qu'un nom de groupe
+(2 à 40 caractères : lettres, chiffres, espaces, tirets, apostrophes).
+Une seule demande **en attente** à la fois par compte (409 sinon) ; une
+demande **refusée** est remplacée par la suivante ; 409 si le demandeur est
+déjà responsable de 5 groupes ; plafond horaire par IP (429).
+→ 201 `{ "demande": { "nom", "statut": "attente", "createdAt" } }`
+
+### GET /api/groupes/demande
+→ `{ "demande": null | { "nom", "statut": "attente"|"refusee", "createdAt" } }`
+
+### DELETE /api/groupes/demande
+Annule sa demande (efface aussi une refusée). → `{ "ok": true }` — 404 si rien.
+
+### GET /api/admin/eglises
+Admin seul. → `{ "demandes": [ { "id", "nom", "pseudo", "email",
+"createdAt" } ] (en attente, ordre d'arrivée), "groupes": [ { "code", "nom",
+"nbMembres", "responsable", "createdAt" } ] }`
+
+### POST /api/admin/eglises/demandes/{id}/accepter
+Le groupe naît (code GRP- unique, demandeur **responsable**), la demande
+disparaît — revendiquée atomiquement : deux acceptations simultanées ne
+créent qu'un groupe, la seconde reçoit 404. Le plafond de 5 est revérifié
+(409, demande conservée). Tracé dans admin_log. → `{ "code", "nom" }`
+
+### POST /api/admin/eglises/demandes/{id}/refuser
+Statut `refusee` — le demandeur le voit avec douceur et peut redéposer.
+Tracé dans admin_log. → `{ "ok": true }` — 404 si déjà tranchée.
 
 ### POST /api/groupes/rejoindre
 Corps : `{ "code": "GRP-XXXXX" }` — on rejoint en **membre**.

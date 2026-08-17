@@ -124,7 +124,7 @@ function handle_groupes_create(PDO $pdo): never {
     // La porte reste visible mais fermée : le message oriente vers le nouveau
     // chemin plutôt que de laisser croire à une panne.
     json_error(
-        "La création d'un groupe passe par une demande : dépose-la depuis l'écran Église, et nous l'examinerons avec soin.",
+        "La création d'un groupe passe par une demande : dépose-la depuis « Mon église », dans l'écran Moi — elle sera examinée avec soin.",
         403
     );
 }

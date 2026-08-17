@@ -2514,13 +2514,18 @@ function renderVeilleeBanqueSel() {
     // vient de cet appareil. Si les deux comptes divergent (sélection faite
     // ailleurs), on le dit avant que l'enregistrement ne la remplace.
     const nbServeur = vl.quiz ? vl.quiz.nbSelection : null;
-    const divergence = nbServeur !== null && nbServeur !== vl.sel.size && nbServeur > 0;
+    // La note est PERMANENTE dès qu'une sélection serveur est connue : le
+    // serveur ne renvoie que des COMPTES, jamais les ids — comparer les
+    // nombres laissait muets deux cas réels (même nombre mais autres ids
+    // depuis un autre appareil ; sélection vidée ailleurs). Plutôt qu'une
+    // alerte faillible, une vérité constante : Enregistrer REMPLACE tout.
+    const divergence = nbServeur !== null;
     corps = `
     <div class="card">
       <input class="field" type="search" id="egl-sel-recherche" placeholder="Chercher une question, une référence…"
         autocomplete="off" value="${esc(vl.selRecherche || '')}">
       <p class="egl-compteur" id="egl-sel-compteur">${eglSelCompteur()}</p>
-      ${divergence ? `<p class="prepa-note" style="margin-top:4px">La sélection enregistrée compte ${nbServeur} question${nbServeur > 1 ? 's' : ''} (faite depuis un autre appareil ?). En enregistrant, c'est la liste cochée ici qui fera foi.</p>` : ''}
+      ${divergence ? `<p class="prepa-note" style="margin-top:4px">La sélection enregistrée sur le serveur compte ${nbServeur} question${nbServeur > 1 ? 's' : ''}. « Enregistrer » la remplace ENTIÈREMENT par la liste cochée ici — si tu l'as retouchée depuis un autre appareil, revérifie tes cases avant.</p>` : ''}
       <div id="egl-sel-liste"></div>
       ${vl.error ? `<p class="field-error">${esc(vl.error)}</p>` : ''}
       <div class="defi-actions egl-sel-actions">

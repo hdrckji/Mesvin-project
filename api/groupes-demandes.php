@@ -55,6 +55,9 @@ function groupe_nb_en_responsable(PDO $pdo, int $userId): int {
 
 function handle_groupe_demande_create(PDO $pdo): never {
     $user = require_user($pdo);
+    // Une demande à la fois par compte, mais annuler/redéposer en boucle
+    // resterait gratuit : le plafond horaire par IP ferme cette porte-là.
+    throttle_or_429($pdo, 'groupe-demande', 30);
     $nom = validate_group_name(read_json_body()['nom'] ?? null);
     if ($nom === null) {
         json_error('Nom de groupe invalide : 2 à 40 caractères (lettres, chiffres, espaces, tirets ou apostrophes).', 400);
@@ -176,11 +179,24 @@ function handle_admin_eglise_accepter(PDO $pdo, int $id): never {
         json_error('Ce compte est déjà responsable de ' . GROUPE_MAX_PAR_RESPONSABLE . ' groupes — c\'est le maximum.', 409);
     }
 
-    // Même mécanique que l'ancienne création directe : code GRP- unique,
-    // demandeur responsable (groupe_creer, groupes.php). La demande acceptée
-    // disparaît — elle a rempli son office.
-    $groupe = groupe_creer($pdo, (int) $demande['user_id'], (string) $demande['nom']);
-    $pdo->prepare('DELETE FROM groupe_demandes WHERE id = ?')->execute([$demande['id']]);
+    // La demande est REVENDIQUÉE d'abord, par une suppression conditionnelle :
+    // deux administrateurs qui acceptent en même temps ne peuvent pas créer
+    // deux groupes — un seul DELETE gagne, l'autre reçoit un 404. Si la
+    // création échoue ensuite, la demande est remise en place.
+    $st = $pdo->prepare("DELETE FROM groupe_demandes WHERE id = ? AND statut = 'attente'");
+    $st->execute([$demande['id']]);
+    if ($st->rowCount() === 0) {
+        json_error('Cette demande vient déjà d\'être tranchée.', 404);
+    }
+    try {
+        // Même mécanique que l'ancienne création directe : code GRP- unique,
+        // demandeur responsable (groupe_creer, groupes.php).
+        $groupe = groupe_creer($pdo, (int) $demande['user_id'], (string) $demande['nom']);
+    } catch (Throwable $e) {
+        $pdo->prepare('INSERT INTO groupe_demandes (user_id, nom, statut, created_at) VALUES (?, ?, ?, ?)')
+            ->execute([(int) $demande['user_id'], (string) $demande['nom'], 'attente', (string) $demande['created_at']]);
+        throw $e;
+    }
 
     admin_log($pdo, $admin, 'eglise.acceptation', $groupe['code'] . ' — ' . $groupe['nom']);
     json_out(['code' => $groupe['code'], 'nom' => $groupe['nom']]);
