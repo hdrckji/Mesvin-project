@@ -2408,11 +2408,14 @@ async function doGroupePassation(pseudo) {
    (autre moteur, même esprit) — une carte y mène.
    ========================================================================== */
 const BQ_MODULES = [
+  { id: 'defi', nom: 'Qui, où, quand ?' },
   { id: 'quiadit', nom: 'Qui a dit ?' },
   { id: 'ecritoupas', nom: 'Écrit… ou pas ?' },
   { id: 'portrait', nom: 'De qui parle-t-on ?' },
 ];
-let bqModule = 'quiadit';
+const NIVEAUX_QUIZ = { 1: 'Découverte', 2: 'Habitué', 3: 'Connaisseur' };
+let bqModule = 'defi';
+let bqCategories = null;   // catégories du grand quiz (servies par /api/questions)
 let bqCache = {};          // `${code}|${module}` → réglages + items du serveur
 let bqLoading = {}, bqTentee = {};
 let bqCommune = {};        // module → items de la banque commune (écran de sélection)
@@ -2423,13 +2426,49 @@ let bqNotice = null, bqError = null;
 
 function bqCle() { const g = egliseCourante(); return g ? g.code + '|' + bqModule : null; }
 
+/* Le même écran, deux dialectes serveur : le grand quiz (« Qui, où,
+   quand ? ») parle à son moteur historique (groupes-quiz.php), les trois
+   épreuves au générique (groupes-banques.php). L'adaptateur ramène les deux
+   à une seule forme : { mode, selection, nbSelection, nbPropres, nbTotal,
+   items }. */
+function bqApi() {
+  if (bqModule === 'defi') {
+    return {
+      charger: async (code) => {
+        const [quiz, questions] = await Promise.all([
+          GraineAPI.groupeQuiz(code), GraineAPI.groupeQuizQuestions(code)]);
+        return { module: 'defi', mode: quiz.mode, selection: quiz.selection || [],
+          nbSelection: quiz.nbSelection, nbPropres: quiz.nbPropres, nbTotal: quiz.nbTotal,
+          items: questions || [] };
+      },
+      mode: (code, m) => GraineAPI.groupeQuizMode(code, m),
+      selection: (code, ids) => GraineAPI.groupeQuizSelection(code, ids),
+      itemSave: (code, corps) => GraineAPI.groupeQuizQuestionSave(code, corps),
+      itemDelete: (code, id) => GraineAPI.groupeQuizQuestionDelete(code, id),
+      commune: async () => {
+        const d = await GraineAPI.questions();
+        bqCategories = (d && d.categories) || [];
+        return (d && d.questions) || [];
+      },
+    };
+  }
+  return {
+    charger: (code) => GraineAPI.groupeBanque(code, bqModule),
+    mode: (code, m) => GraineAPI.groupeBanqueMode(code, bqModule, m),
+    selection: (code, ids) => GraineAPI.groupeBanqueSelection(code, bqModule, ids),
+    itemSave: (code, corps) => GraineAPI.groupeBanqueItemSave(code, bqModule, corps),
+    itemDelete: (code, id) => GraineAPI.groupeBanqueItemDelete(code, bqModule, id),
+    commune: async () => ((await GraineAPI.banque(bqModule)) || {}).items || [],
+  };
+}
+
 function ensureBanqueEglise() {
   const g = egliseCourante(); if (!g) return;
   const cle = bqCle();
   if (bqLoading[cle] || bqTentee[cle]) return;
   bqTentee[cle] = true;
   bqLoading[cle] = true;
-  GraineAPI.groupeBanque(g.code, bqModule)
+  bqApi().charger(g.code)
     .then(b => { bqCache[cle] = b; })
     .catch(e => { bqError = (e && e.offline) ? 'Pas de connexion — la banque apparaîtra en ligne.' : friendlyError(e); })
     .then(() => { bqLoading[cle] = false; renderIfIdle(); });
@@ -2438,11 +2477,13 @@ function bqRafraichir() { const cle = bqCle(); delete bqCache[cle]; delete bqTen
 
 /* L'étiquette d'un item selon sa forme — pour les listes (sélection, propres). */
 function bqItemLibelle(module, it) {
+  if (module === 'defi') return it.question || '';
   if (module === 'quiadit') return it.parole || '';
   if (module === 'ecritoupas') return it.phrase || '';
   return it.reponse || '';
 }
 function bqItemMeta(module, it) {
+  if (module === 'defi') return `${esc(it.categorie || '')} · ${NIVEAUX_QUIZ[it.niveau] || ''}${it.reference ? ' · ' + esc(it.reference) : ''}`;
   if (module === 'quiadit') return `${esc((it.options || [])[it.bonne] || '')} · ${esc(it.reference || '')}`;
   if (module === 'ecritoupas') return `${it.ecrit ? 'écrit' : 'pas écrit'}${it.reference ? ' · ' + esc(it.reference) : ''}`;
   return `${esc(it.genre || '')} · ${esc(it.reference || '')}`;
@@ -2505,14 +2546,7 @@ function viewEgliseBanques() {
     corps = reglages + propres;
   }
 
-  // « Qui, où, quand ? » : sa banque d'église vit dans le module Défi.
-  const defiCard = (bqEdit || bqSel) ? '' : `<a class="card hub-card fade" href="defi/#banque">
-    <span class="hub-ic">${icon('defi', 26)}</span>
-    <span class="hub-txt"><span class="hub-title">Qui, où, quand ?</span>
-      <span class="hub-sub">La banque du grand quiz se règle dans le module Défi — même esprit, autre moteur.</span></span>
-    <span class="chev">›</span></a>`;
-
-  return topbar() + tete + alerte + corps + defiCard;
+  return topbar() + tete + alerte + corps;
 }
 
 /* ---- L'écran de sélection dans la banque commune ---- */
@@ -2550,6 +2584,29 @@ function bqFormHTML() {
       <button class="btn btn-grow" type="submit" ${e.busy ? 'disabled' : ''}>${e.id ? 'Enregistrer' : 'Ajouter'}</button>
       <button class="btn btn-ghost" type="button" data-bqannuler="1">Annuler</button>
     </div>`;
+  if (bqModule === 'defi') {
+    if (bqCategories === null) {
+      return `<div class="card fade"><p class="muted fr-empty" style="margin:0">Chargement des catégories…</p></div>`;
+    }
+    return `<form class="card fade" data-bqform="1">
+      <label class="lbl" for="bqQuestion" style="margin-top:0">${e.id ? 'Modifier la question' : 'Nouvelle question'}</label>
+      <textarea class="field" id="bqQuestion" maxlength="300" placeholder="La question posée…">${esc(e.question)}</textarea>
+      <label class="lbl" for="bqCategorie">Catégorie</label>
+      <select class="field" id="bqCategorie">${bqCategories.map(c =>
+        `<option value="${esc(c)}" ${c === e.categorie ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
+      <label class="lbl">Niveau</label>
+      <div class="pill-row">${[1, 2, 3].map(n =>
+        `<button class="pill ${Number(e.niveau) === n ? 'on' : ''}" type="button" data-bqniveau="${n}">${NIVEAUX_QUIZ[n]}</button>`).join('')}</div>
+      ${[0, 1, 2, 3].map(i => `<label class="lbl" for="bqOpt${i}">Réponse ${i + 1}${i === Number(e.bonne) ? ' — la bonne' : ''}</label>
+        <input class="field" type="text" id="bqOpt${i}" maxlength="90" autocomplete="off" value="${esc(e.options[i] || '')}">`).join('')}
+      <label class="lbl">La bonne réponse</label>
+      <div class="pill-row">${[0, 1, 2, 3].map(i =>
+        `<button class="pill ${Number(e.bonne) === i ? 'on' : ''}" type="button" data-bqbonne="${i}">Réponse ${i + 1}</button>`).join('')}</div>
+      <label class="lbl" for="bqRef">Référence</label>
+      <input class="field" type="text" id="bqRef" maxlength="60" placeholder="Genèse 6–9" autocomplete="off" value="${esc(e.reference)}">
+      ${boutons}
+    </form>`;
+  }
   if (bqModule === 'quiadit') {
     return `<form class="card fade" data-bqform="1">
       <label class="lbl" for="bqParole" style="margin-top:0">${e.id ? 'Modifier la parole' : 'Nouvelle parole'}</label>
@@ -2604,6 +2661,22 @@ function bqOuvrirForm(id) {
   const b = bqCache[bqCle()]; if (!b) return;
   const it = id ? b.items.find(x => x.id === id) : null;
   bqNotice = bqError = null;
+  if (bqModule === 'defi') {
+    bqEdit = { id: it ? it.id : null, question: it ? it.question : '',
+      categorie: it ? it.categorie : (bqCategories && bqCategories[0]) || '',
+      niveau: it ? it.niveau : 1, options: it ? it.options.slice() : ['', '', '', ''],
+      bonne: it ? it.bonne : 0, reference: it ? it.reference : '', busy: false, error: null };
+    // Les catégories viennent de la banque commune — chargées au premier besoin.
+    if (bqCategories === null) {
+      bqApi().commune().then(items => {
+        bqCommune.defi = items;
+        if (bqEdit && !bqEdit.categorie) bqEdit.categorie = (bqCategories && bqCategories[0]) || '';
+        renderIfIdle();
+      }).catch(() => { bqError = 'Les catégories n\'ont pas pu être chargées — réessaie en ligne.'; bqEdit = null; renderIfIdle(); });
+    }
+    render();
+    return;
+  }
   if (bqModule === 'quiadit') {
     bqEdit = { id: it ? it.id : null, parole: it ? it.parole : '', options: it ? it.options.slice() : ['', '', '', ''],
       bonne: it ? it.bonne : 0, reference: it ? it.reference : '', contexte: it && it.contexte ? it.contexte : '', busy: false, error: null };
@@ -2622,7 +2695,8 @@ async function doBqMode(mode) {
   const g = egliseCourante(); if (!g || bqBusy) return;
   bqBusy = true; bqNotice = bqError = null; render();
   try {
-    bqCache[bqCle()] = await GraineAPI.groupeBanqueMode(g.code, bqModule, mode);
+    await bqApi().mode(g.code, mode);
+    bqRafraichir(); // relu depuis le serveur : les deux dialectes rendent pareil
   } catch (e) {
     bqError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
   }
@@ -2639,8 +2713,7 @@ async function doBqSelOuvrir() {
   render();
   if (!bqCommune[bqModule]) {
     try {
-      const d = await GraineAPI.banque(bqModule);
-      bqCommune[bqModule] = (d && d.items) || [];
+      bqCommune[bqModule] = await bqApi().commune();
     } catch (e) {
       bqSel = null;
       bqError = (e && e.offline) ? 'Pas de connexion — la banque commune est introuvable.' : friendlyError(e);
@@ -2653,9 +2726,10 @@ async function doBqSelSave() {
   const g = egliseCourante(); if (!g || !bqSel || bqBusy) return;
   bqBusy = true; render();
   try {
-    bqCache[bqCle()] = await GraineAPI.groupeBanqueSelection(g.code, bqModule, Object.keys(bqSel.ids));
+    await bqApi().selection(g.code, Object.keys(bqSel.ids));
     bqSel = null;
     bqNotice = 'Sélection retenue pour tes parties d\'église.';
+    bqRafraichir();
   } catch (e) {
     bqError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
   }
@@ -2668,7 +2742,10 @@ async function doBqItemSave() {
   if (!g || !e || e.busy) return;
   e.busy = true; e.error = null; render();
   let corps;
-  if (bqModule === 'quiadit') {
+  if (bqModule === 'defi') {
+    corps = { categorie: e.categorie, niveau: Number(e.niveau), question: e.question,
+      options: e.options.map(o => o || ''), bonne: Number(e.bonne), reference: e.reference };
+  } else if (bqModule === 'quiadit') {
     corps = { parole: e.parole, options: e.options.map(o => o || ''), bonne: Number(e.bonne),
       reference: e.reference, contexte: e.contexte.trim() === '' ? null : e.contexte };
   } else if (bqModule === 'ecritoupas') {
@@ -2681,7 +2758,7 @@ async function doBqItemSave() {
   }
   if (e.id) corps.id = e.id;
   try {
-    await GraineAPI.groupeBanqueItemSave(g.code, bqModule, corps);
+    await bqApi().itemSave(g.code, corps);
     bqEdit = null;
     bqNotice = e.id ? 'C\'est enregistré.' : 'L\'item rejoint la banque de ton église 🙂';
     bqRafraichir();
@@ -2699,7 +2776,7 @@ async function doBqItemDelete(id) {
   if (!confirm(`Supprimer « ${it ? bqItemLibelle(bqModule, it) : id} » de la banque de ton église ?`)) return;
   bqNotice = bqError = null;
   try {
-    await GraineAPI.groupeBanqueItemDelete(g.code, bqModule, id);
+    await bqApi().itemDelete(g.code, id);
     bqRafraichir();
   } catch (e) {
     bqError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
@@ -2940,6 +3017,7 @@ function wire() {
   el.querySelectorAll('[data-bqbonne]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.bonne = +b.dataset.bqbonne; render(); } }));
   el.querySelectorAll('[data-bqecrit]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.ecrit = b.dataset.bqecrit === '1'; render(); } }));
   el.querySelectorAll('[data-bqgenre]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.genre = b.dataset.bqgenre; render(); } }));
+  el.querySelectorAll('[data-bqniveau]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.niveau = +b.dataset.bqniveau; render(); } }));
   el.querySelectorAll('[data-eglsel]').forEach(b => b.addEventListener('click', () => {
     egliseSel = b.dataset.eglsel; pageEdit = null; pageNotice = pageError = null; render();
     const gEgl = egliseCourante(); if (gEgl) ensurePage(gEgl.code);
@@ -2988,6 +3066,8 @@ function wire() {
     bqSel.filtre = v; render();
     const f = q('#bqFiltre'); if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
   });
+  bindInput('bqQuestion', v => { if (bqEdit) bqEdit.question = v; });
+  bindInput('bqCategorie', v => { if (bqEdit) bqEdit.categorie = v; });
   bindInput('bqParole', v => { if (bqEdit) bqEdit.parole = v; });
   bindInput('bqOpt0', v => { if (bqEdit) bqEdit.options[0] = v; });
   bindInput('bqOpt1', v => { if (bqEdit) bqEdit.options[1] = v; });

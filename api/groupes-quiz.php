@@ -111,9 +111,13 @@ function groupe_quiz_payload(PDO $pdo, int $groupeId): array {
         'SELECT COUNT(*) AS n FROM groupe_questions WHERE groupe_id = ? AND actif = 1'
     );
     $st->execute([$groupeId]);
+    $selection = groupe_quiz_selection_ids($pdo, $groupeId);
     return [
         'mode'        => groupe_quiz_mode($pdo, $groupeId),
-        'nbSelection' => count(groupe_quiz_selection_ids($pdo, $groupeId)),
+        // Les ids eux-mêmes : l'éditeur unifié des banques (onglet Mon église)
+        // relit la sélection d'où qu'on vienne — pas besoin d'un miroir local.
+        'selection'   => $selection,
+        'nbSelection' => count($selection),
         'nbPropres'   => (int) $st->fetch()['n'],
         // La taille de la banque RÉSULTANTE — ce que tirera un quiz d'église.
         'nbTotal'     => count(groupe_quiz_bank($pdo, $groupeId)),
