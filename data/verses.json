@@ -1,65 +1,707 @@
 {
-  "version": "Segond 1910",
-  "note": "Textes du domaine public (Louis Segond 1910). L'ordre du tableau est le parcours d'apprentissage : des versets courts et essentiels vers les autres. À relire avant diffusion large.",
-  "regleContexte": "Le champ « contexte » de chaque verset doit rester STRICTEMENT biblique : uniquement ce que dit le texte lui-même (récit, suscription des psaumes, versets qui précèdent/suivent) ou un autre passage de la Bible cité en référence croisée — jamais une tradition d'Église, une hypothèse d'érudition ou un repère historique extérieur au texte, même largement admis. En cas de doute sur une attribution (auteur, lieu, date), l'omettre plutôt que l'affirmer.",
-  "verses": [
-    { "id": "phil-4-13", "ref": "Philippiens 4.13", "theme": "force", "text": "Je puis tout par celui qui me fortifie.", "contexte": "Paul écrit depuis sa prison à l’église de Philippes, qui vient de lui envoyer un don. Il vient d’expliquer qu’il a appris à vivre dans l’abondance comme dans le dénuement : c’est dans ce passage sur le contentement qu’il déclare pouvoir tout par celui qui le fortifie." },
-    { "id": "ps-23-1", "ref": "Psaumes 23.1", "theme": "confiance", "text": "L'Éternel est mon berger: je ne manquerai de rien.", "contexte": "David, qui a gardé les troupeaux de son père dans sa jeunesse, compose ce psaume de confiance. Il ouvre son chant en comparant l’Éternel à un berger qui conduit sa brebis vers les verts pâturages et les eaux paisibles, avant d’évoquer la vallée de l’ombre de la mort." },
-    { "id": "ps-119-11", "ref": "Psaumes 119.11", "theme": "parole", "text": "Je serre ta parole dans mon cœur, afin de ne pas pécher contre toi.", "contexte": "Le Psaume 119, le plus long du psautier, est un poème anonyme entièrement consacré à la parole de Dieu. L’auteur s’adresse directement à l’Éternel : il vient de demander comment un jeune homme peut rendre pur son sentier, et répond en serrant la parole dans son cœur." },
-    { "id": "prov-16-3", "ref": "Proverbes 16.3", "theme": "confiance", "text": "Recommande à l'Éternel tes œuvres, et tes projets réussiront.", "contexte": "Ce proverbe fait partie des sentences attribuées à Salomon, recueillies pour instruire dans la sagesse. Dans cette section, plusieurs maximes voisines rappellent que l’homme forme des projets dans son cœur, mais que c’est l’Éternel qui pèse les esprits et dirige les pas." },
-    { "id": "ps-37-4", "ref": "Psaumes 37.4", "theme": "confiance", "text": "Fais de l'Éternel tes délices, et il te donnera ce que ton cœur désire.", "contexte": "David, devenu vieux selon ses propres mots dans ce psaume, s’adresse aux fidèles troublés par la réussite des méchants. Il les exhorte à ne pas s’irriter contre ceux qui font le mal, mais à se confier en l’Éternel, à faire de lui leurs délices et à se reposer sur lui." },
-    { "id": "jean-14-6", "ref": "Jean 14.6", "theme": "salut", "text": "Jésus lui dit: Je suis le chemin, la vérité, et la vie. Nul ne vient au Père que par moi.", "contexte": "Lors du dernier repas avec ses disciples, Jésus annonce son départ et dit qu’il va leur préparer une place dans la maison de son Père. Thomas lui demande comment connaître le chemin puisqu’ils ignorent où il va ; Jésus lui répond par ces mots." },
-    { "id": "ps-119-105", "ref": "Psaumes 119.105", "theme": "parole", "text": "Ta parole est une lampe à mes pieds, et une lumière sur mon sentier.", "contexte": "Ce verset ouvre une strophe du Psaume 119, long poème anonyme entièrement consacré à la parole de Dieu. L’auteur, qui se dit affligé et entouré de pièges tendus par les méchants, déclare que cette parole éclaire sa marche comme une lampe dans la nuit." },
-    { "id": "prov-3-5", "ref": "Proverbes 3.5", "theme": "sagesse", "text": "Confie-toi en l'Éternel de tout ton cœur, et ne t'appuie pas sur ta sagesse.", "contexte": "Dans les premiers chapitres des Proverbes, recueil attribué à Salomon, un père transmet la sagesse à son fils. Il vient de l’inviter à ne pas oublier ses enseignements et à s’attacher à la bonté et à la fidélité, avant de l’appeler à se confier en l’Éternel de tout son cœur." },
-    { "id": "prov-3-6", "ref": "Proverbes 3.6", "theme": "sagesse", "text": "Reconnais-le dans toutes tes voies, et il aplanira tes sentiers.", "contexte": "Ce verset poursuit l’enseignement qu’un père adresse à son fils au début des Proverbes, recueil attribué à Salomon. Après l’appel à se confier en l’Éternel de tout son cœur plutôt qu’en sa propre sagesse, il promet des sentiers aplanis à celui qui le reconnaît dans toutes ses voies." },
-    { "id": "matt-11-28", "ref": "Matthieu 11.28", "theme": "réconfort", "text": "Venez à moi, vous tous qui êtes fatigués et chargés, et je vous donnerai du repos.", "contexte": "Jésus parcourt la Galilée et vient de reprocher aux villes témoins de ses miracles de ne pas s’être repenties. Il loue ensuite son Père d’avoir révélé ces choses aux enfants plutôt qu’aux sages, puis lance cette invitation à ceux qui l’écoutent." },
-    { "id": "jean-3-16", "ref": "Jean 3.16", "theme": "salut", "text": "Car Dieu a tant aimé le monde qu'il a donné son Fils unique, afin que quiconque croit en lui ne périsse point, mais qu'il ait la vie éternelle.", "contexte": "Jésus s’entretient de nuit avec Nicodème, un pharisien, chef des Juifs, venu l’interroger. Il lui explique la nouvelle naissance, puis résume pourquoi Dieu a envoyé son Fils dans le monde." },
-    { "id": "matt-6-33", "ref": "Matthieu 6.33", "theme": "confiance", "text": "Cherchez premièrement le royaume et la justice de Dieu; et toutes ces choses vous seront données par-dessus.", "contexte": "Dans le sermon sur la montagne, Jésus enseigne ses disciples et la foule en Galilée. Il vient de les inviter à ne pas s’inquiéter de la nourriture ni du vêtement, rappelant que le Père céleste nourrit les oiseaux du ciel et habille les lis des champs." },
-    { "id": "2tim-1-7", "ref": "2 Timothée 1.7", "theme": "force", "text": "Car ce n'est pas un esprit de timidité que Dieu nous a donné, mais un esprit de force, d'amour et de sagesse.", "contexte": "Paul, prisonnier à Rome et sentant sa fin proche, écrit à Timothée, son jeune collaborateur qu’il appelle son enfant bien-aimé. Il vient de l’encourager à ranimer le don de Dieu reçu par l’imposition de ses mains, avant de l’inviter à ne pas rougir du témoignage du Seigneur." },
-    { "id": "phil-4-6", "ref": "Philippiens 4.6", "theme": "prière", "text": "Ne vous inquiétez de rien; mais en toute chose faites connaître vos besoins à Dieu par des prières et des supplications, avec des actions de grâces.", "contexte": "Paul écrit depuis sa prison à l’église de Philippes, qu’il a fondée lors de son passage en Macédoine. À la fin de sa lettre, il enchaîne de courtes exhortations : il vient d’appeler les Philippiens à se réjouir toujours dans le Seigneur, puis les invite à remettre leurs inquiétudes à Dieu." },
-    { "id": "phil-4-7", "ref": "Philippiens 4.7", "theme": "paix", "text": "Et la paix de Dieu, qui surpasse toute intelligence, gardera vos cœurs et vos pensées en Jésus-Christ.", "contexte": "Dans les exhortations finales de sa lettre aux Philippiens, écrite depuis sa prison, Paul vient de demander à l’église de ne s’inquiéter de rien et de présenter ses besoins à Dieu par la prière avec des actions de grâces. Ce verset décrit ce qui accompagne cette démarche : la paix de Dieu." },
-    { "id": "esaie-41-10", "ref": "Ésaïe 41.10", "theme": "réconfort", "text": "Ne crains rien, car je suis avec toi; ne promène pas des regards inquiets, car je suis ton Dieu; je te fortifie, je viens à ton secours, je te soutiens de ma droite triomphante.", "contexte": "Dans cette partie du livre d’Ésaïe, Dieu s’adresse à Israël, qu’il appelle son serviteur et descendance d’Abraham son ami. Face aux nations et à leurs idoles, il rassure son peuple : il l’a choisi et ne l’a pas rejeté, et lui demande de ne pas craindre." },
-    { "id": "josue-1-9", "ref": "Josué 1.9", "theme": "force", "text": "Ne t'ai-je pas donné cet ordre: Fortifie-toi et prends courage? Ne t'effraie point et ne t'épouvante point, car l'Éternel, ton Dieu, est avec toi dans tout ce que tu entreprendras.", "contexte": "Après la mort de Moïse, Dieu s’adresse à Josué, désigné pour conduire Israël dans le pays promis. Avant la traversée du Jourdain, il lui ordonne à plusieurs reprises de se fortifier et de garder la loi, en lui promettant d’être avec lui comme il a été avec Moïse." },
-    { "id": "rom-8-28", "ref": "Romains 8.28", "theme": "confiance", "text": "Nous savons, du reste, que toutes choses concourent au bien de ceux qui aiment Dieu, de ceux qui sont appelés selon son dessein.", "contexte": "Paul écrit à l’église de Rome, qu’il n’a pas encore visitée. Dans ce chapitre, il vient de comparer les souffrances du temps présent à la gloire à venir, et d’expliquer que l’Esprit soutient les croyants dans leur faiblesse et intercède pour eux." },
-    { "id": "jer-29-11", "ref": "Jérémie 29.11", "theme": "espérance", "text": "Car je connais les projets que j'ai formés sur vous, dit l'Éternel, projets de paix et non de malheur, afin de vous donner un avenir et de l'espérance.", "contexte": "Jérémie, resté à Jérusalem, envoie une lettre aux Judéens déportés à Babylone. De la part de l’Éternel, il leur demande de s’y installer, de bâtir et de chercher la paix de la ville, car l’exil durera soixante-dix ans avant que Dieu ne les ramène ; c’est là qu’il révèle ses projets." },
-    { "id": "esaie-40-31", "ref": "Ésaïe 40.31", "theme": "force", "text": "Mais ceux qui se confient en l'Éternel renouvellent leur force. Ils prennent le vol comme les aigles; ils courent, et ne se lassent point, ils marchent, et ne se fatiguent point.", "contexte": "Ce chapitre ouvre la partie du livre d’Ésaïe où Dieu console son peuple et lui annonce la fin de sa servitude. Le prophète vient de décrire la grandeur du Créateur, qui ne se fatigue point, et de rappeler que même les jeunes gens chancellent, avant d’évoquer ceux qui se confient en l’Éternel." },
-    { "id": "rom-12-2", "ref": "Romains 12.2", "theme": "sagesse", "text": "Ne vous conformez pas au siècle présent, mais soyez transformés par le renouvellement de l'intelligence, afin que vous discerniez quelle est la volonté de Dieu, ce qui est bon, agréable et parfait.", "contexte": "Après onze chapitres où il expose l’Évangile aux chrétiens de Rome, Paul passe aux exhortations pratiques. Il vient de les inviter, au nom des compassions de Dieu, à offrir leurs corps comme un sacrifice vivant, puis les appelle à ne pas se conformer au siècle présent." },
-    { "id": "eph-2-8", "ref": "Éphésiens 2.8", "theme": "salut", "text": "Car c'est par la grâce que vous êtes sauvés, par le moyen de la foi. Et cela ne vient pas de vous, c'est le don de Dieu.", "contexte": "Paul, prisonnier, écrit aux chrétiens d’Éphèse, ville où il a longuement séjourné. Il vient de rappeler qu’ils étaient morts par leurs offenses et leurs péchés, et que Dieu, riche en miséricorde, les a rendus à la vie avec Christ ; ce verset en donne la raison." },
-    { "id": "rom-6-23", "ref": "Romains 6.23", "theme": "salut", "text": "Car le salaire du péché, c'est la mort; mais le don gratuit de Dieu, c'est la vie éternelle en Jésus-Christ notre Seigneur.", "contexte": "Dans sa lettre aux chrétiens de Rome, Paul répond à une objection : faut-il pécher parce qu’on est sous la grâce ? Il vient d’opposer l’ancienne servitude du péché, dont la fin est la mort, au service de Dieu, qui a pour fin la vie éternelle ; ce verset conclut le chapitre." },
-    { "id": "rom-10-9", "ref": "Romains 10.9", "theme": "salut", "text": "Si tu confesses de ta bouche le Seigneur Jésus, et si tu crois dans ton cœur que Dieu l'a ressuscité des morts, tu seras sauvé.", "contexte": "Dans les chapitres où il parle d’Israël, Paul oppose la justice qui vient de la loi à celle qui vient de la foi. Citant le Deutéronome, il vient de rappeler que la parole est près de chacun, dans sa bouche et dans son cœur, avant de préciser ce qu’il faut confesser et croire." },
-    { "id": "1jean-1-9", "ref": "1 Jean 1.9", "theme": "pardon", "text": "Si nous confessons nos péchés, il est fidèle et juste pour nous les pardonner, et pour nous purifier de toute iniquité.", "contexte": "Jean écrit à des croyants en témoin de ce qu’il a vu et entendu, pour que leur joie soit parfaite. Il vient d’affirmer que Dieu est lumière et que prétendre être sans péché, c’est se séduire soi-même ; ce verset présente l’autre voie, celle de la confession des péchés." },
-    { "id": "apoc-3-20", "ref": "Apocalypse 3.20", "theme": "salut", "text": "Voici, je me tiens à la porte, et je frappe. Si quelqu'un entend ma voix et ouvre la porte, j'entrerai chez lui, je souperai avec lui, et lui avec moi.", "contexte": "Dans une vision reçue sur l’île de Patmos, Jean entend le Christ ressuscité dicter sept lettres à des églises d’Asie. Celle-ci s’adresse à l’église de Laodicée, à qui il reproche d’être tiède, ni froide ni bouillante, et qu’il appelle à se repentir avant de frapper à la porte." },
-    { "id": "1cor-13-4", "ref": "1 Corinthiens 13.4", "theme": "amour", "text": "La charité est patiente, elle est pleine de bonté; la charité n'est point envieuse; la charité ne se vante point, elle ne s'enfle point d'orgueil.", "contexte": "Paul écrit à l’église de Corinthe, divisée et fière de ses dons spirituels. Entre deux chapitres consacrés à ces dons, il montre une voie par excellence : sans la charité, dit-il, les langues, la prophétie et la connaissance ne sont rien ; puis il décrit ce qu’est cette charité." },
-    { "id": "gal-5-22", "ref": "Galates 5.22", "theme": "vie chrétienne", "text": "Mais le fruit de l'Esprit, c'est l'amour, la joie, la paix, la patience, la bonté, la bénignité, la fidélité.", "contexte": "Paul écrit aux églises de Galatie, troublées par ceux qui veulent imposer la loi de Moïse aux croyants venus des nations. Il vient de les appeler à marcher selon l’Esprit et d’énumérer les œuvres de la chair, avant d’y opposer, par contraste, le fruit de l’Esprit." },
-    { "id": "michee-6-8", "ref": "Michée 6.8", "theme": "vie chrétienne", "text": "On t'a fait connaître, ô homme, ce qui est bien; et ce que l'Éternel demande de toi, c'est que tu pratiques la justice, que tu aimes la miséricorde, et que tu marches humblement avec ton Dieu.", "contexte": "Le prophète Michée, contemporain d’Ésaïe, parle au peuple sous les rois de Juda. Dieu ouvre un procès contre son peuple et rappelle ses bienfaits depuis la sortie d’Égypte ; à la question de savoir quelles offrandes apporter, même des milliers de béliers, ce verset donne la réponse." },
-    { "id": "heb-11-1", "ref": "Hébreux 11.1", "theme": "foi", "text": "Or la foi est une ferme assurance des choses qu'on espère, une démonstration de celles qu'on ne voit pas.", "contexte": "L’auteur de la lettre aux Hébreux, resté anonyme, écrit à des chrétiens éprouvés, tentés de se relâcher. Il vient de les exhorter à ne pas abandonner leur assurance et à vivre par la foi ; il ouvre alors un chapitre qui définit la foi, puis énumère les anciens qui en ont vécu." },
-    { "id": "prov-22-6", "ref": "Proverbes 22.6", "theme": "sagesse", "text": "Instruis l'enfant selon la voie qu'il doit suivre; et quand il sera vieux, il ne s'en détournera pas.", "contexte": "Ce proverbe appartient au recueil de sentences attribuées à Salomon, rassemblées pour transmettre la sagesse. Comme beaucoup de maximes voisines sur l’éducation, la richesse et l’humilité, il tient en une phrase une observation sur la formation de l’enfant et ses fruits durables." },
-    { "id": "jean-1-1", "ref": "Jean 1.1", "theme": "parole", "text": "Au commencement était la Parole, et la Parole était avec Dieu, et la Parole était Dieu.", "contexte": "Jean ouvre son évangile par un prologue, avant tout récit de la vie de Jésus. Il y présente la Parole qui était dès le commencement auprès de Dieu et par qui tout a été fait ; quelques versets plus loin, il dira que cette Parole a été faite chair et a habité parmi nous." },
-    { "id": "ps-46-2", "ref": "Psaumes 46.2", "theme": "réconfort", "text": "Dieu est pour nous un refuge et un appui, un secours qui ne manque jamais dans la détresse.", "contexte": "Ce psaume est un cantique des fils de Koré, une famille attachée au chant du sanctuaire. Il célèbre Dieu comme refuge de son peuple : même si la terre est bouleversée et si les montagnes chancellent au cœur des mers, la ville de Dieu n’est point ébranlée, car Dieu est au milieu d’elle." },
-    { "id": "ps-118-24", "ref": "Psaumes 118.24", "theme": "joie", "text": "C'est ici la journée que l'Éternel a faite: qu'elle soit pour nous un sujet d'allégresse et de joie!", "contexte": "Le Psaume 118 est un chant de reconnaissance où l’on rend grâce à l’Éternel, car sa miséricorde dure à toujours. Le psalmiste vient de célébrer sa délivrance et la pierre rejetée par ceux qui bâtissaient, devenue la principale de l’angle : cela vient de l’Éternel, et c’est un prodige." },
-    { "id": "lam-3-22", "ref": "Lamentations 3.22-23", "theme": "espérance", "text": "Les bontés de l'Éternel ne sont pas épuisées, ses compassions ne sont pas à leur terme; elles se renouvellent chaque matin. Oh! que ta fidélité est grande!", "contexte": "Les Lamentations pleurent la destruction de Jérusalem par les Babyloniens. Au cœur du troisième poème, l’auteur, qui vient de décrire sa profonde affliction — « il a rassasié d’amertume, il m’a fait boire l’absinthe » — se rappelle soudain ce qui lui rend l’espérance : les bontés de l’Éternel." },
-    { "id": "matt-28-19", "ref": "Matthieu 28.19", "theme": "mission", "text": "Allez, faites de toutes les nations des disciples, les baptisant au nom du Père, du Fils et du Saint-Esprit.", "contexte": "Après sa résurrection, Jésus retrouve les onze disciples sur une montagne de Galilée où il leur a donné rendez-vous. Il leur déclare que tout pouvoir lui a été donné dans le ciel et sur la terre, puis les envoie vers toutes les nations : ce sont les dernières paroles de l’évangile selon Matthieu." },
-    { "id": "eph-4-32", "ref": "Éphésiens 4.32", "theme": "pardon", "text": "Soyez bons les uns envers les autres, compatissants, vous pardonnant réciproquement, comme Dieu vous a pardonné en Christ.", "contexte": "Dans la partie pratique de sa lettre aux chrétiens d’Éphèse, Paul décrit la vie qui convient à ceux qui ont revêtu l’homme nouveau. Il vient de demander d’abandonner le mensonge, l’amertume, la colère et la calomnie, puis indique ce qui doit les remplacer." },
-    { "id": "ps-103-12", "ref": "Psaumes 103.12", "theme": "pardon", "text": "Autant l'orient est éloigné de l'occident, autant il éloigne de nous nos transgressions.", "contexte": "David compose ce psaume de louange où il invite son âme à bénir l’Éternel et à n’oublier aucun de ses bienfaits. Il vient de célébrer un Dieu miséricordieux et lent à la colère, qui ne nous traite pas selon nos péchés, avant d’illustrer par cette image l’étendue de son pardon." },
-    { "id": "col-3-13", "ref": "Colossiens 3.13", "theme": "pardon", "text": "Supportez-vous les uns les autres, et, si l'un a sujet de se plaindre de l'autre, pardonnez-vous réciproquement. De même que Christ vous a pardonné, pardonnez-vous aussi.", "contexte": "Paul, prisonnier, écrit à l’église de Colosses, qui lui a été présentée par Épaphras et qu’il n’a pas visitée lui-même. Il vient d’inviter les croyants, ressuscités avec Christ, à revêtir des sentiments de compassion, de bonté, d’humilité, de douceur et de patience." },
-    { "id": "esaie-1-18", "ref": "Ésaïe 1.18", "theme": "pardon", "text": "Venez et plaidons! dit l'Éternel. Si vos péchés sont comme le cramoisi, ils deviendront blancs comme la neige; s'ils sont rouges comme la pourpre, ils deviendront comme la laine.", "contexte": "Au début du livre d’Ésaïe, l’Éternel adresse par le prophète un réquisitoire à Juda et à Jérusalem, peuple rebelle dont il rejette les sacrifices sans justice. Après l’avoir appelé à cesser de faire le mal et à défendre l’orphelin et la veuve, il l’invite à venir plaider avec lui." },
-    { "id": "jean-13-34", "ref": "Jean 13.34", "theme": "amour", "text": "Je vous donne un commandement nouveau: Aimez-vous les uns les autres; comme je vous ai aimés, vous aussi, aimez-vous les uns les autres.", "contexte": "Au cours du dernier repas, Jésus a lavé les pieds de ses disciples, et Judas vient de sortir dans la nuit. Sachant son départ proche, Jésus annonce qu’il n’est plus avec eux que pour peu de temps, puis leur laisse ce commandement, signe auquel tous reconnaîtront ses disciples." },
-    { "id": "1jean-4-19", "ref": "1 Jean 4.19", "theme": "amour", "text": "Pour nous, nous l'aimons, parce qu'il nous a aimés le premier.", "contexte": "Dans sa lettre, Jean exhorte les croyants à s’aimer les uns les autres, car l’amour est de Dieu. Il vient de rappeler comment cet amour a été manifesté : Dieu a envoyé son Fils unique dans le monde ; ce verset indique alors d’où vient l’amour des croyants pour Dieu." },
-    { "id": "rom-5-8", "ref": "Romains 5.8", "theme": "amour", "text": "Mais Dieu prouve son amour envers nous, en ce que, lorsque nous étions encore des pécheurs, Christ est mort pour nous.", "contexte": "Paul vient d’exposer aux chrétiens de Rome que, justifiés par la foi, ils ont la paix avec Dieu. Il rappelle qu’au temps marqué, Christ est mort pour des impies, et souligne qu’à peine mourrait-on pour un juste, avant d’énoncer ce que Dieu prouve ainsi." },
-    { "id": "1cor-16-14", "ref": "1 Corinthiens 16.14", "theme": "amour", "text": "Que tout ce que vous faites se fasse avec charité!", "contexte": "Cette phrase figure parmi les toutes dernières exhortations de la première lettre de Paul à l’église de Corinthe, communauté marquée par les divisions. Après avoir réglé les questions de la collecte et de ses projets de voyage, Paul conclut par de brefs appels : veiller, être fermes dans la foi, se fortifier." },
-    { "id": "heb-11-6", "ref": "Hébreux 11.6", "theme": "foi", "text": "Or sans la foi il est impossible de lui être agréable; car il faut que celui qui s'approche de Dieu croie que Dieu existe, et qu'il est le rémunérateur de ceux qui le cherchent.", "contexte": "Dans le chapitre où il définit la foi et énumère les anciens qui en ont vécu, l’auteur anonyme de la lettre aux Hébreux vient d’évoquer Hénoc, enlevé sans voir la mort parce qu’il était agréable à Dieu. Ce verset explique pourquoi une telle approbation passe par la foi." },
-    { "id": "rom-10-17", "ref": "Romains 10.17", "theme": "foi", "text": "Ainsi la foi vient de ce qu'on entend, et ce qu'on entend vient de la parole de Christ.", "contexte": "Paul, parlant d’Israël aux chrétiens de Rome, vient de poser une suite de questions : comment invoquer le Seigneur sans avoir cru en lui, croire sans avoir entendu parler de lui, entendre sans prédicateur ? Ce verset tire la conclusion de cet enchaînement." },
-    { "id": "gal-2-20", "ref": "Galates 2.20", "theme": "foi", "text": "J'ai été crucifié avec Christ; et si je vis, ce n'est plus moi qui vis, c'est Christ qui vit en moi; si je vis maintenant dans la chair, je vis dans la foi au Fils de Dieu, qui m'a aimé et qui s'est livré lui-même pour moi.", "contexte": "Paul rappelle aux Galates comment il a résisté en face à Pierre à Antioche, quand celui-ci s’était mis à l’écart des croyants non juifs. Il vient d’affirmer que nul n’est justifié par les œuvres de la loi, mais par la foi en Christ, puis décrit sa propre vie en ces termes." },
-    { "id": "rom-15-13", "ref": "Romains 15.13", "theme": "espérance", "text": "Que le Dieu de l'espérance vous remplisse de toute joie et de toute paix dans la foi, pour que vous abondiez en espérance, par la puissance du Saint-Esprit!", "contexte": "Vers la fin de sa lettre aux chrétiens de Rome, Paul appelle les forts et les faibles à s’accueillir les uns les autres, comme Christ les a accueillis. Il vient de citer plusieurs Écritures annonçant que les nations loueraient Dieu avec son peuple, puis conclut ce passage par ce souhait." },
-    { "id": "rom-8-38", "ref": "Romains 8.38-39", "theme": "espérance", "text": "Car j'ai l'assurance que ni la mort ni la vie, ni les anges ni les dominations, ni les choses présentes ni les choses à venir, ni les puissances, ni la hauteur, ni la profondeur, ni aucune autre créature ne pourra nous séparer de l'amour de Dieu manifesté en Jésus-Christ notre Seigneur.", "contexte": "Paul achève le chapitre où il a décrit la vie par l’Esprit et l’espérance des enfants de Dieu. Il vient de demander qui pourrait accuser les élus de Dieu ou les séparer de l’amour de Christ, énumérant tribulation, persécution et péril, avant de donner cette réponse pleine d’assurance." },
-    { "id": "ps-34-19", "ref": "Psaumes 34.19", "theme": "réconfort", "text": "L'Éternel est près de ceux qui ont le cœur brisé, et il sauve ceux qui ont l'esprit dans l'abattement.", "contexte": "La suscription de ce psaume situe David au moment où, fuyant Saül, il contrefit l’insensé devant Abimélec, qui le chassa. Délivré, David bénit l’Éternel en tout temps et invite les humbles à sentir combien il est bon ; il évoque ici la proximité de Dieu avec ceux qui ont le cœur brisé." },
-    { "id": "matt-11-29", "ref": "Matthieu 11.29", "theme": "réconfort", "text": "Prenez mon joug sur vous et recevez mes instructions, car je suis doux et humble de cœur; et vous trouverez du repos pour vos âmes.", "contexte": "Jésus vient d’inviter à venir à lui tous ceux qui sont fatigués et chargés, en leur promettant du repos. Il parle en Galilée, après avoir reproché leur impénitence aux villes témoins de ses miracles et loué son Père d’avoir révélé ces choses aux enfants ; il poursuit ici son invitation." },
-    { "id": "ps-55-23", "ref": "Psaumes 55.23", "theme": "réconfort", "text": "Remets ton sort à l'Éternel, et il te soutiendra, il ne laissera jamais chanceler le juste.", "contexte": "Dans ce psaume, David est dans l’angoisse : il est trahi non par un ennemi, mais par un intime, un compagnon avec qui il allait à la maison de Dieu. Après avoir décrit la violence qui règne dans la ville et déversé sa plainte du matin au soir, il se tourne vers l’Éternel avec confiance." },
-    { "id": "1thess-5-17", "ref": "1 Thessaloniciens 5.17", "theme": "prière", "text": "Priez sans cesse.", "contexte": "Paul écrit à la jeune église de Thessalonique, qu’il a dû quitter précipitamment à cause de la persécution, peu après l’avoir fondée. À la fin de sa lettre, il enchaîne de très courtes exhortations sur la vie commune : se réjouir toujours, prier sans cesse, rendre grâces en toutes choses." },
-    { "id": "jean-14-27", "ref": "Jean 14.27", "theme": "paix", "text": "Je vous laisse la paix, je vous donne ma paix. Je ne vous donne pas comme le monde donne. Que votre cœur ne se trouble point, et ne s'alarme point.", "contexte": "Lors du dernier repas, Jésus annonce son départ à ses disciples, dont le cœur est troublé. Il vient de leur promettre le consolateur, le Saint-Esprit, que le Père enverra en son nom pour leur enseigner toutes choses et leur rappeler ses paroles ; c’est alors qu’il leur laisse sa paix." },
-    { "id": "matt-7-7", "ref": "Matthieu 7.7", "theme": "prière", "text": "Demandez, et l'on vous donnera; cherchez, et vous trouverez; frappez, et l'on vous ouvrira.", "contexte": "Vers la fin du sermon sur la montagne, Jésus enseigne ses disciples et la foule en Galilée. Après ces paroles sur la demande, il compare Dieu à un père qui ne donne pas une pierre à son fils demandant du pain : combien plus le Père céleste donnera-t-il de bonnes choses à ceux qui les lui demandent." },
-    { "id": "jer-33-3", "ref": "Jérémie 33.3", "theme": "prière", "text": "Invoque-moi, et je te répondrai; je t'annoncerai de grandes choses, des choses cachées, que tu ne connais pas.", "contexte": "Jérémie est enfermé dans la cour de la prison, tandis que l’armée babylonienne assiège Jérusalem. La parole de l’Éternel lui est adressée une seconde fois en ce lieu : Dieu l’invite à l’invoquer, avant de lui annoncer la guérison et le rétablissement de la ville et de Juda." },
-    { "id": "ps-28-7", "ref": "Psaumes 28.7", "theme": "force", "text": "L'Éternel est ma force et mon bouclier; en lui mon cœur se confie, et je suis secouru; j'ai le cœur dans la joie, et je le loue par mes chants.", "contexte": "Dans ce psaume, David crie à l’Éternel, son rocher, et le supplie de ne pas l’entraîner avec les méchants, qui parlent de paix à leur prochain avec la malice dans le cœur. Il bénit ensuite l’Éternel qui a entendu ses supplications ; ce verset exprime cette reconnaissance." },
-    { "id": "jacq-1-5", "ref": "Jacques 1.5", "theme": "sagesse", "text": "Si quelqu'un d'entre vous manque de sagesse, qu'il la demande à Dieu, qui donne à tous simplement et sans reproche, et elle lui sera donnée.", "contexte": "Jacques écrit aux douze tribus de la dispersion, des croyants d’origine juive répandus hors de leur pays. Il ouvre sa lettre en les invitant à regarder les épreuves diverses comme un sujet de joie complète, car l’épreuve de la foi produit la patience ; c’est là qu’il évoque le manque de sagesse." }
-  ]
+ "version": "Segond 1910",
+ "note": "Textes du domaine public (Louis Segond 1910). L'ordre du tableau est le parcours d'apprentissage : des versets courts et essentiels vers les autres. À relire avant diffusion large.",
+ "regleContexte": "Le champ « contexte » de chaque verset doit rester STRICTEMENT biblique : uniquement ce que dit le texte lui-même (récit, suscription des psaumes, versets qui précèdent/suivent) ou un autre passage de la Bible cité en référence croisée — jamais une tradition d'Église, une hypothèse d'érudition ou un repère historique extérieur au texte, même largement admis. En cas de doute sur une attribution (auteur, lieu, date), l'omettre plutôt que l'affirmer.",
+ "verses": [
+  {
+   "id": "phil-4-13",
+   "ref": "Philippiens 4.13",
+   "theme": "force",
+   "text": "Je puis tout par celui qui me fortifie.",
+   "contexte": "Paul écrit depuis sa prison à l’église de Philippes, qui vient de lui envoyer un don. Il vient d’expliquer qu’il a appris à vivre dans l’abondance comme dans le dénuement : c’est dans ce passage sur le contentement qu’il déclare pouvoir tout par celui qui le fortifie."
+  },
+  {
+   "id": "ps-23-1",
+   "ref": "Psaumes 23.1",
+   "theme": "confiance",
+   "text": "L'Éternel est mon berger: je ne manquerai de rien.",
+   "contexte": "David, qui a gardé les troupeaux de son père dans sa jeunesse, compose ce psaume de confiance. Il ouvre son chant en comparant l’Éternel à un berger qui conduit sa brebis vers les verts pâturages et les eaux paisibles, avant d’évoquer la vallée de l’ombre de la mort."
+  },
+  {
+   "id": "ps-119-11",
+   "ref": "Psaumes 119.11",
+   "theme": "parole",
+   "text": "Je serre ta parole dans mon cœur, afin de ne pas pécher contre toi.",
+   "contexte": "Le Psaume 119, le plus long du psautier, est un poème anonyme entièrement consacré à la parole de Dieu. L’auteur s’adresse directement à l’Éternel : il vient de demander comment un jeune homme peut rendre pur son sentier, et répond en serrant la parole dans son cœur."
+  },
+  {
+   "id": "prov-16-3",
+   "ref": "Proverbes 16.3",
+   "theme": "confiance",
+   "text": "Recommande à l'Éternel tes œuvres, et tes projets réussiront.",
+   "contexte": "Ce proverbe fait partie des sentences attribuées à Salomon, recueillies pour instruire dans la sagesse. Dans cette section, plusieurs maximes voisines rappellent que l’homme forme des projets dans son cœur, mais que c’est l’Éternel qui pèse les esprits et dirige les pas."
+  },
+  {
+   "id": "ps-37-4",
+   "ref": "Psaumes 37.4",
+   "theme": "confiance",
+   "text": "Fais de l'Éternel tes délices, et il te donnera ce que ton cœur désire.",
+   "contexte": "David, devenu vieux selon ses propres mots dans ce psaume, s’adresse aux fidèles troublés par la réussite des méchants. Il les exhorte à ne pas s’irriter contre ceux qui font le mal, mais à se confier en l’Éternel, à faire de lui leurs délices et à se reposer sur lui."
+  },
+  {
+   "id": "jean-14-6",
+   "ref": "Jean 14.6",
+   "theme": "salut",
+   "text": "Jésus lui dit: Je suis le chemin, la vérité, et la vie. Nul ne vient au Père que par moi.",
+   "contexte": "Lors du dernier repas avec ses disciples, Jésus annonce son départ et dit qu’il va leur préparer une place dans la maison de son Père. Thomas lui demande comment connaître le chemin puisqu’ils ignorent où il va ; Jésus lui répond par ces mots."
+  },
+  {
+   "id": "ps-119-105",
+   "ref": "Psaumes 119.105",
+   "theme": "parole",
+   "text": "Ta parole est une lampe à mes pieds, et une lumière sur mon sentier.",
+   "contexte": "Ce verset ouvre une strophe du Psaume 119, long poème anonyme entièrement consacré à la parole de Dieu. L’auteur, qui se dit affligé et entouré de pièges tendus par les méchants, déclare que cette parole éclaire sa marche comme une lampe dans la nuit."
+  },
+  {
+   "id": "prov-3-5",
+   "ref": "Proverbes 3.5",
+   "theme": "sagesse",
+   "text": "Confie-toi en l'Éternel de tout ton cœur, et ne t'appuie pas sur ta sagesse.",
+   "contexte": "Dans les premiers chapitres des Proverbes, recueil attribué à Salomon, un père transmet la sagesse à son fils. Il vient de l’inviter à ne pas oublier ses enseignements et à s’attacher à la bonté et à la fidélité, avant de l’appeler à se confier en l’Éternel de tout son cœur."
+  },
+  {
+   "id": "prov-3-6",
+   "ref": "Proverbes 3.6",
+   "theme": "sagesse",
+   "text": "Reconnais-le dans toutes tes voies, et il aplanira tes sentiers.",
+   "contexte": "Ce verset poursuit l’enseignement qu’un père adresse à son fils au début des Proverbes, recueil attribué à Salomon. Après l’appel à se confier en l’Éternel de tout son cœur plutôt qu’en sa propre sagesse, il promet des sentiers aplanis à celui qui le reconnaît dans toutes ses voies."
+  },
+  {
+   "id": "matt-11-28",
+   "ref": "Matthieu 11.28",
+   "theme": "réconfort",
+   "text": "Venez à moi, vous tous qui êtes fatigués et chargés, et je vous donnerai du repos.",
+   "contexte": "Jésus parcourt la Galilée et vient de reprocher aux villes témoins de ses miracles de ne pas s’être repenties. Il loue ensuite son Père d’avoir révélé ces choses aux enfants plutôt qu’aux sages, puis lance cette invitation à ceux qui l’écoutent."
+  },
+  {
+   "id": "jean-3-16",
+   "ref": "Jean 3.16",
+   "theme": "salut",
+   "text": "Car Dieu a tant aimé le monde qu'il a donné son Fils unique, afin que quiconque croit en lui ne périsse point, mais qu'il ait la vie éternelle.",
+   "contexte": "Jésus s’entretient de nuit avec Nicodème, un pharisien, chef des Juifs, venu l’interroger. Il lui explique la nouvelle naissance, puis résume pourquoi Dieu a envoyé son Fils dans le monde."
+  },
+  {
+   "id": "matt-6-33",
+   "ref": "Matthieu 6.33",
+   "theme": "confiance",
+   "text": "Cherchez premièrement le royaume et la justice de Dieu; et toutes ces choses vous seront données par-dessus.",
+   "contexte": "Dans le sermon sur la montagne, Jésus enseigne ses disciples et la foule en Galilée. Il vient de les inviter à ne pas s’inquiéter de la nourriture ni du vêtement, rappelant que le Père céleste nourrit les oiseaux du ciel et habille les lis des champs."
+  },
+  {
+   "id": "2tim-1-7",
+   "ref": "2 Timothée 1.7",
+   "theme": "force",
+   "text": "Car ce n'est pas un esprit de timidité que Dieu nous a donné, mais un esprit de force, d'amour et de sagesse.",
+   "contexte": "Paul, prisonnier à Rome et sentant sa fin proche, écrit à Timothée, son jeune collaborateur qu’il appelle son enfant bien-aimé. Il vient de l’encourager à ranimer le don de Dieu reçu par l’imposition de ses mains, avant de l’inviter à ne pas rougir du témoignage du Seigneur."
+  },
+  {
+   "id": "phil-4-6",
+   "ref": "Philippiens 4.6",
+   "theme": "prière",
+   "text": "Ne vous inquiétez de rien; mais en toute chose faites connaître vos besoins à Dieu par des prières et des supplications, avec des actions de grâces.",
+   "contexte": "Paul écrit depuis sa prison à l’église de Philippes, qu’il a fondée lors de son passage en Macédoine. À la fin de sa lettre, il enchaîne de courtes exhortations : il vient d’appeler les Philippiens à se réjouir toujours dans le Seigneur, puis les invite à remettre leurs inquiétudes à Dieu."
+  },
+  {
+   "id": "phil-4-7",
+   "ref": "Philippiens 4.7",
+   "theme": "paix",
+   "text": "Et la paix de Dieu, qui surpasse toute intelligence, gardera vos cœurs et vos pensées en Jésus-Christ.",
+   "contexte": "Dans les exhortations finales de sa lettre aux Philippiens, écrite depuis sa prison, Paul vient de demander à l’église de ne s’inquiéter de rien et de présenter ses besoins à Dieu par la prière avec des actions de grâces. Ce verset décrit ce qui accompagne cette démarche : la paix de Dieu."
+  },
+  {
+   "id": "esaie-41-10",
+   "ref": "Ésaïe 41.10",
+   "theme": "réconfort",
+   "text": "Ne crains rien, car je suis avec toi; ne promène pas des regards inquiets, car je suis ton Dieu; je te fortifie, je viens à ton secours, je te soutiens de ma droite triomphante.",
+   "contexte": "Dans cette partie du livre d’Ésaïe, Dieu s’adresse à Israël, qu’il appelle son serviteur et descendance d’Abraham son ami. Face aux nations et à leurs idoles, il rassure son peuple : il l’a choisi et ne l’a pas rejeté, et lui demande de ne pas craindre."
+  },
+  {
+   "id": "josue-1-9",
+   "ref": "Josué 1.9",
+   "theme": "force",
+   "text": "Ne t'ai-je pas donné cet ordre: Fortifie-toi et prends courage? Ne t'effraie point et ne t'épouvante point, car l'Éternel, ton Dieu, est avec toi dans tout ce que tu entreprendras.",
+   "contexte": "Après la mort de Moïse, Dieu s’adresse à Josué, désigné pour conduire Israël dans le pays promis. Avant la traversée du Jourdain, il lui ordonne à plusieurs reprises de se fortifier et de garder la loi, en lui promettant d’être avec lui comme il a été avec Moïse."
+  },
+  {
+   "id": "rom-8-28",
+   "ref": "Romains 8.28",
+   "theme": "confiance",
+   "text": "Nous savons, du reste, que toutes choses concourent au bien de ceux qui aiment Dieu, de ceux qui sont appelés selon son dessein.",
+   "contexte": "Paul écrit à l’église de Rome, qu’il n’a pas encore visitée. Dans ce chapitre, il vient de comparer les souffrances du temps présent à la gloire à venir, et d’expliquer que l’Esprit soutient les croyants dans leur faiblesse et intercède pour eux."
+  },
+  {
+   "id": "jer-29-11",
+   "ref": "Jérémie 29.11",
+   "theme": "espérance",
+   "text": "Car je connais les projets que j'ai formés sur vous, dit l'Éternel, projets de paix et non de malheur, afin de vous donner un avenir et de l'espérance.",
+   "contexte": "Jérémie, resté à Jérusalem, envoie une lettre aux Judéens déportés à Babylone. De la part de l’Éternel, il leur demande de s’y installer, de bâtir et de chercher la paix de la ville, car l’exil durera soixante-dix ans avant que Dieu ne les ramène ; c’est là qu’il révèle ses projets."
+  },
+  {
+   "id": "esaie-40-31",
+   "ref": "Ésaïe 40.31",
+   "theme": "force",
+   "text": "Mais ceux qui se confient en l'Éternel renouvellent leur force. Ils prennent le vol comme les aigles; ils courent, et ne se lassent point, ils marchent, et ne se fatiguent point.",
+   "contexte": "Ce chapitre ouvre la partie du livre d’Ésaïe où Dieu console son peuple et lui annonce la fin de sa servitude. Le prophète vient de décrire la grandeur du Créateur, qui ne se fatigue point, et de rappeler que même les jeunes gens chancellent, avant d’évoquer ceux qui se confient en l’Éternel."
+  },
+  {
+   "id": "rom-12-2",
+   "ref": "Romains 12.2",
+   "theme": "sagesse",
+   "text": "Ne vous conformez pas au siècle présent, mais soyez transformés par le renouvellement de l'intelligence, afin que vous discerniez quelle est la volonté de Dieu, ce qui est bon, agréable et parfait.",
+   "contexte": "Après onze chapitres où il expose l’Évangile aux chrétiens de Rome, Paul passe aux exhortations pratiques. Il vient de les inviter, au nom des compassions de Dieu, à offrir leurs corps comme un sacrifice vivant, puis les appelle à ne pas se conformer au siècle présent."
+  },
+  {
+   "id": "eph-2-8",
+   "ref": "Éphésiens 2.8",
+   "theme": "salut",
+   "text": "Car c'est par la grâce que vous êtes sauvés, par le moyen de la foi. Et cela ne vient pas de vous, c'est le don de Dieu.",
+   "contexte": "Paul, prisonnier, écrit aux chrétiens d’Éphèse, ville où il a longuement séjourné. Il vient de rappeler qu’ils étaient morts par leurs offenses et leurs péchés, et que Dieu, riche en miséricorde, les a rendus à la vie avec Christ ; ce verset en donne la raison."
+  },
+  {
+   "id": "rom-6-23",
+   "ref": "Romains 6.23",
+   "theme": "salut",
+   "text": "Car le salaire du péché, c'est la mort; mais le don gratuit de Dieu, c'est la vie éternelle en Jésus-Christ notre Seigneur.",
+   "contexte": "Dans sa lettre aux chrétiens de Rome, Paul répond à une objection : faut-il pécher parce qu’on est sous la grâce ? Il vient d’opposer l’ancienne servitude du péché, dont la fin est la mort, au service de Dieu, qui a pour fin la vie éternelle ; ce verset conclut le chapitre."
+  },
+  {
+   "id": "rom-10-9",
+   "ref": "Romains 10.9",
+   "theme": "salut",
+   "text": "Si tu confesses de ta bouche le Seigneur Jésus, et si tu crois dans ton cœur que Dieu l'a ressuscité des morts, tu seras sauvé.",
+   "contexte": "Dans les chapitres où il parle d’Israël, Paul oppose la justice qui vient de la loi à celle qui vient de la foi. Citant le Deutéronome, il vient de rappeler que la parole est près de chacun, dans sa bouche et dans son cœur, avant de préciser ce qu’il faut confesser et croire."
+  },
+  {
+   "id": "1jean-1-9",
+   "ref": "1 Jean 1.9",
+   "theme": "pardon",
+   "text": "Si nous confessons nos péchés, il est fidèle et juste pour nous les pardonner, et pour nous purifier de toute iniquité.",
+   "contexte": "Jean écrit à des croyants en témoin de ce qu’il a vu et entendu, pour que leur joie soit parfaite. Il vient d’affirmer que Dieu est lumière et que prétendre être sans péché, c’est se séduire soi-même ; ce verset présente l’autre voie, celle de la confession des péchés."
+  },
+  {
+   "id": "apoc-3-20",
+   "ref": "Apocalypse 3.20",
+   "theme": "salut",
+   "text": "Voici, je me tiens à la porte, et je frappe. Si quelqu'un entend ma voix et ouvre la porte, j'entrerai chez lui, je souperai avec lui, et lui avec moi.",
+   "contexte": "Dans une vision reçue sur l’île de Patmos, Jean entend le Christ ressuscité dicter sept lettres à des églises d’Asie. Celle-ci s’adresse à l’église de Laodicée, à qui il reproche d’être tiède, ni froide ni bouillante, et qu’il appelle à se repentir avant de frapper à la porte."
+  },
+  {
+   "id": "1cor-13-4",
+   "ref": "1 Corinthiens 13.4",
+   "theme": "amour",
+   "text": "La charité est patiente, elle est pleine de bonté; la charité n'est point envieuse; la charité ne se vante point, elle ne s'enfle point d'orgueil.",
+   "contexte": "Paul écrit à l’église de Corinthe, divisée et fière de ses dons spirituels. Entre deux chapitres consacrés à ces dons, il montre une voie par excellence : sans la charité, dit-il, les langues, la prophétie et la connaissance ne sont rien ; puis il décrit ce qu’est cette charité."
+  },
+  {
+   "id": "gal-5-22",
+   "ref": "Galates 5.22",
+   "theme": "vie chrétienne",
+   "text": "Mais le fruit de l'Esprit, c'est l'amour, la joie, la paix, la patience, la bonté, la bénignité, la fidélité.",
+   "contexte": "Paul écrit aux églises de Galatie, troublées par ceux qui veulent imposer la loi de Moïse aux croyants venus des nations. Il vient de les appeler à marcher selon l’Esprit et d’énumérer les œuvres de la chair, avant d’y opposer, par contraste, le fruit de l’Esprit."
+  },
+  {
+   "id": "michee-6-8",
+   "ref": "Michée 6.8",
+   "theme": "vie chrétienne",
+   "text": "On t'a fait connaître, ô homme, ce qui est bien; et ce que l'Éternel demande de toi, c'est que tu pratiques la justice, que tu aimes la miséricorde, et que tu marches humblement avec ton Dieu.",
+   "contexte": "Le prophète Michée, contemporain d’Ésaïe, parle au peuple sous les rois de Juda. Dieu ouvre un procès contre son peuple et rappelle ses bienfaits depuis la sortie d’Égypte ; à la question de savoir quelles offrandes apporter, même des milliers de béliers, ce verset donne la réponse."
+  },
+  {
+   "id": "heb-11-1",
+   "ref": "Hébreux 11.1",
+   "theme": "foi",
+   "text": "Or la foi est une ferme assurance des choses qu'on espère, une démonstration de celles qu'on ne voit pas.",
+   "contexte": "L’auteur de la lettre aux Hébreux, resté anonyme, écrit à des chrétiens éprouvés, tentés de se relâcher. Il vient de les exhorter à ne pas abandonner leur assurance et à vivre par la foi ; il ouvre alors un chapitre qui définit la foi, puis énumère les anciens qui en ont vécu."
+  },
+  {
+   "id": "prov-22-6",
+   "ref": "Proverbes 22.6",
+   "theme": "sagesse",
+   "text": "Instruis l'enfant selon la voie qu'il doit suivre; et quand il sera vieux, il ne s'en détournera pas.",
+   "contexte": "Ce proverbe appartient au recueil de sentences attribuées à Salomon, rassemblées pour transmettre la sagesse. Comme beaucoup de maximes voisines sur l’éducation, la richesse et l’humilité, il tient en une phrase une observation sur la formation de l’enfant et ses fruits durables."
+  },
+  {
+   "id": "jean-1-1",
+   "ref": "Jean 1.1",
+   "theme": "parole",
+   "text": "Au commencement était la Parole, et la Parole était avec Dieu, et la Parole était Dieu.",
+   "contexte": "Jean ouvre son évangile par un prologue, avant tout récit de la vie de Jésus. Il y présente la Parole qui était dès le commencement auprès de Dieu et par qui tout a été fait ; quelques versets plus loin, il dira que cette Parole a été faite chair et a habité parmi nous."
+  },
+  {
+   "id": "ps-46-2",
+   "ref": "Psaumes 46.2",
+   "theme": "réconfort",
+   "text": "Dieu est pour nous un refuge et un appui, un secours qui ne manque jamais dans la détresse.",
+   "contexte": "Ce psaume est un cantique des fils de Koré, une famille attachée au chant du sanctuaire. Il célèbre Dieu comme refuge de son peuple : même si la terre est bouleversée et si les montagnes chancellent au cœur des mers, la ville de Dieu n’est point ébranlée, car Dieu est au milieu d’elle."
+  },
+  {
+   "id": "ps-118-24",
+   "ref": "Psaumes 118.24",
+   "theme": "joie",
+   "text": "C'est ici la journée que l'Éternel a faite: qu'elle soit pour nous un sujet d'allégresse et de joie!",
+   "contexte": "Le Psaume 118 est un chant de reconnaissance où l’on rend grâce à l’Éternel, car sa miséricorde dure à toujours. Le psalmiste vient de célébrer sa délivrance et la pierre rejetée par ceux qui bâtissaient, devenue la principale de l’angle : cela vient de l’Éternel, et c’est un prodige."
+  },
+  {
+   "id": "lam-3-22",
+   "ref": "Lamentations 3.22-23",
+   "theme": "espérance",
+   "text": "Les bontés de l'Éternel ne sont pas épuisées, ses compassions ne sont pas à leur terme; elles se renouvellent chaque matin. Oh! que ta fidélité est grande!",
+   "contexte": "Les Lamentations pleurent la destruction de Jérusalem par les Babyloniens. Au cœur du troisième poème, l’auteur, qui vient de décrire sa profonde affliction — « il a rassasié d’amertume, il m’a fait boire l’absinthe » — se rappelle soudain ce qui lui rend l’espérance : les bontés de l’Éternel."
+  },
+  {
+   "id": "matt-28-19",
+   "ref": "Matthieu 28.19",
+   "theme": "mission",
+   "text": "Allez, faites de toutes les nations des disciples, les baptisant au nom du Père, du Fils et du Saint-Esprit.",
+   "contexte": "Après sa résurrection, Jésus retrouve les onze disciples sur une montagne de Galilée où il leur a donné rendez-vous. Il leur déclare que tout pouvoir lui a été donné dans le ciel et sur la terre, puis les envoie vers toutes les nations : ce sont les dernières paroles de l’évangile selon Matthieu."
+  },
+  {
+   "id": "eph-4-32",
+   "ref": "Éphésiens 4.32",
+   "theme": "pardon",
+   "text": "Soyez bons les uns envers les autres, compatissants, vous pardonnant réciproquement, comme Dieu vous a pardonné en Christ.",
+   "contexte": "Dans la partie pratique de sa lettre aux chrétiens d’Éphèse, Paul décrit la vie qui convient à ceux qui ont revêtu l’homme nouveau. Il vient de demander d’abandonner le mensonge, l’amertume, la colère et la calomnie, puis indique ce qui doit les remplacer."
+  },
+  {
+   "id": "ps-103-12",
+   "ref": "Psaumes 103.12",
+   "theme": "pardon",
+   "text": "Autant l'orient est éloigné de l'occident, autant il éloigne de nous nos transgressions.",
+   "contexte": "David compose ce psaume de louange où il invite son âme à bénir l’Éternel et à n’oublier aucun de ses bienfaits. Il vient de célébrer un Dieu miséricordieux et lent à la colère, qui ne nous traite pas selon nos péchés, avant d’illustrer par cette image l’étendue de son pardon."
+  },
+  {
+   "id": "col-3-13",
+   "ref": "Colossiens 3.13",
+   "theme": "pardon",
+   "text": "Supportez-vous les uns les autres, et, si l'un a sujet de se plaindre de l'autre, pardonnez-vous réciproquement. De même que Christ vous a pardonné, pardonnez-vous aussi.",
+   "contexte": "Paul, prisonnier, écrit à l’église de Colosses, qui lui a été présentée par Épaphras et qu’il n’a pas visitée lui-même. Il vient d’inviter les croyants, ressuscités avec Christ, à revêtir des sentiments de compassion, de bonté, d’humilité, de douceur et de patience."
+  },
+  {
+   "id": "esaie-1-18",
+   "ref": "Ésaïe 1.18",
+   "theme": "pardon",
+   "text": "Venez et plaidons! dit l'Éternel. Si vos péchés sont comme le cramoisi, ils deviendront blancs comme la neige; s'ils sont rouges comme la pourpre, ils deviendront comme la laine.",
+   "contexte": "Au début du livre d’Ésaïe, l’Éternel adresse par le prophète un réquisitoire à Juda et à Jérusalem, peuple rebelle dont il rejette les sacrifices sans justice. Après l’avoir appelé à cesser de faire le mal et à défendre l’orphelin et la veuve, il l’invite à venir plaider avec lui."
+  },
+  {
+   "id": "jean-13-34",
+   "ref": "Jean 13.34",
+   "theme": "amour",
+   "text": "Je vous donne un commandement nouveau: Aimez-vous les uns les autres; comme je vous ai aimés, vous aussi, aimez-vous les uns les autres.",
+   "contexte": "Au cours du dernier repas, Jésus a lavé les pieds de ses disciples, et Judas vient de sortir dans la nuit. Sachant son départ proche, Jésus annonce qu’il n’est plus avec eux que pour peu de temps, puis leur laisse ce commandement, signe auquel tous reconnaîtront ses disciples."
+  },
+  {
+   "id": "1jean-4-19",
+   "ref": "1 Jean 4.19",
+   "theme": "amour",
+   "text": "Pour nous, nous l'aimons, parce qu'il nous a aimés le premier.",
+   "contexte": "Dans sa lettre, Jean exhorte les croyants à s’aimer les uns les autres, car l’amour est de Dieu. Il vient de rappeler comment cet amour a été manifesté : Dieu a envoyé son Fils unique dans le monde ; ce verset indique alors d’où vient l’amour des croyants pour Dieu."
+  },
+  {
+   "id": "rom-5-8",
+   "ref": "Romains 5.8",
+   "theme": "amour",
+   "text": "Mais Dieu prouve son amour envers nous, en ce que, lorsque nous étions encore des pécheurs, Christ est mort pour nous.",
+   "contexte": "Paul vient d’exposer aux chrétiens de Rome que, justifiés par la foi, ils ont la paix avec Dieu. Il rappelle qu’au temps marqué, Christ est mort pour des impies, et souligne qu’à peine mourrait-on pour un juste, avant d’énoncer ce que Dieu prouve ainsi."
+  },
+  {
+   "id": "1cor-16-14",
+   "ref": "1 Corinthiens 16.14",
+   "theme": "amour",
+   "text": "Que tout ce que vous faites se fasse avec charité!",
+   "contexte": "Cette phrase figure parmi les toutes dernières exhortations de la première lettre de Paul à l’église de Corinthe, communauté marquée par les divisions. Après avoir réglé les questions de la collecte et de ses projets de voyage, Paul conclut par de brefs appels : veiller, être fermes dans la foi, se fortifier."
+  },
+  {
+   "id": "heb-11-6",
+   "ref": "Hébreux 11.6",
+   "theme": "foi",
+   "text": "Or sans la foi il est impossible de lui être agréable; car il faut que celui qui s'approche de Dieu croie que Dieu existe, et qu'il est le rémunérateur de ceux qui le cherchent.",
+   "contexte": "Dans le chapitre où il définit la foi et énumère les anciens qui en ont vécu, l’auteur anonyme de la lettre aux Hébreux vient d’évoquer Hénoc, enlevé sans voir la mort parce qu’il était agréable à Dieu. Ce verset explique pourquoi une telle approbation passe par la foi."
+  },
+  {
+   "id": "rom-10-17",
+   "ref": "Romains 10.17",
+   "theme": "foi",
+   "text": "Ainsi la foi vient de ce qu'on entend, et ce qu'on entend vient de la parole de Christ.",
+   "contexte": "Paul, parlant d’Israël aux chrétiens de Rome, vient de poser une suite de questions : comment invoquer le Seigneur sans avoir cru en lui, croire sans avoir entendu parler de lui, entendre sans prédicateur ? Ce verset tire la conclusion de cet enchaînement."
+  },
+  {
+   "id": "gal-2-20",
+   "ref": "Galates 2.20",
+   "theme": "foi",
+   "text": "J'ai été crucifié avec Christ; et si je vis, ce n'est plus moi qui vis, c'est Christ qui vit en moi; si je vis maintenant dans la chair, je vis dans la foi au Fils de Dieu, qui m'a aimé et qui s'est livré lui-même pour moi.",
+   "contexte": "Paul rappelle aux Galates comment il a résisté en face à Pierre à Antioche, quand celui-ci s’était mis à l’écart des croyants non juifs. Il vient d’affirmer que nul n’est justifié par les œuvres de la loi, mais par la foi en Christ, puis décrit sa propre vie en ces termes."
+  },
+  {
+   "id": "rom-15-13",
+   "ref": "Romains 15.13",
+   "theme": "espérance",
+   "text": "Que le Dieu de l'espérance vous remplisse de toute joie et de toute paix dans la foi, pour que vous abondiez en espérance, par la puissance du Saint-Esprit!",
+   "contexte": "Vers la fin de sa lettre aux chrétiens de Rome, Paul appelle les forts et les faibles à s’accueillir les uns les autres, comme Christ les a accueillis. Il vient de citer plusieurs Écritures annonçant que les nations loueraient Dieu avec son peuple, puis conclut ce passage par ce souhait."
+  },
+  {
+   "id": "rom-8-38",
+   "ref": "Romains 8.38-39",
+   "theme": "espérance",
+   "text": "Car j'ai l'assurance que ni la mort ni la vie, ni les anges ni les dominations, ni les choses présentes ni les choses à venir, ni les puissances, ni la hauteur, ni la profondeur, ni aucune autre créature ne pourra nous séparer de l'amour de Dieu manifesté en Jésus-Christ notre Seigneur.",
+   "contexte": "Paul achève le chapitre où il a décrit la vie par l’Esprit et l’espérance des enfants de Dieu. Il vient de demander qui pourrait accuser les élus de Dieu ou les séparer de l’amour de Christ, énumérant tribulation, persécution et péril, avant de donner cette réponse pleine d’assurance."
+  },
+  {
+   "id": "ps-34-19",
+   "ref": "Psaumes 34.19",
+   "theme": "réconfort",
+   "text": "L'Éternel est près de ceux qui ont le cœur brisé, et il sauve ceux qui ont l'esprit dans l'abattement.",
+   "contexte": "La suscription de ce psaume situe David au moment où, fuyant Saül, il contrefit l’insensé devant Abimélec, qui le chassa. Délivré, David bénit l’Éternel en tout temps et invite les humbles à sentir combien il est bon ; il évoque ici la proximité de Dieu avec ceux qui ont le cœur brisé."
+  },
+  {
+   "id": "matt-11-29",
+   "ref": "Matthieu 11.29",
+   "theme": "réconfort",
+   "text": "Prenez mon joug sur vous et recevez mes instructions, car je suis doux et humble de cœur; et vous trouverez du repos pour vos âmes.",
+   "contexte": "Jésus vient d’inviter à venir à lui tous ceux qui sont fatigués et chargés, en leur promettant du repos. Il parle en Galilée, après avoir reproché leur impénitence aux villes témoins de ses miracles et loué son Père d’avoir révélé ces choses aux enfants ; il poursuit ici son invitation."
+  },
+  {
+   "id": "ps-55-23",
+   "ref": "Psaumes 55.23",
+   "theme": "réconfort",
+   "text": "Remets ton sort à l'Éternel, et il te soutiendra, il ne laissera jamais chanceler le juste.",
+   "contexte": "Dans ce psaume, David est dans l’angoisse : il est trahi non par un ennemi, mais par un intime, un compagnon avec qui il allait à la maison de Dieu. Après avoir décrit la violence qui règne dans la ville et déversé sa plainte du matin au soir, il se tourne vers l’Éternel avec confiance."
+  },
+  {
+   "id": "1thess-5-17",
+   "ref": "1 Thessaloniciens 5.17",
+   "theme": "prière",
+   "text": "Priez sans cesse.",
+   "contexte": "Paul écrit à la jeune église de Thessalonique, qu’il a dû quitter précipitamment à cause de la persécution, peu après l’avoir fondée. À la fin de sa lettre, il enchaîne de très courtes exhortations sur la vie commune : se réjouir toujours, prier sans cesse, rendre grâces en toutes choses."
+  },
+  {
+   "id": "jean-14-27",
+   "ref": "Jean 14.27",
+   "theme": "paix",
+   "text": "Je vous laisse la paix, je vous donne ma paix. Je ne vous donne pas comme le monde donne. Que votre cœur ne se trouble point, et ne s'alarme point.",
+   "contexte": "Lors du dernier repas, Jésus annonce son départ à ses disciples, dont le cœur est troublé. Il vient de leur promettre le consolateur, le Saint-Esprit, que le Père enverra en son nom pour leur enseigner toutes choses et leur rappeler ses paroles ; c’est alors qu’il leur laisse sa paix."
+  },
+  {
+   "id": "matt-7-7",
+   "ref": "Matthieu 7.7",
+   "theme": "prière",
+   "text": "Demandez, et l'on vous donnera; cherchez, et vous trouverez; frappez, et l'on vous ouvrira.",
+   "contexte": "Vers la fin du sermon sur la montagne, Jésus enseigne ses disciples et la foule en Galilée. Après ces paroles sur la demande, il compare Dieu à un père qui ne donne pas une pierre à son fils demandant du pain : combien plus le Père céleste donnera-t-il de bonnes choses à ceux qui les lui demandent."
+  },
+  {
+   "id": "jer-33-3",
+   "ref": "Jérémie 33.3",
+   "theme": "prière",
+   "text": "Invoque-moi, et je te répondrai; je t'annoncerai de grandes choses, des choses cachées, que tu ne connais pas.",
+   "contexte": "Jérémie est enfermé dans la cour de la prison, tandis que l’armée babylonienne assiège Jérusalem. La parole de l’Éternel lui est adressée une seconde fois en ce lieu : Dieu l’invite à l’invoquer, avant de lui annoncer la guérison et le rétablissement de la ville et de Juda."
+  },
+  {
+   "id": "ps-28-7",
+   "ref": "Psaumes 28.7",
+   "theme": "force",
+   "text": "L'Éternel est ma force et mon bouclier; en lui mon cœur se confie, et je suis secouru; j'ai le cœur dans la joie, et je le loue par mes chants.",
+   "contexte": "Dans ce psaume, David crie à l’Éternel, son rocher, et le supplie de ne pas l’entraîner avec les méchants, qui parlent de paix à leur prochain avec la malice dans le cœur. Il bénit ensuite l’Éternel qui a entendu ses supplications ; ce verset exprime cette reconnaissance."
+  },
+  {
+   "id": "jacq-1-5",
+   "ref": "Jacques 1.5",
+   "theme": "sagesse",
+   "text": "Si quelqu'un d'entre vous manque de sagesse, qu'il la demande à Dieu, qui donne à tous simplement et sans reproche, et elle lui sera donnée.",
+   "contexte": "Jacques écrit aux douze tribus de la dispersion, des croyants d’origine juive répandus hors de leur pays. Il ouvre sa lettre en les invitant à regarder les épreuves diverses comme un sujet de joie complète, car l’épreuve de la foi produit la patience ; c’est là qu’il évoque le manque de sagesse."
+  },
+  {
+   "id": "genese-1-1",
+   "ref": "Genèse 1.1",
+   "theme": "sagesse",
+   "text": "Au commencement, Dieu créa les cieux et la terre.",
+   "contexte": "Première phrase de la Bible : elle ouvre le récit des jours de la création, où Dieu appelle à l'existence la lumière, le ciel, la terre et tout ce qui les remplit."
+  },
+  {
+   "id": "genese-1-27",
+   "ref": "Genèse 1.27",
+   "theme": "sagesse",
+   "text": "Dieu créa l'homme à son image, il le créa à l'image de Dieu, il créa l'homme et la femme.",
+   "contexte": "Au jour où le récit de la création parle de l'homme, après les animaux. Le verset qui précède rapporte la décision : « Faisons l'homme à notre image, selon notre ressemblance »."
+  },
+  {
+   "id": "exode-14-14",
+   "ref": "Exode 14.14",
+   "theme": "confiance",
+   "text": "L'Éternel combattra pour vous; et vous, gardez le silence.",
+   "contexte": "Israël vient de sortir d'Égypte et se trouve acculé à la mer, l'armée de Pharaon derrière lui. Le peuple crie sa peur ; Moïse lui répond par ces mots, juste avant que la mer ne s'ouvre."
+  },
+  {
+   "id": "deut-31-6",
+   "ref": "Deutéronome 31.6",
+   "theme": "force",
+   "text": "Fortifiez-vous et ayez du courage! Ne craignez point et ne soyez point effrayés devant eux; car l'Éternel, ton Dieu, marchera lui-même avec toi, il ne te délaissera point, il ne t'abandonnera point.",
+   "contexte": "Moïse s'adresse à tout Israël au moment de passer le relais à Josué pour l'entrée dans le pays. Il redira les mêmes mots à Josué lui-même, quelques versets plus loin."
+  },
+  {
+   "id": "josue-24-15",
+   "ref": "Josué 24.15",
+   "theme": "vie chrétienne",
+   "text": "Moi et ma maison, nous servirons l'Éternel.",
+   "contexte": "Josué a rassemblé les tribus à Sichem, à la fin de sa vie, et les met devant un choix. Le peuple répond aussitôt : « Loin de nous la pensée d'abandonner l'Éternel »."
+  },
+  {
+   "id": "1sam-16-7",
+   "ref": "1 Samuel 16.7",
+   "theme": "sagesse",
+   "text": "L'homme regarde à ce qui frappe les yeux, mais l'Éternel regarde au cœur.",
+   "contexte": "Samuel est envoyé pour oindre un roi parmi les fils d'Isaï. Devant l'aîné, de haute taille, il croit reconnaître l'élu ; ces mots l'en détournent, et c'est David, le plus jeune, occupé aux brebis, qui sera appelé."
+  },
+  {
+   "id": "job-19-25",
+   "ref": "Job 19.25",
+   "theme": "espérance",
+   "text": "Mais je sais que mon rédempteur est vivant, et qu'il se lèvera le dernier sur la terre.",
+   "contexte": "Job a tout perdu et ses amis l'accusent. Il vient de souhaiter que ses paroles soient gravées pour toujours ; il ajoute ensuite : « Quand ma peau sera détruite, je verrai Dieu »."
+  },
+  {
+   "id": "ps-27-1",
+   "ref": "Psaumes 27.1",
+   "theme": "confiance",
+   "text": "L'Éternel est ma lumière et mon salut: de qui aurais-je crainte? L'Éternel est le soutien de ma vie: de qui aurais-je peur?",
+   "contexte": "De David. Les versets qui suivent évoquent une armée qui camperait contre lui et une guerre qui s'élèverait — et son cœur, dit-il, resterait sans crainte."
+  },
+  {
+   "id": "ps-91-1",
+   "ref": "Psaumes 91.1-2",
+   "theme": "confiance",
+   "text": "Celui qui demeure sous l'abri du Très-Haut repose à l'ombre du Tout Puissant. Je dis à l'Éternel: Mon refuge et ma forteresse, mon Dieu en qui je me confie!",
+   "contexte": "Le psaume file l'image de l'abri : la suite parle du filet de l'oiseleur, des plumes qui couvrent et des ailes où l'on trouve refuge."
+  },
+  {
+   "id": "ps-121-1",
+   "ref": "Psaumes 121.1-2",
+   "theme": "confiance",
+   "text": "Je lève mes yeux vers les montagnes... D'où me viendra le secours? Le secours me vient de l'Éternel, qui a fait les cieux et la terre.",
+   "contexte": "Un cantique des degrés. Les versets suivants promettent que celui qui garde Israël ne sommeille ni ne dort."
+  },
+  {
+   "id": "ps-139-14",
+   "ref": "Psaumes 139.14",
+   "theme": "joie",
+   "text": "Je te loue de ce que je suis une créature si merveilleuse. Tes œuvres sont admirables, et mon âme le reconnaît bien.",
+   "contexte": "Le psaume vient de dire que Dieu a formé les reins et tissé le corps dans le sein maternel ; ce verset en est la réponse émerveillée."
+  },
+  {
+   "id": "prov-4-23",
+   "ref": "Proverbes 4.23",
+   "theme": "sagesse",
+   "text": "Garde ton cœur plus que toute autre chose, car de lui viennent les sources de la vie.",
+   "contexte": "Dans une suite de conseils d'un père à son fils. Les versets voisins passent en revue la bouche, les yeux et les pieds — le cœur, lui, vient en premier."
+  },
+  {
+   "id": "esaie-53-5",
+   "ref": "Ésaïe 53.5",
+   "theme": "salut",
+   "text": "Mais il était blessé pour nos péchés, brisé pour nos iniquités; le châtiment qui nous donne la paix est tombé sur lui, et c'est par ses meurtrissures que nous sommes guéris.",
+   "contexte": "Au cœur du chant du serviteur souffrant, méprisé et abandonné, dont le chapitre dit qu'il portait nos douleurs."
+  },
+  {
+   "id": "ezech-36-26",
+   "ref": "Ézéchiel 36.26",
+   "theme": "salut",
+   "text": "Je vous donnerai un cœur nouveau, et je mettrai en vous un esprit nouveau; j'ôterai de votre corps le cœur de pierre, et je vous donnerai un cœur de chair.",
+   "contexte": "Dieu annonce à un peuple exilé qu'il le ramènera dans son pays. Le verset précédent parle d'une eau pure répandue pour purifier."
+  },
+  {
+   "id": "soph-3-17",
+   "ref": "Sophonie 3.17",
+   "theme": "joie",
+   "text": "L'Éternel, ton Dieu, est au milieu de toi, comme un héros qui sauve; il fera de toi sa plus grande joie; il gardera le silence dans son amour; il aura pour toi des transports d'allégresse.",
+   "contexte": "Fin du livre : après les annonces de jugement, un appel à la joie adressé à Jérusalem, « fille de Sion »."
+  },
+  {
+   "id": "matt-5-16",
+   "ref": "Matthieu 5.16",
+   "theme": "mission",
+   "text": "Que votre lumière luise ainsi devant les hommes, afin qu'ils voient vos bonnes œuvres, et qu'ils glorifient votre Père qui est dans les cieux.",
+   "contexte": "Dans le sermon sur la montagne, juste après les images du sel de la terre et de la lampe qu'on ne met pas sous le boisseau."
+  },
+  {
+   "id": "matt-6-34",
+   "ref": "Matthieu 6.34",
+   "theme": "paix",
+   "text": "Ne vous inquiétez donc pas du lendemain; car le lendemain aura soin de lui-même. À chaque jour suffit sa peine.",
+   "contexte": "Conclusion d'un passage sur l'inquiétude, où Jésus montre les oiseaux du ciel et les lis des champs."
+  },
+  {
+   "id": "matt-22-37",
+   "ref": "Matthieu 22.37",
+   "theme": "amour",
+   "text": "Jésus lui répondit: Tu aimeras le Seigneur, ton Dieu, de tout ton cœur, de toute ton âme, et de toute ta pensée.",
+   "contexte": "Interrogé sur le plus grand commandement, Jésus cite celui-ci, puis ajoute le second : « Tu aimeras ton prochain comme toi-même »."
+  },
+  {
+   "id": "marc-10-27",
+   "ref": "Marc 10.27",
+   "theme": "foi",
+   "text": "Jésus les regarda, et dit: Cela est impossible aux hommes, mais non à Dieu: car tout est possible à Dieu.",
+   "contexte": "Un homme riche vient de s'en aller tout triste. Les disciples s'étonnent : « Et qui peut être sauvé ? » — ces mots sont la réponse de Jésus."
+  },
+  {
+   "id": "luc-1-37",
+   "ref": "Luc 1.37",
+   "theme": "foi",
+   "text": "Car rien n'est impossible à Dieu.",
+   "contexte": "Parole de l'ange à Marie, qui venait de demander comment cela se ferait ; il lui a rappelé qu'Élisabeth, qu'on disait stérile, attend un fils."
+  },
+  {
+   "id": "luc-6-31",
+   "ref": "Luc 6.31",
+   "theme": "vie chrétienne",
+   "text": "Ce que vous voulez que les hommes fassent pour vous, faites-le de même pour eux.",
+   "contexte": "Dans le discours où Jésus demande d'aimer ses ennemis et de faire du bien sans rien espérer en retour."
+  },
+  {
+   "id": "jean-8-32",
+   "ref": "Jean 8.32",
+   "theme": "parole",
+   "text": "Vous connaîtrez la vérité, et la vérité vous affranchira.",
+   "contexte": "Jésus s'adresse à ceux qui venaient de croire en lui ; le verset précédent pose la condition : « Si vous demeurez dans ma parole, vous êtes vraiment mes disciples »."
+  },
+  {
+   "id": "jean-10-10",
+   "ref": "Jean 10.10",
+   "theme": "espérance",
+   "text": "Le voleur ne vient que pour dérober, égorger et détruire; moi, je suis venu afin que les brebis aient la vie, et qu'elles soient dans l'abondance.",
+   "contexte": "Dans le discours du bon berger, opposé au voleur et au mercenaire qui abandonne les brebis."
+  },
+  {
+   "id": "jean-11-25",
+   "ref": "Jean 11.25",
+   "theme": "espérance",
+   "text": "Jésus lui dit: Je suis la résurrection et la vie. Celui qui croit en moi vivra, quand même il serait mort.",
+   "contexte": "Devant le tombeau de Lazare. Marthe vient de dire qu'elle sait qu'il ressuscitera au dernier jour ; Jésus déplace la promesse sur sa propre personne."
+  },
+  {
+   "id": "jean-15-5",
+   "ref": "Jean 15.5",
+   "theme": "vie chrétienne",
+   "text": "Je suis le cep, vous êtes les sarments. Celui qui demeure en moi et en qui je demeure porte beaucoup de fruit, car sans moi vous ne pouvez rien faire.",
+   "contexte": "L'image de la vigne, donnée aux disciples le dernier soir. Les versets voisins parlent du sarment qui ne peut porter de fruit par lui-même."
+  },
+  {
+   "id": "jean-16-33",
+   "ref": "Jean 16.33",
+   "theme": "paix",
+   "text": "Je vous ai dit ces choses, afin que vous ayez la paix en moi. Vous aurez des tribulations dans le monde; mais prenez courage, j'ai vaincu le monde.",
+   "contexte": "Derniers mots de Jésus à ses disciples avant son arrestation, après leur avoir annoncé qu'ils seraient dispersés."
+  },
+  {
+   "id": "actes-1-8",
+   "ref": "Actes 1.8",
+   "theme": "mission",
+   "text": "Mais vous recevrez une puissance, le Saint-Esprit survenant sur vous, et vous serez mes témoins à Jérusalem, dans toute la Judée, dans la Samarie, et jusqu'aux extrémités de la terre.",
+   "contexte": "Réponse de Jésus aux disciples qui l'interrogent sur le rétablissement du royaume, juste avant qu'il ne soit enlevé à leurs regards."
+  },
+  {
+   "id": "actes-4-12",
+   "ref": "Actes 4.12",
+   "theme": "salut",
+   "text": "Il n'y a de salut en aucun autre; car il n'y a sous le ciel aucun autre nom qui ait été donné parmi les hommes, par lequel nous devions être sauvés.",
+   "contexte": "Pierre parle devant les chefs du peuple, après la guérison d'un boiteux à la porte du temple."
+  },
+  {
+   "id": "actes-16-31",
+   "ref": "Actes 16.31",
+   "theme": "salut",
+   "text": "Crois au Seigneur Jésus, et tu seras sauvé, toi et ta famille.",
+   "contexte": "À Philippes : un tremblement de terre ouvre la prison, et le geôlier, croyant les prisonniers enfuis, demande à Paul et Silas ce qu'il doit faire pour être sauvé."
+  },
+  {
+   "id": "1cor-10-13",
+   "ref": "1 Corinthiens 10.13",
+   "theme": "force",
+   "text": "Aucune tentation ne vous est survenue qui n'ait été humaine, et Dieu, qui est fidèle, ne permettra pas que vous soyez tentés au delà de vos forces; mais avec la tentation il préparera aussi le moyen d'en sortir, afin que vous puissiez la supporter.",
+   "contexte": "Paul vient de rappeler les épreuves traversées par Israël au désert, données en exemple."
+  },
+  {
+   "id": "2cor-5-17",
+   "ref": "2 Corinthiens 5.17",
+   "theme": "salut",
+   "text": "Si quelqu'un est en Christ, il est une nouvelle créature. Les choses anciennes sont passées; voici, toutes choses sont devenues nouvelles.",
+   "contexte": "Paul écrit que l'amour du Christ le presse, et qu'il ne connaît plus personne selon la chair."
+  },
+  {
+   "id": "2cor-12-9",
+   "ref": "2 Corinthiens 12.9",
+   "theme": "force",
+   "text": "Ma grâce te suffit, car ma puissance s'accomplit dans la faiblesse.",
+   "contexte": "Paul a parlé d'une écharde dans sa chair et dit avoir prié trois fois pour qu'elle s'éloigne ; ceci est la réponse reçue. Il conclut : « Quand je suis faible, c'est alors que je suis fort »."
+  },
+  {
+   "id": "gal-6-9",
+   "ref": "Galates 6.9",
+   "theme": "vie chrétienne",
+   "text": "Ne nous lassons pas de faire le bien; car nous moissonnerons au temps convenable, si nous ne nous relâchons pas.",
+   "contexte": "Dans un passage sur ce que l'on sème et ce que l'on moissonne."
+  },
+  {
+   "id": "phil-1-6",
+   "ref": "Philippiens 1.6",
+   "theme": "espérance",
+   "text": "Je suis persuadé que celui qui a commencé en vous cette bonne œuvre la rendra parfaite pour le jour de Jésus-Christ.",
+   "contexte": "Ouverture de la lettre : Paul dit rendre grâces à Dieu pour la part que les Philippiens prennent à l'Évangile depuis le premier jour."
+  },
+  {
+   "id": "col-3-23",
+   "ref": "Colossiens 3.23",
+   "theme": "vie chrétienne",
+   "text": "Tout ce que vous faites, faites-le de bon cœur, comme pour le Seigneur et non pour des hommes.",
+   "contexte": "Dans une suite de conseils sur la vie quotidienne, adressés à toute la maison."
+  },
+  {
+   "id": "1thess-5-18",
+   "ref": "1 Thessaloniciens 5.18",
+   "theme": "joie",
+   "text": "Rendez grâces en toutes choses, car c'est à votre égard la volonté de Dieu en Jésus-Christ.",
+   "contexte": "Au milieu d'une file de brèves exhortations : « Réjouissez-vous toujours, priez sans cesse »."
+  },
+  {
+   "id": "heb-4-12",
+   "ref": "Hébreux 4.12",
+   "theme": "parole",
+   "text": "Car la parole de Dieu est vivante et efficace, plus tranchante qu'une épée quelconque à deux tranchants, pénétrante jusqu'à partager âme et esprit, jointures et moelles; elle juge les sentiments et les pensées du cœur.",
+   "contexte": "L'épître vient de parler d'un repos promis, dans lequel on entre par la foi."
+  },
+  {
+   "id": "heb-13-8",
+   "ref": "Hébreux 13.8",
+   "theme": "confiance",
+   "text": "Jésus-Christ est le même hier, aujourd'hui, et éternellement.",
+   "contexte": "Parmi les recommandations finales, juste après un appel à se souvenir de ceux qui ont annoncé la parole."
+  },
+  {
+   "id": "1pi-5-7",
+   "ref": "1 Pierre 5.7",
+   "theme": "réconfort",
+   "text": "Déchargez-vous sur lui de tous vos soucis, car lui-même prend soin de vous.",
+   "contexte": "Adressé à des chrétiens dispersés et éprouvés ; le verset précédent invite à s'humilier sous la puissante main de Dieu."
+  },
+  {
+   "id": "1jean-4-16",
+   "ref": "1 Jean 4.16",
+   "theme": "amour",
+   "text": "Dieu est amour; et celui qui demeure dans l'amour demeure en Dieu, et Dieu demeure en lui.",
+   "contexte": "Le chapitre vient de dire que celui qui n'aime point n'a pas connu Dieu, car Dieu est amour."
+  },
+  {
+   "id": "2tim-3-16",
+   "ref": "2 Timothée 3.16",
+   "theme": "parole",
+   "text": "Toute Écriture est inspirée de Dieu, et utile pour enseigner, pour convaincre, pour corriger, pour instruire dans la justice.",
+   "contexte": "Timothée est rappelé aux saintes lettres qu'il connaît depuis l'enfance."
+  },
+  {
+   "id": "apoc-21-4",
+   "ref": "Apocalypse 21.4",
+   "theme": "réconfort",
+   "text": "Il essuiera toute larme de leurs yeux, et la mort ne sera plus, et il n'y aura plus ni deuil, ni cri, ni douleur, car les premières choses ont disparu.",
+   "contexte": "Vision des cieux nouveaux et de la terre nouvelle ; une voix vient d'annoncer que Dieu habitera avec les hommes."
+  }
+ ]
 }
