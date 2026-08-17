@@ -479,6 +479,16 @@ Public, sans authentification.
 → `{ "version": 2, "categories": [...], "questions": [banque fusionnée] }`
 Le module Défi l'essaie d'abord et retombe sur son fichier local hors-ligne.
 
+### GET /api/banque/{module}
+Public, sans authentification. `module` ∈ `quiadit` | `ecritoupas` |
+`portrait` (liste blanche — tout autre → 404).
+→ `{ "version", "items": [banque fusionnée] }` — les items gardent la
+structure du fichier du module ({module}/data/banque.json) : ceux du fichier
+d'abord (remplacés par leur surcharge active, retirés si surcharge inactive),
+puis les ajouts `adm-` actifs. Les pages d'épreuve l'essaient d'abord
+(copie locale en localStorage, rafraîchie en arrière-plan) et retombent sur
+leur fichier statique hors-ligne.
+
 ## Administration
 
 Un utilisateur est **admin** si son e-mail figure dans la variable
@@ -518,6 +528,31 @@ entre 0 et 3, référence non vide ≤ 60 caractères.
 ### POST /api/admin/questions/{id}/restore
 Retire la surcharge : la version du fichier redevient active (annule une
 édition ou une désactivation). → `{ "ok": true }` — 404 si pas de surcharge.
+
+### POST /api/admin/banque/{module}
+Créer ou modifier un item de la banque du module (mêmes règles d'id que le
+quiz : sans `id` → ajout `adm-<6 hex>` ; `id` du fichier → surcharge ;
+`id` en `adm-` → modification ; autre → 404). Corps = l'item du module,
+validé strictement selon sa structure — bornes alignées sur les moteurs
+d'épreuve pour qu'un item ajouté ne puisse jamais casser une partie :
+- `quiadit` : `parole` ≤ 300, `options` exactement 4 (≤ 90 chacune),
+  `bonne` 0–3, `reference` requise ≤ 60, `contexte` optionnel ≤ 300 ;
+- `ecritoupas` : `phrase` ≤ 300, `ecrit` booléen strict, `reference`
+  requise (≤ 60) si `ecrit` est vrai, `precision` optionnelle ≤ 300 ;
+- `portrait` : `reponse` ≤ 60, `accepte` non vide (entrées ≤ 60),
+  `genre` ∈ personnage|lieu|chose, `indices` exactement 5 (≤ 240 chacun),
+  `reference` requise ≤ 60.
+Les champs hors structure sont rejetés à la reconstruction (rien d'étranger
+n'entre en base ni ne ressort). Tracé dans admin_log.
+→ `{ "item": { … } }` (l'item enregistré, id inclus)
+
+### DELETE /api/admin/banque/{module}/{id}
+Comme le quiz : id du fichier → surcharge `actif = 0` (désactivé,
+réversible) ; id `adm-` → suppression réelle. → `{ "ok": true }` — 404 sinon.
+
+### POST /api/admin/banque/{module}/{id}/restore
+Retire la surcharge : la version du fichier redevient active.
+→ `{ "ok": true }` — 404 s'il n'y a rien à retirer.
 
 ### GET /api/admin/journal
 Le **journal serveur** (onglet « Activité ») : les 100 derniers événements du
