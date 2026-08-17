@@ -556,9 +556,13 @@ function tabbar() {
   const tab = (n, ic, l) => `<button data-tab="${n}" class="${cur === n ? 'active' : ''}"><span class="ic">${ic}</span>${l}</button>`;
   // L'onglet « Mon église » n'existe que pour qui est dans un groupe : la
   // barre reste à trois onglets pour tous les autres, et l'onglet APPARAÎT
-  // au moment où l'on rejoint son assemblée.
-  const eglise = Array.isArray(groupesCache) && groupesCache.length
-    ? tab('eglise', icon('eglise', 21), 'Mon église') : '';
+  // au moment où l'on rejoint son assemblée. Il est COLLANT : mémorisé sur
+  // l'appareil, il tient bon pendant les chargements et les passages
+  // hors-ligne au lieu de clignoter — il ne s'efface que sur une réponse
+  // ferme du serveur (« plus aucun groupe ») ou à la déconnexion.
+  const connecte = window.GraineAPI && GraineAPI.isLoggedIn();
+  if (connecte && Array.isArray(groupesCache)) egliseOngletMemorise(groupesCache.length > 0);
+  const eglise = connecte && egliseOngletVu ? tab('eglise', icon('eglise', 21), 'Mon église') : '';
   return `<nav class="tabbar">${tab('home', icon('accueil', 21), 'Accueil')}${tab('moi', icon('moi', 21), 'Moi')}${eglise}${tab('about', icon('apropos', 21), 'À propos')}</nav>`;
 }
 
@@ -1445,10 +1449,12 @@ function syncStatusText() {
   }
   return 'Pas encore synchronisé.';
 }
-// Re-rendre sans gêner : seulement sur Moi, le parcours compte et l'onglet
-// Mon église, et jamais pendant que l'utilisateur écrit dans un champ.
+// Re-rendre sans gêner : jamais en pleine séance d'exercice, jamais pendant
+// que l'utilisateur écrit dans un champ. Partout ailleurs, oui — c'est ce qui
+// fait apparaître l'onglet « Mon église » dès que les groupes sont connus,
+// même quand on est resté sur l'Accueil.
 function renderIfIdle() {
-  if (!['moi', 'account', 'eglise', 'banques'].includes(route.name)) return;
+  if (route.name === 'session') return;
   const a = document.activeElement;
   if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return;
   render();
@@ -1705,6 +1711,7 @@ function egliseOublier() { // à la déconnexion / suppression : plus rien d'ég
   // sur un appareil partagé, la page de l'assemblée ne survit pas à la session.
   egliseSel = null; pageCache = {}; pageMeta = {}; pageTentee = {}; pageEdit = null; pageNotice = pageError = null;
   bqCache = {}; bqTentee = {}; bqSel = null; bqEdit = null; bqNotice = bqError = null;
+  egliseOngletMemorise(false);
   if (route.name === 'banques') route = { name: 'moi', param: null };
   try {
     Object.keys(localStorage)
@@ -2023,6 +2030,20 @@ function moiSansGroupeCard() {
 const PAGE_CACHE_PREFIX = 'graine.eglpage.'; // + code du groupe
 const JOURS_SEMAINE = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 
+/* L'onglet « Mon église » se souvient de lui-même (localStorage) : présent
+   dès l'ouverture de l'appli pour qui est dans un groupe, sans attendre le
+   réseau ni clignoter à chaque rechargement de la liste. */
+let egliseOngletVu = (() => {
+  try { return localStorage.getItem('graine.eglise.onglet') === '1'; } catch (e) { return false; }
+})();
+function egliseOngletMemorise(v) {
+  egliseOngletVu = !!v;
+  try {
+    if (v) localStorage.setItem('graine.eglise.onglet', '1');
+    else localStorage.removeItem('graine.eglise.onglet');
+  } catch (e) { /* stockage inaccessible : l'onglet vivra au fil de la session */ }
+}
+
 let egliseSel = null;      // code du groupe affiché (utile à partir de 2 groupes)
 let pageCache = {};        // code → { annonces, rdv, services }
 let pageMeta = {};         // code → { quand: ISO, horsLigne: bool }
@@ -2151,17 +2172,7 @@ function viewEglise() {
       <span class="hub-ic">${icon('defi', 26)}</span>
       <span class="hub-txt"><span class="hub-title">Banques de questions de mon église</span>
         <span class="hub-sub">Ce que tes parties d'église utilisent, épreuve par épreuve : la banque commune, ta sélection, tes propres questions.</span></span>
-      <span class="chev">›</span></button>
-    <div class="card fade">
-      <div class="fc-label" style="margin-bottom:4px">Animer dans mon église</div>
-      <p class="muted" style="margin:0 0 10px;font-size:.88rem">Chaque partie lancée d'ici tire dans la banque de ton église.</p>
-      <div class="egl-animer">
-        <a class="btn btn-soft" href="defi/">Qui, où, quand ?</a>
-        <a class="btn btn-soft" href="quiadit/?eglise=${esc(g.code)}">Qui a dit ?</a>
-        <a class="btn btn-soft" href="ecritoupas/?eglise=${esc(g.code)}">Écrit… ou pas ?</a>
-        <a class="btn btn-soft" href="portrait/?eglise=${esc(g.code)}">De qui parle-t-on ?</a>
-      </div>
-    </div>` : '';
+      <span class="chev">›</span></button>` : '';
 
   const membres = `<div class="section-title">${icon('amis')} Membres</div>
     <div class="card friends-card fade">
@@ -2543,7 +2554,17 @@ function viewEgliseBanques() {
         <button class="btn btn-grow btn-block" data-bqedit="" style="margin-top:10px">Nouvel item</button>
       </div>`;
 
-    corps = reglages + propres;
+    // Animer là où l'on vient de régler sa banque : c'est ici que le geste a
+    // du sens — et pour les trois épreuves, ce lien est LA porte qui emporte
+    // le contexte de l'église (?eglise=…).
+    const animer = `<a class="card hub-card fade" href="${bqModule === 'defi' ? 'defi/' : bqModule + '/?eglise=' + esc(g.code)}">
+      <span class="hub-ic">${icon('groupe', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">Animer dans mon église</span>
+        <span class="hub-sub">${bqModule === 'defi'
+          ? 'Ouvre le module Défi — choisis « Dans mon église » en préparant le quiz.'
+          : 'Ouvre l\'épreuve avec la banque réglée ci-dessus.'}</span></span>
+      <span class="chev">›</span></a>`;
+    corps = reglages + propres + animer;
   }
 
   return topbar() + tete + alerte + corps;

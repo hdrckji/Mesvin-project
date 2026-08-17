@@ -654,10 +654,6 @@ summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; 
 .linkbtn.danger { color: var(--danger); }
 .fr-passation { flex-shrink: 0; font-size: .8rem; text-align: right; }
 
-/* « Animer dans mon église » : une porte par épreuve, à parts égales. */
-.egl-animer { display: flex; flex-wrap: wrap; gap: 8px; }
-.egl-animer .btn { flex: 1 1 45%; padding: 11px 10px; font-size: .92rem; text-decoration: none; }
-
 /* L'écran de sélection des banques d'église : une longue liste qui défile
    dans son cadre, la page reste en place. */
 .bq-liste { max-height: 55vh; overflow-y: auto; margin-top: 10px; }
