@@ -8,7 +8,8 @@
    classement individuel public, et les e-mails des membres ne sont JAMAIS
    exposés aux autres.
 
-   - POST   /api/groupes                    : créer (le créateur devient responsable).
+   - POST   /api/groupes                    : FERMÉE (403) — la création passe par
+                                              une demande (voir groupes-demandes.php).
    - POST   /api/groupes/rejoindre          : rejoindre par code (en membre).
    - GET    /api/groupes                    : mes groupes.
    - GET    /api/groupes/{code}             : détail — membres seulement (403 sinon).
@@ -84,35 +85,29 @@ function groupe_payload(PDO $pdo, array $groupe, string $role, ?int $nbMembres =
     ];
 }
 
-/* ---- POST /api/groupes — créer un groupe ------------------------------------- */
+/* ---- POST /api/groupes — la création directe est FERMÉE ----------------------- */
 
-function handle_groupes_create(PDO $pdo): never {
-    $user = require_user($pdo);
-    $nom = validate_group_name(read_json_body()['nom'] ?? null);
-    if ($nom === null) {
-        json_error('Nom de groupe invalide : 2 à 40 caractères (lettres, chiffres, espaces, tirets ou apostrophes).', 400);
-    }
-
-    // Anti-abus : personne n'a besoin d'être responsable de plus de 5 groupes.
-    $st = $pdo->prepare('SELECT COUNT(*) AS n FROM groupes WHERE responsable_id = ?');
-    $st->execute([$user['id']]);
-    if ((int) $st->fetch()['n'] >= GROUPE_MAX_PAR_RESPONSABLE) {
-        json_error('Tu es déjà responsable de ' . GROUPE_MAX_PAR_RESPONSABLE . ' groupes — c\'est le maximum.', 400);
-    }
-
+/**
+ * Crée réellement un groupe : la ligne `groupes` (code GRP- unique) et
+ * l'adhésion du porteur en responsable, sous transaction. Retourne la ligne
+ * `groupes` créée. Seul chemin de création d'un groupe : l'acceptation d'une
+ * demande par l'administration (voir groupes-demandes.php) — la route POST
+ * /api/groupes ne crée plus, elle oriente vers la demande.
+ */
+function groupe_creer(PDO $pdo, int $userId, string $nom): array {
     $code = generate_group_code($pdo);
     $pdo->beginTransaction();
     try {
         $st = $pdo->prepare(
             'INSERT INTO groupes (code, nom, responsable_id, created_at) VALUES (?, ?, ?, ?)'
         );
-        $st->execute([$code, $nom, $user['id'], now_sql()]);
+        $st->execute([$code, $nom, $userId, now_sql()]);
         $groupeId = (int) $pdo->lastInsertId();
         $st = $pdo->prepare(
             'INSERT INTO groupe_membres (groupe_id, user_id, role, joined_at)
              VALUES (?, ?, \'responsable\', ?)'
         );
-        $st->execute([$groupeId, $user['id'], now_sql()]);
+        $st->execute([$groupeId, $userId, now_sql()]);
         $pdo->commit();
     } catch (Throwable $e) {
         $pdo->rollBack();
@@ -121,7 +116,17 @@ function handle_groupes_create(PDO $pdo): never {
 
     $st = $pdo->prepare('SELECT * FROM groupes WHERE id = ?');
     $st->execute([$groupeId]);
-    json_out(['groupe' => groupe_payload($pdo, $st->fetch(), 'responsable', 1)], 201);
+    return $st->fetch();
+}
+
+function handle_groupes_create(PDO $pdo): never {
+    require_user($pdo);
+    // La porte reste visible mais fermée : le message oriente vers le nouveau
+    // chemin plutôt que de laisser croire à une panne.
+    json_error(
+        "La création d'un groupe passe par une demande : dépose-la depuis l'écran Église, et nous l'examinerons avec soin.",
+        403
+    );
 }
 
 /* ---- POST /api/groupes/rejoindre — rejoindre par code ------------------------- */

@@ -11,6 +11,8 @@
      du fichier crée une surcharge ; la « supprimer » la désactive seulement
      (réversible) ; seuls les ajouts se suppriment pour de bon.
    - « Utilisateurs » : la liste des comptes, avec suppression totale.
+   - « Églises » : les demandes de groupe en attente (accepter fait naître le
+     groupe, refuser laisse le porteur redemander) et les groupes existants.
 
    En ligne seulement : rien ici n'est pré-caché, et le serveur revérifie le
    rôle admin à chaque route — cette page ne fait que refléter son verdict.
@@ -63,7 +65,7 @@ function dateCourte(iso) {
 const normalise = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 /* ---------- État ---------- */
-let onglet = 'questions';   // 'questions' | 'users' | 'activite' | 'systeme'
+let onglet = 'questions';   // 'questions' | 'users' | 'eglises' | 'activite' | 'systeme'
 let sys = null, sysErreur = null; // onglet Système : état du serveur
 let actJournal = null, actJournalErreur = null; // onglet Activité : journal serveur
 let actBrevo = null, actBrevoErreur = null;     // onglet Activité : côté Brevo
@@ -88,6 +90,9 @@ let bGenres = [];           // genres réellement présents dans la banque portr
 let bForm = null;           // formulaire d'épreuve ouvert : { module, neuf, id, …champs, erreur }
 let uListe = null;          // comptes — null pendant le chargement
 let uErreur = null;
+let egData = null;          // onglet Églises : { demandes, groupes } — null pendant le chargement
+let egErreur = null;
+let egBusy = false;         // une décision (accepter/refuser) à la fois
 
 /* ---------- Questions : chargement et fusion des états ---------- */
 
@@ -378,6 +383,38 @@ async function supprimerCompte(id, pseudo, email) {
   try { await GraineAPI.adminDeleteUser(id); }
   catch (e) { uErreur = messageDoux(e); }
   await ouvrirUsers();
+}
+
+/* ---------- Églises : demandes de groupe et groupes existants ---------- */
+
+async function ouvrirEglises() {
+  onglet = 'eglises';
+  egData = null; egErreur = null;
+  render();
+  await chargerEglises();
+}
+
+/* Recharge la liste sans effacer une erreur déjà affichée (celle d'une
+   décision qui vient d'échouer doit rester visible après le re-rendu). */
+async function chargerEglises() {
+  try { egData = await GraineAPI.adminEglises(); }
+  catch (e) { egData = null; egErreur = messageDoux(e); }
+  render();
+}
+
+async function trancherDemande(action, id, nom, pseudo) {
+  if (egBusy) return;
+  if (action === 'accepter'
+    && !confirm(`Accepter la demande « ${nom} » de ${pseudo} ?\n\nLe groupe sera créé, et ${pseudo} en deviendra le responsable.`)) return;
+  egBusy = true; egErreur = null; render();
+  try {
+    if (action === 'accepter') await GraineAPI.adminEgliseAccepter(id);
+    else await GraineAPI.adminEgliseRefuser(id);
+  } catch (e) {
+    egErreur = messageDoux(e);
+  }
+  egBusy = false;
+  await chargerEglises();
 }
 
 /* ---------- Activité : journal serveur + remontée Brevo ---------- */
@@ -711,12 +748,14 @@ function render() {
     <div class="pill-row" style="margin-bottom:16px">
       <button class="pill ${onglet === 'questions' ? 'on' : ''}" id="tab-questions">Questions</button>
       <button class="pill ${onglet === 'users' ? 'on' : ''}" id="tab-users">Utilisateurs</button>
+      <button class="pill ${onglet === 'eglises' ? 'on' : ''}" id="tab-eglises">Églises</button>
       <button class="pill ${onglet === 'activite' ? 'on' : ''}" id="tab-activite">Activité</button>
       <button class="pill ${onglet === 'systeme' ? 'on' : ''}" id="tab-systeme">Système</button>
     </div>`;
 
   el.innerHTML = `<div class="fade">${entete}${
     onglet === 'users' ? htmlUsers()
+    : onglet === 'eglises' ? htmlEglises()
     : onglet === 'activite' ? htmlActivite()
     : onglet === 'systeme' ? htmlSysteme()
     : htmlQuestions()}</div>`;
@@ -724,9 +763,11 @@ function render() {
   document.getElementById('btn-retour').onclick = () => { location.href = '../index.html'; };
   document.getElementById('tab-questions').onclick = () => { onglet = 'questions'; qForm = null; bForm = null; render(); };
   document.getElementById('tab-users').onclick = ouvrirUsers;
+  document.getElementById('tab-eglises').onclick = ouvrirEglises;
   document.getElementById('tab-activite').onclick = ouvrirActivite;
   document.getElementById('tab-systeme').onclick = ouvrirSysteme;
   if (onglet === 'users') brancherUsers();
+  else if (onglet === 'eglises') brancherEglises();
   else if (onglet === 'activite') brancherActivite();
   else if (onglet === 'systeme') brancherSysteme();
   else brancherQuestions();
@@ -1182,6 +1223,67 @@ function htmlUsers() {
 function brancherUsers() {
   document.querySelectorAll('[data-suppr]').forEach(b => {
     b.onclick = () => supprimerCompte(Number(b.dataset.suppr), b.dataset.pseudo, b.dataset.email);
+  });
+}
+
+/* ---------- Onglet Églises ---------- */
+
+/* Une demande en attente : le nom voulu, qui la porte, depuis quand — et la
+   décision. L'e-mail s'affiche (l'admin voit déjà les comptes) : c'est lui
+   qui permet d'écrire au porteur si un doute demande d'être levé. */
+function carteDemande(d) {
+  return `
+  <div class="adm-q">
+    <div class="adm-q-top">
+      <span class="adm-q-txt">${esc(d.nom)}</span>
+      <span class="adm-badge">en attente</span>
+    </div>
+    <div class="adm-q-meta">${esc(d.pseudo)} · ${esc(d.email)} · demandé le ${esc(dateCourte(d.createdAt))}</div>
+    <div class="eg-actions">
+      <button class="btn btn-grow" data-eg="accepter" data-id="${d.id}" data-nom="${esc(d.nom)}"
+        data-pseudo="${esc(d.pseudo)}" ${egBusy ? 'disabled' : ''}>Accepter</button>
+      <button class="btn btn-ghost" data-eg="refuser" data-id="${d.id}" data-nom="${esc(d.nom)}"
+        data-pseudo="${esc(d.pseudo)}" ${egBusy ? 'disabled' : ''}>Refuser</button>
+    </div>
+  </div>`;
+}
+
+function htmlEglises() {
+  if (egData === null && !egErreur) {
+    return `<div class="card center" style="padding:30px"><p class="muted" style="margin:0">Chargement des demandes…</p></div>`;
+  }
+  if (egData === null) {
+    return `<div class="card"><p class="field-error" style="margin:0">${esc(egErreur)}</p></div>`;
+  }
+  const demandes = egData.demandes || [];
+  const groupes = egData.groupes || [];
+  const lignes = groupes.map(g => `
+    <tr>
+      <td><span class="friend-code inline">${esc(g.code)}</span></td>
+      <td class="pseudo">${esc(g.nom)}</td>
+      <td>${esc(g.responsable)}</td>
+      <td style="text-align:right">${g.nbMembres}</td>
+      <td>${esc(dateCourte(g.createdAt))}</td>
+    </tr>`).join('');
+  return `
+    <div class="section-title">Demandes en attente${demandes.length ? ` (${demandes.length})` : ''}</div>
+    ${egErreur ? `<p class="field-error" style="margin:0 4px 10px">${esc(egErreur)}</p>` : ''}
+    ${demandes.map(carteDemande).join('')
+      || `<div class="card"><p class="muted" style="margin:0">Aucune demande en attente — quand quelqu'un demandera l'ouverture d'un groupe pour son église, elle apparaîtra ici.</p></div>`}
+    <div class="section-title" style="margin-top:22px">Groupes existants (${groupes.length})</div>
+    <div class="card" style="padding:8px 10px">
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead><tr><th>Code</th><th>Nom</th><th>Responsable</th><th style="text-align:right">Membres</th><th>Créé le</th></tr></thead>
+          <tbody>${lignes || `<tr><td colspan="5" class="muted">Aucun groupe pour l'instant.</td></tr>`}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function brancherEglises() {
+  document.querySelectorAll('[data-eg]').forEach(b => {
+    b.onclick = () => trancherDemande(b.dataset.eg, Number(b.dataset.id), b.dataset.nom, b.dataset.pseudo);
   });
 }
 

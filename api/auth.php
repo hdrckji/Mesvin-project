@@ -358,6 +358,10 @@ function delete_user_completely(PDO $pdo, array $user): void {
         $st = $pdo->prepare('DELETE FROM groupe_service_inscriptions WHERE user_id = ?');
         $st->execute([$id]);
 
+        // Sa demande de groupe (en attente ou refusée) part avec le compte.
+        $st = $pdo->prepare('DELETE FROM groupe_demandes WHERE user_id = ?');
+        $st->execute([$id]);
+
         // Groupes dont il est responsable : suppression s'il y est seul
         // (avec toute la page — voir groupe_delete_completely), sinon
         // passation au membre restant le plus ancien.

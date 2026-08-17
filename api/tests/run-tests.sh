@@ -65,7 +65,7 @@ require $argv[1] . "/api/db.php";
 $pdo = new PDO("sqlite:" . $argv[2]);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 db_migrate($pdo);
-$recentes = ["visites", "banque_surcharges"];
+$recentes = ["visites", "banque_surcharges", "groupe_demandes"];
 foreach ($recentes as $t) { $pdo->exec("DROP TABLE " . $t); }
 db_migrate($pdo);
 $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type = \"table\"")->fetchAll(PDO::FETCH_COLUMN);
@@ -403,20 +403,85 @@ check "classement : Léa devant (10 pts)" "Léa 10" "$(jval '"\(.participants[0]
 check "Marc garde ses 5 points"          5 "$(jval '.participants[] | select(.prenom == "Marc") | .score')"
 
 # ---------------------------------------------------------------------------
-# Groupes d'église (fondations serveur — aucune interface encore).
-# Aucun appel request-code ici : on réutilise TOKEN1/TOKEN2/TOKEN3 pour ne pas
-# entamer les plafonds testés plus loin (par e-mail et par IP).
-say "Groupes d'église — création (u1 responsable)"
-check "créer sans compte → 401"         401 "$(api POST /api/groupes '' '{"nom":"Béthel"}')"
-check "nom trop court → 400"            400 "$(api POST /api/groupes "$TOKEN1" '{"nom":"B"}')"
-check "nom avec caractère interdit → 400" 400 "$(api POST /api/groupes "$TOKEN1" '{"nom":"Béthel <7>"}')"
-check "création (apostrophes, accents) → 201" 201 "$(api POST /api/groupes "$TOKEN1" '{"nom":"L’Église d’Éphèse"}')"
-GCODE="$(jval .groupe.code)"
+# Groupes d'église : la création directe est FERMÉE — un groupe naît d'une
+# DEMANDE (groupes-demandes.php) que seule l'administration (TOKEN1 = alice)
+# accepte ou refuse. Aucun appel request-code ici : on réutilise TOKEN1/
+# TOKEN2/TOKEN3 pour ne pas entamer les plafonds testés plus loin.
+
+# Crée un groupe par le flux complet — demande du porteur, acceptation admin —
+# et écrit le code GRP- du groupe sur stdout (le corps de la dernière réponse
+# est celui de l'acceptation : {code, nom}).
+groupe_via_demande() {
+  api POST /api/groupes/demande "$1" "{\"nom\":\"$2\"}" > /dev/null
+  api GET /api/admin/eglises "$TOKEN1" > /dev/null
+  local id
+  id="$(jq -r --arg nom "$2" '[.demandes[] | select(.nom == $nom)] | last | .id' "$TMP/body.json")"
+  api POST "/api/admin/eglises/demandes/$id/accepter" "$TOKEN1" > /dev/null
+  jval .code
+}
+
+say "Groupes d'église — la création directe est fermée (le message oriente)"
+check "POST /api/groupes sans compte → 401" 401 "$(api POST /api/groupes '' '{"nom":"Béthel"}')"
+check "création directe connectée → 403" 403 "$(api POST /api/groupes "$TOKEN1" '{"nom":"Béthel"}')"
+check "→ le message oriente vers la demande" true "$(jval '.error | contains("demande")')"
+
+say "Groupes — déposer sa demande (u1)"
+check "demande sans compte → 401"       401 "$(api POST /api/groupes/demande '' '{"nom":"Béthel"}')"
+check "nom trop court → 400"            400 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"B"}')"
+check "nom avec caractère interdit → 400" 400 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"Béthel <7>"}')"
+check "GET : aucune demande au départ"  null "$(api GET /api/groupes/demande "$TOKEN1" > /dev/null; jval .demande)"
+check "annuler sans demande → 404"      404 "$(api DELETE /api/groupes/demande "$TOKEN1")"
+check "demande valide (apostrophes, accents) → 201" 201 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"L’Église d’Éphèse"}')"
+check "→ statut attente"                attente "$(jval .demande.statut)"
+check "→ createdAt en ISO"              Z "$(jval .demande.createdAt | tail -c 2)"
+check "seconde demande → 409 (une seule à la fois)" 409 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"Une autre"}')"
+check "GET : la demande est là"         "L’Église d’Éphèse" "$(api GET /api/groupes/demande "$TOKEN1" > /dev/null; jval .demande.nom)"
+check "aucun groupe n'existe encore"    0 "$(api GET /api/groupes "$TOKEN1" > /dev/null; jval '.groupes | length')"
+
+say "Groupes — annuler sa demande, puis redéposer"
+check "annuler → ok true"               true "$(api DELETE /api/groupes/demande "$TOKEN1" > /dev/null; jval .ok)"
+check "GET : plus de demande"           null "$(api GET /api/groupes/demande "$TOKEN1" > /dev/null; jval .demande)"
+check "re-annuler → 404"                404 "$(api DELETE /api/groupes/demande "$TOKEN1")"
+check "redéposer → 201"                 201 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"L’Église d’Éphèse"}')"
+
+say "Groupes — le refus par l'administration, la demande REMPLACÉE"
+check "admin/eglises sans token → 401"  401 "$(api GET /api/admin/eglises)"
+check "admin/eglises non-admin → 403"   403 "$(api GET /api/admin/eglises "$TOKEN3")"
+check "admin/eglises alice → 200"       200 "$(api GET /api/admin/eglises "$TOKEN1")"
+check "1 demande en attente listée"     1 "$(jval '.demandes | length')"
+check "→ avec pseudo et e-mail"         "Alice alice@example.org" "$(jval '"\(.demandes[0].pseudo) \(.demandes[0].email)"')"
+check "→ aucun groupe pour l'instant"   0 "$(jval '.groupes | length')"
+DEM_ID="$(jval '.demandes[0].id')"
+check "refuser par non-admin → 403"     403 "$(api POST "/api/admin/eglises/demandes/$DEM_ID/refuser" "$TOKEN3")"
+check "refuser → ok true"               true "$(api POST "/api/admin/eglises/demandes/$DEM_ID/refuser" "$TOKEN1" > /dev/null; jval .ok)"
+check "re-refuser (déjà tranchée) → 404" 404 "$(api POST "/api/admin/eglises/demandes/$DEM_ID/refuser" "$TOKEN1")"
+check "accepter une refusée → 404"      404 "$(api POST "/api/admin/eglises/demandes/$DEM_ID/accepter" "$TOKEN1")"
+check "le porteur voit le refus"        refusee "$(api GET /api/groupes/demande "$TOKEN1" > /dev/null; jval .demande.statut)"
+check "la refusée ne bloque plus l'admin" 0 "$(api GET /api/admin/eglises "$TOKEN1" > /dev/null; jval '.demandes | length')"
+check "la refusée est REMPLACÉE → 201"  201 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"L’Église d’Éphèse"}')"
+check "→ de nouveau en attente"         attente "$(api GET /api/groupes/demande "$TOKEN1" > /dev/null; jval .demande.statut)"
+
+say "Groupes — l'acceptation fait naître le groupe (u1 responsable)"
+api GET /api/admin/eglises "$TOKEN1" > /dev/null
+DEM_ID="$(jval '.demandes[0].id')"
+check "accepter une demande inconnue → 404" 404 "$(api POST /api/admin/eglises/demandes/999999/accepter "$TOKEN1")"
+check "accepter par non-admin → 403"    403 "$(api POST "/api/admin/eglises/demandes/$DEM_ID/accepter" "$TOKEN3")"
+check "accepter → 200"                  200 "$(api POST "/api/admin/eglises/demandes/$DEM_ID/accepter" "$TOKEN1")"
+GCODE="$(jval .code)"
+check "→ le nom demandé"                "L’Église d’Éphèse" "$(jval .nom)"
 check "code au format GRP-XXXXX (préfixe)"  GRP "${GCODE%-*}"
 check "code au format GRP-XXXXX (longueur)" 9   "${#GCODE}"
-check "le créateur est responsable"     responsable "$(jval .groupe.role)"
-check "1 membre au départ"              1    "$(jval .groupe.nbMembres)"
-check "pas encore de verset"            null "$(jval .groupe.verset)"
+check "la demande a disparu"            null "$(api GET /api/groupes/demande "$TOKEN1" > /dev/null; jval .demande)"
+check "re-accepter → 404"               404 "$(api POST "/api/admin/eglises/demandes/$DEM_ID/accepter" "$TOKEN1")"
+api GET /api/groupes "$TOKEN1" > /dev/null
+check "u1 a maintenant 1 groupe"        1 "$(jval '.groupes | length')"
+check "le demandeur est responsable"    responsable "$(jval '.groupes[0].role')"
+check "1 membre au départ"              1    "$(jval '.groupes[0].nbMembres')"
+check "pas encore de verset"            null "$(jval '.groupes[0].verset')"
+api GET /api/admin/eglises "$TOKEN1" > /dev/null
+check "admin/eglises : plus de demande" 0 "$(jval '.demandes | length')"
+check "le groupe figure dans la liste"  "L’Église d’Éphèse" "$(jval ".groupes[] | select(.code == \"$GCODE\") | .nom")"
+check "→ responsable et nbMembres"      "Alice 1" "$(jval ".groupes[] | select(.code == \"$GCODE\") | \"\(.responsable) \(.nbMembres)\"")"
 
 say "Groupes — u3 rejoint par code"
 check "code mal formé → 400"            400 "$(api POST /api/groupes/rejoindre "$TOKEN3" '{"code":"BETHEL7"}')"
@@ -458,11 +523,28 @@ check "le groupe a disparu avec lui → 404" 404 "$(api POST /api/groupes/rejoin
 say "Groupes — plafond de 5 groupes par responsable, puis suppression"
 GCODES=""
 for i in 1 2 3 4 5; do
-  api POST /api/groupes "$TOKEN1" "{\"nom\":\"Groupe numéro $i\"}" > /dev/null
-  GCODES="$GCODES $(jval .groupe.code)"
+  GCODES="$GCODES $(groupe_via_demande "$TOKEN1" "Groupe numéro $i")"
 done
 check "u1 responsable de 5 groupes"     5   "$(api GET /api/groupes "$TOKEN1" > /dev/null; jval '.groupes | length')"
-check "6e groupe → 400"                 400 "$(api POST /api/groupes "$TOKEN1" '{"nom":"Groupe de trop"}')"
+check "6e demande → 409 (plafond)"      409 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"Groupe de trop"}')"
+# Le plafond se REVÉRIFIE à l'acceptation : une demande déposée avant le 5e
+# groupe peut être tranchée après lui. Insertion directe en base pour simuler
+# ce décalage (le dépôt normal refuse déjà à 5), demande CONSERVÉE au 409.
+php -r '
+$pdo = new PDO("sqlite:" . $argv[1]);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$pdo->exec("INSERT INTO groupe_demandes (user_id, nom, statut, created_at)
+  SELECT id, \"Demande en décalage\", \"attente\", \"2000-01-01 00:00:00\"
+  FROM users WHERE email = \"alice@example.org\"");
+' "$ROOT/api/data/dev.sqlite"
+api GET /api/admin/eglises "$TOKEN1" > /dev/null
+DEC_ID="$(jval '.demandes[0].id')"
+check "accepter au plafond → 409"       409 "$(api POST "/api/admin/eglises/demandes/$DEC_ID/accepter" "$TOKEN1")"
+check "la demande est conservée"        1   "$(api GET /api/admin/eglises "$TOKEN1" > /dev/null; jval '.demandes | length')"
+php -r '
+$pdo = new PDO("sqlite:" . $argv[1]);
+$pdo->exec("DELETE FROM groupe_demandes WHERE nom = \"Demande en décalage\"");
+' "$ROOT/api/data/dev.sqlite"
 set -- $GCODES
 check "suppression par u3 (non-responsable) → 403" 403 "$(api DELETE "/api/groupes/$1" "$TOKEN3")"
 SUPPRIMES=0
@@ -473,8 +555,8 @@ check "u1 supprime ses 5 groupes"       5   "$SUPPRIMES"
 check "u1 : liste vide"                 0   "$(api GET /api/groupes "$TOKEN1" > /dev/null; jval '.groupes | length')"
 
 say "Groupes — deuxième groupe : u2 responsable, u3 membre (passation testée après la suppression de u2)"
-check "u2 crée son groupe → 201"        201 "$(api POST /api/groupes "$TOKEN2" '{"nom":"Groupe de Benoît"}')"
-G2CODE="$(jval .groupe.code)"
+G2CODE="$(groupe_via_demande "$TOKEN2" "Groupe de Benoît")"
+check "u2 obtient son groupe (via demande)" GRP "${G2CODE%-*}"
 check "u3 rejoint → 200"                200 "$(api POST /api/groupes/rejoindre "$TOKEN3" "{\"code\":\"$G2CODE\"}")"
 check "→ 2 membres"                     2   "$(jval .groupe.nbMembres)"
 
@@ -486,8 +568,8 @@ check "→ 2 membres"                     2   "$(jval .groupe.nbMembres)"
 # fusionnée est exactement le fichier — les 5 premières questions du fichier
 # servent de sélection déterministe pour le test du tirage.
 say "Quiz d'église — réglages par défaut (u1 crée, u3 rejoint)"
-check "u1 crée le groupe du quiz → 201" 201 "$(api POST /api/groupes "$TOKEN1" '{"nom":"Église du Quiz"}')"
-QGCODE="$(jval .groupe.code)"
+QGCODE="$(groupe_via_demande "$TOKEN1" "Église du Quiz")"
+check "u1 obtient le groupe du quiz (via demande)" GRP "${QGCODE%-*}"
 api POST /api/groupes/rejoindre "$TOKEN3" "{\"code\":\"$QGCODE\"}" > /dev/null
 NBQF="$(api GET /api/questions > /dev/null; jval '.questions | length')"
 check "GET quiz par u3 (membre) → 200"  200 "$(api GET "/api/groupes/$QGCODE/quiz" "$TOKEN3")"
@@ -576,8 +658,7 @@ sqlval()  { php -r '$p = new PDO("sqlite:" . $argv[1]); echo $p->query($argv[2])
 sqlexec() { php -r '$p = new PDO("sqlite:" . $argv[1]); $p->exec($argv[2]);' "$ROOT/api/data/dev.sqlite" "$1"; }
 
 say "La page de l'église — vide au départ, réservée aux membres"
-api POST /api/groupes "$TOKEN1" '{"nom":"Assemblée du Chemin"}' > /dev/null
-PGCODE="$(jval .groupe.code)"
+PGCODE="$(groupe_via_demande "$TOKEN1" "Assemblée du Chemin")"
 api POST /api/groupes/rejoindre "$TOKEN3" "{\"code\":\"$PGCODE\"}" > /dev/null
 check "GET page sans token → 401"       401 "$(api GET "/api/groupes/$PGCODE/page")"
 check "GET page non-membre (u2) → 403"  403 "$(api GET "/api/groupes/$PGCODE/page" "$TOKEN2")"
@@ -750,11 +831,14 @@ api POST /api/auth/request-code '' '{"email":"david@example.org"}' > /dev/null
 CODE4="$(jval .devCode)"
 api POST /api/auth/verify '' "{\"email\":\"david@example.org\",\"code\":\"$CODE4\",\"pseudo\":\"David\"}" > /dev/null
 TOKEN4="$(jval .token)"
+check "u4 dépose une demande de groupe → 201" 201 "$(api POST /api/groupes/demande "$TOKEN4" '{"nom":"Groupe de David"}')"
 api GET /api/admin/users "$TOKEN1" > /dev/null
 check "4 comptes après l'arrivée de u4" 4   "$(jval '.users | length')"
 DAVID_ID="$(jval '.users[] | select(.email == "david@example.org") | .id')"
 check "admin supprime u4 → 200"         200 "$(api DELETE "/api/admin/users/$DAVID_ID" "$TOKEN1")"
 check "la session de u4 est close"      401 "$(api GET /api/me "$TOKEN4")"
+check "sa demande de groupe est purgée avec le compte" 0 \
+  "$(sqlval "SELECT COUNT(*) FROM groupe_demandes WHERE nom = 'Groupe de David'")"
 api GET /api/admin/users "$TOKEN1" > /dev/null
 check "3 comptes restants"              3   "$(jval '.users | length')"
 

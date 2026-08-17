@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM banque_surcharges LIMIT 1');
+        $pdo->query('SELECT 1 FROM groupe_demandes LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -520,6 +520,20 @@ function db_migrate(PDO $pdo): void {
                 created_at DATETIME NOT NULL,
                 PRIMARY KEY (module, id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+            // Demandes de groupe d'église : la création n'est plus libre — on
+            // dépose une demande (le nom souhaité), et seule l'administration
+            // l'accepte (le groupe naît alors) ou la refuse (statut 'refusee',
+            // remplaçable par une nouvelle demande). UNE demande par compte à
+            // la fois — voir api/groupes-demandes.php.
+            "CREATE TABLE IF NOT EXISTS groupe_demandes (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                user_id INT UNSIGNED NOT NULL,
+                nom VARCHAR(40) NOT NULL,
+                statut VARCHAR(10) NOT NULL DEFAULT 'attente',
+                created_at DATETIME NOT NULL,
+                INDEX idx_gdemandes_user (user_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         ];
     } else {
         $ddl = [
@@ -910,6 +924,16 @@ function db_migrate(PDO $pdo): void {
                 created_at TEXT NOT NULL,
                 PRIMARY KEY (module, id)
             )",
+
+            // Demandes de groupe d'église — voir le dialecte MySQL ci-dessus.
+            "CREATE TABLE IF NOT EXISTS groupe_demandes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                nom TEXT NOT NULL,
+                statut TEXT NOT NULL DEFAULT 'attente',
+                created_at TEXT NOT NULL
+            )",
+            'CREATE INDEX IF NOT EXISTS idx_gdemandes_user ON groupe_demandes (user_id)',
         ];
     }
 

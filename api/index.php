@@ -23,6 +23,7 @@ require __DIR__ . '/auth.php';
 require __DIR__ . '/sync.php';
 require __DIR__ . '/friends.php';
 require __DIR__ . '/groupes.php';
+require __DIR__ . '/groupes-demandes.php';
 require __DIR__ . '/groupes-quiz.php';
 require __DIR__ . '/groupes-page.php';
 require __DIR__ . '/duels.php';
@@ -129,9 +130,17 @@ if (preg_match('#^/api/friends/([^/]+)$#', $path, $m) && $method === 'DELETE') {
     handle_friends_remove($pdo, $m[1]);
 }
 
-/* ---- Groupes d'église (fondations serveur — aucune interface encore) ----------- */
+/* ---- Groupes d'église ------------------------------------------------------------
+   La création directe est fermée (403) : elle passe par une demande, que seule
+   l'administration accepte ou refuse (groupes-demandes.php). AVANT le motif
+   /api/groupes/{code} : « demande » n'est pas un code de groupe. */
 if ($path === '/api/groupes' && $method === 'POST') handle_groupes_create($pdo);
 if ($path === '/api/groupes' && $method === 'GET')  handle_groupes_list($pdo);
+if ($path === '/api/groupes/demande') {
+    if ($method === 'POST')   handle_groupe_demande_create($pdo);
+    if ($method === 'GET')    handle_groupe_demande_get($pdo);
+    if ($method === 'DELETE') handle_groupe_demande_delete($pdo);
+}
 if ($path === '/api/groupes/rejoindre' && $method === 'POST') handle_groupes_join($pdo);
 if (preg_match('#^/api/groupes/([^/]+)/verset$#', $path, $m) && $method === 'POST') {
     handle_groupes_verset($pdo, $m[1]);
@@ -220,6 +229,11 @@ if ($path === '/api/admin/log'     && $method === 'GET') handle_admin_log_get($p
 if ($path === '/api/admin/journal' && $method === 'GET') handle_admin_journal($pdo);
 if ($path === '/api/admin/visites' && $method === 'GET') handle_admin_visites($pdo);
 if ($path === '/api/admin/brevo'   && $method === 'GET') handle_admin_brevo($pdo);
+if ($path === '/api/admin/eglises' && $method === 'GET') handle_admin_eglises($pdo);
+if (preg_match('#^/api/admin/eglises/demandes/([0-9]+)/(accepter|refuser)$#', $path, $m) && $method === 'POST') {
+    if ($m[2] === 'accepter') handle_admin_eglise_accepter($pdo, (int) $m[1]);
+    handle_admin_eglise_refuser($pdo, (int) $m[1]);
+}
 if (preg_match('#^/api/admin/users/([0-9]+)$#', $path, $m) && $method === 'DELETE') {
     handle_admin_user_delete($pdo, (int) $m[1]);
 }
