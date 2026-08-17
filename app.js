@@ -194,10 +194,17 @@ async function pushDeactivate() {
   pushNotice = 'Notifications désactivées. Tu peux les retrouver ici quand tu veux.';
   pushBusy = false; render();
 }
-// La carte « Le verset offert » de l'écran Moi — même modèle que Apparence.
+// La section « Le verset offert » de l'écran Moi — repliée, même modèle
+// que Apparence ; son résumé dit l'essentiel sans ouvrir.
 function moiPushCard() {
   const support = pushSupport();
   const pref = pushPref();
+  let resume;
+  if (support === 'ios') resume = 'après installation';
+  else if (support === 'non') resume = 'indisponible ici';
+  else if (Notification.permission === 'denied') resume = 'bloquées par le navigateur';
+  else if (pref) resume = `chaque jour vers ${pref.heure} h`;
+  else resume = 'désactivé';
   const desc = `<p class="muted" style="margin:0">Chaque jour, un verset t'est offert en notification. Rien à faire, rien à rattraper — juste recevoir.</p>`;
   let corps;
   if (support === 'ios') {
@@ -215,11 +222,11 @@ function moiPushCard() {
   } else {
     corps = desc + `<button class="btn btn-primary" data-push-on="1" ${pushBusy ? 'disabled' : ''} style="margin-top:12px">${pushBusy ? 'Activation…' : 'Activer'}</button>`;
   }
-  return `<div class="section-title">${icon('cloche')} Le verset offert</div>
-    <div class="card fade">${corps}
-      ${pushError ? `<p class="field-error">${esc(pushError)}</p>` : ''}
-      ${pushNotice ? `<p class="field-ok">${esc(pushNotice)}</p>` : ''}
-    </div>`;
+  // Erreur et confirmation HORS du repli : visibles même section fermée.
+  const alerte = (pushError ? `<p class="field-error" style="margin:0 2px 10px">${esc(pushError)}</p>` : '')
+    + (pushNotice ? `<p class="field-ok" style="margin:0 2px 10px">${esc(pushNotice)}</p>` : '');
+  return moiRepli('offert', `${icon('cloche')} Le verset offert`, resume,
+    `<div class="card fade">${corps}</div>`, alerte);
 }
 
 /* ---------- Bibliothèque (parcours) ---------- */
@@ -954,6 +961,22 @@ function viewSessionDone() {
   </div>`;
 }
 
+/* ---------- Moi : sections repliables ----------
+   L'écran Moi est long : chaque bloc secondaire se replie, fermé par défaut —
+   même langage que .revoir (defi/defi.css) et .act-repli (admin/admin.css).
+   `moiOuverts` mémorise l'état déplié : une action re-rend tout l'écran, et
+   une section ouverte doit le rester (cf. l'onglet Activité de l'admin).
+   Les messages d'une section (erreur, confirmation) passent par `alerte` :
+   rendus HORS du <details>, ils restent visibles sans avoir à ouvrir. */
+let moiOuverts = {};
+function moiRepli(cle, titre, resume, corps, alerte) {
+  return `<details class="moi-repli" data-cle="${cle}" ${moiOuverts[cle] ? 'open' : ''}>
+      <summary>${titre} <span class="mr-resume">— ${esc(resume)}</span></summary>
+      ${corps}
+    </details>
+    ${alerte || ''}`;
+}
+
 /* ---------- Moi : espace personnel (stats locales, jardin, compte & amis) ---------- */
 function viewMoi() {
   const user = window.GraineAPI ? GraineAPI.user() : null;
@@ -974,30 +997,33 @@ function viewMoi() {
   // Apparence : quatre pastilles, le choix s'applique immédiatement.
   const theme = themeChoice();
   const tpill = (v, l) => `<button class="pill ${theme === v ? 'on' : ''}" data-theme-pick="${v}">${l}</button>`;
-  const apparence = `<div class="section-title">${icon('apparence')} Apparence</div>
-    <div class="card fade">
+  const themeNoms = { auto: 'auto', clair: 'clair', sombre: 'sombre', sepia: 'sépia' };
+  const apparence = moiRepli('apparence', `${icon('apparence')} Apparence`, themeNoms[theme] || 'auto',
+    `<div class="card fade">
       <div class="pill-row">${tpill('auto', 'Auto')}${tpill('clair', icon('soleil', 14) + ' Clair')}${tpill('sombre', icon('lune', 14) + ' Sombre')}${tpill('sepia', icon('parchemin', 14) + ' Sépia')}</div>
       <p class="muted" style="font-size:.85rem;margin:12px 2px 0">« Auto » suit le réglage clair/sombre de ton appareil. Ton choix vaut pour toute l'appli.</p>
-    </div>`;
+    </div>`);
 
   // « Le verset offert » — notifications quotidiennes, sur le même modèle.
   const pousse = moiPushCard();
 
-  const memo = `<div class="section-title">${icon('memorisation')} Mémorisation</div>
-    <div class="stat-grid fade">
+  const memo = moiRepli('memo', `${icon('memorisation')} Mémorisation`,
+    `${gardenN} verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''} · série de ${streakN}`,
+    `<div class="stat-grid fade">
       ${tile(gardenN, `verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}`)}
       ${tile(learnN, 'en apprentissage')}
       ${tile(streakN + ' 🔥', 'série actuelle (jours)')}
       ${tile(bestN, 'plus longue série')}
       <div class="stat-tile wide"><div class="st-n">${completedN}</div>
         <div class="st-l">collection${completedN > 1 ? 's' : ''} complétée${completedN > 1 ? 's' : ''}</div></div>
-    </div>`;
+    </div>`);
 
-  const assiduite = `<div class="section-title">${icon('assiduite')} Assiduité</div>
-    <div class="stat-grid fade">
+  const assiduite = moiRepli('assiduite', `${icon('assiduite')} Assiduité`,
+    `${daysN} jour${daysN > 1 ? 's' : ''} d'activité`,
+    `<div class="stat-grid fade">
       <div class="stat-tile wide"><div class="st-n">${daysN}</div>
         <div class="st-l">jour${daysN > 1 ? 's' : ''} d'activité en tout</div></div>
-    </div>`;
+    </div>`);
 
   // Pierres du chemin (badges-souvenirs, voir pierres.js) : SEULEMENT les
   // pierres reçues — jamais de grille grisée de ce qui manquerait.
@@ -1008,29 +1034,32 @@ function viewMoi() {
         <span class="pi-phrase">${esc(p.phrase)}</span>
         <span class="pi-date">posée le ${esc(p.date)}</span></span>
     </div>`).join('');
-  const pierresSec = `<div class="section-title">${icon('pierres')} Pierres du chemin</div>
-    <p class="muted me-note fade">Des badges-souvenirs qui marquent un pas réel du chemin — premier
+  const pierresSec = moiRepli('pierres', `${icon('pierres')} Pierres du chemin`,
+    pierresList.length ? `${pierresList.length} posée${pierresList.length > 1 ? 's' : ''}` : 'aucune pour l\'instant',
+    `<p class="muted me-note fade" style="margin-top:0">Des badges-souvenirs qui marquent un pas réel du chemin — premier
       verset planté, premier chapitre lu, premier défi relevé… Une pierre se pose une seule fois,
       et ne se retire jamais.</p>
     <p class="pierres-quote fade">« Que signifient ces pierres ? » — Josué 4.21</p>
     ${pierresList.length
       ? pierresTiles + `<p class="muted me-note center">D'autres pierres se poseront au fil du chemin.</p>`
-      : `<p class="muted me-note center fade">Tes pierres se poseront ici, une à une, au fil du chemin.</p>`}`;
+      : `<p class="muted me-note center fade">Tes pierres se poseront ici, une à une, au fil du chemin.</p>`}`);
 
-  const lireSec = `<div class="section-title">${icon('lecture')} Lecture</div>
-    <div class="stat-grid fade">
+  const lireSec = moiRepli('lecture', `${icon('lecture')} Lecture`,
+    `${lire.chapters} chapitre${lire.chapters > 1 ? 's' : ''} lu${lire.chapters > 1 ? 's' : ''}`,
+    `<div class="stat-grid fade">
       ${tile(lire.chapters, `chapitre${lire.chapters > 1 ? 's' : ''} lu${lire.chapters > 1 ? 's' : ''}`)}
       ${tile(lire.books, `livre${lire.books > 1 ? 's' : ''} terminé${lire.books > 1 ? 's' : ''}`)}
     </div>
-    ${lire.chapters === 0 ? `<p class="muted me-note">Pas encore commencé — le module Lire t'attend, à ton rythme.</p>` : ''}`;
+    ${lire.chapters === 0 ? `<p class="muted me-note">Pas encore commencé — le module Lire t'attend, à ton rythme.</p>` : ''}`);
 
-  const defiSec = `<div class="section-title">${icon('defi')} Défi</div>
-    <div class="stat-grid fade">
+  const defiSec = moiRepli('defi', `${icon('defi')} Défi`,
+    `${defi.defis} défi${defi.defis > 1 ? 's' : ''} relevé${defi.defis > 1 ? 's' : ''}`,
+    `<div class="stat-grid fade">
       ${tile(defi.defis, `défi${defi.defis > 1 ? 's' : ''} relevé${defi.defis > 1 ? 's' : ''}`)}
       ${tile(defi.bestScore === null ? '—' : defi.bestScore, defi.bestScoreLabel.toLowerCase())}
       ${tile(defi.bestSerie, 'meilleure série de bonnes réponses')}
     </div>
-    ${defi.defis === 0 ? `<p class="muted me-note">Pas encore commencé — relève ton premier défi quand tu veux.</p>` : ''}`;
+    ${defi.defis === 0 ? `<p class="muted me-note">Pas encore commencé — relève ton premier défi quand tu veux.</p>` : ''}`);
 
   const friends = user ? moiFriendsSection(user) : '';
 
@@ -1655,7 +1684,7 @@ function moiAccountCard(u) {
 }
 function egliseOublier() { // à la déconnexion / suppression : plus rien d'église à montrer
   groupesCache = null; groupeDetails = {}; demandeCache = undefined; versetEdit = null;
-  grpCodeField = grpNomField = ''; grpError = grpNotice = null;
+  grpCodeField = grpNomField = grpAdrField = grpMailField = ''; grpError = grpNotice = null;
 }
 async function doLogout() {
   await GraineAPI.logout(); // même hors-ligne, la session locale est effacée
@@ -1744,13 +1773,13 @@ function texteInvitation() {
   if (u && u.friendCode) t += ` Rejoins-moi : mon code ami est ${u.friendCode}.`;
   return t + '\n' + location.origin;
 }
-// La carte « Fais découvrir » de l'écran Moi — visible pour tous, connecté ou non.
+// La section « Fais découvrir » de l'écran Moi — pour tous, connecté ou non.
 function moiPartageCard() {
-  return `<div class="card account-card fade">
-    <div class="acc-head"><span class="acc-ic">${icon('partage', 22)}</span><b>Fais découvrir Bible Horizon</b></div>
-    <p class="muted">Quelqu'un autour de toi aimerait peut-être, lui aussi, avancer dans la Parole — un simple message suffit.</p>
-    <button class="btn btn-soft btn-block" data-invite="1" style="margin-top:10px">Inviter un proche</button>
-  </div>`;
+  return moiRepli('partage', `${icon('partage')} Fais découvrir`, 'invite un proche',
+    `<div class="card account-card fade">
+      <p class="muted" style="margin:0">Quelqu'un autour de toi aimerait peut-être, lui aussi, avancer dans la Parole — un simple message suffit.</p>
+      <button class="btn btn-soft btn-block" data-invite="1" style="margin-top:10px">Inviter un proche</button>
+    </div>`);
 }
 
 /* ---------- Amis ---------- */
@@ -1792,18 +1821,23 @@ function moiFriendsSection(u) {
       <span class="fr-main"><b>${esc(f.pseudo)}</b><br><span class="muted fr-since">${esc(sinceText(f.since))}</span></span>
       <button class="fr-x" data-unfriend="${esc(f.friendCode)}" data-pseudo="${esc(f.pseudo)}" title="Retirer cet ami" aria-label="Retirer ${esc(f.pseudo)}">${icon('croix', 13)}</button>
     </div>`).join('');
-  return `<div class="section-title">${icon('amis')} Amis</div>
-    <div class="card friends-card fade">
+  let resume;
+  if (friendsCache === null) resume = '…';
+  else if (friendsCache === 'error') resume = 'hors-ligne';
+  else resume = friendsCache.length ? String(friendsCache.length) : 'aucun pour l\'instant';
+  // Erreur et confirmation HORS du repli : visibles même section fermée.
+  const alerte = (friendError ? `<p class="field-error" style="margin:0 2px 10px">${esc(friendError)}</p>` : '')
+    + (friendNotice ? `<p class="field-ok" style="margin:0 2px 10px">${esc(friendNotice)}</p>` : '');
+  return moiRepli('amis', `${icon('amis')} Mes amis`, resume,
+    `<div class="card friends-card fade">
       <p style="margin:0 0 10px">Ton code ami : <span class="friend-code inline">${esc(u.friendCode)}</span></p>
       <form data-addfriendform="1" class="add-friend-row">
         <input class="field" type="text" id="friendInput" placeholder="Code d'un ami (GRN-XXXX)" autocomplete="off" autocapitalize="characters" value="${esc(friendField)}">
         <button class="btn btn-grow" type="submit">Ajouter</button>
       </form>
-      ${friendError ? `<p class="field-error">${esc(friendError)}</p>` : ''}
-      ${friendNotice ? `<p class="field-ok">${esc(friendNotice)}</p>` : ''}
       ${list}
     </div>
-    <p class="muted me-note">Pour vous défier, rendez-vous dans Défi → « Défier un ami ».</p>`;
+    <p class="muted me-note">Pour vous défier, rendez-vous dans Défi → « Défier un ami ».</p>`, alerte);
 }
 async function doAddFriend() {
   friendNotice = null;
@@ -1846,7 +1880,7 @@ let groupesCache = null;    // null = pas chargé | 'error' | [ { code, nom, rol
 let groupesLoading = false;
 let groupeDetails = {};     // détail par code (liste des membres — pseudo + rôle, jamais d'e-mail)
 let demandeCache;           // undefined = pas chargée | null | { nom, statut: 'attente'|'refusee', createdAt }
-let grpCodeField = '', grpNomField = '';
+let grpCodeField = '', grpNomField = '', grpAdrField = '', grpMailField = '';
 let grpError = null, grpNotice = null;
 let versetEdit = null;      // { code, reference, texte, error, busy } — formulaire du responsable
 
@@ -1891,10 +1925,18 @@ function moiEgliseSection() {
   else if (groupesCache === 'error') corps = `<div class="card fade"><p class="muted fr-empty" style="margin:0">Ta section église apparaîtra dès que tu seras en ligne.</p></div>`;
   else if (groupesCache.length) corps = groupesCache.map(moiGroupeCard).join('');
   else corps = moiSansGroupeCard();
-  return `<div class="section-title">${icon('eglise')} Mon église</div>
-    ${grpNotice ? `<p class="field-ok" style="margin:0 2px 10px">${esc(grpNotice)}</p>` : ''}
-    ${grpError ? `<p class="field-error" style="margin:0 2px 10px">${esc(grpError)}</p>` : ''}
-    ${corps}`;
+  // Le résumé dit l'essentiel sans ouvrir : le nom du groupe, ou l'état.
+  let resume;
+  if (groupesCache === null) resume = '…';
+  else if (groupesCache === 'error') resume = 'hors-ligne';
+  else if (groupesCache.length) resume = groupesCache.map(g => g.nom).join(' · ');
+  else if (demandeCache === undefined) resume = '…';
+  else if (demandeCache && demandeCache.statut === 'attente') resume = 'demande en attente';
+  else resume = 'rejoindre ou demander';
+  // Erreur et confirmation HORS du repli : visibles même section fermée.
+  const alerte = (grpNotice ? `<p class="field-ok" style="margin:0 2px 10px">${esc(grpNotice)}</p>` : '')
+    + (grpError ? `<p class="field-error" style="margin:0 2px 10px">${esc(grpError)}</p>` : '');
+  return moiRepli('eglise', `${icon('eglise')} Mon église`, resume, corps, alerte);
 }
 
 // Sans groupe : deux chemins (rejoindre par code, demander l'ouverture) —
@@ -1906,6 +1948,7 @@ function moiSansGroupeCard() {
   if (demandeCache && demandeCache.statut === 'attente') {
     return `<div class="card friends-card fade">
       <p style="margin:0 0 4px">Ta demande pour « <b>${esc(demandeCache.nom)}</b> » attend une réponse.</p>
+      ${demandeCache.adresse ? `<p class="muted" style="margin:0 0 4px">${esc(demandeCache.adresse)}</p>` : ''}
       <p class="muted">L'administrateur la regarde bientôt — le groupe apparaîtra ici dès qu'il sera ouvert.</p>
       <button class="linkbtn" data-grpdemcancel="1">Annuler ma demande</button>
     </div>`;
@@ -1924,9 +1967,13 @@ function moiSansGroupeCard() {
     </form>
     <p class="muted" style="font-size:.85rem;margin:8px 2px 0">Le responsable de ton groupe te le donne.</p>
     <label class="lbl" for="grpNomInput">Demander l'ouverture d'un groupe</label>
-    <form data-grpdemform="1" class="add-friend-row">
+    <form data-grpdemform="1">
       <input class="field" type="text" id="grpNomInput" placeholder="Nom de ton église" maxlength="40" autocomplete="off" value="${esc(grpNomField)}">
-      <button class="btn btn-soft" type="submit">Envoyer</button>
+      <label class="lbl" for="grpAdrInput">Adresse de l'église</label>
+      <input class="field" type="text" id="grpAdrInput" placeholder="Rue et numéro, ville" maxlength="120" autocomplete="off" value="${esc(grpAdrField)}">
+      <label class="lbl" for="grpMailInput">E-mail de contact (si différent du tien)</label>
+      <input class="field" type="email" id="grpMailInput" placeholder="Facultatif" maxlength="255" autocomplete="off" value="${esc(grpMailField)}">
+      <button class="btn btn-soft btn-block" type="submit" style="margin-top:12px">Envoyer la demande</button>
     </form>
     <p class="muted" style="font-size:.85rem;margin:8px 2px 0">L'administrateur regarde chaque demande ; tu deviendras responsable du groupe.</p>
   </div>`;
@@ -2006,16 +2053,21 @@ async function doGroupeRejoindre() {
 async function doDemandeEnvoyer() {
   grpNotice = null;
   const nom = (grpNomField || '').trim();
+  const adresse = (grpAdrField || '').trim();
+  const email = (grpMailField || '').trim();
   if (nom.length < 2 || nom.length > 40) { grpError = 'Le nom de ton église : entre 2 et 40 caractères.'; render(); return; }
+  // Vérifications locales douces — le serveur revérifie de toute façon.
+  if (adresse.length < 5 || adresse.length > 120) { grpError = 'L\'adresse de ton église : entre 5 et 120 caractères.'; render(); return; }
+  if (email && !/^\S+@\S+\.\S+$/.test(email)) { grpError = 'Cet e-mail de contact semble incomplet — vérifie-le, ou laisse le champ vide.'; render(); return; }
   grpError = null;
   try {
     // Une demande refusée encore affichée s'efface avant d'en poser une nouvelle.
     if (demandeCache && demandeCache.statut === 'refusee') {
       try { await GraineAPI.groupeDemandeAnnuler(); } catch (e) { /* on tente l'envoi quand même */ }
     }
-    const d = await GraineAPI.groupeDemandeEnvoyer(nom);
-    grpNomField = '';
-    demandeCache = d || { nom, statut: 'attente', createdAt: new Date().toISOString() };
+    const d = await GraineAPI.groupeDemandeEnvoyer(nom, adresse, email);
+    grpNomField = grpAdrField = grpMailField = '';
+    demandeCache = d || { nom, adresse, email: email || null, statut: 'attente', createdAt: new Date().toISOString() };
     grpNotice = 'Ta demande est envoyée — on te répond bientôt.';
   } catch (e) {
     if (e && e.offline) grpError = 'Pas de connexion — réessaie quand tu seras en ligne.';
@@ -2125,6 +2177,13 @@ function wire() {
   if (q('[data-push-off]')) q('[data-push-off]').addEventListener('click', pushDeactivate);
   el.querySelectorAll('[data-push-heure]').forEach(b => b.addEventListener('click', () => pushSetHour(+b.dataset.pushHeure)));
 
+  // Écran Moi : mémorise l'état déplié/replié de chaque section — une action
+  // re-rend tout l'écran, et une section ouverte doit le rester (même
+  // mécanique que l'onglet Activité de l'admin).
+  el.querySelectorAll('details.moi-repli').forEach(d => {
+    d.addEventListener('toggle', () => { moiOuverts[d.dataset.cle] = d.open; });
+  });
+
   // Compte, synchro, amis & église
   if (route.name === 'moi') { ensureFriends(); ensureGroupes(); }
   if (q('[data-account]')) q('[data-account]').addEventListener('click', startAccountFlow);
@@ -2174,6 +2233,8 @@ function wire() {
   bindInput('friendInput', v => { friendField = v; });
   bindInput('grpCodeInput', v => { grpCodeField = v; });
   bindInput('grpNomInput', v => { grpNomField = v; });
+  bindInput('grpAdrInput', v => { grpAdrField = v; });
+  bindInput('grpMailInput', v => { grpMailField = v; });
   bindInput('versetRefInput', v => { if (versetEdit) versetEdit.reference = v; });
   bindInput('versetTexteInput', v => { if (versetEdit) versetEdit.texte = v; });
 }

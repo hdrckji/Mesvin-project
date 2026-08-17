@@ -492,6 +492,22 @@ a.verse-item { text-decoration: none; }
 .me-head h2 { font-family: var(--serif); margin: 8px 0 4px; }
 .me-head p { margin: 0; font-size: .92rem; }
 
+/* sections repliées par défaut — même langage que .revoir (defi/defi.css) et
+   .act-repli (admin/admin.css) : marker natif masqué, chevron '›'/'⌄' en
+   ::before. L'intitulé garde l'allure d'un .section-title, le résumé reste
+   en bas de casse et passe à la ligne si la place manque. */
+.moi-repli { margin-top: 18px; }
+.moi-repli summary {
+  cursor: pointer; list-style: none; padding: 2px 0; margin: 0 4px 10px;
+  font-size: .82rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-soft); line-height: 1.6;
+}
+.moi-repli summary::-webkit-details-marker { display: none; }
+.moi-repli summary::before { content: '› '; color: var(--ink-soft); }
+.moi-repli[open] summary::before { content: '⌄ '; }
+.moi-repli summary svg { vertical-align: -3px; margin-right: 2px; }
+.moi-repli .mr-resume { text-transform: none; letter-spacing: normal; font-weight: 600; }
+
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .stat-tile {
   background: var(--surface); border: 1px solid var(--line);

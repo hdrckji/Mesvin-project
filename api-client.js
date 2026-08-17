@@ -122,8 +122,13 @@
     },
     async groupeQuitter(code) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/membres/moi'); },
     // La création d'un groupe passe par une DEMANDE validée par l'administrateur —
-    // jamais de création directe depuis l'appli.
-    async groupeDemandeEnvoyer(nom) { return (await call('POST', '/api/groupes/demande', { nom })).demande; },
+    // jamais de création directe depuis l'appli. L'adresse de l'église est
+    // obligatoire ; l'e-mail de contact est facultatif (omis si vide).
+    async groupeDemandeEnvoyer(nom, adresse, email) {
+      const corps = { nom, adresse };
+      if (email) corps.email = email;
+      return (await call('POST', '/api/groupes/demande', corps)).demande;
+    },
     async groupeDemande() { return (await call('GET', '/api/groupes/demande')).demande; },
     async groupeDemandeAnnuler() { return call('DELETE', '/api/groupes/demande'); },
     // La banque de quiz PAR GROUPE (api/groupes-quiz.php) : réglages lisibles
