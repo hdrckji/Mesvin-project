@@ -468,7 +468,8 @@ function groupe_delete_completely(PDO $pdo, int $groupeId): void {
     if ($ownTx) $pdo->beginTransaction();
     try {
         groupe_quiz_purge($pdo, $groupeId);
-        groupe_banques_purge($pdo, $groupeId); // banques des épreuves (groupes-banques.php)
+        groupe_banques_purge($pdo, $groupeId);      // banques des épreuves (groupes-banques.php)
+        groupe_propositions_purge($pdo, $groupeId); // packs et chemins (groupes-propositions.php)
         $pdo->prepare(
             'DELETE FROM groupe_service_inscriptions
              WHERE service_id IN (SELECT id FROM groupe_services WHERE groupe_id = ?)'

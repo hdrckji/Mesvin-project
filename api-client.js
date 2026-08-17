@@ -152,6 +152,13 @@
     async groupeQuizQuestionSave(code, q) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/quiz/questions', q)).question; },
     async groupeQuizQuestionDelete(code, id) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/quiz/questions/' + encodeURIComponent(id)); },
 
+    /* ---- ce que l'église propose (api/groupes-propositions.php) : packs de
+       versets et chemins de lecture. Tout membre lit ; l'équipe écrit.
+       ADOPTER est local : rien ne remonte jamais au serveur. */
+    async groupePropositions(code) { return (await call('GET', '/api/groupes/' + encodeURIComponent(code) + '/propositions')).propositions; },
+    async groupePropositionSave(code, corps) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/propositions', corps)).proposition; },
+    async groupePropositionDelete(code, id) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/propositions/' + encodeURIComponent(id)); },
+
     /* ---- la page de l'église (api/groupes-page.php) : annonces, rendez-vous,
        services. Lecture pour tout membre ; écriture réservée au responsable
        (403 sinon) — sauf lever/retirer la main, ouvert à tout membre. */

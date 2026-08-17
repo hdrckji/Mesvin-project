@@ -55,6 +55,10 @@ function normalizeStore(s) {
   if (!s.streak) s.streak = { count: 0, lastDay: null };
   if (!('activeCollection' in s)) s.activeCollection = null;           // objectif choisi (id de collection) ou null = parcours général
   if (!Array.isArray(s.completedCollections)) s.completedCollections = []; // collections déjà célébrées
+  // Versets venus de l'église (verset de la semaine appris, packs adoptés) :
+  // ils ne sont pas dans data/verses.json, l'appareil les garde.
+  if (!s.eglVersets || typeof s.eglVersets !== 'object') s.eglVersets = {};
+  if (!Array.isArray(s.eglPacks)) s.eglPacks = []; // packs adoptés : [{ id, titre, verses:[ids] }]
   // Espace « Moi » — champs additifs (un store existant reste valide) :
   // plus longue série (initialisée à la série en cours, sans inventer de passé)
   if (typeof s.bestStreak !== 'number') s.bestStreak = typeof s.streak.count === 'number' ? s.streak.count : 0;
@@ -234,6 +238,27 @@ let LIBRARY = [], LIB_VERSION = 'Segond 1910';
 async function loadLibrary() {
   try { const d = await (await fetch('data/verses.json', { cache: 'no-cache' })).json(); LIBRARY = d.verses || []; LIB_VERSION = d.version || LIB_VERSION; }
   catch (e) { LIBRARY = []; }
+  fondrePacksAdoptes();
+}
+
+/* ---------- Les versets venus de l'église ----------
+   Un pack adopté (ou le verset de la semaine appris) apporte des versets qui
+   ne sont PAS dans data/verses.json. Ils sont gardés sur l'appareil et fondus
+   dans LIBRARY au démarrage : tout le moteur — parcours, exercices, jardin,
+   collections — les traite alors comme les autres, sans une ligne de plus.
+   `store.eglVersets` : { id → { id, ref, text } }. */
+function fondrePacksAdoptes() {
+  const perso = store.eglVersets || {};
+  const connus = new Set(LIBRARY.map(v => v.id));
+  for (const v of Object.values(perso)) {
+    if (v && v.id && !connus.has(v.id)) LIBRARY.push({ id: v.id, ref: v.ref, text: v.text });
+  }
+}
+/** Range un verset d'église sur l'appareil ET dans la bibliothèque en cours. */
+function retenirVersetEglise(v) {
+  if (!store.eglVersets) store.eglVersets = {};
+  store.eglVersets[v.id] = { id: v.id, ref: v.ref, text: v.text };
+  if (!LIBRARY.some(x => x.id === v.id)) LIBRARY.push({ id: v.id, ref: v.ref, text: v.text });
 }
 
 /* ---------- Collections (objectifs facultatifs) ---------- */
@@ -257,7 +282,12 @@ function bookCollections() {
   }
   return out;
 }
-const allCollections = () => THEME_COLLECTIONS.concat(bookCollections());
+// Les packs adoptés d'une église sont des collections comme les autres : même
+// progression, même célébration à l'achèvement, même choix d'objectif.
+const packCollections = () => (store.eglPacks || [])
+  .filter(p => p && Array.isArray(p.verses) && p.verses.length)
+  .map(p => ({ id: 'pack:' + p.id, name: p.titre, emoji: '⛪', desc: p.desc || '', verses: p.verses }));
+const allCollections = () => THEME_COLLECTIONS.concat(packCollections(), bookCollections());
 const collectionById = id => (id ? allCollections().find(c => c.id === id) || null : null);
 const activeColl = () => collectionById(store.activeCollection);
 function collProgress(c) {
@@ -2189,7 +2219,8 @@ function viewEglise() {
   } else {
     const vieux = meta && meta.horsLigne && meta.quand
       ? `<p class="muted" style="font-size:.85rem;margin:6px 2px 0">Hors-ligne — page du ${dateAnnonceFr(meta.quand)}.</p>` : '';
-    corpsPage = vieux + egliseAnnonces(g, p, anime) + egliseRdv(g, p, anime) + egliseServices(g, p, anime);
+    corpsPage = vieux + egliseAnnonces(g, p, anime) + egliseRdv(g, p, anime) + egliseServices(g, p, anime)
+      + eglisePropositions(g, anime);
   }
 
   // Le coin de l'équipe : le code qui ouvre la porte, et la porte des banques
@@ -2246,6 +2277,240 @@ function egliseVersetForm(g) {
     </form>`;
   }
   return `<button class="btn btn-soft btn-block" data-versetedit="${esc(g.code)}" style="margin-top:12px">${g.verset ? 'Changer le verset de la semaine' : 'Définir le verset de la semaine'}</button>`;
+}
+
+/* ============================================================================
+   Ce que l'église propose : packs de versets et chemins de lecture.
+
+   L'équipe propose, chacun adopte À SON RYTHME — et l'adoption est un geste
+   LOCAL : rien ne remonte, personne ne sait qui a adopté quoi ni où il en
+   est. Un pack adopté devient une collection du parcours (ses versets sont
+   fondus dans la bibliothèque) ; un chemin adopté devient un plan du module
+   Marcher (store graine.lire.v1, format v2 respecté).
+   ========================================================================== */
+/* Les 66 livres que le module Marcher sait ouvrir, dans l'ordre canonique —
+   extraits de son propre catalogue (lire/lire.js, BOOKS). Ils servent ici à
+   nommer un chemin de lecture et à le composer ; le serveur revalide chaque
+   identifiant contre les fichiers réellement présents. */
+const LIVRES_AT = { genese: "Genèse", exode: "Exode", levitique: "Lévitique", nombres: "Nombres", deuteronome: "Deutéronome", josue: "Josué", juges: "Juges", ruth: "Ruth", '1samuel': "1 Samuel", '2samuel': "2 Samuel", '1rois': "1 Rois", '2rois': "2 Rois", '1chroniques': "1 Chroniques", '2chroniques': "2 Chroniques", esdras: "Esdras", nehemie: "Néhémie", esther: "Esther", job: "Job", psaumes: "Psaumes", proverbes: "Proverbes", ecclesiaste: "Ecclésiaste", cantique: "Cantique des cantiques", esaie: "Ésaïe", jeremie: "Jérémie", lamentations: "Lamentations", ezechiel: "Ézéchiel", daniel: "Daniel", osee: "Osée", joel: "Joël", amos: "Amos", abdias: "Abdias", jonas: "Jonas", michee: "Michée", nahum: "Nahum", habacuc: "Habacuc", sophonie: "Sophonie", aggee: "Aggée", zacharie: "Zacharie", malachie: "Malachie" };
+const LIVRES_NT = { matthieu: "Matthieu", marc: "Marc", luc: "Luc", jean: "Jean", actes: "Actes", romains: "Romains", '1corinthiens': "1 Corinthiens", '2corinthiens': "2 Corinthiens", galates: "Galates", ephesiens: "Éphésiens", philippiens: "Philippiens", colossiens: "Colossiens", '1thessaloniciens': "1 Thessaloniciens", '2thessaloniciens': "2 Thessaloniciens", '1timothee': "1 Timothée", '2timothee': "2 Timothée", tite: "Tite", philemon: "Philémon", hebreux: "Hébreux", jacques: "Jacques", '1pierre': "1 Pierre", '2pierre': "2 Pierre", '1jean': "1 Jean", '2jean': "2 Jean", '3jean': "3 Jean", jude: "Jude", apocalypse: "Apocalypse" };
+const LIVRES = Object.assign({}, LIVRES_AT, LIVRES_NT);
+const nomLivre = id => LIVRES[id] || id;
+
+let propCache = {}, propLoading = {}, propTentee = {};
+let propEdit = null; // { genre, id|null, titre, description, versets[], livres[], busy, error }
+
+function ensurePropositions(code) {
+  if (!code || propLoading[code] || propTentee[code]) return;
+  propTentee[code] = true; propLoading[code] = true;
+  GraineAPI.groupePropositions(code)
+    .then(l => { propCache[code] = Array.isArray(l) ? l : []; })
+    .catch(() => { /* hors-ligne : la section reste discrète */ })
+    .then(() => { propLoading[code] = false; renderIfIdle(); });
+}
+function propRafraichir(code) { delete propCache[code]; delete propTentee[code]; ensurePropositions(code); }
+
+const packAdopte = id => (store.eglPacks || []).some(p => p.id === id);
+/** L'id de carte d'un verset de pack : stable, donc jamais de doublon. */
+function packVersetId(propId, i, reference) {
+  return 'eglp-' + propId + '-' + i + '-' + (reference || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function eglisePropositions(g, anime) {
+  const liste = propCache[g.code];
+  if (!liste) return '';
+  const packs = liste.filter(p => p.genre === 'pack');
+  const lectures = liste.filter(p => p.genre === 'lecture');
+  if (!packs.length && !lectures.length && !anime) return '';
+
+  if (propEdit) return eglisePropForm();
+
+  const carte = (p) => {
+    const estPack = p.genre === 'pack';
+    const n = estPack ? (p.contenu.versets || []).length : (p.contenu.livres || []).length;
+    const adopte = estPack ? packAdopte(p.id) : lectureAdoptee(p.id);
+    return `<div class="egl-prop fade">
+      <div class="ep-tete"><b>${esc(p.titre)}</b><span class="ep-n">${n} ${estPack ? 'verset' : 'livre'}${n > 1 ? 's' : ''}</span></div>
+      ${p.description ? `<p class="ep-desc">${multiligne(p.description)}</p>` : ''}
+      <p class="muted ep-apercu">${esc(estPack
+        ? (p.contenu.versets || []).map(v => v.reference).join(' · ')
+        : (p.contenu.livres || []).map(nomLivre).join(' → '))}</p>
+      <div class="ep-actions">
+        ${adopte
+          ? `<span class="muted" style="font-size:.88rem">${estPack ? 'Dans ton parcours 🌱' : 'Sur ton chemin 📖'}</span>`
+          : `<button class="btn btn-grow" data-propadopte="${p.id}">${estPack ? 'Ajouter à mon parcours' : 'Suivre ce chemin'}</button>`}
+        ${anime ? `<button class="linkbtn" data-propedit="${p.id}">Modifier</button>
+          <button class="linkbtn danger" data-propdel="${p.id}" data-nom="${esc(p.titre)}">Supprimer</button>` : ''}
+      </div>
+    </div>`;
+  };
+
+  const bloc = (titre, icone, items, genre, vide, bouton) => `
+    <div class="section-title">${icon(icone)} ${titre}</div>
+    <div class="card fade">
+      ${items.length ? items.map(carte).join('') : `<p class="muted fr-empty" style="margin-top:0">${vide}</p>`}
+      ${anime ? `<button class="btn btn-soft btn-block" data-propnouveau="${genre}" style="margin-top:10px">${bouton}</button>` : ''}
+    </div>`;
+
+  return bloc('Ensemble par cœur', 'memorisation', packs, 'pack',
+      anime ? 'Aucun pack — assemble les versets d\'une série de prédications, d\'un camp…' : 'Pas de pack proposé pour l\'instant.',
+      'Proposer un pack de versets')
+    + bloc('Ensemble dans la Parole', 'lecture', lectures, 'lecture',
+      anime ? 'Aucun chemin — propose une traversée : un évangile, les psaumes…' : 'Pas de chemin de lecture proposé.',
+      'Proposer un chemin de lecture');
+}
+
+/* ---- Adopter : deux gestes strictement locaux ---- */
+
+function doAdopterPack(p) {
+  const ids = [];
+  (p.contenu.versets || []).forEach((v, i) => {
+    const id = packVersetId(p.id, i, v.reference);
+    retenirVersetEglise({ id, ref: v.reference, text: v.texte });
+    ids.push(id);
+  });
+  if (!ids.length) return;
+  store.eglPacks = (store.eglPacks || []).filter(x => x.id !== p.id);
+  store.eglPacks.push({ id: p.id, titre: p.titre, desc: p.description || '', verses: ids });
+  // Le pack devient l'objectif en cours : les prochains versets appris seront
+  // les siens. Un simple choix, défaisable dans l'écran Collections.
+  store.activeCollection = 'pack:' + p.id;
+  saveStore();
+  pageNotice = `« ${p.titre} » rejoint ton parcours — rendez-vous dans Semer 🌱`;
+  render();
+}
+
+/* Le chemin de lecture vit dans le module Marcher (LIRE_KEY, format v2 :
+   { v, active, books, plans }). On y écrit avec précaution — le module reste
+   seul maître de son format, on ne touche qu'à `plans` et `active`. */
+function lireStoreLu() {
+  try {
+    const raw = localStorage.getItem(LIRE_KEY);
+    const s = raw ? JSON.parse(raw) : null;
+    if (!s || typeof s !== 'object') return null;
+    if (!Array.isArray(s.plans)) s.plans = [];
+    return s;
+  } catch (e) { return null; }
+}
+const lecturePlanId = propId => 'egl-' + propId;
+function lectureAdoptee(propId) {
+  const s = lireStoreLu();
+  return !!(s && s.plans.some(p => p && p.id === lecturePlanId(propId)));
+}
+function doAdopterLecture(p) {
+  const livres = (p.contenu.livres || []).filter(id => LIVRES[id]);
+  if (!livres.length) return;
+  const s = lireStoreLu() || { v: 2, active: null, books: {}, plans: [] };
+  if (typeof s.v !== 'number') s.v = 2;
+  if (!s.books || typeof s.books !== 'object') s.books = {};
+  const id = lecturePlanId(p.id);
+  s.plans = s.plans.filter(x => x && x.id !== id);
+  // Même forme qu'un plan créé dans le module : id, nom, objectif, seq, minutes.
+  s.plans.push({ id, nom: p.titre, objectif: p.description || 'Proposé par ton église', seq: livres, minutes: 10 });
+  s.active = id;
+  try { localStorage.setItem(LIRE_KEY, JSON.stringify(s)); } catch (e) { /* stockage plein */ }
+  pageNotice = `« ${p.titre} » t'attend dans Marcher — à ton rythme, sans retard possible 📖`;
+  render();
+}
+
+function doPropAdopter(id) {
+  const g = egliseCourante(); if (!g) return;
+  const p = (propCache[g.code] || []).find(x => x.id === id);
+  if (!p) return;
+  pageNotice = pageError = null;
+  if (p.genre === 'pack') doAdopterPack(p); else doAdopterLecture(p);
+}
+
+/* ---- L'éditeur de l'équipe ---- */
+
+function propOuvrirForm(genre, id) {
+  const g = egliseCourante(); if (!g) return;
+  const p = id ? (propCache[g.code] || []).find(x => x.id === id) : null;
+  pageNotice = pageError = null;
+  propEdit = {
+    genre: p ? p.genre : genre,
+    id: p ? p.id : null,
+    titre: p ? p.titre : '',
+    description: p && p.description ? p.description : '',
+    versets: p && p.genre === 'pack' ? (p.contenu.versets || []).map(v => ({ reference: v.reference, texte: v.texte })) : [{ reference: '', texte: '' }],
+    livres: p && p.genre === 'lecture' ? (p.contenu.livres || []).slice() : [],
+    busy: false, error: null,
+  };
+  render();
+}
+
+function eglisePropForm() {
+  const e = propEdit;
+  const estPack = e.genre === 'pack';
+  const corps = estPack
+    ? `${e.versets.map((v, i) => `<div class="ep-verset">
+        <label class="lbl" for="propRef${i}" style="margin-top:0">Verset ${i + 1}${e.versets.length > 1 ? ` <button class="linkbtn danger" type="button" data-propversmoins="${i}">retirer</button>` : ''}</label>
+        <input class="field" type="text" id="propRef${i}" maxlength="60" placeholder="Matthieu 5.3" autocomplete="off" value="${esc(v.reference)}">
+        <textarea class="field" id="propTexte${i}" maxlength="500" placeholder="Le texte du verset…">${esc(v.texte)}</textarea>
+      </div>`).join('')}
+      ${e.versets.length < 50 ? `<button class="btn btn-soft btn-block" type="button" data-propversplus="1" style="margin-top:8px">Ajouter un verset</button>` : ''}`
+    : `<label class="lbl">Les livres du chemin, dans l'ordre</label>
+      ${e.livres.length
+        ? `<p class="ep-choisis">${e.livres.map((id, i) => `<button class="pill on" type="button" data-proplivremoins="${i}">${esc(nomLivre(id))} ✕</button>`).join('')}</p>`
+        : `<p class="muted" style="font-size:.88rem;margin:4px 2px 10px">Touche les livres ci-dessous : ils s'ajoutent dans l'ordre où tu les choisis.</p>`}
+      <div class="bq-liste">
+        ${[['Ancien Testament', LIVRES_AT], ['Nouveau Testament', LIVRES_NT]].map(([t, m]) => `
+          <p class="fc-label" style="margin:10px 2px 6px">${t}</p>
+          <div class="pill-row">${Object.keys(m).map(id =>
+            `<button class="pill" type="button" data-proplivreplus="${id}">${esc(m[id])}</button>`).join('')}</div>`).join('')}
+      </div>`;
+
+  return `<form class="card fade" data-propform="1">
+    <label class="lbl" for="propTitre" style="margin-top:0">${e.id ? 'Modifier' : (estPack ? 'Nouveau pack de versets' : 'Nouveau chemin de lecture')}</label>
+    <input class="field" type="text" id="propTitre" maxlength="80" placeholder="${estPack ? 'Les Béatitudes' : 'Luc avant Pâques'}" autocomplete="off" value="${esc(e.titre)}">
+    <label class="lbl" for="propDesc">Un mot pour l'assemblée (facultatif)</label>
+    <textarea class="field" id="propDesc" maxlength="500" placeholder="Pourquoi ce chemin, ce que l'on y cherche…">${esc(e.description)}</textarea>
+    ${corps}
+    ${e.error ? `<p class="field-error">${esc(e.error)}</p>` : ''}
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-grow" type="submit" ${e.busy ? 'disabled' : ''}>${e.id ? 'Enregistrer' : 'Proposer'}</button>
+      <button class="btn btn-ghost" type="button" data-propannuler="1">Annuler</button>
+    </div>
+  </form>`;
+}
+
+async function doPropSave() {
+  const g = egliseCourante(); const e = propEdit;
+  if (!g || !e || e.busy) return;
+  e.busy = true; e.error = null; render();
+  const corps = { genre: e.genre, titre: e.titre, description: e.description };
+  if (e.id) corps.id = e.id;
+  if (e.genre === 'pack') {
+    corps.versets = e.versets
+      .map(v => ({ reference: (v.reference || '').trim(), texte: (v.texte || '').trim() }))
+      .filter(v => v.reference !== '' || v.texte !== '');
+  } else {
+    corps.livres = e.livres;
+  }
+  try {
+    await GraineAPI.groupePropositionSave(g.code, corps);
+    propEdit = null;
+    pageNotice = e.id ? 'C\'est enregistré.' : 'C\'est proposé à ton assemblée 🙂';
+    propRafraichir(g.code);
+  } catch (err) {
+    e.busy = false;
+    e.error = (err && err.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(err);
+  }
+  render();
+}
+
+async function doPropDelete(id, nom) {
+  const g = egliseCourante(); if (!g) return;
+  if (!confirm(`Retirer « ${nom} » des propositions ? Ceux qui l'ont déjà adopté le gardent — c'est leur parcours.`)) return;
+  pageNotice = pageError = null;
+  try {
+    await GraineAPI.groupePropositionDelete(g.code, id);
+    propRafraichir(g.code);
+  } catch (e) {
+    pageError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
+  }
+  render();
 }
 
 function egliseAnnonces(g, p, anime) {
@@ -3191,7 +3456,28 @@ function wire() {
   if (q('[data-versetcancel]')) q('[data-versetcancel]').addEventListener('click', () => { versetEdit = null; render(); });
   if (q('[data-grpversetform]')) q('[data-grpversetform]').addEventListener('submit', e => { e.preventDefault(); doGroupeVerset(); });
   // L'onglet Mon église : la page se charge à l'arrivée, le reste est du geste.
-  if (route.name === 'eglise') { ensureGroupes(); const gEgl = egliseCourante(); if (gEgl) ensurePage(gEgl.code); }
+  if (route.name === 'eglise') {
+    ensureGroupes();
+    const gEgl = egliseCourante();
+    if (gEgl) { ensurePage(gEgl.code); ensurePropositions(gEgl.code); }
+  }
+  // Ce que l'église propose : adopter, et l'éditeur de l'équipe.
+  el.querySelectorAll('[data-propadopte]').forEach(b => b.addEventListener('click', () => doPropAdopter(+b.dataset.propadopte)));
+  el.querySelectorAll('[data-propnouveau]').forEach(b => b.addEventListener('click', () => propOuvrirForm(b.dataset.propnouveau, null)));
+  el.querySelectorAll('[data-propedit]').forEach(b => b.addEventListener('click', () => propOuvrirForm(null, +b.dataset.propedit)));
+  el.querySelectorAll('[data-propdel]').forEach(b => b.addEventListener('click', () => doPropDelete(+b.dataset.propdel, b.dataset.nom)));
+  if (q('[data-propform]')) q('[data-propform]').addEventListener('submit', e => { e.preventDefault(); doPropSave(); });
+  if (q('[data-propannuler]')) q('[data-propannuler]').addEventListener('click', () => { propEdit = null; render(); });
+  if (q('[data-propversplus]')) q('[data-propversplus]').addEventListener('click', () => { if (propEdit) { propEdit.versets.push({ reference: '', texte: '' }); render(); } });
+  el.querySelectorAll('[data-propversmoins]').forEach(b => b.addEventListener('click', () => {
+    if (propEdit) { propEdit.versets.splice(+b.dataset.propversmoins, 1); render(); }
+  }));
+  el.querySelectorAll('[data-proplivreplus]').forEach(b => b.addEventListener('click', () => {
+    if (propEdit && !propEdit.livres.includes(b.dataset.proplivreplus)) { propEdit.livres.push(b.dataset.proplivreplus); render(); }
+  }));
+  el.querySelectorAll('[data-proplivremoins]').forEach(b => b.addEventListener('click', () => {
+    if (propEdit) { propEdit.livres.splice(+b.dataset.proplivremoins, 1); render(); }
+  }));
   if (route.name === 'banques') { ensureGroupes(); ensureBanqueEglise(); }
   // L'éditeur des banques d'église
   el.querySelectorAll('[data-bqmodule]').forEach(b => b.addEventListener('click', () => {
@@ -3287,6 +3573,15 @@ function wire() {
     bqSel.filtre = v; render();
     const f = q('#bqFiltre'); if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
   });
+  // Propositions de l'église (pack / chemin de lecture).
+  bindInput('propTitre', v => { if (propEdit) propEdit.titre = v; });
+  bindInput('propDesc', v => { if (propEdit) propEdit.description = v; });
+  if (propEdit && propEdit.genre === 'pack') {
+    propEdit.versets.forEach((_, i) => {
+      bindInput('propRef' + i, v => { if (propEdit && propEdit.versets[i]) propEdit.versets[i].reference = v; });
+      bindInput('propTexte' + i, v => { if (propEdit && propEdit.versets[i]) propEdit.versets[i].texte = v; });
+    });
+  }
   bindInput('bqQuestion', v => { if (bqEdit) bqEdit.question = v; });
   bindInput('bqCategorie', v => { if (bqEdit) bqEdit.categorie = v; });
   bindInput('bqParole', v => { if (bqEdit) bqEdit.parole = v; });

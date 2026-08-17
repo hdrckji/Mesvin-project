@@ -26,6 +26,7 @@ require __DIR__ . '/groupes.php';
 require __DIR__ . '/groupes-demandes.php';
 require __DIR__ . '/groupes-quiz.php';
 require __DIR__ . '/groupes-banques.php';
+require __DIR__ . '/groupes-propositions.php';
 require __DIR__ . '/groupes-page.php';
 require __DIR__ . '/duels.php';
 require __DIR__ . '/veillees.php';
@@ -160,6 +161,15 @@ if (preg_match('#^/api/groupes/([^/]+)/coresponsables$#', $path, $m) && $method 
 }
 if (preg_match('#^/api/groupes/([^/]+)/coresponsables/(.+)$#', $path, $m) && $method === 'DELETE') {
     handle_groupes_coresp_remove($pdo, $m[1], urldecode($m[2]));
+}
+
+/* ---- Ce que l'église propose : packs de versets, chemins de lecture ------------- */
+if (preg_match('#^/api/groupes/([^/]+)/propositions$#', $path, $m)) {
+    if ($method === 'GET')  handle_groupe_propositions_get($pdo, $m[1]);
+    if ($method === 'POST') handle_groupe_proposition_save($pdo, $m[1]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/propositions/([0-9]+)$#', $path, $m) && $method === 'DELETE') {
+    handle_groupe_proposition_delete($pdo, $m[1], (int) $m[2]);
 }
 
 /* ---- La page de l'église : annonces, rendez-vous, services (groupes-page.php) --- */

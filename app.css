@@ -667,6 +667,23 @@ summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; 
 .fr-actions { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
 .fr-actions .linkbtn { font-size: .78rem; padding: 2px 0; text-align: right; }
 
+/* Ce que l'église propose : packs de versets et chemins de lecture. */
+.egl-prop { padding: 12px 0; }
+.egl-prop + .egl-prop { border-top: 1px solid var(--line); }
+.egl-prop .ep-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.egl-prop .ep-n {
+  flex: 0 0 auto; font-size: .78rem; font-weight: 700; color: var(--accent-ink);
+  background: var(--surface-2); border-radius: 999px; padding: 2px 10px;
+}
+.egl-prop .ep-desc { margin: 6px 0 0; font-size: .92rem; }
+.egl-prop .ep-apercu { margin: 6px 0 0; font-size: .84rem; }
+.egl-prop .ep-actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+.egl-prop .ep-actions .btn { padding: 9px 16px; }
+.egl-prop .ep-actions .linkbtn { font-size: .82rem; }
+.ep-verset { padding: 10px 0; border-top: 1px solid var(--line); }
+.ep-verset .linkbtn { font-size: .78rem; }
+.ep-choisis { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
+
 /* L'écran de sélection des banques d'église : une longue liste qui défile
    dans son cadre, la page reste en place. */
 .bq-liste { max-height: 55vh; overflow-y: auto; margin-top: 10px; }

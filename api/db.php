@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 4;
+const DB_MIGRATION_DERNIERE = 5;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1045,10 +1045,41 @@ function db_migrate(PDO $pdo): void {
         ? ['ALTER TABLE groupe_membres MODIFY role VARCHAR(20) NOT NULL']
         : [];
 
+    /* ---- Étape 5 — les propositions de l'église ---------------------------------
+       Ce que l'équipe propose à l'assemblée et que chacun suit À SON RYTHME :
+       - 'pack'    : une liste de versets à mémoriser (les versets vivent dans
+                     le JSON `contenu`, comme le verset de la semaine — ils ne
+                     viennent pas forcément de la bibliothèque de l'appli) ;
+       - 'lecture' : une séquence de livres à lire (chemin, pas calendrier).
+       Adopter reste un geste LOCAL : rien n'enregistre qui a adopté quoi. */
+    $etape5 = db_driver($pdo) === 'mysql'
+        ? ["CREATE TABLE IF NOT EXISTS groupe_propositions (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                groupe_id INT UNSIGNED NOT NULL,
+                genre VARCHAR(10) NOT NULL,
+                titre VARCHAR(80) NOT NULL,
+                description VARCHAR(500) NULL,
+                contenu MEDIUMTEXT NOT NULL,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL,
+                INDEX idx_gpropositions_groupe (groupe_id, genre)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"]
+        : ["CREATE TABLE IF NOT EXISTS groupe_propositions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                groupe_id INTEGER NOT NULL,
+                genre TEXT NOT NULL,
+                titre TEXT NOT NULL,
+                description TEXT NULL,
+                contenu TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )",
+           'CREATE INDEX IF NOT EXISTS idx_gpropositions_groupe ON groupe_propositions (groupe_id, genre)'];
+
     /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
-    foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4] as $version => $liste) {
+    foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4, 5 => $etape5] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }

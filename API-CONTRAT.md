@@ -446,6 +446,36 @@ C'est elle que chargent les pages d'épreuves pour animer « dans mon
 défis et veillées sont inchangés. À la suppression du groupe, tout est
 purgé (`groupe_banques_purge`).
 
+## Ce que l'église propose : packs de versets et chemins de lecture
+
+Table `groupe_propositions` (étape 5). Deux genres, une seule forme :
+- `pack` — `contenu: { versets: [ { reference, texte } ] }` (1 à 50). Les
+  versets vivent DANS la proposition : ils ne viennent pas forcément de
+  `data/verses.json`, l'équipe écrit ce qu'elle veut offrir.
+- `lecture` — `contenu: { livres: [ id… ] }` (1 à 66, doublons fondus,
+  ordre conservé). Chaque id doit exister dans `lire/data/{id}.json` —
+  liste blanche déduite des fichiers, 400 sinon.
+
+Le pacte : l'équipe (responsable + co-responsables) **propose**, tout membre
+**lit**, et **adopter est strictement LOCAL** — rien ne remonte jamais, aucune
+route ne dit qui a adopté quoi ni où il en est. Un pack adopté devient une
+collection du parcours (ses versets sont rangés sur l'appareil et fondus dans
+la bibliothèque) ; un chemin adopté devient un plan du module Marcher. Le
+genre ne change jamais après création (404). Plafond : 20 par groupe et par
+genre. À la suppression du groupe, tout est purgé — mais ce qu'un membre a
+adopté lui reste : c'est son parcours.
+
+### GET /api/groupes/{code}/propositions
+**Membres seulement.** → `{ "propositions": [ { "id", "genre", "titre",
+"description", "contenu", "date" } ] }`
+
+### POST /api/groupes/{code}/propositions
+**Équipe seulement** (403 sinon). Sans `id` → création (201), avec `id` →
+modification du même genre (404 sinon). → `{ "proposition": { … } }`
+
+### DELETE /api/groupes/{code}/propositions/{id}
+**Équipe seulement.** → `{ "ok": true }` — 404 hors du groupe.
+
 ## La page de l'église : annonces, rendez-vous, services (l'onglet « Mon église » les affiche)
 
 Chaque groupe-église a sa « page », trois blocs : les **annonces** du
