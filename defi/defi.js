@@ -1883,6 +1883,9 @@ async function vlCreer() {
   const opts = { nb: vl.nb, seconds: vl.seconds };
   if (vl.categorie) opts.categorie = vl.categorie;
   if (vl.niveau) opts.niveau = vl.niveau;
+  // Quiz dans l'église : le serveur vérifie que je suis responsable du groupe
+  // et tire les questions dans SA banque (l'état portera alors `eglise`).
+  if (vl.groupe) opts.groupe = vl.groupe;
   const ecrans = vl.ecrans === 'deux' ? 'deux' : 'un';
   vl.busy = true; vl.error = null; render();
   try {
@@ -1959,11 +1962,163 @@ async function vlRepondre(pos) {
   vl.busy = false; render();
 }
 
+/* ============================================================================
+   Mon église (responsable) — la rangée « Église » du paramétrage et l'écran
+   « Banque de mon église ». Les groupes dont je suis RESPONSABLE se chargent
+   en douceur au passage dans les écrans de veillée : jamais bloquant, jamais
+   d'erreur affichée — pour un membre simple, un non-connecté ou un serveur
+   muet, RIEN ne change à l'écran.
+   ========================================================================== */
+/* Miroir local de la sélection envoyée au serveur : { [codeGroupe]: [ids] }.
+   Le serveur ne renvoie que des COMPTES (nbSelection…), jamais la liste des
+   ids retenus — sans ce miroir, l'écran de sélection s'ouvrirait toujours
+   vide et un simple « Enregistrer » écraserait la sélection en place. */
+const EGL_SEL_KEY = 'graine.defi.egl.selection.v1';
+
+let eglGroupes = null;   // groupes dont je suis responsable (null = pas encore su)
+let eglCharge = false;   // une tentative de chargement a eu lieu
+
+function eglResponsables() { return eglGroupes || []; }
+function eglCharger() {
+  if (eglCharge || !connecte()) return;
+  eglCharge = true;
+  GraineAPI.mesGroupes().then(gs => {
+    eglGroupes = (gs || []).filter(g => g.role === 'responsable');
+    // L'écran concerné est peut-être déjà affiché : on le complète en douceur.
+    if (eglGroupes.length && vue.ecran === 'veillee' && vl && (vl.mode === 'menu' || vl.mode === 'creer')) render();
+  }).catch(() => { eglCharge = false; /* hors-ligne : on retentera au prochain passage */ });
+}
+
+/* ---------- Banque de mon église : chargement et actions ---------- */
+function eglGroupeCourant() { return eglResponsables().find(g => g.code === vl.grpCode) || null; }
+
+function eglOuvrirBanque() {
+  const resp = eglResponsables();
+  if (!resp.length) return;
+  vl = { mode: 'banque', grpCode: resp.length === 1 ? resp[0].code : null,
+    quiz: null, questions: null, form: null, notice: null, busy: false, error: null };
+  render();
+  if (vl.grpCode) eglChargerBanque();
+}
+async function eglChargerBanque() {
+  const code = vl.grpCode;
+  try {
+    const [quiz, questions] = await Promise.all([
+      GraineAPI.groupeQuiz(code),
+      GraineAPI.groupeQuizQuestions(code)
+    ]);
+    if (!vl || vl.mode !== 'banque' || vl.grpCode !== code) return;
+    vl.quiz = quiz; vl.questions = questions; vl.error = null;
+  } catch (e) {
+    if (!vl || vl.mode !== 'banque' || vl.grpCode !== code) return;
+    vl.error = messageDoux(e);
+  }
+  render();
+}
+async function eglChangerMode(mode) {
+  if (vl.busy || !vl.quiz || vl.quiz.mode === mode) return;
+  vl.busy = true; vl.error = null; vl.notice = null; render();
+  try { vl.quiz = await GraineAPI.groupeQuizMode(vl.grpCode, mode); }
+  catch (e) { vl.error = messageDoux(e); }
+  vl.busy = false; render();
+}
+
+/* Le formulaire vit dans vl.form ; avant chaque re-rendu, on relit les champs
+   pour ne rien perdre (même motif que l'administration). */
+function eglLireForm() {
+  const f = vl.form;
+  if (!f) return;
+  const v = id => { const n = document.getElementById(id); return n ? n.value : null; };
+  const q = v('egl-f-question'); if (q !== null) f.question = q;
+  const c = v('egl-f-categorie'); if (c !== null) f.categorie = c;
+  for (let i = 0; i < 4; i++) { const o = v('egl-f-opt-' + i); if (o !== null) f.options[i] = o; }
+  const b = document.querySelector('input[name="egl-f-bonne"]:checked'); if (b) f.bonne = Number(b.value);
+  const r = v('egl-f-reference'); if (r !== null) f.reference = r;
+}
+async function eglEnregistrerQuestion() {
+  eglLireForm();
+  const f = vl.form;
+  if (vl.busy || !f) return;
+  const corps = {
+    categorie: f.categorie, niveau: f.niveau,
+    question: f.question.trim(),
+    options: f.options.map(o => o.trim()),
+    bonne: f.bonne,
+    reference: f.reference.trim()
+  };
+  if (f.id) corps.id = f.id;
+  // Un premier regard local ; le serveur revalide strictement de toute façon.
+  if (!corps.question) { f.erreur = 'La question ne peut pas rester vide.'; render(); return; }
+  if (corps.options.some(o => !o)) { f.erreur = 'Il faut remplir les 4 réponses.'; render(); return; }
+  if (!corps.reference) { f.erreur = 'La référence biblique manque — c\'est elle qui ramène au texte.'; render(); return; }
+  vl.busy = true; f.erreur = null; render();
+  try {
+    await GraineAPI.groupeQuizQuestionSave(vl.grpCode, corps);
+    vl.busy = false; vl.form = null;
+    vl.notice = f.id ? 'Question modifiée.' : 'Question ajoutée à la banque de ton église.';
+    render();
+    eglChargerBanque(); // liste et compteurs frais
+  } catch (e) {
+    vl.busy = false; f.erreur = messageDoux(e); render();
+  }
+}
+async function eglSupprimerQuestion(id) {
+  if (vl.busy) return;
+  if (!confirm('Supprimer cette question de la banque de ton église ? C\'est définitif.')) return;
+  vl.busy = true; vl.error = null; vl.notice = null; render();
+  try {
+    await GraineAPI.groupeQuizQuestionDelete(vl.grpCode, id);
+    vl.busy = false; vl.notice = 'Question supprimée.';
+    render();
+    eglChargerBanque();
+  } catch (e) {
+    vl.busy = false; vl.error = messageDoux(e); render();
+  }
+}
+
+/* ---------- Sélection dans la banque commune ---------- */
+async function eglOuvrirSelection() {
+  vl.mode = 'banqueSel';
+  vl.selBanque = null; // la banque commune, demandée fraîche au serveur
+  vl.selRecherche = '';
+  vl.sel = new Set(lireJSON(EGL_SEL_KEY)[vl.grpCode] || []);
+  vl.notice = null; vl.error = null;
+  render();
+  try {
+    const d = await GraineAPI.questions();
+    if (!vl || vl.mode !== 'banqueSel') return;
+    vl.selBanque = (d && d.questions) || [];
+    // Une question retirée de la banque commune sort du coche : le serveur la
+    // refuserait (« Question inconnue… ») et bloquerait tout l'enregistrement.
+    const connus = new Set(vl.selBanque.map(q => q.id));
+    vl.sel = new Set([...vl.sel].filter(id => connus.has(id)));
+  } catch (e) {
+    if (!vl || vl.mode !== 'banqueSel') return;
+    vl.error = messageDoux(e);
+  }
+  render();
+}
+async function eglEnregistrerSelection() {
+  if (vl.busy) return;
+  vl.busy = true; vl.error = null; render();
+  try {
+    vl.quiz = await GraineAPI.groupeQuizSelection(vl.grpCode, [...vl.sel]);
+    const m2 = lireJSON(EGL_SEL_KEY); m2[vl.grpCode] = [...vl.sel]; ecrireJSON(EGL_SEL_KEY, m2);
+    vl.busy = false; vl.mode = 'banque';
+    vl.notice = 'Sélection enregistrée — tes quiz d\'église tireront dedans.';
+  } catch (e) {
+    vl.busy = false; vl.error = messageDoux(e);
+  }
+  render();
+}
+
 /* ---------- Écrans ---------- */
 function renderVeillee() {
   if (!vl) vl = { mode: 'menu' };
   if (vl.mode === 'compte') return renderVeilleeCompte();
   if (vl.mode === 'creer') return renderVeilleeCreer();
+  if (vl.mode === 'banque') return renderVeilleeBanque();
+  if (vl.mode === 'banqueSel') return renderVeilleeBanqueSel();
   if (vl.mode === 'join') return renderVeilleeJoin();
   if (vl.mode === 'ecran') return renderVeilleeEcranCode();
   if (vl.mode === 'proj') return renderVeilleeProj();
@@ -1976,6 +2131,7 @@ function renderVeillee() {
 
 function renderVeilleeMenu() {
   const reprise = vlSauvegarde();
+  eglCharger(); // responsable d'un groupe ? la carte « Banque » apparaîtra en douceur
   el.innerHTML = `
   <div class="fade">
     <button class="back-link" id="btn-retour-defi">‹ Qui, où, quand ?</button>
@@ -2024,6 +2180,16 @@ function renderVeilleeMenu() {
       </span>
       <span class="chev">›</span>
     </button>
+
+    ${eglResponsables().length ? `
+    <button class="card hub-card" id="btn-vl-banque">
+      <span class="hub-ic">${icon('eglise', 26)}</span>
+      <span class="hub-txt">
+        <span class="hub-title">Banque de mon église</span>
+        <span class="hub-sub">Choisis ce que tes quiz d'église utilisent : toute la banque commune, ta sélection, et les questions écrites par ton église.</span>
+      </span>
+      <span class="chev">›</span>
+    </button>` : ''}
   </div>`;
 
   document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'quiz' }; render(); };
@@ -2032,11 +2198,13 @@ function renderVeilleeMenu() {
   document.getElementById('btn-vl-rejoindre').onclick = () => { vl = { mode: 'join', code: '', prenom: '', busy: false, error: null }; render(); };
   document.getElementById('btn-vl-animer').onclick = () => {
     vl = connecte()
-      ? { mode: 'creer', nb: 10, seconds: 25, categorie: null, niveau: null, ecrans: 'un', busy: false, error: null }
+      ? { mode: 'creer', nb: 10, seconds: 25, categorie: null, niveau: null, groupe: null, ecrans: 'un', busy: false, error: null }
       : { mode: 'compte' };
     render();
   };
   document.getElementById('btn-vl-ecran').onclick = () => { vl = { mode: 'ecran', code: '', busy: false, error: null }; render(); };
+  const bq = document.getElementById('btn-vl-banque');
+  if (bq) bq.onclick = eglOuvrirBanque;
 }
 
 function renderVeilleeCompte() {
@@ -2057,6 +2225,8 @@ function renderVeilleeCompte() {
 }
 
 function renderVeilleeCreer() {
+  eglCharger(); // responsable ? la rangée « Église » apparaîtra en douceur
+  const eglChoisie = eglResponsables().find(g => g.code === vl.groupe) || null;
   el.innerHTML = `
   <div class="fade">
     <button class="back-link" id="btn-vl-retour">‹ Quiz</button>
@@ -2087,6 +2257,13 @@ function renderVeilleeCreer() {
         ${[1, 2, 3].map(n => `<button class="pill ${vl.niveau === n ? 'on' : ''}" data-niv="${n}">${NIVEAUX[n]}</button>`).join('')}
       </div>
 
+      ${eglResponsables().length ? `
+      <label class="lbl">Église</label>
+      <div class="pill-row" id="vl-pills-grp">
+        <button class="pill ${!vl.groupe ? 'on' : ''}" data-grp="">Quiz ordinaire</button>
+        ${eglResponsables().map(g => `<button class="pill ${vl.groupe === g.code ? 'on' : ''}" data-grp="${esc(g.code)}">Dans mon église : ${esc(g.nom)}</button>`).join('')}
+      </div>` : ''}
+
       <label class="lbl">Écrans</label>
       <div class="pill-row" id="vl-pills-ecrans">
         <button class="pill ${vlUnSeulEcran() ? 'on' : ''}" data-ecrans="un">Un seul écran</button>
@@ -2096,7 +2273,9 @@ function renderVeilleeCreer() {
         ? 'Cet appareil affichera le quiz en grand — c\'est lui qu\'on projette ou qu\'on montre, commandes comprises.'
         : 'Cet appareil devient ta télécommande, dans le creux de la main. Sur l\'ordinateur du vidéoprojecteur, ouvre « Grand écran » et saisis le même code.'}</p>
 
-      <p class="prepa-note">≈ ${Math.max(2, Math.round(vl.nb * (vl.seconds + 15) / 60))} min, échanges compris. Les questions sont tirées par le site, personne ne les connaît d'avance — pas même toi.</p>
+      <p class="prepa-note">≈ ${Math.max(2, Math.round(vl.nb * (vl.seconds + 15) / 60))} min, échanges compris. ${eglChoisie
+        ? `Les questions viennent de la banque de <b>${esc(eglChoisie.nom)}</b> — celle que tu règles dans « Banque de mon église ». Personne ne les connaît d'avance, pas même toi.`
+        : `Les questions sont tirées par le site, personne ne les connaît d'avance — pas même toi.`}</p>
       ${vl.error ? `<p class="field-error">${esc(vl.error)}</p>` : ''}
       <div class="defi-actions">
         <button class="btn btn-primary" id="btn-vl-creer" ${vl.busy ? 'disabled' : ''}>${vl.busy ? 'Création…' : 'Créer le quiz'}</button>
@@ -2109,8 +2288,265 @@ function renderVeilleeCreer() {
   document.querySelectorAll('#vl-pills-sec .pill').forEach(b => { b.onclick = () => { vl.seconds = Number(b.dataset.sec); render(); }; });
   document.querySelectorAll('#vl-pills-cat .pill').forEach(b => { b.onclick = () => { vl.categorie = b.dataset.cat || null; render(); }; });
   document.querySelectorAll('#vl-pills-niv .pill').forEach(b => { b.onclick = () => { vl.niveau = b.dataset.niv ? Number(b.dataset.niv) : null; render(); }; });
+  document.querySelectorAll('#vl-pills-grp .pill').forEach(b => { b.onclick = () => { vl.groupe = b.dataset.grp || null; render(); }; });
   document.querySelectorAll('#vl-pills-ecrans .pill').forEach(b => { b.onclick = () => { vl.ecrans = b.dataset.ecrans; render(); }; });
   document.getElementById('btn-vl-creer').onclick = vlCreer;
+}
+
+/* ---------- Banque de mon église (responsable seul) ----------
+   Le mode de la banque (« toutes » / « sélection ») et les questions PROPRES
+   du groupe. La carte du menu n'existe que pour un responsable connecté ; le
+   serveur re-vérifie de toute façon (403). */
+function renderVeilleeBanque() {
+  const resp = eglResponsables();
+  const grp = eglGroupeCourant();
+  const q = vl.quiz;
+
+  // Plusieurs églises : une pastille par groupe pour choisir laquelle régler.
+  const choixGroupe = resp.length > 1 ? `
+    <div class="pill-row" id="egl-pills-grp" style="margin:0 0 14px">
+      ${resp.map(g => `<button class="pill ${vl.grpCode === g.code ? 'on' : ''}" data-grp="${esc(g.code)}">${esc(g.nom)}</button>`).join('')}
+    </div>` : '';
+
+  let corps = '';
+  if (!grp) {
+    corps = `<div class="card"><p class="defi-lead">Choisis l'église à régler ci-dessus.</p></div>`;
+  } else if (!q && !vl.error) {
+    corps = `<div class="card center" style="padding:30px"><p class="muted" style="margin:0">Un instant…</p></div>`;
+  } else if (!q) {
+    corps = `
+    <div class="card">
+      <p class="defi-lead">${esc(vl.error)}</p>
+      <div class="defi-actions"><button class="btn btn-grow btn-block" id="egl-reessayer">Réessayer</button></div>
+    </div>`;
+  } else {
+    const selection = q.mode === 'selection';
+    corps = `
+    <div class="card">
+      <label class="lbl" style="margin-top:0">La banque commune</label>
+      <div class="pill-row" id="egl-pills-mode">
+        <button class="pill ${selection ? '' : 'on'}" data-mode="toutes" ${vl.busy ? 'disabled' : ''}>Toute la banque commune</button>
+        <button class="pill ${selection ? 'on' : ''}" data-mode="selection" ${vl.busy ? 'disabled' : ''}>Ma sélection</button>
+      </div>
+      ${selection ? `
+      <p class="prepa-note">${q.nbSelection
+        ? `${q.nbSelection} question${q.nbSelection > 1 ? 's' : ''} de la banque commune retenue${q.nbSelection > 1 ? 's' : ''}.`
+        : `Aucune question retenue pour l'instant — choisis-en, sinon tes quiz d'église n'auront que les questions propres.`}</p>
+      <div class="defi-actions" style="margin-top:10px">
+        <button class="btn btn-soft btn-block" id="egl-choisir" ${vl.busy ? 'disabled' : ''}>Choisir les questions retenues</button>
+      </div>` : `
+      <p class="prepa-note">Tes quiz d'église tirent dans toute la banque commune. Passe en « Ma sélection » pour ne retenir que certaines questions${q.nbSelection ? ` — ta sélection (${q.nbSelection} question${q.nbSelection > 1 ? 's' : ''}) est gardée en attendant` : ''}.</p>`}
+      <p class="prepa-note">En tout, tes quiz d'église tireront dans <b>${q.nbTotal}</b> question${q.nbTotal > 1 ? 's' : ''} (banque commune ${selection ? 'retenue' : 'entière'} + questions de ton église).</p>
+    </div>
+
+    <div class="section-title">Les questions de ton église${q.nbPropres ? ` (${q.nbPropres})` : ''}</div>
+    ${vl.form ? eglFormHTML() : `
+    <div class="card">
+      <p class="defi-lead" style="margin:0 0 4px">${q.nbPropres
+        ? `Écrites par ton église, servies dans ses quiz avec la banque commune.`
+        : `Ton église peut écrire ses propres questions — elles s'ajoutent à la banque commune dans ses quiz.`}</p>
+      <div id="egl-propres">
+        ${(vl.questions || []).map(p => `
+        <div class="egl-q">
+          <div class="q">${esc(p.question)}</div>
+          <div class="meta">${esc(p.categorie)} · ${NIVEAUX[p.niveau] || ''} · ${esc(p.options[p.bonne])} · ${esc(p.reference)}</div>
+          <div class="actions">
+            <button class="linkbtn" data-act="editer" data-id="${esc(p.id)}">Modifier</button>
+            <button class="linkbtn danger" data-act="supprimer" data-id="${esc(p.id)}">Supprimer</button>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div class="defi-actions">
+        <button class="btn btn-grow btn-block" id="egl-nouvelle" ${vl.busy ? 'disabled' : ''}>Nouvelle question</button>
+      </div>
+    </div>`}`;
+  }
+
+  el.innerHTML = `
+  <div class="fade">
+    <button class="back-link" id="btn-vl-retour">‹ Quiz</button>
+    <div class="topbar"><div class="brand">
+      <h1 class="app-title">Banque de mon église <span class="seed">•</span> <span class="muted">${grp ? esc(grp.nom) : 'quiz d\'église'}</span></h1>
+    </div></div>
+    <p class="defi-lead" style="margin:0 4px 14px">Ce que les quiz lancés « dans mon église » utilisent. Le Défi du jour et le solo de chacun restent mondiaux.</p>
+    ${choixGroupe}
+    ${vl.notice ? `<p class="field-ok" style="margin:0 4px 12px">${esc(vl.notice)}</p>` : ''}
+    ${grp && q && vl.error ? `<p class="field-error" style="margin:0 4px 12px">${esc(vl.error)}</p>` : ''}
+    ${corps}
+  </div>`;
+
+  document.getElementById('btn-vl-retour').onclick = () => { vl = { mode: 'menu' }; render(); };
+  document.querySelectorAll('#egl-pills-grp .pill').forEach(b => {
+    b.onclick = () => {
+      if (vl.grpCode === b.dataset.grp) return;
+      vl.grpCode = b.dataset.grp; vl.quiz = null; vl.questions = null; vl.form = null;
+      vl.notice = null; vl.error = null;
+      render();
+      eglChargerBanque();
+    };
+  });
+  const re = document.getElementById('egl-reessayer');
+  if (re) re.onclick = () => { vl.error = null; render(); eglChargerBanque(); };
+  document.querySelectorAll('#egl-pills-mode .pill').forEach(b => { b.onclick = () => eglChangerMode(b.dataset.mode); });
+  const ch = document.getElementById('egl-choisir');
+  if (ch) ch.onclick = eglOuvrirSelection;
+  const nv = document.getElementById('egl-nouvelle');
+  if (nv) nv.onclick = () => {
+    vl.notice = null;
+    vl.form = { id: null, categorie: CATEGORIES[0] || '', niveau: 1, question: '', options: ['', '', '', ''], bonne: 0, reference: '', erreur: null };
+    render();
+  };
+  document.querySelectorAll('#egl-propres [data-act]').forEach(b => {
+    b.onclick = () => {
+      const p = (vl.questions || []).find(x => x.id === b.dataset.id);
+      if (!p) return;
+      if (b.dataset.act === 'supprimer') { eglSupprimerQuestion(p.id); return; }
+      vl.notice = null;
+      vl.form = { id: p.id, categorie: p.categorie, niveau: p.niveau, question: p.question,
+        options: p.options.slice(), bonne: p.bonne, reference: p.reference, erreur: null };
+      render();
+    };
+  });
+  if (vl.form) eglFormBind();
+}
+
+/* Le formulaire d'une question propre — calqué sur celui du quiz de
+   l'administration : question, 4 réponses (coche la bonne), référence,
+   catégorie et niveau (le serveur les exige, comme pour la banque commune). */
+function eglFormHTML() {
+  const f = vl.form;
+  return `
+  <div class="card">
+    <h2 style="font-family:var(--serif);font-size:1.15rem;margin:0 0 4px">${f.id ? 'Modifier la question' : 'Nouvelle question'}</h2>
+    <label class="lbl" for="egl-f-question">Question</label>
+    <textarea class="field" id="egl-f-question" maxlength="300">${esc(f.question)}</textarea>
+    <label class="lbl" for="egl-f-categorie">Catégorie</label>
+    <select class="field" id="egl-f-categorie">
+      ${CATEGORIES.map(c => `<option value="${esc(c)}" ${c === f.categorie ? 'selected' : ''}>${esc(c)}</option>`).join('')}
+    </select>
+    <label class="lbl">Niveau</label>
+    <div class="pill-row" id="egl-f-niveaux">
+      ${[1, 2, 3].map(n => `<button type="button" class="pill ${f.niveau === n ? 'on' : ''}" data-niveau="${n}">${n} · ${NIVEAUX[n]}</button>`).join('')}
+    </div>
+    <label class="lbl">Les 4 réponses <span class="muted" style="font-weight:500">(coche la bonne)</span></label>
+    ${[0, 1, 2, 3].map(i => `
+    <div class="egl-opt-row">
+      <input type="radio" name="egl-f-bonne" value="${i}" id="egl-f-bonne-${i}" ${f.bonne === i ? 'checked' : ''} aria-label="Bonne réponse : option ${i + 1}">
+      <input class="field" type="text" id="egl-f-opt-${i}" maxlength="120" placeholder="Réponse ${i + 1}" value="${esc(f.options[i])}">
+    </div>`).join('')}
+    <label class="lbl" for="egl-f-reference">Référence biblique</label>
+    <input class="field" type="text" id="egl-f-reference" maxlength="60" placeholder="Genèse 6.14" value="${esc(f.reference)}">
+    ${f.erreur ? `<p class="field-error">${esc(f.erreur)}</p>` : ''}
+    <div class="defi-actions">
+      <button class="btn btn-primary btn-block" id="egl-f-enregistrer" ${vl.busy ? 'disabled' : ''}>${vl.busy ? 'Enregistrement…' : 'Enregistrer'}</button>
+      <button class="btn btn-ghost btn-block" id="egl-f-annuler" ${vl.busy ? 'disabled' : ''}>Annuler</button>
+    </div>
+  </div>`;
+}
+function eglFormBind() {
+  document.getElementById('egl-f-enregistrer').onclick = eglEnregistrerQuestion;
+  document.getElementById('egl-f-annuler').onclick = () => { vl.form = null; render(); };
+  document.querySelectorAll('#egl-f-niveaux .pill').forEach(p => {
+    p.onclick = () => { eglLireForm(); vl.form.niveau = Number(p.dataset.niveau); render(); };
+  });
+}
+
+/* ---------- Ma sélection dans la banque commune ----------
+   Toute la banque commune en liste à cocher, avec recherche. Le champ garde le
+   focus : la recherche ne re-rend que la liste (même motif que l'admin). */
+const eglNormalise = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+function eglSelFiltrees() {
+  const r = eglNormalise(vl.selRecherche || '');
+  if (!r) return vl.selBanque;
+  return vl.selBanque.filter(q => eglNormalise(q.question + ' ' + q.reference + ' ' + q.categorie).includes(r));
+}
+function eglSelLigne(q) {
+  return `
+  <label class="egl-sel-ligne">
+    <input type="checkbox" data-id="${esc(q.id)}" ${vl.sel.has(q.id) ? 'checked' : ''}>
+    <span class="txt">
+      <span class="q">${esc(q.question)}</span>
+      <span class="meta">${esc(q.categorie)} · ${NIVEAUX[q.niveau] || ''} · ${esc(q.reference)}</span>
+    </span>
+  </label>`;
+}
+function eglSelCompteur() {
+  const n = vl.sel.size, t = vl.selBanque ? vl.selBanque.length : 0;
+  return `${n} retenue${n > 1 ? 's' : ''} sur ${t}`;
+}
+/* Re-rendu de la liste seule (et du compteur) : le champ garde le focus. */
+function eglSelMajListe() {
+  const zone = document.getElementById('egl-sel-liste');
+  if (!zone) return;
+  const filtrees = eglSelFiltrees();
+  zone.innerHTML = filtrees.map(eglSelLigne).join('')
+    || `<p class="muted" style="margin:14px 4px">Aucune question ne correspond.</p>`;
+  const c = document.getElementById('egl-sel-compteur');
+  if (c) c.textContent = eglSelCompteur();
+  eglSelBindListe();
+}
+function eglSelBindListe() {
+  document.querySelectorAll('#egl-sel-liste input[type="checkbox"]').forEach(cb => {
+    cb.onchange = () => {
+      if (cb.checked) vl.sel.add(cb.dataset.id);
+      else vl.sel.delete(cb.dataset.id);
+      const c = document.getElementById('egl-sel-compteur');
+      if (c) c.textContent = eglSelCompteur();
+    };
+  });
+}
+
+function renderVeilleeBanqueSel() {
+  const grp = eglGroupeCourant();
+
+  let corps = '';
+  if (!vl.selBanque && !vl.error) {
+    corps = `<div class="card center" style="padding:30px"><p class="muted" style="margin:0">Un instant…</p></div>`;
+  } else if (!vl.selBanque) {
+    corps = `
+    <div class="card">
+      <p class="defi-lead">${esc(vl.error)}</p>
+      <div class="defi-actions"><button class="btn btn-grow btn-block" id="egl-sel-reessayer">Réessayer</button></div>
+    </div>`;
+  } else {
+    // Le serveur ne dit que le NOMBRE de questions retenues ; la liste cochée
+    // vient de cet appareil. Si les deux comptes divergent (sélection faite
+    // ailleurs), on le dit avant que l'enregistrement ne la remplace.
+    const nbServeur = vl.quiz ? vl.quiz.nbSelection : null;
+    const divergence = nbServeur !== null && nbServeur !== vl.sel.size && nbServeur > 0;
+    corps = `
+    <div class="card">
+      <input class="field" type="search" id="egl-sel-recherche" placeholder="Chercher une question, une référence…"
+        autocomplete="off" value="${esc(vl.selRecherche || '')}">
+      <p class="egl-compteur" id="egl-sel-compteur">${eglSelCompteur()}</p>
+      ${divergence ? `<p class="prepa-note" style="margin-top:4px">La sélection enregistrée compte ${nbServeur} question${nbServeur > 1 ? 's' : ''} (faite depuis un autre appareil ?). En enregistrant, c'est la liste cochée ici qui fera foi.</p>` : ''}
+      <div id="egl-sel-liste"></div>
+      ${vl.error ? `<p class="field-error">${esc(vl.error)}</p>` : ''}
+      <div class="defi-actions egl-sel-actions">
+        <button class="btn btn-primary btn-block" id="egl-sel-enregistrer" ${vl.busy ? 'disabled' : ''}>${vl.busy ? 'Enregistrement…' : 'Enregistrer la sélection'}</button>
+      </div>
+    </div>`;
+  }
+
+  el.innerHTML = `
+  <div class="fade">
+    <button class="back-link" id="btn-vl-retour">‹ Banque de mon église</button>
+    <div class="topbar"><div class="brand">
+      <h1 class="app-title">Ma sélection <span class="seed">•</span> <span class="muted">${grp ? esc(grp.nom) : 'banque commune'}</span></h1>
+    </div></div>
+    <p class="defi-lead" style="margin:0 4px 14px">Coche les questions de la banque commune que tes quiz d'église retiennent — les questions de ton église s'y ajoutent toujours.</p>
+    ${corps}
+  </div>`;
+
+  document.getElementById('btn-vl-retour').onclick = () => { vl.mode = 'banque'; vl.error = null; render(); };
+  const re = document.getElementById('egl-sel-reessayer');
+  if (re) re.onclick = () => eglOuvrirSelection();
+  const rech = document.getElementById('egl-sel-recherche');
+  if (rech) rech.oninput = () => { vl.selRecherche = rech.value; eglSelMajListe(); };
+  const env = document.getElementById('egl-sel-enregistrer');
+  if (env) env.onclick = eglEnregistrerSelection;
+  eglSelMajListe(); // premier remplissage de la liste
 }
 
 function renderVeilleeJoin() {
@@ -2191,6 +2627,7 @@ function renderVeilleeHost() {
   if (e.statut === 'lobby') {
     corps = `
     <div class="card vl-proj">
+      ${e.eglise ? `<p class="vl-eglise">Veillée de ${esc(e.eglise)}</p>` : ''}
       <p class="vl-invite">Sur vos téléphones : <b>${esc(location.host)}</b> › Sonder › Quiz dans ton église › <b>Rejoindre</b></p>
       <div class="vl-code-big">${esc(e.code)}</div>
       <p class="vl-nb">${e.nPlayers === 0 ? 'En attente des premiers participants…' : `${e.nPlayers} participant${e.nPlayers > 1 ? 's' : ''}`}</p>
@@ -2489,6 +2926,7 @@ function renderVeilleeProj() {
   if (e.statut === 'lobby') {
     corps = `
     <div class="card vl-proj">
+      ${e.eglise ? `<p class="vl-eglise">Veillée de ${esc(e.eglise)}</p>` : ''}
       <p class="vl-invite">Sur vos téléphones : <b>${esc(location.host)}</b> › Sonder › Quiz dans ton église › <b>Rejoindre</b></p>
       <div class="vl-code-big">${esc(e.code)}</div>
       <p class="vl-nb">${e.nPlayers === 0 ? 'En attente des premiers participants…' : `${e.nPlayers} participant${e.nPlayers > 1 ? 's' : ''}`}</p>

@@ -113,6 +113,31 @@
     async duel(id) { return (await call('GET', '/api/duels/' + id)).duel; },
     async duelResult(id, answers) { return (await call('POST', '/api/duels/' + id + '/result', { answers })).duel; },
 
+    /* ---- groupes d'église (voir api/groupes.php et la section Groupes du contrat) ---- */
+    async mesGroupes() { return (await call('GET', '/api/groupes')).groupes; },
+    async groupeRejoindre(code) { return (await call('POST', '/api/groupes/rejoindre', { code })).groupe; },
+    async groupeDetail(code) { return (await call('GET', '/api/groupes/' + encodeURIComponent(code))).groupe; },
+    async groupeVerset(code, reference, texte) {
+      return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/verset', { reference, texte })).groupe;
+    },
+    async groupeQuitter(code) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/membres/moi'); },
+    // La création d'un groupe passe par une DEMANDE validée par l'administrateur —
+    // jamais de création directe depuis l'appli.
+    async groupeDemandeEnvoyer(nom) { return (await call('POST', '/api/groupes/demande', { nom })).demande; },
+    async groupeDemande() { return (await call('GET', '/api/groupes/demande')).demande; },
+    async groupeDemandeAnnuler() { return call('DELETE', '/api/groupes/demande'); },
+    // La banque de quiz PAR GROUPE (api/groupes-quiz.php) : réglages lisibles
+    // par les membres, écriture réservée au responsable (403 sinon).
+    async groupeQuiz(code) { return (await call('GET', '/api/groupes/' + encodeURIComponent(code) + '/quiz')).quiz; },
+    async groupeQuizMode(code, mode) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/quiz/mode', { mode })).quiz; },
+    // REMPLACE la sélection entière d'ids de la banque commune.
+    async groupeQuizSelection(code, ids) { return (await call('PUT', '/api/groupes/' + encodeURIComponent(code) + '/quiz/selection', { ids })).quiz; },
+    // Les questions PROPRES du groupe (elles portent la bonne réponse) — responsable seul.
+    async groupeQuizQuestions(code) { return (await call('GET', '/api/groupes/' + encodeURIComponent(code) + '/quiz/questions')).questions; },
+    // Sans id = création (id egl- rendu), avec id = modification.
+    async groupeQuizQuestionSave(code, q) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/quiz/questions', q)).question; },
+    async groupeQuizQuestionDelete(code, id) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/quiz/questions/' + encodeURIComponent(id)); },
+
     /* ---- questions du Défi (banque fusionnée, publique) ---- */
     async questions() { return call('GET', '/api/questions'); },
 
@@ -143,6 +168,12 @@
     async adminJournal() { return call('GET', '/api/admin/journal'); },
     async adminBrevo() { return call('GET', '/api/admin/brevo'); },
     async adminVisites() { return call('GET', '/api/admin/visites'); },
+    // Onglet « Églises » : les demandes de groupe en attente et les groupes
+    // existants ; accepter fait naître le groupe (le demandeur devient
+    // responsable), refuser laisse le porteur redemander plus tard.
+    async adminEglises() { return call('GET', '/api/admin/eglises'); },
+    async adminEgliseAccepter(id) { return call('POST', '/api/admin/eglises/demandes/' + id + '/accepter'); },
+    async adminEgliseRefuser(id) { return call('POST', '/api/admin/eglises/demandes/' + id + '/refuser'); },
 
     /* ---- veillées en direct ---- */
     async createVeillee(opts) { return (await call('POST', '/api/veillees', opts || {})).veillee; },
