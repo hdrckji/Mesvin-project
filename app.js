@@ -223,8 +223,8 @@ function moiPushCard() {
     corps = desc + `<button class="btn btn-primary" data-push-on="1" ${pushBusy ? 'disabled' : ''} style="margin-top:12px">${pushBusy ? 'Activation…' : 'Activer'}</button>`;
   }
   // Erreur et confirmation HORS du repli : visibles même section fermée.
-  const alerte = (pushError ? `<p class="field-error" style="margin:0 2px 10px">${esc(pushError)}</p>` : '')
-    + (pushNotice ? `<p class="field-ok" style="margin:0 2px 10px">${esc(pushNotice)}</p>` : '');
+  const alerte = (pushError ? `<p class="field-error mr-alerte">${esc(pushError)}</p>` : '')
+    + (pushNotice ? `<p class="field-ok mr-alerte">${esc(pushNotice)}</p>` : '');
   return moiRepli('offert', `${icon('cloche')} Le verset offert`, resume,
     `<div class="card fade">${corps}</div>`, alerte);
 }
@@ -962,8 +962,10 @@ function viewSessionDone() {
 }
 
 /* ---------- Moi : sections repliables ----------
-   L'écran Moi est long : chaque bloc secondaire se replie, fermé par défaut —
-   même langage que .revoir (defi/defi.css) et .act-repli (admin/admin.css).
+   L'écran Moi est long : chaque bloc secondaire se replie, fermé par défaut,
+   et les rangées vivent ensemble dans UNE carte-liste (.moi-liste) — même
+   langage que la carte de compte au-dessus. L'intitulé à gauche, le résumé
+   en colonne à droite, le chevron contre le bord (voir app.css).
    `moiOuverts` mémorise l'état déplié : une action re-rend tout l'écran, et
    une section ouverte doit le rester (cf. l'onglet Activité de l'admin).
    Les messages d'une section (erreur, confirmation) passent par `alerte` :
@@ -971,8 +973,8 @@ function viewSessionDone() {
 let moiOuverts = {};
 function moiRepli(cle, titre, resume, corps, alerte) {
   return `<details class="moi-repli" data-cle="${cle}" ${moiOuverts[cle] ? 'open' : ''}>
-      <summary>${titre} <span class="mr-resume">— ${esc(resume)}</span></summary>
-      ${corps}
+      <summary><span class="mr-titre">${titre}</span><span class="mr-resume">${esc(resume)}</span></summary>
+      <div class="mr-corps">${corps}</div>
     </details>
     ${alerte || ''}`;
 }
@@ -1008,7 +1010,7 @@ function viewMoi() {
   const pousse = moiPushCard();
 
   const memo = moiRepli('memo', `${icon('memorisation')} Mémorisation`,
-    `${gardenN} verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''} · série de ${streakN}`,
+    `${gardenN} verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}`,
     `<div class="stat-grid fade">
       ${tile(gardenN, `verset${gardenN > 1 ? 's' : ''} mémorisé${gardenN > 1 ? 's' : ''}`)}
       ${tile(learnN, 'en apprentissage')}
@@ -1078,7 +1080,8 @@ function viewMoi() {
         <span class="hub-sub">Comptes et banque de questions du Défi</span></span>
       <span class="chev">›</span></a>` : '';
 
-  return topbar() + head + account + apparence + pousse + memo + assiduite + pierresSec + lireSec + defiSec + friends + eglise + invite + admin;
+  const sections = `<div class="card moi-liste fade">${apparence}${pousse}${memo}${assiduite}${pierresSec}${lireSec}${defiSec}${friends}${eglise}${invite}</div>`;
+  return topbar() + head + account + sections + admin;
 }
 
 /* ---------- Jardin (versets mémorisés) ---------- */
@@ -1651,6 +1654,8 @@ function moiInviteCard() {
     <button class="btn btn-primary" data-account="1" style="margin-top:12px">Créer mon compte / Me connecter</button>
   </div>`;
 }
+// La ligne de synchro suit le motif du code ami : l'état à gauche, l'action
+// discrète à droite. Pas de gros bouton — tout se synchronise déjà tout seul.
 function moiAccountCard(u) {
   let actions;
   if (pseudoEdit) {
@@ -1661,8 +1666,7 @@ function moiAccountCard(u) {
       ${pseudoEdit.error ? `<p class="field-error">${esc(pseudoEdit.error)}</p>` : ''}
       <button class="linkbtn" data-cancelpseudo="1">Annuler</button>`;
   } else {
-    actions = `<button class="btn btn-soft btn-block" data-syncnow="1" ${syncUi.status === 'syncing' ? 'disabled' : ''} style="margin-top:12px">Synchroniser maintenant</button>
-      <div class="btn-row" style="margin-top:8px">
+    actions = `<div class="btn-row" style="margin-top:12px">
         <button class="btn btn-ghost" data-editpseudo="1">Changer de pseudo</button>
         <button class="btn btn-ghost" data-logout="1">Se déconnecter</button>
       </div>`;
@@ -1673,7 +1677,8 @@ function moiAccountCard(u) {
     <div class="friend-code-row">
       <div><div class="fc-label">Code ami</div><div class="friend-code" id="friendCode">${esc(u.friendCode)}</div></div>
       <button class="btn btn-soft" data-copycode="1">Copier</button></div>
-    <p class="sync-status muted">${esc(syncStatusText())}</p>
+    <div class="sync-line"><span class="sync-status muted">${esc(syncStatusText())}</span>
+      <button class="linkbtn" data-syncnow="1" ${syncUi.status === 'syncing' ? 'disabled' : ''}>Synchroniser</button></div>
     ${actions}
     ${accountError ? `<p class="field-error">${esc(accountError)}</p>` : ''}
     <details class="danger-zone"><summary>Supprimer mon compte…</summary>
@@ -1826,8 +1831,8 @@ function moiFriendsSection(u) {
   else if (friendsCache === 'error') resume = 'hors-ligne';
   else resume = friendsCache.length ? String(friendsCache.length) : 'aucun pour l\'instant';
   // Erreur et confirmation HORS du repli : visibles même section fermée.
-  const alerte = (friendError ? `<p class="field-error" style="margin:0 2px 10px">${esc(friendError)}</p>` : '')
-    + (friendNotice ? `<p class="field-ok" style="margin:0 2px 10px">${esc(friendNotice)}</p>` : '');
+  const alerte = (friendError ? `<p class="field-error mr-alerte">${esc(friendError)}</p>` : '')
+    + (friendNotice ? `<p class="field-ok mr-alerte">${esc(friendNotice)}</p>` : '');
   return moiRepli('amis', `${icon('amis')} Mes amis`, resume,
     `<div class="card friends-card fade">
       <p style="margin:0 0 10px">Ton code ami : <span class="friend-code inline">${esc(u.friendCode)}</span></p>
@@ -1934,8 +1939,8 @@ function moiEgliseSection() {
   else if (demandeCache && demandeCache.statut === 'attente') resume = 'demande en attente';
   else resume = 'rejoindre ou demander';
   // Erreur et confirmation HORS du repli : visibles même section fermée.
-  const alerte = (grpNotice ? `<p class="field-ok" style="margin:0 2px 10px">${esc(grpNotice)}</p>` : '')
-    + (grpError ? `<p class="field-error" style="margin:0 2px 10px">${esc(grpError)}</p>` : '');
+  const alerte = (grpNotice ? `<p class="field-ok mr-alerte">${esc(grpNotice)}</p>` : '')
+    + (grpError ? `<p class="field-error mr-alerte">${esc(grpError)}</p>` : '');
   return moiRepli('eglise', `${icon('eglise')} Mon église`, resume, corps, alerte);
 }
 
