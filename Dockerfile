@@ -32,6 +32,8 @@ COPY quiz-biblique/ ./quiz-biblique/
 COPY plan-lecture-bible/ ./plan-lecture-bible/
 COPY memoriser-versets/ ./memoriser-versets/
 COPY eglises/ ./eglises/
+# Dossier de presse (PDF) : adresse stable, citée dans les envois aux médias.
+COPY presse/ ./presse/
 COPY data/ ./data/
 COPY lire/ ./lire/
 COPY defi/ ./defi/
