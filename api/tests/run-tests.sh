@@ -65,7 +65,7 @@ require $argv[1] . "/api/db.php";
 $pdo = new PDO("sqlite:" . $argv[2]);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 db_migrate($pdo);
-$recentes = ["visites", "banque_surcharges", "groupe_demandes"];
+$recentes = ["visites", "banque_surcharges", "groupe_demandes", "groupe_demande_details"];
 foreach ($recentes as $t) { $pdo->exec("DROP TABLE " . $t); }
 db_migrate($pdo);
 $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type = \"table\"")->fetchAll(PDO::FETCH_COLUMN);
@@ -412,7 +412,7 @@ check "Marc garde ses 5 points"          5 "$(jval '.participants[] | select(.pr
 # et écrit le code GRP- du groupe sur stdout (le corps de la dernière réponse
 # est celui de l'acceptation : {code, nom}).
 groupe_via_demande() {
-  api POST /api/groupes/demande "$1" "{\"nom\":\"$2\"}" > /dev/null
+  api POST /api/groupes/demande "$1" "{\"nom\":\"$2\",\"adresse\":\"12 rue des Oliviers, Mons\"}" > /dev/null
   api GET /api/admin/eglises "$TOKEN1" > /dev/null
   local id
   id="$(jq -r --arg nom "$2" '[.demandes[] | select(.nom == $nom)] | last | .id' "$TMP/body.json")"
@@ -425,24 +425,32 @@ check "POST /api/groupes sans compte → 401" 401 "$(api POST /api/groupes '' '{
 check "création directe connectée → 403" 403 "$(api POST /api/groupes "$TOKEN1" '{"nom":"Béthel"}')"
 check "→ le message oriente vers la demande" true "$(jval '.error | contains("demande")')"
 
-say "Groupes — déposer sa demande (u1)"
+say "Groupes — déposer sa demande (u1) : nom, adresse obligatoire, e-mail facultatif"
 check "demande sans compte → 401"       401 "$(api POST /api/groupes/demande '' '{"nom":"Béthel"}')"
 check "nom trop court → 400"            400 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"B"}')"
 check "nom avec caractère interdit → 400" 400 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"Béthel <7>"}')"
+check "adresse manquante → 400"         400 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"Béthel"}')"
+check "adresse trop courte → 400"       400 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"Béthel","adresse":"Rue"}')"
+check "e-mail de contact invalide → 400" 400 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"Béthel","adresse":"12 rue des Oliviers, Mons","email":"pas-un-email"}')"
 check "GET : aucune demande au départ"  null "$(api GET /api/groupes/demande "$TOKEN1" > /dev/null; jval .demande)"
 check "annuler sans demande → 404"      404 "$(api DELETE /api/groupes/demande "$TOKEN1")"
-check "demande valide (apostrophes, accents) → 201" 201 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"L’Église d’Éphèse"}')"
+check "demande valide, sans e-mail (facultatif) → 201" 201 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"L’Église d’Éphèse","adresse":"7 place de la Grâce, Éphèse"}')"
 check "→ statut attente"                attente "$(jval .demande.statut)"
 check "→ createdAt en ISO"              Z "$(jval .demande.createdAt | tail -c 2)"
-check "seconde demande → 409 (une seule à la fois)" 409 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"Une autre"}')"
-check "GET : la demande est là"         "L’Église d’Éphèse" "$(api GET /api/groupes/demande "$TOKEN1" > /dev/null; jval .demande.nom)"
+check "→ l'adresse est portée"          "7 place de la Grâce, Éphèse" "$(jval .demande.adresse)"
+check "→ email null (absent)"           null "$(jval .demande.email)"
+check "seconde demande → 409 (une seule à la fois)" 409 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"Une autre","adresse":"12 rue des Oliviers, Mons"}')"
+api GET /api/groupes/demande "$TOKEN1" > /dev/null
+check "GET : la demande est là"         "L’Église d’Éphèse" "$(jval .demande.nom)"
+check "GET : avec son adresse"          "7 place de la Grâce, Éphèse" "$(jval .demande.adresse)"
+check "GET : email null"                null "$(jval .demande.email)"
 check "aucun groupe n'existe encore"    0 "$(api GET /api/groupes "$TOKEN1" > /dev/null; jval '.groupes | length')"
 
 say "Groupes — annuler sa demande, puis redéposer"
 check "annuler → ok true"               true "$(api DELETE /api/groupes/demande "$TOKEN1" > /dev/null; jval .ok)"
 check "GET : plus de demande"           null "$(api GET /api/groupes/demande "$TOKEN1" > /dev/null; jval .demande)"
 check "re-annuler → 404"                404 "$(api DELETE /api/groupes/demande "$TOKEN1")"
-check "redéposer → 201"                 201 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"L’Église d’Éphèse"}')"
+check "redéposer → 201"                 201 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"L’Église d’Éphèse","adresse":"7 place de la Grâce, Éphèse"}')"
 
 say "Groupes — le refus par l'administration, la demande REMPLACÉE"
 check "admin/eglises sans token → 401"  401 "$(api GET /api/admin/eglises)"
@@ -450,6 +458,8 @@ check "admin/eglises non-admin → 403"   403 "$(api GET /api/admin/eglises "$TO
 check "admin/eglises alice → 200"       200 "$(api GET /api/admin/eglises "$TOKEN1")"
 check "1 demande en attente listée"     1 "$(jval '.demandes | length')"
 check "→ avec pseudo et e-mail"         "Alice alice@example.org" "$(jval '"\(.demandes[0].pseudo) \(.demandes[0].email)"')"
+check "→ avec l'adresse de l'église"    "7 place de la Grâce, Éphèse" "$(jval '.demandes[0].adresse')"
+check "→ emailContact null (absent)"    null "$(jval '.demandes[0].emailContact')"
 check "→ aucun groupe pour l'instant"   0 "$(jval '.groupes | length')"
 DEM_ID="$(jval '.demandes[0].id')"
 check "refuser par non-admin → 403"     403 "$(api POST "/api/admin/eglises/demandes/$DEM_ID/refuser" "$TOKEN3")"
@@ -458,8 +468,13 @@ check "re-refuser (déjà tranchée) → 404" 404 "$(api POST "/api/admin/eglise
 check "accepter une refusée → 404"      404 "$(api POST "/api/admin/eglises/demandes/$DEM_ID/accepter" "$TOKEN1")"
 check "le porteur voit le refus"        refusee "$(api GET /api/groupes/demande "$TOKEN1" > /dev/null; jval .demande.statut)"
 check "la refusée ne bloque plus l'admin" 0 "$(api GET /api/admin/eglises "$TOKEN1" > /dev/null; jval '.demandes | length')"
-check "la refusée est REMPLACÉE → 201"  201 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"L’Église d’Éphèse"}')"
-check "→ de nouveau en attente"         attente "$(api GET /api/groupes/demande "$TOKEN1" > /dev/null; jval .demande.statut)"
+check "le refus CONSERVE les détails"   "7 place de la Grâce, Éphèse" "$(api GET /api/groupes/demande "$TOKEN1" > /dev/null; jval .demande.adresse)"
+check "la refusée est REMPLACÉE → 201"  201 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"L’Église d’Éphèse","adresse":"1 chemin du Figuier, Smyrne","email":"Contact@Ephese.example.org"}')"
+api GET /api/groupes/demande "$TOKEN1" > /dev/null
+check "→ de nouveau en attente"         attente "$(jval .demande.statut)"
+check "→ les détails aussi sont remplacés" "1 chemin du Figuier, Smyrne" "$(jval .demande.adresse)"
+check "→ e-mail de contact en minuscules" "contact@ephese.example.org" "$(jval .demande.email)"
+check "l'admin voit l'e-mail de contact" "contact@ephese.example.org" "$(api GET /api/admin/eglises "$TOKEN1" > /dev/null; jval '.demandes[0].emailContact')"
 
 say "Groupes — l'acceptation fait naître le groupe (u1 responsable)"
 api GET /api/admin/eglises "$TOKEN1" > /dev/null
@@ -482,6 +497,11 @@ api GET /api/admin/eglises "$TOKEN1" > /dev/null
 check "admin/eglises : plus de demande" 0 "$(jval '.demandes | length')"
 check "le groupe figure dans la liste"  "L’Église d’Éphèse" "$(jval ".groupes[] | select(.code == \"$GCODE\") | .nom")"
 check "→ responsable et nbMembres"      "Alice 1" "$(jval ".groupes[] | select(.code == \"$GCODE\") | \"\(.responsable) \(.nbMembres)\"")"
+
+say "Groupes — e-mail de contact identique à celui du compte : masqué pour l'admin"
+check "u2 dépose avec son propre e-mail → 201" 201 "$(api POST /api/groupes/demande "$TOKEN2" '{"nom":"Antioche","adresse":"3 rue du Levant, Antioche","email":"BENOIT@example.org"}')"
+check "l'admin voit emailContact null (identique)" null "$(api GET /api/admin/eglises "$TOKEN1" > /dev/null; jval '.demandes[0].emailContact')"
+check "u2 annule → ok true"             true "$(api DELETE /api/groupes/demande "$TOKEN2" > /dev/null; jval .ok)"
 
 say "Groupes — u3 rejoint par code"
 check "code mal formé → 400"            400 "$(api POST /api/groupes/rejoindre "$TOKEN3" '{"code":"BETHEL7"}')"
@@ -526,7 +546,7 @@ for i in 1 2 3 4 5; do
   GCODES="$GCODES $(groupe_via_demande "$TOKEN1" "Groupe numéro $i")"
 done
 check "u1 responsable de 5 groupes"     5   "$(api GET /api/groupes "$TOKEN1" > /dev/null; jval '.groupes | length')"
-check "6e demande → 409 (plafond)"      409 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"Groupe de trop"}')"
+check "6e demande → 409 (plafond)"      409 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"Groupe de trop","adresse":"12 rue des Oliviers, Mons"}')"
 # Le plafond se REVÉRIFIE à l'acceptation : une demande déposée avant le 5e
 # groupe peut être tranchée après lui. Insertion directe en base pour simuler
 # ce décalage (le dépôt normal refuse déjà à 5), demande CONSERVÉE au 409.
@@ -831,7 +851,7 @@ api POST /api/auth/request-code '' '{"email":"david@example.org"}' > /dev/null
 CODE4="$(jval .devCode)"
 api POST /api/auth/verify '' "{\"email\":\"david@example.org\",\"code\":\"$CODE4\",\"pseudo\":\"David\"}" > /dev/null
 TOKEN4="$(jval .token)"
-check "u4 dépose une demande de groupe → 201" 201 "$(api POST /api/groupes/demande "$TOKEN4" '{"nom":"Groupe de David"}')"
+check "u4 dépose une demande de groupe → 201" 201 "$(api POST /api/groupes/demande "$TOKEN4" '{"nom":"Groupe de David","adresse":"9 rue du Puits, Bethléem","email":"secretariat@bethleem.example.org"}')"
 api GET /api/admin/users "$TOKEN1" > /dev/null
 check "4 comptes après l'arrivée de u4" 4   "$(jval '.users | length')"
 DAVID_ID="$(jval '.users[] | select(.email == "david@example.org") | .id')"
@@ -839,6 +859,8 @@ check "admin supprime u4 → 200"         200 "$(api DELETE "/api/admin/users/$D
 check "la session de u4 est close"      401 "$(api GET /api/me "$TOKEN4")"
 check "sa demande de groupe est purgée avec le compte" 0 \
   "$(sqlval "SELECT COUNT(*) FROM groupe_demandes WHERE nom = 'Groupe de David'")"
+check "… et ses détails avec elle (aucun orphelin)" 0 \
+  "$(sqlval "SELECT COUNT(*) FROM groupe_demande_details WHERE demande_id NOT IN (SELECT id FROM groupe_demandes)")"
 api GET /api/admin/users "$TOKEN1" > /dev/null
 check "3 comptes restants"              3   "$(jval '.users | length')"
 

@@ -1230,7 +1230,9 @@ function brancherUsers() {
 
 /* Une demande en attente : le nom voulu, qui la porte, depuis quand — et la
    décision. L'e-mail s'affiche (l'admin voit déjà les comptes) : c'est lui
-   qui permet d'écrire au porteur si un doute demande d'être levé. */
+   qui permet d'écrire au porteur si un doute demande d'être levé. L'adresse
+   de l'église et l'éventuel e-mail de contact (si différent de celui du
+   compte) aident à juger sur pièces. */
 function carteDemande(d) {
   return `
   <div class="adm-q">
@@ -1239,6 +1241,8 @@ function carteDemande(d) {
       <span class="adm-badge">en attente</span>
     </div>
     <div class="adm-q-meta">${esc(d.pseudo)} · ${esc(d.email)} · demandé le ${esc(dateCourte(d.createdAt))}</div>
+    ${d.adresse ? `<div class="adm-q-meta">Adresse : ${esc(d.adresse)}</div>` : ''}
+    ${d.emailContact ? `<div class="adm-q-meta">Contact : ${esc(d.emailContact)}</div>` : ''}
     <div class="eg-actions">
       <button class="btn btn-grow" data-eg="accepter" data-id="${d.id}" data-nom="${esc(d.nom)}"
         data-pseudo="${esc(d.pseudo)}" ${egBusy ? 'disabled' : ''}>Accepter</button>

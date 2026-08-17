@@ -249,23 +249,35 @@ FERMÉE : la création directe répond désormais **403** — l'ouverture d'un
 groupe passe par une demande validée par l'administration (ci-dessous).
 
 ### POST /api/groupes/demande
-Compte requis. Corps : `{ "nom": "..." }` — mêmes règles qu'un nom de groupe
-(2 à 40 caractères : lettres, chiffres, espaces, tirets, apostrophes).
-Une seule demande **en attente** à la fois par compte (409 sinon) ; une
-demande **refusée** est remplacée par la suivante ; 409 si le demandeur est
-déjà responsable de 5 groupes ; plafond horaire par IP (429).
-→ 201 `{ "demande": { "nom", "statut": "attente", "createdAt" } }`
+Compte requis. Corps : `{ "nom": "...", "adresse": "...", "email"?: "..." }`.
+`nom` : mêmes règles qu'un nom de groupe (2 à 40 caractères : lettres,
+chiffres, espaces, tirets, apostrophes). `adresse` (**obligatoire**) :
+l'adresse de l'église, texte libre de 5 à 120 caractères (400 sinon).
+`email` (**facultatif**) : un e-mail de contact si différent de celui du
+compte — mêmes règles de validité qu'à la connexion (400 si invalide),
+absent ou vide → `null`. Une seule demande **en attente** à la fois par
+compte (409 sinon) ; une demande **refusée** est remplacée par la suivante
+(détails compris) ; 409 si le demandeur est déjà responsable de 5 groupes ;
+plafond horaire par IP (429).
+→ 201 `{ "demande": { "nom", "adresse", "email", "statut": "attente",
+"createdAt" } }`
 
 ### GET /api/groupes/demande
-→ `{ "demande": null | { "nom", "statut": "attente"|"refusee", "createdAt" } }`
+→ `{ "demande": null | { "nom", "adresse", "email",
+"statut": "attente"|"refusee", "createdAt" } }` — `adresse`/`email` peuvent
+être `null` sur une demande d'avant leur introduction.
 
 ### DELETE /api/groupes/demande
-Annule sa demande (efface aussi une refusée). → `{ "ok": true }` — 404 si rien.
+Annule sa demande (efface aussi une refusée, détails compris).
+→ `{ "ok": true }` — 404 si rien.
 
 ### GET /api/admin/eglises
-Admin seul. → `{ "demandes": [ { "id", "nom", "pseudo", "email",
-"createdAt" } ] (en attente, ordre d'arrivée), "groupes": [ { "code", "nom",
-"nbMembres", "responsable", "createdAt" } ] }`
+Admin seul. → `{ "demandes": [ { "id", "nom", "adresse", "emailContact",
+"pseudo", "email", "createdAt" } ] (en attente, ordre d'arrivée),
+"groupes": [ { "code", "nom", "nbMembres", "responsable", "createdAt" } ] }`.
+`emailContact` : l'e-mail de contact fourni au dépôt, `null` s'il est absent
+ou identique à celui du compte ; `adresse` : `null` seulement sur une
+demande d'avant son introduction.
 
 ### POST /api/admin/eglises/demandes/{id}/accepter
 Le groupe naît (code GRP- unique, demandeur **responsable**), la demande
@@ -274,7 +286,8 @@ créent qu'un groupe, la seconde reçoit 404. Le plafond de 5 est revérifié
 (409, demande conservée). Tracé dans admin_log. → `{ "code", "nom" }`
 
 ### POST /api/admin/eglises/demandes/{id}/refuser
-Statut `refusee` — le demandeur le voit avec douceur et peut redéposer.
+Statut `refusee` (détails conservés) — le demandeur le voit avec douceur et
+peut redéposer.
 Tracé dans admin_log. → `{ "ok": true }` — 404 si déjà tranchée.
 
 ### POST /api/groupes/rejoindre

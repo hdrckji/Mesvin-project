@@ -358,7 +358,13 @@ function delete_user_completely(PDO $pdo, array $user): void {
         $st = $pdo->prepare('DELETE FROM groupe_service_inscriptions WHERE user_id = ?');
         $st->execute([$id]);
 
-        // Sa demande de groupe (en attente ou refusée) part avec le compte.
+        // Sa demande de groupe (en attente ou refusée) part avec le compte,
+        // détails compris (adresse, e-mail de contact — table compagne).
+        $st = $pdo->prepare(
+            'DELETE FROM groupe_demande_details WHERE demande_id IN
+             (SELECT id FROM groupe_demandes WHERE user_id = ?)'
+        );
+        $st->execute([$id]);
         $st = $pdo->prepare('DELETE FROM groupe_demandes WHERE user_id = ?');
         $st->execute([$id]);
 

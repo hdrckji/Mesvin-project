@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM groupe_demandes LIMIT 1');
+        $pdo->query('SELECT 1 FROM groupe_demande_details LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -534,6 +534,18 @@ function db_migrate(PDO $pdo): void {
                 created_at DATETIME NOT NULL,
                 INDEX idx_gdemandes_user (user_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+            // Détails de la demande de groupe — table COMPAGNE de
+            // groupe_demandes (pas d'ALTER : les bases déjà déployées ne le
+            // recevraient pas via CREATE IF NOT EXISTS) : l'adresse de
+            // l'église (obligatoire au dépôt) et un e-mail de contact si
+            // différent de celui du compte (NULL sinon). La ligne suit la
+            // demande dans tout son cycle — voir api/groupes-demandes.php.
+            'CREATE TABLE IF NOT EXISTS groupe_demande_details (
+                demande_id INT UNSIGNED NOT NULL PRIMARY KEY,
+                adresse VARCHAR(120) NOT NULL,
+                email VARCHAR(255) NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
         ];
     } else {
         $ddl = [
@@ -934,6 +946,14 @@ function db_migrate(PDO $pdo): void {
                 created_at TEXT NOT NULL
             )",
             'CREATE INDEX IF NOT EXISTS idx_gdemandes_user ON groupe_demandes (user_id)',
+
+            // Détails de la demande de groupe (table compagne) — voir le
+            // dialecte MySQL ci-dessus.
+            'CREATE TABLE IF NOT EXISTS groupe_demande_details (
+                demande_id INTEGER NOT NULL PRIMARY KEY,
+                adresse TEXT NOT NULL,
+                email TEXT NULL
+            )',
         ];
     }
 
