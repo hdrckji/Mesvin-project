@@ -744,10 +744,20 @@ function htmlTri(id, valeur) {
 }
 
 /* Le sélecteur d'épreuve en tête de l'onglet. */
+/* Le choix de l'ÉPREUVE — un composant à part, qui ne doit surtout pas
+   ressembler aux pastilles de filtre en dessous : le quiz a une catégorie
+   « Qui a dit ? » quasi homonyme de l'épreuve « Qui a dit ça ? », et deux
+   rangées de pastilles identiques rendaient les deux niveaux indiscernables.
+   Mêmes icônes que le hub de l'appli, pour parler la même langue. */
+const EPREUVE_ICONES = { quiz: 'defi', quiadit: 'parchemin', ecritoupas: 'lecture', portrait: 'moi' };
 function htmlSelecteurEpreuve() {
-  const pills = [['quiz', 'Quiz']].concat(Object.keys(EPREUVES).map(m => [m, EPREUVES[m].titre]));
-  return `<div class="pill-row" id="q-epreuves" style="margin-bottom:14px">${pills.map(([m, t]) =>
-    `<button class="pill ${epreuve === m ? 'on' : ''}" data-epreuve="${m}">${esc(t)}</button>`).join('')}</div>`;
+  const entrees = [['quiz', 'Qui, où, quand ?']].concat(Object.keys(EPREUVES).map(m => [m, EPREUVES[m].titre]));
+  return `
+    <div class="section-title">Épreuve</div>
+    <div class="adm-epreuves" id="q-epreuves">${entrees.map(([m, t]) =>
+      `<button class="adm-epreuve ${epreuve === m ? 'on' : ''}" data-epreuve="${m}">${icon(EPREUVE_ICONES[m], 18)}<span>${esc(t)}</span></button>`).join('')}
+    </div>
+    <p class="muted adm-epreuve-note">« Avant ou après ? » (la frise) n'est pas encore modifiable ici — sa chronologie arrive dans une prochaine étape.</p>`;
 }
 
 function htmlQuestions() {
@@ -762,7 +772,7 @@ function htmlQuestions() {
 function brancherQuestions() {
   if (epreuve === 'quiz' && qForm) { brancherForm(); return; }
   if (epreuve !== 'quiz' && bForm) { brancherFormBanque(); return; }
-  document.querySelectorAll('#q-epreuves .pill').forEach(p => {
+  document.querySelectorAll('#q-epreuves [data-epreuve]').forEach(p => {
     p.onclick = () => {
       epreuve = p.dataset.epreuve;
       qForm = null; bForm = null;
@@ -811,12 +821,13 @@ function htmlQuiz() {
     .join('');
 
   return `
-    <div class="section-title">Banque de questions</div>
+    <div class="section-title">Qui, où, quand ? — les questions du quiz</div>
     <p class="adm-count">${actives} question${actives > 1 ? 's' : ''} active${actives > 1 ? 's' : ''} · ${qListe.length} en tout</p>
     ${qErreur ? `<p class="field-error" style="margin:0 4px 10px">${esc(qErreur)}</p>` : ''}
     <button class="btn btn-grow btn-block" id="btn-nouvelle" style="margin-bottom:12px" ${qBusy ? 'disabled' : ''}>Nouvelle question</button>
     <input class="field" type="search" id="q-recherche" placeholder="Chercher une question, une référence…"
       autocomplete="off" value="${esc(qRecherche)}" style="margin-bottom:10px">
+    <label class="lbl" style="margin-top:2px">Catégorie <span class="muted" style="font-weight:500">(un thème du quiz — pas une épreuve)</span></label>
     <div class="pill-row" id="q-cats" style="margin-bottom:10px">${pills}</div>
     <div class="adm-outils">
       <p class="adm-count" id="q-compte">${filtrees.length} affichée${filtrees.length > 1 ? 's' : ''}</p>

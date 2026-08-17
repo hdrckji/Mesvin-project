@@ -105,3 +105,19 @@
 .vis-barre { flex: 1; height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
 .vis-barre i { display: block; height: 100%; background: var(--grow); border-radius: 999px; }
 .vis-n { font-size: .82rem; font-weight: 650; min-width: 2.4em; text-align: right; }
+
+/* ---------- Sélecteur d'épreuve (onglet Questions) ---------- */
+/* Volontairement DIFFÉRENT des pastilles de filtre : c'est un étage au-dessus.
+   Icônes du hub de l'appli, cadre plein, libellé complet de l'épreuve. */
+.adm-epreuves { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+.adm-epreuve {
+  display: inline-flex; align-items: center; gap: 7px;
+  font: inherit; font-size: .92rem; font-weight: 650; cursor: pointer;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 12px; padding: 9px 13px;
+  transition: border-color .15s ease, background .15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.adm-epreuve svg { flex: none; }
+.adm-epreuve.on { border-color: var(--grow); background: var(--grow-soft); color: var(--grow); }
+.adm-epreuve-note { font-size: .85rem; margin: 0 2px 16px; }
