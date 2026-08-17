@@ -265,17 +265,53 @@ function portraitCorrespond(texte, items, idx) {
   return true;
 }
 
+/* La banque, chargée une fois. Même mécanique que le Défi : la copie
+   mémorisée sur l'appareil d'abord, le serveur consulté en arrière-plan
+   pour la PROCHAINE ouverture, et le fichier embarqué (pré-caché) en
+   dernier filet — hors-ligne compris. */
 let BANQUE = null;
-async function chargerBanque() {
-  if (BANQUE) return BANQUE;
-  const r = await fetch('data/banque.json', { cache: 'no-cache' });
-  if (!r.ok) throw new Error("La banque de l'épreuve n'a pas pu être chargée.");
-  const brut = await r.json();
-  BANQUE = (brut.items || []).map(it => ({
+const BANQUE_KEY = 'graine.portrait.banque.v1'; // copie locale de la banque vivante
+function adapter(brut) {
+  return (brut.items || []).map(it => ({
     reponse: it.reponse,
     accepte: [norm(it.reponse)].concat((it.accepte || []).map(norm)),
     indices: it.indices, ref: it.reference || null, genre: it.genre || 'personnage',
   }));
+}
+function lireBanqueLocale() { try { return JSON.parse(localStorage.getItem(BANQUE_KEY) || 'null'); } catch (e) { return null; } }
+function ecrireBanqueLocale(d) { try { localStorage.setItem(BANQUE_KEY, JSON.stringify(d)); } catch (e) {} }
+async function telechargerBanque() {
+  // La banque « vivante » du serveur (elle inclut les retouches de
+  // l'administration). La page vit dans /portrait/, l'API à la racine : ../api.
+  try {
+    const r = await fetch('../api/banque/portrait', { cache: 'no-cache' });
+    if (r.ok) {
+      const d = await r.json();
+      if (d && Array.isArray(d.items) && d.items.length > 0) return d;
+    }
+  } catch (e) { /* pas de réseau : la copie locale ou le fichier suffira */ }
+  return null;
+}
+async function chargerBanque() {
+  if (BANQUE) return BANQUE;
+  const locale = lireBanqueLocale();
+  if (locale && Array.isArray(locale.items) && locale.items.length > 0) {
+    // Copie locale : on la sert tout de suite, et on rafraîchit derrière —
+    // jamais en pleine séance, le tirage ne change pas sous les pieds.
+    BANQUE = adapter(locale);
+    telechargerBanque().then(d => { if (d) ecrireBanqueLocale(d); }).catch(() => {});
+    return BANQUE;
+  }
+  // Première visite (ou copie absente) : le serveur, sinon le fichier
+  // embarqué (et pré-caché) du module — repli silencieux.
+  let d = await telechargerBanque();
+  if (d) ecrireBanqueLocale(d);
+  else {
+    const r = await fetch('data/banque.json', { cache: 'no-cache' });
+    if (!r.ok) throw new Error("La banque de l'épreuve n'a pas pu être chargée.");
+    d = await r.json();
+  }
+  BANQUE = adapter(d);
   return BANQUE;
 }
 const tirage = n => shuffle(BANQUE).slice(0, n);
