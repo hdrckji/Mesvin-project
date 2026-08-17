@@ -1,9 +1,12 @@
 /* ============================================================================
    Bible Horizon — écran d'administration (adresses listées dans ADMIN_EMAILS).
 
-   - « Questions » : la banque du Défi telle que servie par /api/questions,
-     comparée au fichier defi/data/questions.json pour montrer l'état de
-     chaque question : fichier (intacte) / modifiée (surcharge en base) /
+   - « Questions » : les questions de chaque épreuve, épreuve par épreuve.
+     Le quiz du Défi vient de /api/questions comparé à defi/data/questions.json ;
+     les trois autres banques (« Qui a dit ça ? », « Écrit… ou pas ? »,
+     « De qui parle-t-on ? ») de /api/banque/{module} comparé à leur
+     {module}/data/banque.json. La comparaison donne l'état de chaque
+     question : fichier (intacte) / modifiée (surcharge en base) /
      ajoutée (id adm-) / désactivée (surcharge inactive). Éditer une question
      du fichier crée une surcharge ; la « supprimer » la désactive seulement
      (réversible) ; seuls les ajouts se suppriment pour de bon.
@@ -25,6 +28,24 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 
 const NIVEAUX = { 1: 'Découverte', 2: 'Habitué', 3: 'Connaisseur' };
 const ETATS = { fichier: 'fichier', modifiee: 'modifiée', ajoutee: 'ajoutée', desactivee: 'désactivée' };
+
+/* Les trois banques d'épreuve gérées ici (le quiz du Défi a son propre circuit).
+   `champ` : le texte principal d'une question (affichage, recherche, tri A → Z) ;
+   `nom`/`fem` : le mot juste pour compteurs, boutons et confirmations. */
+const EPREUVES = {
+  quiadit: {
+    titre: 'Qui a dit ça ?', champ: 'parole', fichier: '../quiadit/data/banque.json',
+    nom: 'parole', fem: true, placeholder: 'Chercher une parole, une référence…'
+  },
+  ecritoupas: {
+    titre: 'Écrit… ou pas ?', champ: 'phrase', fichier: '../ecritoupas/data/banque.json',
+    nom: 'phrase', fem: true, placeholder: 'Chercher une phrase, une référence…'
+  },
+  portrait: {
+    titre: 'De qui parle-t-on ?', champ: 'reponse', fichier: '../portrait/data/banque.json',
+    nom: 'portrait', fem: false, placeholder: 'Chercher un personnage, un indice, une référence…'
+  }
+};
 
 /* Message doux quand le serveur est injoignable — jamais d'erreur brute. */
 function messageDoux(e) {
@@ -48,13 +69,23 @@ let actJournal = null, actJournalErreur = null; // onglet Activité : journal se
 let actBrevo = null, actBrevoErreur = null;     // onglet Activité : côté Brevo
 let actVisites = null, actVisitesErreur = null; // onglet Activité : fréquentation
 let actOuverts = { visites: false, journal: false, brevo: false }; // sections dépliées (survit au re-rendu)
+let epreuve = 'quiz';       // sous-onglet de « Questions » : 'quiz' | 'quiadit' | 'ecritoupas' | 'portrait'
 let categories = [];        // catégories du fichier (ordre d'affichage, et du select)
 let qListe = null;          // [{ q, etat }] — null tant que rien n'est chargé
 let qRecherche = '';
 let qCategorie = null;      // null = toutes
+let qTri = 'fichier';       // 'fichier' | 'texte' | 'reference'
 let qForm = null;           // formulaire ouvert : { neuf, id, categorie, niveau, question, options, bonne, reference, erreur }
 let qErreur = null;
 let qBusy = false;
+/* Les trois banques d'épreuve, chacune son coin d'état (clé = module). */
+let bListes = { quiadit: null, ecritoupas: null, portrait: null }; // [{ q, etat }]
+let bErreurs = { quiadit: null, ecritoupas: null, portrait: null };
+let bRecherches = { quiadit: '', ecritoupas: '', portrait: '' };
+let bFiltres = { ecritoupas: null, portrait: null }; // ecritoupas : true/false (le champ ecrit) ; portrait : un genre — null = toutes
+let bTris = { quiadit: 'fichier', ecritoupas: 'fichier', portrait: 'fichier' };
+let bGenres = [];           // genres réellement présents dans la banque portrait
+let bForm = null;           // formulaire d'épreuve ouvert : { module, neuf, id, …champs, erreur }
 let uListe = null;          // comptes — null pendant le chargement
 let uErreur = null;
 
@@ -92,8 +123,17 @@ async function chargerQuestions() {
   render();
 }
 
+/* Tri d'une liste [{ q, etat }] : ordre du fichier (tel quel), ou A → Z sur le
+   texte principal (`champ`) ou la référence — sans accents, à la française. */
+function triListe(liste, tri, champ) {
+  if (tri === 'fichier') return liste;
+  const cle = tri === 'reference' ? 'reference' : champ;
+  return liste.slice().sort((a, b) =>
+    normalise(a.q[cle] || '').localeCompare(normalise(b.q[cle] || ''), 'fr'));
+}
+
 function qFiltrees() {
-  return qListe.filter(i => {
+  const res = qListe.filter(i => {
     if (qCategorie && i.q.categorie !== qCategorie) return false;
     if (qRecherche) {
       const t = normalise(i.q.question + ' ' + i.q.reference + ' ' + i.q.id);
@@ -101,6 +141,7 @@ function qFiltrees() {
     }
     return true;
   });
+  return triListe(res, qTri, 'question');
 }
 
 /* ---------- Questions : actions ---------- */
@@ -154,6 +195,167 @@ async function enregistrerForm() {
     await GraineAPI.adminSaveQuestion(corps);
     qForm = null; qBusy = false;
     await chargerQuestions();
+  } catch (e) {
+    qBusy = false; f.erreur = messageDoux(e); render();
+  }
+}
+
+/* ---------- Banques d'épreuve : chargement et fusion des états ----------
+   Même mécanique que le quiz : la banque fusionnée du serveur d'un côté, le
+   fichier statique de l'autre, et la comparaison donne l'état de chaque
+   question — fichier / modifiée / ajoutée (adm-) / désactivée. */
+
+function memeItemBanque(module, a, b) {
+  const t = v => (v == null ? '' : String(v)); // null et absent valent « vide »
+  if (module === 'quiadit') {
+    return t(a.parole) === t(b.parole) && a.bonne === b.bonne
+      && t(a.reference) === t(b.reference) && t(a.contexte) === t(b.contexte)
+      && JSON.stringify(a.options) === JSON.stringify(b.options);
+  }
+  if (module === 'ecritoupas') {
+    return t(a.phrase) === t(b.phrase) && !!a.ecrit === !!b.ecrit
+      && t(a.reference) === t(b.reference) && t(a.precision) === t(b.precision);
+  }
+  return t(a.reponse) === t(b.reponse) && t(a.genre) === t(b.genre)
+    && t(a.reference) === t(b.reference)
+    && JSON.stringify(a.accepte || []) === JSON.stringify(b.accepte || [])
+    && JSON.stringify(a.indices || []) === JSON.stringify(b.indices || []);
+}
+
+async function chargerBanque(module) {
+  bErreurs[module] = null;
+  try {
+    const [serveur, fichier] = await Promise.all([
+      GraineAPI.banque(module),
+      fetch(EPREUVES[module].fichier, { cache: 'no-cache' }).then(r => r.json())
+    ]);
+    if (module === 'portrait') {
+      // Les genres réellement présents dans le fichier, dans son ordre.
+      bGenres = [];
+      (fichier.items || []).forEach(it => { if (it.genre && !bGenres.includes(it.genre)) bGenres.push(it.genre); });
+    }
+    const parId = new Map((serveur.items || []).map(q => [q.id, q]));
+    const liste = [];
+    (fichier.items || []).forEach(f => {
+      const s = parId.get(f.id);
+      if (!s) liste.push({ q: f, etat: 'desactivee' });
+      else liste.push({ q: s, etat: memeItemBanque(module, f, s) ? 'fichier' : 'modifiee' });
+      parId.delete(f.id);
+    });
+    parId.forEach(q => liste.push({ q, etat: 'ajoutee' })); // les ajouts (adm-…)
+    bListes[module] = liste;
+  } catch (e) {
+    bListes[module] = null;
+    bErreurs[module] = messageDoux(e);
+  }
+  render();
+}
+
+/* Tous les champs textuels d'une question, pour la recherche (id compris). */
+function texteBanque(module, q) {
+  if (module === 'quiadit') return [q.parole].concat(q.options || [], [q.reference, q.contexte, q.id]);
+  if (module === 'ecritoupas') return [q.phrase, q.reference, q.precision, q.id];
+  return [q.reponse].concat(q.accepte || [], q.indices || [], [q.genre, q.reference, q.id]);
+}
+
+function bFiltrees(module) {
+  const res = bListes[module].filter(i => {
+    const q = i.q;
+    if (module === 'ecritoupas' && bFiltres.ecritoupas !== null && !!q.ecrit !== bFiltres.ecritoupas) return false;
+    if (module === 'portrait' && bFiltres.portrait && q.genre !== bFiltres.portrait) return false;
+    if (bRecherches[module]) {
+      const t = normalise(texteBanque(module, q).filter(Boolean).join(' '));
+      if (!t.includes(normalise(bRecherches[module]))) return false;
+    }
+    return true;
+  });
+  return triListe(res, bTris[module], EPREUVES[module].champ);
+}
+
+/* ---------- Banques d'épreuve : actions ---------- */
+
+async function actionBanque(module, act, id) {
+  if (qBusy) return;
+  const c = EPREUVES[module];
+  if (act === 'supprimer' && !confirm(`Supprimer définitivement ${c.fem ? 'cette' : 'ce'} ${c.nom} ajouté${c.fem ? 'e' : ''} ?`)) return;
+  qBusy = true; bErreurs[module] = null; render();
+  try {
+    if (act === 'desactiver' || act === 'supprimer') await GraineAPI.adminBanqueDelete(module, id);
+    else await GraineAPI.adminBanqueRestore(module, id); // réactiver / rétablir
+  } catch (e) {
+    bErreurs[module] = messageDoux(e);
+  }
+  qBusy = false;
+  await chargerBanque(module);
+}
+
+/* Un formulaire vierge pour l'épreuve donnée. */
+function formBanqueVide(module) {
+  if (module === 'quiadit') return { module, neuf: true, id: null, parole: '', options: ['', '', '', ''], bonne: 0, reference: '', contexte: '', erreur: null };
+  if (module === 'ecritoupas') return { module, neuf: true, id: null, phrase: '', ecrit: true, reference: '', precision: '', erreur: null };
+  return { module, neuf: true, id: null, reponse: '', accepte: '', genre: bGenres[0] || 'personnage', indices: ['', '', '', '', ''], reference: '', erreur: null };
+}
+
+/* Relit les champs du formulaire d'épreuve (pour ne rien perdre à un re-rendu). */
+function lireFormBanque() {
+  const f = bForm;
+  const g = id => document.getElementById(id);
+  if (!f || !g('b-f-reference')) return;
+  f.reference = g('b-f-reference').value;
+  if (f.module === 'quiadit') {
+    f.parole = g('b-f-parole').value;
+    f.contexte = g('b-f-contexte').value;
+    f.options = [0, 1, 2, 3].map(i => g('b-f-opt-' + i).value);
+    const r = document.querySelector('input[name="b-f-bonne"]:checked');
+    f.bonne = r ? Number(r.value) : 0;
+  } else if (f.module === 'ecritoupas') {
+    f.phrase = g('b-f-phrase').value;
+    f.precision = g('b-f-precision').value;
+  } else {
+    f.reponse = g('b-f-reponse').value;
+    f.accepte = g('b-f-accepte').value;
+    f.indices = [0, 1, 2, 3, 4].map(i => g('b-f-ind-' + i).value);
+  }
+}
+
+async function enregistrerFormBanque() {
+  if (qBusy) return;
+  lireFormBanque();
+  const f = bForm;
+  let corps;
+  // Petites vérifications locales — le serveur revalide tout de toute façon.
+  if (f.module === 'quiadit') {
+    corps = {
+      parole: f.parole.trim(), options: f.options.map(o => o.trim()), bonne: f.bonne,
+      reference: f.reference.trim(), contexte: f.contexte.trim()
+    };
+    if (!corps.parole) { f.erreur = 'La parole ne peut pas être vide.'; render(); return; }
+    if (corps.options.some(o => !o)) { f.erreur = 'Les 4 réponses doivent être remplies.'; render(); return; }
+    if (!corps.reference) { f.erreur = 'La référence biblique ne peut pas être vide.'; render(); return; }
+  } else if (f.module === 'ecritoupas') {
+    corps = {
+      phrase: f.phrase.trim(), ecrit: f.ecrit,
+      reference: f.reference.trim() || null, precision: f.precision.trim()
+    };
+    if (!corps.phrase) { f.erreur = 'La phrase ne peut pas être vide.'; render(); return; }
+    if (f.ecrit && !corps.reference) { f.erreur = 'Une phrase écrite doit citer sa référence biblique.'; render(); return; }
+  } else {
+    corps = {
+      reponse: f.reponse.trim(),
+      accepte: f.accepte.split(',').map(v => v.trim()).filter(Boolean),
+      genre: f.genre, indices: f.indices.map(i => i.trim()), reference: f.reference.trim()
+    };
+    if (!corps.reponse) { f.erreur = 'La réponse ne peut pas être vide.'; render(); return; }
+    if (corps.indices.some(i => !i)) { f.erreur = 'Les 5 indices doivent être remplis.'; render(); return; }
+    if (!corps.reference) { f.erreur = 'La référence biblique ne peut pas être vide.'; render(); return; }
+  }
+  if (!f.neuf) corps.id = f.id;
+  qBusy = true; f.erreur = null; render();
+  try {
+    await GraineAPI.adminBanqueSave(f.module, corps);
+    const module = f.module;
+    bForm = null; qBusy = false;
+    await chargerBanque(module);
   } catch (e) {
     qBusy = false; f.erreur = messageDoux(e); render();
   }
@@ -520,7 +722,7 @@ function render() {
     : htmlQuestions()}</div>`;
 
   document.getElementById('btn-retour').onclick = () => { location.href = '../index.html'; };
-  document.getElementById('tab-questions').onclick = () => { onglet = 'questions'; qForm = null; render(); };
+  document.getElementById('tab-questions').onclick = () => { onglet = 'questions'; qForm = null; bForm = null; render(); };
   document.getElementById('tab-users').onclick = ouvrirUsers;
   document.getElementById('tab-activite').onclick = ouvrirActivite;
   document.getElementById('tab-systeme').onclick = ouvrirSysteme;
@@ -531,6 +733,49 @@ function render() {
 }
 
 /* ---------- Onglet Questions ---------- */
+
+/* Le petit select de tri, commun au quiz et aux banques d'épreuve. */
+function htmlTri(id, valeur) {
+  const opts = [['fichier', 'Ordre du fichier'], ['texte', 'A → Z (texte)'], ['reference', 'A → Z (référence)']];
+  return `<label class="adm-tri">Trier
+    <select id="${id}">${opts.map(([v, l]) =>
+      `<option value="${v}" ${valeur === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+  </label>`;
+}
+
+/* Le sélecteur d'épreuve en tête de l'onglet. */
+function htmlSelecteurEpreuve() {
+  const pills = [['quiz', 'Quiz']].concat(Object.keys(EPREUVES).map(m => [m, EPREUVES[m].titre]));
+  return `<div class="pill-row" id="q-epreuves" style="margin-bottom:14px">${pills.map(([m, t]) =>
+    `<button class="pill ${epreuve === m ? 'on' : ''}" data-epreuve="${m}">${esc(t)}</button>`).join('')}</div>`;
+}
+
+function htmlQuestions() {
+  if (epreuve === 'quiz') {
+    if (qForm) return htmlForm();
+    return htmlSelecteurEpreuve() + htmlQuiz();
+  }
+  if (bForm) return htmlFormBanque();
+  return htmlSelecteurEpreuve() + htmlBanque(epreuve);
+}
+
+function brancherQuestions() {
+  if (epreuve === 'quiz' && qForm) { brancherForm(); return; }
+  if (epreuve !== 'quiz' && bForm) { brancherFormBanque(); return; }
+  document.querySelectorAll('#q-epreuves .pill').forEach(p => {
+    p.onclick = () => {
+      epreuve = p.dataset.epreuve;
+      qForm = null; bForm = null;
+      render();
+      // Première visite d'une banque : on la charge (le quiz l'est au démarrage).
+      if (epreuve !== 'quiz' && bListes[epreuve] === null && !bErreurs[epreuve]) chargerBanque(epreuve);
+    };
+  });
+  if (epreuve === 'quiz') brancherQuiz();
+  else brancherBanque(epreuve);
+}
+
+/* ---------- Le quiz du Défi (liste historique, intacte) ---------- */
 
 function ligneQuestion(item) {
   const q = item.q;
@@ -551,8 +796,7 @@ function ligneQuestion(item) {
   </div>`;
 }
 
-function htmlQuestions() {
-  if (qForm) return htmlForm();
+function htmlQuiz() {
   if (qListe === null && !qErreur) {
     return `<div class="card center" style="padding:30px"><p class="muted" style="margin:0">Chargement de la banque…</p></div>`;
   }
@@ -574,12 +818,14 @@ function htmlQuestions() {
     <input class="field" type="search" id="q-recherche" placeholder="Chercher une question, une référence…"
       autocomplete="off" value="${esc(qRecherche)}" style="margin-bottom:10px">
     <div class="pill-row" id="q-cats" style="margin-bottom:10px">${pills}</div>
-    <p class="adm-count" id="q-compte">${filtrees.length} affichée${filtrees.length > 1 ? 's' : ''}</p>
+    <div class="adm-outils">
+      <p class="adm-count" id="q-compte">${filtrees.length} affichée${filtrees.length > 1 ? 's' : ''}</p>
+      ${htmlTri('q-tri', qTri)}
+    </div>
     <div id="q-liste">${filtrees.map(ligneQuestion).join('') || `<p class="muted" style="margin:14px 4px">Aucune question ne correspond.</p>`}</div>`;
 }
 
-function brancherQuestions() {
-  if (qForm) { brancherForm(); return; }
+function brancherQuiz() {
   const btnN = document.getElementById('btn-nouvelle');
   if (btnN) btnN.onclick = () => {
     qForm = { neuf: true, id: null, categorie: categories[0] || '', niveau: 1, question: '', options: ['', '', '', ''], bonne: 0, reference: '', erreur: null };
@@ -587,6 +833,8 @@ function brancherQuestions() {
   };
   const rech = document.getElementById('q-recherche');
   if (rech) rech.oninput = () => { qRecherche = rech.value; majListe(); };
+  const tri = document.getElementById('q-tri');
+  if (tri) tri.onchange = () => { qTri = tri.value; majListe(); };
   document.querySelectorAll('#q-cats .pill').forEach(p => {
     p.onclick = () => { qCategorie = p.dataset.cat || null; render(); };
   });
@@ -663,6 +911,228 @@ function brancherForm() {
   document.getElementById('f-enregistrer').onclick = enregistrerForm;
   document.querySelectorAll('#f-niveaux .pill').forEach(p => {
     p.onclick = () => { lireForm(); qForm.niveau = Number(p.dataset.niveau); render(); };
+  });
+}
+
+/* ---------- Les banques d'épreuve : listes ---------- */
+
+/* Le mot juste, accordé : « 3 paroles actives », « 1 portrait actif »… */
+function accordBanque(module, n, actif) {
+  const c = EPREUVES[module];
+  const s = n > 1 ? 's' : '';
+  return `${n} ${c.nom}${s}` + (actif ? ` acti${c.fem ? 've' : 'f'}${s}` : '');
+}
+
+function ligneBanque(module, item) {
+  const q = item.q;
+  let txt, meta;
+  if (module === 'quiadit') {
+    txt = q.parole;
+    meta = `${esc((q.options || [])[q.bonne] || '?')} · ${esc(q.reference)}`;
+  } else if (module === 'ecritoupas') {
+    txt = q.phrase;
+    meta = `${q.ecrit ? 'écrite · ' + esc(q.reference || '?') : 'inventée'}`;
+  } else {
+    txt = q.reponse;
+    meta = `${esc(q.genre)} · ${esc(q.reference)}`;
+  }
+  return `
+  <div class="adm-q ${item.etat === 'desactivee' ? 'off' : ''}">
+    <div class="adm-q-top">
+      <span class="adm-q-txt">${esc(txt)}</span>
+      <span class="adm-badge ${item.etat}">${ETATS[item.etat]}</span>
+    </div>
+    <div class="adm-q-meta">${meta}</div>
+    <div class="adm-q-actions">
+      ${item.etat !== 'desactivee' ? `<button class="linkbtn" data-act="editer" data-id="${esc(q.id)}">Modifier</button>` : ''}
+      ${item.etat === 'fichier' || item.etat === 'modifiee' ? `<button class="linkbtn" data-act="desactiver" data-id="${esc(q.id)}">Désactiver</button>` : ''}
+      ${item.etat === 'modifiee' ? `<button class="linkbtn" data-act="retablir" data-id="${esc(q.id)}">Rétablir la version du fichier</button>` : ''}
+      ${item.etat === 'desactivee' ? `<button class="linkbtn" data-act="reactiver" data-id="${esc(q.id)}">Réactiver</button>` : ''}
+      ${item.etat === 'ajoutee' ? `<button class="linkbtn danger" data-act="supprimer" data-id="${esc(q.id)}">Supprimer</button>` : ''}
+    </div>
+  </div>`;
+}
+
+/* Les pills de filtre du module — rien pour « Qui a dit ça ? » (pas de
+   catégorie dans ses données), écrite/inventée pour « Écrit… ou pas ? »,
+   le genre pour « De qui parle-t-on ? ». */
+function htmlFiltresBanque(module) {
+  let pills = '';
+  if (module === 'ecritoupas') {
+    const v = bFiltres.ecritoupas;
+    pills = `
+      <button class="pill ${v === null ? 'on' : ''}" data-filtre="">Toutes</button>
+      <button class="pill ${v === true ? 'on' : ''}" data-filtre="1">Écrites</button>
+      <button class="pill ${v === false ? 'on' : ''}" data-filtre="0">Inventées</button>`;
+  } else if (module === 'portrait' && bGenres.length) {
+    pills = [`<button class="pill ${bFiltres.portrait === null ? 'on' : ''}" data-filtre="">Tous</button>`]
+      .concat(bGenres.map(g => `<button class="pill ${bFiltres.portrait === g ? 'on' : ''}" data-filtre="${esc(g)}">${esc(g.charAt(0).toUpperCase() + g.slice(1))}</button>`))
+      .join('');
+  }
+  return pills ? `<div class="pill-row" id="b-filtres" style="margin-bottom:10px">${pills}</div>` : '';
+}
+
+function htmlBanque(module) {
+  const c = EPREUVES[module];
+  if (bListes[module] === null && !bErreurs[module]) {
+    return `<div class="card center" style="padding:30px"><p class="muted" style="margin:0">Chargement de la banque…</p></div>`;
+  }
+  if (bListes[module] === null) {
+    return `<div class="card"><p class="field-error" style="margin:0">${esc(bErreurs[module])}</p></div>`;
+  }
+  const liste = bListes[module];
+  const actives = liste.filter(i => i.etat !== 'desactivee').length;
+  const filtrees = bFiltrees(module);
+  return `
+    <div class="section-title">${esc(c.titre)}</div>
+    <p class="adm-count">${accordBanque(module, actives, true)} · ${liste.length} en tout</p>
+    ${bErreurs[module] ? `<p class="field-error" style="margin:0 4px 10px">${esc(bErreurs[module])}</p>` : ''}
+    <button class="btn btn-grow btn-block" id="b-nouvelle" style="margin-bottom:12px" ${qBusy ? 'disabled' : ''}>${c.fem ? 'Nouvelle' : 'Nouveau'} ${esc(c.nom)}</button>
+    <input class="field" type="search" id="b-recherche" placeholder="${esc(c.placeholder)}"
+      autocomplete="off" value="${esc(bRecherches[module])}" style="margin-bottom:10px">
+    ${htmlFiltresBanque(module)}
+    <div class="adm-outils">
+      <p class="adm-count" id="b-compte">${filtrees.length} affichée${filtrees.length > 1 ? 's' : ''}</p>
+      ${htmlTri('b-tri', bTris[module])}
+    </div>
+    <div id="b-liste">${filtrees.map(i => ligneBanque(module, i)).join('') || `<p class="muted" style="margin:14px 4px">Aucune question ne correspond.</p>`}</div>`;
+}
+
+function brancherBanque(module) {
+  const btnN = document.getElementById('b-nouvelle');
+  if (btnN) btnN.onclick = () => { bForm = formBanqueVide(module); render(); };
+  const rech = document.getElementById('b-recherche');
+  if (rech) rech.oninput = () => { bRecherches[module] = rech.value; majListeBanque(module); };
+  const tri = document.getElementById('b-tri');
+  if (tri) tri.onchange = () => { bTris[module] = tri.value; majListeBanque(module); };
+  document.querySelectorAll('#b-filtres .pill').forEach(p => {
+    p.onclick = () => {
+      const v = p.dataset.filtre;
+      if (module === 'ecritoupas') bFiltres.ecritoupas = v === '' ? null : v === '1';
+      else bFiltres.portrait = v || null;
+      render();
+    };
+  });
+  brancherListeBanque(module);
+}
+
+/* Re-rendu de la liste seule, pour que le champ de recherche garde le focus. */
+function majListeBanque(module) {
+  const zone = document.getElementById('b-liste');
+  if (!zone) return;
+  const filtrees = bFiltrees(module);
+  const compte = document.getElementById('b-compte');
+  if (compte) compte.textContent = `${filtrees.length} affichée${filtrees.length > 1 ? 's' : ''}`;
+  zone.innerHTML = filtrees.map(i => ligneBanque(module, i)).join('') || `<p class="muted" style="margin:14px 4px">Aucune question ne correspond.</p>`;
+  brancherListeBanque(module);
+}
+
+function brancherListeBanque(module) {
+  document.querySelectorAll('#b-liste [data-act]').forEach(b => {
+    b.onclick = () => {
+      const id = b.dataset.id;
+      if (b.dataset.act === 'editer') {
+        const item = bListes[module].find(i => i.q.id === id);
+        if (!item) return;
+        const q = item.q;
+        if (module === 'quiadit') {
+          bForm = {
+            module, neuf: false, id, parole: q.parole, options: q.options.slice(),
+            bonne: q.bonne, reference: q.reference, contexte: q.contexte || '', erreur: null
+          };
+        } else if (module === 'ecritoupas') {
+          bForm = {
+            module, neuf: false, id, phrase: q.phrase, ecrit: !!q.ecrit,
+            reference: q.reference || '', precision: q.precision || '', erreur: null
+          };
+        } else {
+          bForm = {
+            module, neuf: false, id, reponse: q.reponse, accepte: (q.accepte || []).join(', '),
+            genre: q.genre || 'personnage', indices: (q.indices || []).slice(),
+            reference: q.reference, erreur: null
+          };
+        }
+        render();
+      } else {
+        actionBanque(module, b.dataset.act, id);
+      }
+    };
+  });
+}
+
+/* ---------- Les banques d'épreuve : formulaires ---------- */
+
+function htmlFormBanque() {
+  const f = bForm;
+  const c = EPREUVES[f.module];
+  const titre = f.neuf ? `${c.fem ? 'Nouvelle' : 'Nouveau'} ${c.nom}` : `Modifier ${c.fem ? 'la' : 'le'} ${c.nom}`;
+  let champs;
+  if (f.module === 'quiadit') {
+    champs = `
+      <label class="lbl" for="b-f-parole">La parole</label>
+      <textarea class="field" id="b-f-parole" maxlength="300">${esc(f.parole)}</textarea>
+      <label class="lbl">Les 4 réponses <span class="muted" style="font-weight:500">(coche la bonne)</span></label>
+      ${[0, 1, 2, 3].map(i => `
+      <div class="adm-opt-row">
+        <input type="radio" name="b-f-bonne" value="${i}" id="b-f-bonne-${i}" ${f.bonne === i ? 'checked' : ''} aria-label="Bonne réponse : option ${i + 1}">
+        <input class="field" type="text" id="b-f-opt-${i}" maxlength="120" placeholder="Réponse ${i + 1}" value="${esc(f.options[i])}">
+      </div>`).join('')}
+      <label class="lbl" for="b-f-reference">Référence biblique</label>
+      <input class="field" type="text" id="b-f-reference" maxlength="60" placeholder="Jean 14.6" value="${esc(f.reference)}">
+      <label class="lbl" for="b-f-contexte">Contexte <span class="muted" style="font-weight:500">(facultatif — montré avec la réponse)</span></label>
+      <input class="field" type="text" id="b-f-contexte" maxlength="200" placeholder="Réponse à Thomas, lors du dernier entretien…" value="${esc(f.contexte)}">`;
+  } else if (f.module === 'ecritoupas') {
+    champs = `
+      <label class="lbl" for="b-f-phrase">La phrase</label>
+      <textarea class="field" id="b-f-phrase" maxlength="300">${esc(f.phrase)}</textarea>
+      <label class="lbl">Cette phrase est-elle dans la Bible ?</label>
+      <div class="pill-row" id="b-f-ecrit">
+        <button type="button" class="pill ${f.ecrit ? 'on' : ''}" data-ecrit="1">Oui, écrite</button>
+        <button type="button" class="pill ${!f.ecrit ? 'on' : ''}" data-ecrit="0">Non, inventée</button>
+      </div>
+      <label class="lbl" for="b-f-reference">Référence biblique <span class="muted" style="font-weight:500">(si elle est écrite)</span></label>
+      <input class="field" type="text" id="b-f-reference" maxlength="60" placeholder="Matthieu 6.34" value="${esc(f.reference)}">
+      <label class="lbl" for="b-f-precision">Précision <span class="muted" style="font-weight:500">(facultatif — montrée avec la réponse)</span></label>
+      <input class="field" type="text" id="b-f-precision" maxlength="300" placeholder="D'où vient la phrase, ce qui surprend…" value="${esc(f.precision)}">`;
+  } else {
+    champs = `
+      <label class="lbl" for="b-f-reponse">La réponse</label>
+      <input class="field" type="text" id="b-f-reponse" maxlength="60" placeholder="Moïse" value="${esc(f.reponse)}">
+      <label class="lbl" for="b-f-accepte">Variantes acceptées <span class="muted" style="font-weight:500">(séparées par des virgules)</span></label>
+      <input class="field" type="text" id="b-f-accepte" maxlength="200" placeholder="moise, moïse" value="${esc(f.accepte)}">
+      <label class="lbl">Genre</label>
+      <div class="pill-row" id="b-f-genres">
+        ${(bGenres.length ? bGenres : ['personnage', 'lieu', 'chose']).map(g =>
+          `<button type="button" class="pill ${f.genre === g ? 'on' : ''}" data-genre="${esc(g)}">${esc(g.charAt(0).toUpperCase() + g.slice(1))}</button>`).join('')}
+      </div>
+      <label class="lbl">Les 5 indices <span class="muted" style="font-weight:500">(révélés dans cet ordre : du plus difficile au plus facile)</span></label>
+      ${[0, 1, 2, 3, 4].map(i => `
+      <input class="field" type="text" id="b-f-ind-${i}" maxlength="300" style="margin-bottom:8px"
+        placeholder="Indice ${i + 1}${i === 0 ? ' — le plus difficile' : i === 4 ? ' — le plus facile' : ''}" value="${esc(f.indices[i])}">`).join('')}
+      <label class="lbl" for="b-f-reference">Référence biblique</label>
+      <input class="field" type="text" id="b-f-reference" maxlength="60" placeholder="Exode 2–14" value="${esc(f.reference)}">`;
+  }
+  return `
+    <div class="card">
+      <h2 style="font-family:var(--serif);font-size:1.15rem;margin-bottom:4px">${esc(titre)} <span class="muted" style="font-weight:500">· ${esc(c.titre)}</span></h2>
+      ${f.neuf ? '' : `<p class="adm-count" style="margin:0">${esc(f.id)}</p>`}
+      ${champs}
+      ${f.erreur ? `<p class="field-error">${esc(f.erreur)}</p>` : ''}
+      <div class="btn-row" style="margin-top:16px">
+        <button class="btn btn-ghost" id="b-f-annuler" ${qBusy ? 'disabled' : ''}>Annuler</button>
+        <button class="btn btn-grow" id="b-f-enregistrer" ${qBusy ? 'disabled' : ''}>Enregistrer</button>
+      </div>
+    </div>`;
+}
+
+function brancherFormBanque() {
+  document.getElementById('b-f-annuler').onclick = () => { bForm = null; render(); };
+  document.getElementById('b-f-enregistrer').onclick = enregistrerFormBanque;
+  document.querySelectorAll('#b-f-ecrit .pill').forEach(p => {
+    p.onclick = () => { lireFormBanque(); bForm.ecrit = p.dataset.ecrit === '1'; render(); };
+  });
+  document.querySelectorAll('#b-f-genres .pill').forEach(p => {
+    p.onclick = () => { lireFormBanque(); bForm.genre = p.dataset.genre; render(); };
   });
 }
 

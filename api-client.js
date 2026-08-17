@@ -116,6 +116,10 @@
     /* ---- questions du Défi (banque fusionnée, publique) ---- */
     async questions() { return call('GET', '/api/questions'); },
 
+    /* ---- banques des épreuves (fusionnées, publiques) ----
+       module ∈ 'quiadit' | 'ecritoupas' | 'portrait'. */
+    async banque(module) { return call('GET', '/api/banque/' + encodeURIComponent(module)); },
+
     /* ---- notifications « le verset offert » (compte facultatif) ---- */
     // La clé publique VAPID, générée par le serveur au premier appel.
     async pushKey() { return call('GET', '/api/push/cle'); },
@@ -130,6 +134,11 @@
     async adminSaveQuestion(q) { return (await call('POST', '/api/admin/questions', q)).question; },
     async adminDeleteQuestion(id) { return call('DELETE', '/api/admin/questions/' + encodeURIComponent(id)); },
     async adminRestoreQuestion(id) { return call('POST', '/api/admin/questions/' + encodeURIComponent(id) + '/restore'); },
+    // Banques des épreuves : sans id = ajout (id adm- rendu), avec id = surcharge ;
+    // « supprimer » une question du fichier la désactive seulement (réversible).
+    async adminBanqueSave(module, item) { return call('POST', '/api/admin/banque/' + encodeURIComponent(module), item); },
+    async adminBanqueDelete(module, id) { return call('DELETE', '/api/admin/banque/' + encodeURIComponent(module) + '/' + encodeURIComponent(id)); },
+    async adminBanqueRestore(module, id) { return call('POST', '/api/admin/banque/' + encodeURIComponent(module) + '/' + encodeURIComponent(id) + '/restore'); },
     // Onglet « Activité » : le journal serveur, et les événements vus par Brevo.
     async adminJournal() { return call('GET', '/api/admin/journal'); },
     async adminBrevo() { return call('GET', '/api/admin/brevo'); },
