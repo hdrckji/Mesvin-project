@@ -1034,6 +1034,9 @@ function viewMoi() {
 
   const friends = user ? moiFriendsSection(user) : '';
 
+  // Mon église — connecté seulement (l'invitation à se connecter est déjà là).
+  const eglise = user ? moiEgliseSection() : '';
+
   // Faire découvrir l'appli — visible pour tous, connecté ou non.
   const invite = moiPartageCard();
 
@@ -1046,7 +1049,7 @@ function viewMoi() {
         <span class="hub-sub">Comptes et banque de questions du Défi</span></span>
       <span class="chev">›</span></a>` : '';
 
-  return topbar() + head + account + apparence + pousse + memo + assiduite + pierresSec + lireSec + defiSec + friends + invite + admin;
+  return topbar() + head + account + apparence + pousse + memo + assiduite + pierresSec + lireSec + defiSec + friends + eglise + invite + admin;
 }
 
 /* ---------- Jardin (versets mémorisés) ---------- */
@@ -1369,6 +1372,7 @@ async function syncNow() {
     saveSyncMeta();
     try { localStorage.removeItem(EXPIRED_KEY); } catch (err) {} // la session marche : plus rien à signaler
     if (friendsCache === 'error') friendsCache = null; // on est en ligne : on retentera la liste d'amis
+    if (groupesCache === 'error') groupesCache = null; // idem pour la section église
   } catch (e) {
     if (e && e.status === 401) {
       // Session expirée : api-client a déjà effacé la session locale. Sans
@@ -1649,9 +1653,14 @@ function moiAccountCard(u) {
     </details>
   </div>`;
 }
+function egliseOublier() { // à la déconnexion / suppression : plus rien d'église à montrer
+  groupesCache = null; groupeDetails = {}; demandeCache = undefined; versetEdit = null;
+  grpCodeField = grpNomField = ''; grpError = grpNotice = null;
+}
 async function doLogout() {
   await GraineAPI.logout(); // même hors-ligne, la session locale est effacée
   pseudoEdit = null; friendsCache = null; friendField = ''; friendError = friendNotice = null;
+  egliseOublier();
   syncUi = { status: 'idle', lastAt: null };
   try { localStorage.removeItem(SYNC_META_KEY); localStorage.removeItem(EXPIRED_KEY); } catch (e) {}
   accountNotice = 'Tu es déconnecté. Tes données locales sont intactes.';
@@ -1662,6 +1671,7 @@ async function doDeleteAccount() {
   try {
     await GraineAPI.deleteAccount();
     pseudoEdit = null; friendsCache = null; friendField = ''; friendError = friendNotice = null;
+    egliseOublier();
     syncUi = { status: 'idle', lastAt: null };
     try { localStorage.removeItem(SYNC_META_KEY); } catch (e) {}
     accountNotice = 'Ton compte a été supprimé du serveur. Tes données locales sont intactes.';
@@ -1828,6 +1838,254 @@ async function doRemoveFriend(code, pseudo) {
   render();
 }
 
+/* ---------- Mon église (groupes — voir api/groupes.php) ----------
+   On rejoint le groupe de son église par code (GRP-XXXXX) ; la CRÉATION passe
+   par une demande validée par l'administrateur. Le cœur de la section : le
+   verset de la semaine, offert au groupe par le responsable. */
+let groupesCache = null;    // null = pas chargé | 'error' | [ { code, nom, role, nbMembres, verset } ]
+let groupesLoading = false;
+let groupeDetails = {};     // détail par code (liste des membres — pseudo + rôle, jamais d'e-mail)
+let demandeCache;           // undefined = pas chargée | null | { nom, statut: 'attente'|'refusee', createdAt }
+let grpCodeField = '', grpNomField = '';
+let grpError = null, grpNotice = null;
+let versetEdit = null;      // { code, reference, texte, error, busy } — formulaire du responsable
+
+function normalizeGroupCode(raw) {
+  let c = String(raw || '').toUpperCase().replace(/[\s-]+/g, '');
+  if (/^[A-Z0-9]{5}$/.test(c)) c = 'GRP' + c; // on tolère les 5 caractères seuls
+  return /^GRP[A-Z0-9]{5}$/.test(c) ? 'GRP-' + c.slice(3) : null;
+}
+function ensureGroupes() {
+  if (!window.GraineAPI || !GraineAPI.isLoggedIn() || groupesCache !== null || groupesLoading) return;
+  groupesLoading = true;
+  GraineAPI.mesGroupes()
+    .then(async gs => {
+      groupesCache = Array.isArray(gs) ? gs : [];
+      if (groupesCache.length) {
+        // Le détail apporte la liste des membres ; s'il manque (réseau), la
+        // carte s'affiche quand même — sans la liste, jamais d'erreur brute.
+        await Promise.all(groupesCache.map(g => GraineAPI.groupeDetail(g.code)
+          .then(d => { if (d) groupeDetails[g.code] = d; })
+          .catch(() => { /* la carte vivra sans sa liste */ })));
+      } else {
+        // Sans groupe : où en est la demande d'ouverture ? Si la route n'est
+        // pas joignable, on propose simplement les deux chemins.
+        await GraineAPI.groupeDemande()
+          .then(d => { demandeCache = d || null; })
+          .catch(() => { demandeCache = null; });
+      }
+    })
+    .catch(() => { groupesCache = 'error'; })
+    .then(() => { groupesLoading = false; renderIfIdle(); });
+}
+// Après un changement d'adhésion (rejoindre, quitter, demande acceptée…),
+// tout se recharge depuis le serveur — la source de vérité.
+function egliseRecharger() {
+  groupesCache = null; groupeDetails = {}; demandeCache = undefined; versetEdit = null;
+  ensureGroupes();
+}
+
+function moiEgliseSection() {
+  let corps;
+  if (groupesCache === null) corps = `<div class="card fade"><p class="muted fr-empty" style="margin:0">Chargement…</p></div>`;
+  else if (groupesCache === 'error') corps = `<div class="card fade"><p class="muted fr-empty" style="margin:0">Ta section église apparaîtra dès que tu seras en ligne.</p></div>`;
+  else if (groupesCache.length) corps = groupesCache.map(moiGroupeCard).join('');
+  else corps = moiSansGroupeCard();
+  return `<div class="section-title">${icon('eglise')} Mon église</div>
+    ${grpNotice ? `<p class="field-ok" style="margin:0 2px 10px">${esc(grpNotice)}</p>` : ''}
+    ${grpError ? `<p class="field-error" style="margin:0 2px 10px">${esc(grpError)}</p>` : ''}
+    ${corps}`;
+}
+
+// Sans groupe : deux chemins (rejoindre par code, demander l'ouverture) —
+// ou l'état de la demande déjà posée, si elle existe.
+function moiSansGroupeCard() {
+  if (demandeCache === undefined) {
+    return `<div class="card fade"><p class="muted fr-empty" style="margin:0">Chargement…</p></div>`;
+  }
+  if (demandeCache && demandeCache.statut === 'attente') {
+    return `<div class="card friends-card fade">
+      <p style="margin:0 0 4px">Ta demande pour « <b>${esc(demandeCache.nom)}</b> » attend une réponse.</p>
+      <p class="muted">L'administrateur la regarde bientôt — le groupe apparaîtra ici dès qu'il sera ouvert.</p>
+      <button class="linkbtn" data-grpdemcancel="1">Annuler ma demande</button>
+    </div>`;
+  }
+  // Refusée : un mot doux, et les deux chemins restent grands ouverts.
+  const refus = demandeCache && demandeCache.statut === 'refusee'
+    ? `<p class="muted" style="margin:0 0 12px">Ta demande pour « ${esc(demandeCache.nom)} » n'a pas abouti cette fois — rien de grave.
+        Tu peux en poser une nouvelle quand tu veux, ou rejoindre un groupe existant avec un code.</p>`
+    : `<p class="muted" style="margin:0 0 12px">Retrouve ton assemblée ici : le verset de la semaine et les membres du groupe.</p>`;
+  return `<div class="card friends-card fade">
+    ${refus}
+    <label class="lbl" for="grpCodeInput" style="margin-top:0">J'ai un code</label>
+    <form data-grpjoinform="1" class="add-friend-row">
+      <input class="field" type="text" id="grpCodeInput" placeholder="GRP-XXXXX" autocomplete="off" autocapitalize="characters" value="${esc(grpCodeField)}">
+      <button class="btn btn-grow" type="submit">Rejoindre</button>
+    </form>
+    <p class="muted" style="font-size:.85rem;margin:8px 2px 0">Le responsable de ton groupe te le donne.</p>
+    <label class="lbl" for="grpNomInput">Demander l'ouverture d'un groupe</label>
+    <form data-grpdemform="1" class="add-friend-row">
+      <input class="field" type="text" id="grpNomInput" placeholder="Nom de ton église" maxlength="40" autocomplete="off" value="${esc(grpNomField)}">
+      <button class="btn btn-soft" type="submit">Envoyer</button>
+    </form>
+    <p class="muted" style="font-size:.85rem;margin:8px 2px 0">L'administrateur regarde chaque demande ; tu deviendras responsable du groupe.</p>
+  </div>`;
+}
+
+// La carte d'un groupe : le verset de la semaine (le cœur), les membres, et
+// pour le responsable le code à partager + le formulaire du verset.
+function moiGroupeCard(g) {
+  const resp = g.role === 'responsable';
+  const d = groupeDetails[g.code];
+
+  const verset = g.verset
+    ? `<div class="grp-verset"><div class="gv-label">Verset de la semaine</div>
+        <p class="gv-texte">« ${esc(g.verset.texte)} »</p>
+        <p class="gv-ref">${esc(g.verset.reference)}</p></div>`
+    : `<p class="muted" style="margin:10px 2px">Pas encore de verset de la semaine${resp ? ' — à toi de l\'offrir au groupe.' : '.'}</p>`;
+
+  const codeRow = resp ? `<div class="friend-code-row">
+      <div><div class="fc-label">Code du groupe</div><div class="friend-code">${esc(g.code)}</div></div>
+      <button class="btn btn-soft" data-copygrp="${esc(g.code)}">Copier</button></div>
+    <p class="muted" style="font-size:.85rem;margin:8px 2px 0">Partage-le aux membres de ton église : c'est lui qui ouvre la porte du groupe.</p>` : '';
+
+  let versetForm = '';
+  if (resp) {
+    if (versetEdit && versetEdit.code === g.code) {
+      versetForm = `<form data-grpversetform="1" style="margin-top:12px">
+        <label class="lbl" for="versetRefInput" style="margin-top:0">Référence</label>
+        <input class="field" type="text" id="versetRefInput" maxlength="60" placeholder="Jean 3.16" autocomplete="off" value="${esc(versetEdit.reference)}">
+        <label class="lbl" for="versetTexteInput">Texte du verset</label>
+        <textarea class="field" id="versetTexteInput" maxlength="500" placeholder="Recopie le verset ici…">${esc(versetEdit.texte)}</textarea>
+        ${versetEdit.error ? `<p class="field-error">${esc(versetEdit.error)}</p>` : ''}
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn btn-grow" type="submit" ${versetEdit.busy ? 'disabled' : ''}>Offrir au groupe</button>
+          <button class="btn btn-ghost" type="button" data-versetcancel="1">Annuler</button>
+        </div>
+      </form>`;
+    } else {
+      versetForm = `<button class="btn btn-soft btn-block" data-versetedit="${esc(g.code)}" style="margin-top:12px">${g.verset ? 'Changer le verset de la semaine' : 'Définir le verset de la semaine'}</button>`;
+    }
+  }
+
+  const membres = d && Array.isArray(d.membres)
+    ? d.membres.map(m => `<div class="friend-row">
+        <span class="fr-avatar">${icon('moi', 18)}</span>
+        <span class="fr-main"><b>${esc(m.pseudo)}</b><br><span class="muted fr-since">${m.role === 'responsable' ? 'responsable' : 'membre'}</span></span>
+      </div>`).join('')
+    : `<p class="muted fr-empty">La liste des membres apparaîtra dès que tu seras en ligne.</p>`;
+
+  return `<div class="card friends-card fade">
+    <p style="margin:0"><b>${esc(g.nom)}</b><br>
+      <span class="muted" style="font-size:.85rem">${resp ? 'Tu es responsable' : 'Tu es membre'} · ${g.nbMembres} membre${g.nbMembres > 1 ? 's' : ''}</span></p>
+    ${verset}
+    ${codeRow}
+    ${versetForm}
+    ${membres}
+    <button class="linkbtn" data-grpleave="${esc(g.code)}" data-nom="${esc(g.nom)}">Quitter ce groupe</button>
+  </div>`;
+}
+
+async function doGroupeRejoindre() {
+  grpNotice = null;
+  const code = normalizeGroupCode(grpCodeField);
+  if (!code) { grpError = 'Un code de groupe ressemble à GRP-XXXXX.'; render(); return; }
+  grpError = null;
+  try {
+    const g = await GraineAPI.groupeRejoindre(code);
+    grpCodeField = '';
+    grpNotice = `Te voilà membre de « ${g && g.nom ? g.nom : 'ton groupe'} » 🙂`;
+    egliseRecharger();
+  } catch (e) {
+    if (e && e.offline) grpError = 'Pas de connexion — réessaie quand tu seras en ligne.';
+    else if (e && e.status === 404) grpError = 'Groupe introuvable — vérifie le code avec ton responsable.';
+    else grpError = friendlyError(e);
+  }
+  render();
+}
+async function doDemandeEnvoyer() {
+  grpNotice = null;
+  const nom = (grpNomField || '').trim();
+  if (nom.length < 2 || nom.length > 40) { grpError = 'Le nom de ton église : entre 2 et 40 caractères.'; render(); return; }
+  grpError = null;
+  try {
+    // Une demande refusée encore affichée s'efface avant d'en poser une nouvelle.
+    if (demandeCache && demandeCache.statut === 'refusee') {
+      try { await GraineAPI.groupeDemandeAnnuler(); } catch (e) { /* on tente l'envoi quand même */ }
+    }
+    const d = await GraineAPI.groupeDemandeEnvoyer(nom);
+    grpNomField = '';
+    demandeCache = d || { nom, statut: 'attente', createdAt: new Date().toISOString() };
+    grpNotice = 'Ta demande est envoyée — on te répond bientôt.';
+  } catch (e) {
+    if (e && e.offline) grpError = 'Pas de connexion — réessaie quand tu seras en ligne.';
+    else if (e && e.status === 409) { egliseRecharger(); } // une demande attend déjà : on la raffiche
+    else grpError = friendlyError(e);
+  }
+  render();
+}
+async function doDemandeAnnuler() {
+  if (demandeCache && !confirm(`Annuler ta demande pour « ${demandeCache.nom} » ?`)) return;
+  grpNotice = null;
+  try { await GraineAPI.groupeDemandeAnnuler(); demandeCache = null; grpError = null; }
+  catch (e) { grpError = friendlyError(e); }
+  render();
+}
+async function doGroupeQuitter(code, nom) {
+  if (!confirm(`Quitter le groupe « ${nom} » ?`)) return;
+  grpNotice = null;
+  try {
+    await GraineAPI.groupeQuitter(code);
+    grpError = null;
+    grpNotice = `Tu as quitté « ${nom} ».`;
+    egliseRecharger();
+  } catch (e) {
+    // Le responsable qui n'est pas seul reçoit ici le message du serveur
+    // (transmettre d'abord la responsabilité) — on l'affiche tel quel.
+    grpError = friendlyError(e);
+  }
+  render();
+}
+async function doGroupeVerset() {
+  if (!versetEdit || versetEdit.busy) return;
+  const reference = (versetEdit.reference || '').trim();
+  const texte = (versetEdit.texte || '').trim();
+  if (!reference) { versetEdit.error = 'Indique la référence (par exemple Jean 3.16).'; render(); return; }
+  if (!texte) { versetEdit.error = 'Recopie le texte du verset.'; render(); return; }
+  versetEdit.busy = true; versetEdit.error = null; render();
+  try {
+    const g = await GraineAPI.groupeVerset(versetEdit.code, reference, texte);
+    if (Array.isArray(groupesCache) && g) {
+      const i = groupesCache.findIndex(x => x.code === versetEdit.code);
+      if (i >= 0) groupesCache[i] = Object.assign({}, groupesCache[i], { verset: g.verset });
+    }
+    if (groupeDetails[versetEdit.code] && g) groupeDetails[versetEdit.code].verset = g.verset;
+    versetEdit = null;
+    grpNotice = 'Le verset de la semaine est offert au groupe 🙂';
+  } catch (e) { versetEdit.busy = false; versetEdit.error = friendlyError(e); }
+  render();
+}
+// Copier le code du groupe — même geste que le code ami (bouton « Copié ✓ »).
+function copyGroupCode(code) {
+  const sel = `[data-copygrp="${code}"]`;
+  const done = () => {
+    const b = el.querySelector(sel);
+    if (b) { b.textContent = 'Copié ✓'; setTimeout(() => { const b2 = el.querySelector(sel); if (b2) b2.textContent = 'Copier'; }, 1600); }
+  };
+  const fallback = () => { // repli : sélection + execCommand
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      done();
+    } catch (e) { /* le code reste visible à recopier */ }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done).catch(fallback);
+  else fallback();
+}
+
 /* ============================================================================
    Interactions
    ========================================================================== */
@@ -1867,8 +2125,8 @@ function wire() {
   if (q('[data-push-off]')) q('[data-push-off]').addEventListener('click', pushDeactivate);
   el.querySelectorAll('[data-push-heure]').forEach(b => b.addEventListener('click', () => pushSetHour(+b.dataset.pushHeure)));
 
-  // Compte, synchro & amis
-  if (route.name === 'moi') ensureFriends();
+  // Compte, synchro, amis & église
+  if (route.name === 'moi') { ensureFriends(); ensureGroupes(); }
   if (q('[data-account]')) q('[data-account]').addEventListener('click', startAccountFlow);
   if (q('[data-accchip]')) q('[data-accchip]').addEventListener('click', () => {
     if (window.GraineAPI && GraineAPI.isLoggedIn()) go('moi');
@@ -1886,6 +2144,21 @@ function wire() {
   if (q('[data-delaccount]')) q('[data-delaccount]').addEventListener('click', doDeleteAccount);
   if (q('[data-addfriendform]')) q('[data-addfriendform]').addEventListener('submit', e => { e.preventDefault(); doAddFriend(); });
   el.querySelectorAll('[data-unfriend]').forEach(b => b.addEventListener('click', () => doRemoveFriend(b.dataset.unfriend, b.dataset.pseudo)));
+  // Mon église
+  if (q('[data-grpjoinform]')) q('[data-grpjoinform]').addEventListener('submit', e => { e.preventDefault(); doGroupeRejoindre(); });
+  if (q('[data-grpdemform]')) q('[data-grpdemform]').addEventListener('submit', e => { e.preventDefault(); doDemandeEnvoyer(); });
+  if (q('[data-grpdemcancel]')) q('[data-grpdemcancel]').addEventListener('click', doDemandeAnnuler);
+  el.querySelectorAll('[data-copygrp]').forEach(b => b.addEventListener('click', () => copyGroupCode(b.dataset.copygrp)));
+  el.querySelectorAll('[data-grpleave]').forEach(b => b.addEventListener('click', () => doGroupeQuitter(b.dataset.grpleave, b.dataset.nom)));
+  el.querySelectorAll('[data-versetedit]').forEach(b => b.addEventListener('click', () => {
+    const g = Array.isArray(groupesCache) ? groupesCache.find(x => x.code === b.dataset.versetedit) : null;
+    versetEdit = { code: b.dataset.versetedit,
+      reference: g && g.verset ? g.verset.reference : '',
+      texte: g && g.verset ? g.verset.texte : '', error: null, busy: false };
+    render();
+  }));
+  if (q('[data-versetcancel]')) q('[data-versetcancel]').addEventListener('click', () => { versetEdit = null; render(); });
+  if (q('[data-grpversetform]')) q('[data-grpversetform]').addEventListener('submit', e => { e.preventDefault(); doGroupeVerset(); });
   // parcours compte (écrans successifs)
   el.querySelectorAll('form[data-authstep]').forEach(f => f.addEventListener('submit', e => { e.preventDefault(); authSubmit(f.dataset.authstep); }));
   if (q('#google-btn')) mountGoogleButton();
@@ -1899,6 +2172,10 @@ function wire() {
   bindInput('auth-pseudo', v => { if (auth) auth.pseudo = v; });
   bindInput('pseudoInput', v => { if (pseudoEdit) pseudoEdit.value = v; });
   bindInput('friendInput', v => { friendField = v; });
+  bindInput('grpCodeInput', v => { grpCodeField = v; });
+  bindInput('grpNomInput', v => { grpNomField = v; });
+  bindInput('versetRefInput', v => { if (versetEdit) versetEdit.reference = v; });
+  bindInput('versetTexteInput', v => { if (versetEdit) versetEdit.texte = v; });
 }
 function fillNext(pid) {
   const ex = session.ex; const k = ex.filled.findIndex(x => x === null);
