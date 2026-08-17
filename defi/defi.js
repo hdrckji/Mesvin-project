@@ -2181,16 +2181,10 @@ function renderVeilleeMenu() {
       <span class="chev">›</span>
     </button>
 
-    ${eglResponsables().length ? `
-    <button class="card hub-card" id="btn-vl-banque">
-      <span class="hub-ic">${icon('eglise', 26)}</span>
-      <span class="hub-txt">
-        <span class="hub-title">Banque de mon église</span>
-        <span class="hub-sub">Choisis ce que tes quiz d'église utilisent : toute la banque commune, ta sélection, et les questions écrites par ton église.</span>
-      </span>
-      <span class="chev">›</span>
-    </button>` : ''}
   </div>`;
+  // La banque de mon église n'a plus sa carte ici : elle habite l'onglet
+  // « Mon église » de l'appli (coin du responsable), qui arrive par le lien
+  // profond defi/#banque — le menu du quiz redevient pur jeu.
 
   document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'quiz' }; render(); };
   const rp = document.getElementById('btn-vl-reprendre');
@@ -2203,8 +2197,6 @@ function renderVeilleeMenu() {
     render();
   };
   document.getElementById('btn-vl-ecran').onclick = () => { vl = { mode: 'ecran', code: '', busy: false, error: null }; render(); };
-  const bq = document.getElementById('btn-vl-banque');
-  if (bq) bq.onclick = eglOuvrirBanque;
 }
 
 function renderVeilleeCompte() {
@@ -2274,7 +2266,7 @@ function renderVeilleeCreer() {
         : 'Cet appareil devient ta télécommande, dans le creux de la main. Sur l\'ordinateur du vidéoprojecteur, ouvre « Grand écran » et saisis le même code.'}</p>
 
       <p class="prepa-note">≈ ${Math.max(2, Math.round(vl.nb * (vl.seconds + 15) / 60))} min, échanges compris. ${eglChoisie
-        ? `Les questions viennent de la banque de <b>${esc(eglChoisie.nom)}</b> — celle que tu règles dans « Banque de mon église ». Personne ne les connaît d'avance, pas même toi.`
+        ? `Les questions viennent de la banque de <b>${esc(eglChoisie.nom)}</b> — celle que tu règles dans « <button type="button" class="linkbtn" id="egl-lien-banque">Banque de mon église</button> ». Personne ne les connaît d'avance, pas même toi.`
         : `Les questions sont tirées par le site, personne ne les connaît d'avance — pas même toi.`}</p>
       ${vl.error ? `<p class="field-error">${esc(vl.error)}</p>` : ''}
       <div class="defi-actions">
@@ -2291,6 +2283,8 @@ function renderVeilleeCreer() {
   document.querySelectorAll('#vl-pills-grp .pill').forEach(b => { b.onclick = () => { vl.groupe = b.dataset.grp || null; render(); }; });
   document.querySelectorAll('#vl-pills-ecrans .pill').forEach(b => { b.onclick = () => { vl.ecrans = b.dataset.ecrans; render(); }; });
   document.getElementById('btn-vl-creer').onclick = vlCreer;
+  const lb = document.getElementById('egl-lien-banque');
+  if (lb) lb.onclick = eglOuvrirBanque;
 }
 
 /* ---------- Banque de mon église (responsable seul) ----------
@@ -3098,6 +3092,20 @@ function renderVeilleePlayer() {
     if (location.hash === '#jour') {
       history.replaceState(null, '', location.pathname);
       demarrer('jour');
+    } else if (location.hash === '#banque') {
+      // Arrivée depuis l'onglet « Mon église » (coin du responsable) : la
+      // banque s'ouvre dès qu'on sait de quelles églises je suis responsable.
+      // Un membre ordinaire retombe simplement sur le menu du quiz d'église.
+      history.replaceState(null, '', location.pathname);
+      vue = { ecran: 'veillee' }; vl = { mode: 'menu' };
+      render();
+      if (connecte()) {
+        GraineAPI.mesGroupes().then(gs => {
+          eglGroupes = (gs || []).filter(g => g.role === 'responsable');
+          eglCharge = true;
+          if (eglGroupes.length) eglOuvrirBanque(); else render();
+        }).catch(() => { /* hors-ligne : le menu est déjà affiché */ });
+      }
     } else {
       render();
     }

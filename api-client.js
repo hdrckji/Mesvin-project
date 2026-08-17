@@ -143,6 +143,20 @@
     async groupeQuizQuestionSave(code, q) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/quiz/questions', q)).question; },
     async groupeQuizQuestionDelete(code, id) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/quiz/questions/' + encodeURIComponent(id)); },
 
+    /* ---- la page de l'église (api/groupes-page.php) : annonces, rendez-vous,
+       services. Lecture pour tout membre ; écriture réservée au responsable
+       (403 sinon) — sauf lever/retirer la main, ouvert à tout membre. */
+    async groupePage(code) { return call('GET', '/api/groupes/' + encodeURIComponent(code) + '/page'); },
+    // Sans id = création, avec id = modification (même règle que les questions).
+    async groupeAnnonceSave(code, corps) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/annonces', corps)).annonce; },
+    async groupeAnnonceDelete(code, id) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/annonces/' + encodeURIComponent(id)); },
+    async groupeRdvSave(code, corps) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/rdv', corps)).rdv; },
+    async groupeRdvDelete(code, id) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/rdv/' + encodeURIComponent(id)); },
+    async groupeServiceSave(code, corps) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/services', corps)).service; },
+    async groupeServiceDelete(code, id) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/services/' + encodeURIComponent(id)); },
+    async groupeServiceLeverLaMain(code, id) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/services/' + encodeURIComponent(id) + '/inscription')).service; },
+    async groupeServiceRetirer(code, id) { return (await call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/services/' + encodeURIComponent(id) + '/inscription')).service; },
+
     /* ---- questions du Défi (banque fusionnée, publique) ---- */
     async questions() { return call('GET', '/api/questions'); },
 

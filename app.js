@@ -519,10 +519,15 @@ function situerOptionsRef(chapitre, versets) {
 let route = { name: 'home', param: null };
 let session = null; // { queue, idx, intro?, phase:'exercise'|'situer'|'result', ex, result, situer, done:[], mastered:[] }
 let studyList = []; // versets présentés sur la page d'étude en cours (avant le quiz d'introduction)
-const go = (name, param) => { route = { name, param: param || null }; render(); window.scrollTo(0, 0); };
+const go = (name, param) => {
+  // Chaque entrée dans l'onglet Mon église rouvre droit à UNE tentative
+  // réseau : un chargement raté (hors-ligne) se retente à la visite suivante.
+  if (name === 'eglise') pageTentee = {};
+  route = { name, param: param || null }; render(); window.scrollTo(0, 0);
+};
 
 function render() {
-  const v = { home: viewHome, memo: viewMemo, study: viewStudy, session: viewSession, moi: viewMoi, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections, account: viewAccount }[route.name] || viewHome;
+  const v = { home: viewHome, memo: viewMemo, study: viewStudy, session: viewSession, moi: viewMoi, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections, account: viewAccount, eglise: viewEglise }[route.name] || viewHome;
   el.innerHTML = v() + tabbar();
   wire();
 }
@@ -548,7 +553,12 @@ function tabbar() {
   const cur = ['memo', 'study', 'collections'].includes(route.name) ? 'home'
     : ['garden', 'verse', 'account'].includes(route.name) ? 'moi' : route.name;
   const tab = (n, ic, l) => `<button data-tab="${n}" class="${cur === n ? 'active' : ''}"><span class="ic">${ic}</span>${l}</button>`;
-  return `<nav class="tabbar">${tab('home', icon('accueil', 21), 'Accueil')}${tab('moi', icon('moi', 21), 'Moi')}${tab('about', icon('apropos', 21), 'À propos')}</nav>`;
+  // L'onglet « Mon église » n'existe que pour qui est dans un groupe : la
+  // barre reste à trois onglets pour tous les autres, et l'onglet APPARAÎT
+  // au moment où l'on rejoint son assemblée.
+  const eglise = Array.isArray(groupesCache) && groupesCache.length
+    ? tab('eglise', icon('eglise', 21), 'Mon église') : '';
+  return `<nav class="tabbar">${tab('home', icon('accueil', 21), 'Accueil')}${tab('moi', icon('moi', 21), 'Moi')}${eglise}${tab('about', icon('apropos', 21), 'À propos')}</nav>`;
 }
 
 /* Le défi du jour vit dans le module Sonder (localStorage 'graine.defi.v1').
@@ -1434,10 +1444,10 @@ function syncStatusText() {
   }
   return 'Pas encore synchronisé.';
 }
-// Re-rendre sans gêner : seulement sur Moi / le parcours compte, et jamais
-// pendant que l'utilisateur écrit dans un champ.
+// Re-rendre sans gêner : seulement sur Moi, le parcours compte et l'onglet
+// Mon église, et jamais pendant que l'utilisateur écrit dans un champ.
 function renderIfIdle() {
-  if (route.name !== 'moi' && route.name !== 'account') return;
+  if (route.name !== 'moi' && route.name !== 'account' && route.name !== 'eglise') return;
   const a = document.activeElement;
   if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return;
   render();
@@ -1690,6 +1700,15 @@ function moiAccountCard(u) {
 function egliseOublier() { // à la déconnexion / suppression : plus rien d'église à montrer
   groupesCache = null; groupeDetails = {}; demandeCache = undefined; versetEdit = null;
   grpCodeField = grpNomField = grpAdrField = grpMailField = ''; grpError = grpNotice = null;
+  // L'onglet et sa page partent avec le compte — copies hors-ligne comprises :
+  // sur un appareil partagé, la page de l'assemblée ne survit pas à la session.
+  egliseSel = null; pageCache = {}; pageMeta = {}; pageTentee = {}; pageEdit = null; pageNotice = pageError = null;
+  try {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith(PAGE_CACHE_PREFIX))
+      .forEach(k => localStorage.removeItem(k));
+  } catch (e) { /* stockage inaccessible : rien à effacer */ }
+  if (route.name === 'eglise') route = { name: 'moi', param: null };
 }
 async function doLogout() {
   await GraineAPI.logout(); // même hors-ligne, la session locale est effacée
@@ -1925,16 +1944,17 @@ function egliseRecharger() {
 }
 
 function moiEgliseSection() {
+  // Dans un groupe : la vie d'église a son onglet dans la barre — cette
+  // section de Moi ne sert plus que l'ENTRÉE (rejoindre, demander).
+  if (Array.isArray(groupesCache) && groupesCache.length) return '';
   let corps;
   if (groupesCache === null) corps = `<div class="card fade"><p class="muted fr-empty" style="margin:0">Chargement…</p></div>`;
   else if (groupesCache === 'error') corps = `<div class="card fade"><p class="muted fr-empty" style="margin:0">Ta section église apparaîtra dès que tu seras en ligne.</p></div>`;
-  else if (groupesCache.length) corps = groupesCache.map(moiGroupeCard).join('');
   else corps = moiSansGroupeCard();
-  // Le résumé dit l'essentiel sans ouvrir : le nom du groupe, ou l'état.
+  // Le résumé dit l'essentiel sans ouvrir.
   let resume;
   if (groupesCache === null) resume = '…';
   else if (groupesCache === 'error') resume = 'hors-ligne';
-  else if (groupesCache.length) resume = groupesCache.map(g => g.nom).join(' · ');
   else if (demandeCache === undefined) resume = '…';
   else if (demandeCache && demandeCache.statut === 'attente') resume = 'demande en attente';
   else resume = 'rejoindre ou demander';
@@ -1984,58 +2004,381 @@ function moiSansGroupeCard() {
   </div>`;
 }
 
-// La carte d'un groupe : le verset de la semaine (le cœur), les membres, et
-// pour le responsable le code à partager + le formulaire du verset.
-function moiGroupeCard(g) {
+/* ============================================================================
+   L'onglet « Mon église » — la page de l'assemblée.
+
+   Tout membre y lit ce que le responsable a posé : le verset de la semaine,
+   les annonces (épinglées en tête), les rendez-vous réguliers et les services
+   où chacun LÈVE LA MAIN (jamais réquisitionné). Le responsable édite EN
+   PLACE, sur la même page que ses membres — il voit toujours exactement ce
+   qu'ils voient. Le serveur re-vérifie chaque écriture (403 sinon) : ici on
+   ne fait que montrer ou cacher des boutons.
+
+   Hors-ligne : la dernière page vue est gardée en localStorage et servie avec
+   sa date — le service worker ne cache jamais /api/ (données privées).
+   ========================================================================== */
+const PAGE_CACHE_PREFIX = 'graine.eglpage.'; // + code du groupe
+const JOURS_SEMAINE = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+
+let egliseSel = null;      // code du groupe affiché (utile à partir de 2 groupes)
+let pageCache = {};        // code → { annonces, rdv, services }
+let pageMeta = {};         // code → { quand: ISO, horsLigne: bool }
+let pageLoading = {};
+let pageTentee = {};       // une tentative réseau par visite de l'onglet — wire()
+                           // repasse à chaque rendu, il ne doit pas re-fetcher
+let pageEdit = null;       // formulaire ouvert : { type, code, id, …champs, busy, error }
+let pageNotice = null, pageError = null;
+
+function egliseCourante() {
+  const gs = Array.isArray(groupesCache) ? groupesCache : [];
+  return gs.find(x => x.code === egliseSel) || gs[0] || null;
+}
+
+/* Texte multi-lignes saisi par le responsable : échappé PUIS aéré — jamais
+   l'inverse, c'est l'échappement qui protège la page. */
+function multiligne(t) { return esc(t).replace(/\n/g, '<br>'); }
+
+function dateAnnonceFr(iso) {
+  try { return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }); }
+  catch (e) { return ''; }
+}
+function dateServiceFr(ymd) {
+  // Midi pile : à minuit, un fuseau à l'ouest ferait glisser au jour d'avant.
+  try {
+    const s = new Date(ymd + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  } catch (e) { return esc(ymd); } // le repli s'insère dans du HTML : échappé aussi
+}
+
+function ensurePage(code) {
+  if (!code || pageLoading[code] || pageTentee[code]) return;
+  pageTentee[code] = true;
+  const dejaLa = !!pageCache[code];
+  // La dernière copie vue s'affiche tout de suite, marquée de sa date —
+  // le réseau la remplacera s'il répond.
+  if (!dejaLa) {
+    try {
+      const raw = localStorage.getItem(PAGE_CACHE_PREFIX + code);
+      if (raw) {
+        const c = JSON.parse(raw);
+        // La copie ne se sert que si sa forme est saine : trois tableaux —
+        // une copie abîmée ne doit jamais faire tomber l'écran.
+        if (c && c.data && [c.data.annonces, c.data.rdv, c.data.services].every(Array.isArray)) {
+          pageCache[code] = c.data;
+          pageMeta[code] = { quand: c.quand, horsLigne: true };
+        }
+      }
+    } catch (e) { /* copie illisible : on vivra sans */ }
+  }
+  pageLoading[code] = true;
+  GraineAPI.groupePage(code)
+    .then(d => {
+      pageCache[code] = { annonces: d.annonces || [], rdv: d.rdv || [], services: d.services || [] };
+      pageMeta[code] = { quand: new Date().toISOString(), horsLigne: false };
+      try {
+        localStorage.setItem(PAGE_CACHE_PREFIX + code,
+          JSON.stringify({ data: pageCache[code], quand: pageMeta[code].quand }));
+      } catch (e) { /* stockage plein : la page vit en mémoire */ }
+    })
+    .catch(() => { if (!pageCache[code]) pageMeta[code] = { quand: null, horsLigne: true }; })
+    .then(() => { pageLoading[code] = false; renderIfIdle(); });
+}
+function pageRafraichir(code) { delete pageCache[code]; delete pageTentee[code]; ensurePage(code); }
+
+function viewEglise() {
+  const user = window.GraineAPI ? GraineAPI.user() : null;
+  const gs = Array.isArray(groupesCache) ? groupesCache : [];
+  if (!user || !gs.length) {
+    // On n'arrive normalement pas ici (l'onglet n'existe qu'en groupe) —
+    // mais un groupe quitté ou une déconnexion ne doit rien casser.
+    return topbar() + `<div class="card fade" style="margin-top:14px">
+      <p style="margin:0 0 8px"><b>Ton église t'attend ici.</b></p>
+      <p class="muted" style="margin:0 0 12px">Rejoins un groupe avec le code de ton responsable, ou demande l'ouverture d'un groupe pour ton assemblée — tout se passe dans l'écran Moi.</p>
+      <button class="btn btn-soft btn-block" data-tab="moi">Ouvrir l'écran Moi</button>
+    </div>`;
+  }
+  const g = egliseCourante();
   const resp = g.role === 'responsable';
   const d = groupeDetails[g.code];
+  const p = pageCache[g.code];
+  const meta = pageMeta[g.code];
 
-  const verset = g.verset
-    ? `<div class="grp-verset"><div class="gv-label">Verset de la semaine</div>
-        <p class="gv-texte">« ${esc(g.verset.texte)} »</p>
-        <p class="gv-ref">${esc(g.verset.reference)}</p></div>`
-    : `<p class="muted" style="margin:10px 2px">Pas encore de verset de la semaine${resp ? ' — à toi de l\'offrir au groupe.' : '.'}</p>`;
+  // Plusieurs assemblées : une pastille par groupe, comme la banque du Défi.
+  const choix = gs.length > 1 ? `<div class="pill-row" style="margin:0 0 14px">
+      ${gs.map(x => `<button class="pill ${x.code === g.code ? 'on' : ''}" data-eglsel="${esc(x.code)}">${esc(x.nom)}</button>`).join('')}
+    </div>` : '';
 
-  const codeRow = resp ? `<div class="friend-code-row">
-      <div><div class="fc-label">Code du groupe</div><div class="friend-code">${esc(g.code)}</div></div>
-      <button class="btn btn-soft" data-copygrp="${esc(g.code)}">Copier</button></div>
-    <p class="muted" style="font-size:.85rem;margin:8px 2px 0">Partage-le aux membres de ton église : c'est lui qui ouvre la porte du groupe.</p>` : '';
-
-  let versetForm = '';
-  if (resp) {
-    if (versetEdit && versetEdit.code === g.code) {
-      versetForm = `<form data-grpversetform="1" style="margin-top:12px">
-        <label class="lbl" for="versetRefInput" style="margin-top:0">Référence</label>
-        <input class="field" type="text" id="versetRefInput" maxlength="60" placeholder="Jean 3.16" autocomplete="off" value="${esc(versetEdit.reference)}">
-        <label class="lbl" for="versetTexteInput">Texte du verset</label>
-        <textarea class="field" id="versetTexteInput" maxlength="500" placeholder="Recopie le verset ici…">${esc(versetEdit.texte)}</textarea>
-        ${versetEdit.error ? `<p class="field-error">${esc(versetEdit.error)}</p>` : ''}
-        <div class="btn-row" style="margin-top:10px">
-          <button class="btn btn-grow" type="submit" ${versetEdit.busy ? 'disabled' : ''}>Offrir au groupe</button>
-          <button class="btn btn-ghost" type="button" data-versetcancel="1">Annuler</button>
-        </div>
-      </form>`;
-    } else {
-      versetForm = `<button class="btn btn-soft btn-block" data-versetedit="${esc(g.code)}" style="margin-top:12px">${g.verset ? 'Changer le verset de la semaine' : 'Définir le verset de la semaine'}</button>`;
-    }
-  }
-
-  const membres = d && Array.isArray(d.membres)
-    ? d.membres.map(m => `<div class="friend-row">
-        <span class="fr-avatar">${icon('moi', 18)}</span>
-        <span class="fr-main"><b>${esc(m.pseudo)}</b><br><span class="muted fr-since">${m.role === 'responsable' ? 'responsable' : 'membre'}</span></span>
-      </div>`).join('')
-    : `<p class="muted fr-empty">La liste des membres apparaîtra dès que tu seras en ligne.</p>`;
-
-  return `<div class="card friends-card fade">
+  const tete = `<div class="card fade">
     <p style="margin:0"><b>${esc(g.nom)}</b><br>
       <span class="muted" style="font-size:.85rem">${resp ? 'Tu es responsable' : 'Tu es membre'} · ${g.nbMembres} membre${g.nbMembres > 1 ? 's' : ''}</span></p>
-    ${verset}
-    ${codeRow}
-    ${versetForm}
-    ${membres}
-    <button class="linkbtn" data-grpleave="${esc(g.code)}" data-nom="${esc(g.nom)}">Quitter ce groupe</button>
+    ${g.verset
+      ? `<div class="grp-verset"><div class="gv-label">Verset de la semaine</div>
+          <p class="gv-texte">« ${esc(g.verset.texte)} »</p>
+          <p class="gv-ref">${esc(g.verset.reference)}</p></div>`
+      : `<p class="muted" style="margin:10px 2px 0">Pas encore de verset de la semaine${resp ? ' — à toi de l\'offrir au groupe.' : '.'}</p>`}
+    ${resp ? egliseVersetForm(g) : ''}
   </div>`;
+
+  const alerte = (pageNotice ? `<p class="field-ok" style="margin:8px 2px">${esc(pageNotice)}</p>` : '')
+    + (pageError ? `<p class="field-error" style="margin:8px 2px">${esc(pageError)}</p>` : '');
+
+  // La page (annonces, rendez-vous, services) — ou son état de chargement.
+  let corpsPage;
+  if (!p) {
+    corpsPage = meta && meta.horsLigne
+      ? `<div class="card fade"><p class="muted fr-empty" style="margin:0">La page de ton église apparaîtra dès que tu seras en ligne.</p></div>`
+      : `<div class="card fade"><p class="muted fr-empty" style="margin:0">Chargement…</p></div>`;
+  } else {
+    const vieux = meta && meta.horsLigne && meta.quand
+      ? `<p class="muted" style="font-size:.85rem;margin:6px 2px 0">Hors-ligne — page du ${dateAnnonceFr(meta.quand)}.</p>` : '';
+    corpsPage = vieux + egliseAnnonces(g, p, resp) + egliseRdv(g, p, resp) + egliseServices(g, p, resp);
+  }
+
+  // Le coin du responsable : le code qui ouvre la porte, et la porte de la
+  // banque de questions (l'écran lui-même vit dans le module Défi).
+  const coinResp = resp ? `
+    <div class="section-title">${icon('outil')} Coin du responsable</div>
+    <div class="card fade">
+      <div class="friend-code-row">
+        <div><div class="fc-label">Code du groupe</div><div class="friend-code">${esc(g.code)}</div></div>
+        <button class="btn btn-soft" data-copygrp="${esc(g.code)}">Copier</button></div>
+      <p class="muted" style="font-size:.85rem;margin:8px 2px 0">Partage-le aux membres de ton église : c'est lui qui ouvre la porte du groupe.</p>
+    </div>
+    <a class="card hub-card fade" href="defi/#banque">
+      <span class="hub-ic">${icon('defi', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">Banque de questions de mon église</span>
+        <span class="hub-sub">Ce que tes quiz d'église utilisent : la banque commune, ta sélection, tes propres questions.</span></span>
+      <span class="chev">›</span></a>` : '';
+
+  const membres = `<div class="section-title">${icon('amis')} Membres</div>
+    <div class="card friends-card fade">
+      ${d && Array.isArray(d.membres)
+        ? d.membres.map(m => `<div class="friend-row">
+            <span class="fr-avatar">${icon('moi', 18)}</span>
+            <span class="fr-main"><b>${esc(m.pseudo)}</b><br><span class="muted fr-since">${m.role === 'responsable' ? 'responsable' : 'membre'}</span></span>
+          </div>`).join('')
+        : `<p class="muted fr-empty">La liste des membres apparaîtra dès que tu seras en ligne.</p>`}
+      <button class="linkbtn" data-grpleave="${esc(g.code)}" data-nom="${esc(g.nom)}">Quitter ce groupe</button>
+    </div>`;
+
+  return topbar() + choix + tete + alerte + corpsPage + coinResp + membres;
+}
+
+/* Le formulaire du verset (responsable) — même état versetEdit que partout. */
+function egliseVersetForm(g) {
+  if (versetEdit && versetEdit.code === g.code) {
+    return `<form data-grpversetform="1" style="margin-top:12px">
+      <label class="lbl" for="versetRefInput" style="margin-top:0">Référence</label>
+      <input class="field" type="text" id="versetRefInput" maxlength="60" placeholder="Jean 3.16" autocomplete="off" value="${esc(versetEdit.reference)}">
+      <label class="lbl" for="versetTexteInput">Texte du verset</label>
+      <textarea class="field" id="versetTexteInput" maxlength="500" placeholder="Recopie le verset ici…">${esc(versetEdit.texte)}</textarea>
+      ${versetEdit.error ? `<p class="field-error">${esc(versetEdit.error)}</p>` : ''}
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn btn-grow" type="submit" ${versetEdit.busy ? 'disabled' : ''}>Offrir au groupe</button>
+        <button class="btn btn-ghost" type="button" data-versetcancel="1">Annuler</button>
+      </div>
+    </form>`;
+  }
+  return `<button class="btn btn-soft btn-block" data-versetedit="${esc(g.code)}" style="margin-top:12px">${g.verset ? 'Changer le verset de la semaine' : 'Définir le verset de la semaine'}</button>`;
+}
+
+function egliseAnnonces(g, p, resp) {
+  const forme = pageEdit && pageEdit.type === 'annonce' ? egliseFormAnnonce() : '';
+  const liste = p.annonces.length
+    ? p.annonces.map(a => `<div class="egl-annonce fade ${a.epingle ? 'epingle' : ''}">
+        <div class="ea-titre">${a.epingle ? '<span class="ea-pin" title="Épinglée">📌</span> ' : ''}<b>${esc(a.titre)}</b></div>
+        <p class="ea-texte">${multiligne(a.texte)}</p>
+        <div class="ea-meta muted">${dateAnnonceFr(a.date)}${resp ? ` ·
+          <button class="linkbtn" data-pageedit="annonce" data-id="${a.id}">Modifier</button>
+          <button class="linkbtn" data-pagepin="${a.id}">${a.epingle ? 'Désépingler' : 'Épingler'}</button>
+          <button class="linkbtn danger" data-pagedel="annonce" data-id="${a.id}" data-nom="${esc(a.titre)}">Supprimer</button>` : ''}</div>
+      </div>`).join('')
+    : `<p class="muted fr-empty">${resp ? 'Aucune annonce — la première nouvelle de l\'assemblée se pose ici.' : 'Pas d\'annonce pour l\'instant.'}</p>`;
+  return `<div class="section-title">${icon('cloche')} Annonces</div>
+    ${forme || `<div class="card fade">${liste}
+      ${resp && !pageEdit ? `<button class="btn btn-soft btn-block" data-pageedit="annonce" style="margin-top:10px">Nouvelle annonce</button>` : ''}</div>`}`;
+}
+
+function egliseRdv(g, p, resp) {
+  const forme = pageEdit && pageEdit.type === 'rdv' ? egliseFormRdv() : '';
+  const liste = p.rdv.length
+    ? p.rdv.map(r => `<div class="egl-rdv">
+        <span class="er-quand"><b>${JOURS_SEMAINE[r.jour] || '?'}</b> ${esc(r.heure)}</span>
+        <span class="er-quoi">${esc(r.libelle)}${r.lieu ? `<br><span class="muted">${esc(r.lieu)}</span>` : ''}</span>
+        ${resp ? `<span class="er-actions">
+          <button class="linkbtn" data-pageedit="rdv" data-id="${r.id}">Modifier</button>
+          <button class="linkbtn danger" data-pagedel="rdv" data-id="${r.id}" data-nom="${esc(r.libelle)}">Supprimer</button></span>` : ''}
+      </div>`).join('')
+    : `<p class="muted fr-empty">${resp ? 'Aucun rendez-vous — pose le culte, la prière, l\'étude…' : 'Pas encore de rendez-vous réguliers.'}</p>`;
+  return `<div class="section-title">${icon('assiduite')} La semaine de l'assemblée</div>
+    ${forme || `<div class="card fade">${liste}
+      ${resp && !pageEdit ? `<button class="btn btn-soft btn-block" data-pageedit="rdv" style="margin-top:10px">Ajouter un rendez-vous</button>` : ''}</div>`}`;
+}
+
+function egliseServices(g, p, resp) {
+  const forme = pageEdit && pageEdit.type === 'service' ? egliseFormService() : '';
+  const liste = p.services.length
+    ? p.services.map(s => {
+      const plein = s.inscrits.length >= s.places;
+      // Le geste du membre : lever la main, ou la retirer — jamais réquisitionné.
+      const main = s.jeSuisInscrit
+        ? `<button class="btn btn-ghost" data-svcmain="${s.id}" data-inscrit="1">Je me retire</button>`
+        : plein
+          ? `<span class="muted" style="font-size:.88rem">Complet — merci à ceux qui ont levé la main !</span>`
+          : `<button class="btn btn-grow" data-svcmain="${s.id}" data-inscrit="0">Je lève la main</button>`;
+      return `<div class="egl-service fade">
+        <div class="es-tete"><b>${esc(s.titre)}</b><span class="es-places">${s.inscrits.length}/${s.places}</span></div>
+        <div class="muted" style="font-size:.88rem">${dateServiceFr(s.date)}</div>
+        ${s.details ? `<p class="es-details">${multiligne(s.details)}</p>` : ''}
+        ${s.inscrits.length ? `<p class="muted es-inscrits">${s.inscrits.map(esc).join(' · ')}</p>` : ''}
+        <div class="es-actions">${main}${resp ? `
+          <button class="linkbtn" data-pageedit="service" data-id="${s.id}">Modifier</button>
+          <button class="linkbtn danger" data-pagedel="service" data-id="${s.id}" data-nom="${esc(s.titre)}">Supprimer</button>` : ''}</div>
+      </div>`;
+    }).join('')
+    : `<p class="muted fr-empty">${resp ? 'Aucun service à venir — propose un coup de main, chacun lèvera la main s\'il le veut.' : 'Pas de service proposé pour l\'instant.'}</p>`;
+  return `<div class="section-title">${icon('partage')} Services — je lève la main</div>
+    ${forme || `<div class="card fade">${liste}
+      ${resp && !pageEdit ? `<button class="btn btn-soft btn-block" data-pageedit="service" style="margin-top:10px">Proposer un service</button>` : ''}</div>`}`;
+}
+
+/* ---- Les trois formulaires du responsable (création et modification) ---- */
+
+function egliseFormBoutons() {
+  return `${pageEdit.error ? `<p class="field-error">${esc(pageEdit.error)}</p>` : ''}
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn btn-grow" type="submit" ${pageEdit.busy ? 'disabled' : ''}>${pageEdit.id ? 'Enregistrer' : 'Publier'}</button>
+      <button class="btn btn-ghost" type="button" data-pagecancel="1">Annuler</button>
+    </div>`;
+}
+function egliseFormAnnonce() {
+  return `<form class="card fade" data-pageform="1">
+    <label class="lbl" for="pageTitre" style="margin-top:0">${pageEdit.id ? 'Modifier l\'annonce' : 'Nouvelle annonce'}</label>
+    <input class="field" type="text" id="pageTitre" maxlength="80" placeholder="Titre" autocomplete="off" value="${esc(pageEdit.titre)}">
+    <textarea class="field" id="pageTexte" maxlength="2000" placeholder="La nouvelle à partager…">${esc(pageEdit.texte)}</textarea>
+    <button class="pill ${pageEdit.epingle ? 'on' : ''}" type="button" data-pagepinform="1" style="margin-top:8px">📌 Épinglée en tête de page</button>
+    ${egliseFormBoutons()}
+  </form>`;
+}
+function egliseFormRdv() {
+  return `<form class="card fade" data-pageform="1">
+    <label class="lbl" for="pageLibelle" style="margin-top:0">${pageEdit.id ? 'Modifier le rendez-vous' : 'Nouveau rendez-vous régulier'}</label>
+    <input class="field" type="text" id="pageLibelle" maxlength="80" placeholder="Culte, prière, étude…" autocomplete="off" value="${esc(pageEdit.libelle)}">
+    <label class="lbl" for="pageJour">Jour</label>
+    <select class="field" id="pageJour">${JOURS_SEMAINE.map((j, i) =>
+      `<option value="${i}" ${String(i) === String(pageEdit.jour) ? 'selected' : ''}>${j.charAt(0).toUpperCase() + j.slice(1)}</option>`).join('')}</select>
+    <label class="lbl" for="pageHeure">Heure</label>
+    <input class="field" type="time" id="pageHeure" value="${esc(pageEdit.heure)}">
+    <label class="lbl" for="pageLieu">Lieu (facultatif)</label>
+    <input class="field" type="text" id="pageLieu" maxlength="80" placeholder="Salle, adresse…" autocomplete="off" value="${esc(pageEdit.lieu)}">
+    ${egliseFormBoutons()}
+  </form>`;
+}
+function egliseFormService() {
+  return `<form class="card fade" data-pageform="1">
+    <label class="lbl" for="pageTitre" style="margin-top:0">${pageEdit.id ? 'Modifier le service' : 'Proposer un service'}</label>
+    <input class="field" type="text" id="pageTitre" maxlength="80" placeholder="Nettoyage de la salle, accueil…" autocomplete="off" value="${esc(pageEdit.titre)}">
+    <label class="lbl" for="pageDate">Date</label>
+    <input class="field" type="date" id="pageDate" value="${esc(pageEdit.date)}">
+    <label class="lbl" for="pageDetails">Détails (facultatif)</label>
+    <textarea class="field" id="pageDetails" maxlength="500" placeholder="Ce qu'il faut savoir…">${esc(pageEdit.details)}</textarea>
+    <label class="lbl" for="pagePlaces">Places</label>
+    <input class="field" type="number" id="pagePlaces" min="1" max="500" value="${esc(pageEdit.places)}">
+    <p class="muted" style="font-size:.85rem;margin:8px 2px 0">Chacun lève la main s'il le veut, dans la limite des places.</p>
+    ${egliseFormBoutons()}
+  </form>`;
+}
+
+/* ---- Les actions de la page ---- */
+
+function pageOuvrirForm(type, id) {
+  const g = egliseCourante(); if (!g) return;
+  const p = pageCache[g.code] || { annonces: [], rdv: [], services: [] };
+  pageNotice = pageError = null;
+  if (type === 'annonce') {
+    const a = id ? p.annonces.find(x => x.id === id) : null;
+    pageEdit = { type, code: g.code, id: a ? a.id : null, titre: a ? a.titre : '', texte: a ? a.texte : '', epingle: a ? a.epingle : false, busy: false, error: null };
+  } else if (type === 'rdv') {
+    const r = id ? p.rdv.find(x => x.id === id) : null;
+    pageEdit = { type, code: g.code, id: r ? r.id : null, libelle: r ? r.libelle : '', jour: r ? r.jour : 0, heure: r ? r.heure : '10:30', lieu: r && r.lieu ? r.lieu : '', busy: false, error: null };
+  } else {
+    const s = id ? p.services.find(x => x.id === id) : null;
+    pageEdit = { type, code: g.code, id: s ? s.id : null, titre: s ? s.titre : '', date: s ? s.date : '', details: s && s.details ? s.details : '', places: s ? s.places : 4, busy: false, error: null };
+  }
+  render();
+}
+
+async function doPageSave() {
+  const pe = pageEdit; if (!pe || pe.busy) return;
+  pe.busy = true; pe.error = null; render();
+  try {
+    const corps = { id: pe.id || undefined };
+    if (pe.type === 'annonce') {
+      Object.assign(corps, { titre: pe.titre, texte: pe.texte, epingle: !!pe.epingle });
+      await GraineAPI.groupeAnnonceSave(pe.code, corps);
+    } else if (pe.type === 'rdv') {
+      Object.assign(corps, { libelle: pe.libelle, jour: Number(pe.jour), heure: pe.heure, lieu: pe.lieu });
+      await GraineAPI.groupeRdvSave(pe.code, corps);
+    } else {
+      Object.assign(corps, { titre: pe.titre, date: pe.date, details: pe.details, places: Number(pe.places) });
+      await GraineAPI.groupeServiceSave(pe.code, corps);
+    }
+    pageNotice = pe.id ? 'C\'est enregistré.' : 'C\'est publié pour ton assemblée 🙂';
+    pageEdit = null;
+    pageRafraichir(pe.code);
+  } catch (e) {
+    pe.busy = false;
+    pe.error = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
+  }
+  render();
+}
+
+async function doPageDelete(type, id, nom) {
+  const g = egliseCourante(); if (!g) return;
+  const quoi = type === 'annonce' ? 'cette annonce' : type === 'rdv' ? 'ce rendez-vous' : 'ce service (les mains levées partent avec)';
+  if (!confirm(`Supprimer ${quoi} — « ${nom} » ?`)) return;
+  pageNotice = pageError = null;
+  try {
+    if (type === 'annonce') await GraineAPI.groupeAnnonceDelete(g.code, id);
+    else if (type === 'rdv') await GraineAPI.groupeRdvDelete(g.code, id);
+    else await GraineAPI.groupeServiceDelete(g.code, id);
+    pageRafraichir(g.code);
+  } catch (e) {
+    pageError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
+  }
+  render();
+}
+
+/* Épingler/désépingler en un geste : une modification d'annonce comme une autre. */
+async function doPagePin(id) {
+  const g = egliseCourante(); if (!g) return;
+  const a = (pageCache[g.code] || { annonces: [] }).annonces.find(x => x.id === id);
+  if (!a) return;
+  pageNotice = pageError = null;
+  try {
+    await GraineAPI.groupeAnnonceSave(g.code, { id: a.id, titre: a.titre, texte: a.texte, epingle: !a.epingle });
+    pageRafraichir(g.code);
+  } catch (e) {
+    pageError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
+  }
+  render();
+}
+
+async function doServiceMain(id, deja) {
+  const g = egliseCourante(); if (!g) return;
+  pageNotice = pageError = null;
+  try {
+    const s = deja
+      ? await GraineAPI.groupeServiceRetirer(g.code, id)
+      : await GraineAPI.groupeServiceLeverLaMain(g.code, id);
+    // Le serveur renvoie le service à jour : on le replace sans tout recharger.
+    const p = pageCache[g.code];
+    if (p && s) { const k = p.services.findIndex(x => x.id === id); if (k >= 0) p.services[k] = s; }
+  } catch (e) {
+    if (e && e.status === 409) pageRafraichir(g.code); // complet, ou déjà inscrit : la page dit vrai
+    pageError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
+  }
+  render();
 }
 
 async function doGroupeRejoindre() {
@@ -2096,6 +2439,9 @@ async function doGroupeQuitter(code, nom) {
     grpError = null;
     grpNotice = `Tu as quitté « ${nom} ».`;
     egliseRecharger();
+    // Depuis l'onglet Mon église : il peut disparaître avec le groupe quitté —
+    // on ramène vers Moi, où vit le message d'au revoir.
+    if (route.name === 'eglise') { egliseSel = null; go('moi'); return; }
   } catch (e) {
     // Le responsable qui n'est pas seul reçoit ici le message du serveur
     // (transmettre d'abord la responsabilité) — on l'affiche tel quel.
@@ -2223,6 +2569,19 @@ function wire() {
   }));
   if (q('[data-versetcancel]')) q('[data-versetcancel]').addEventListener('click', () => { versetEdit = null; render(); });
   if (q('[data-grpversetform]')) q('[data-grpversetform]').addEventListener('submit', e => { e.preventDefault(); doGroupeVerset(); });
+  // L'onglet Mon église : la page se charge à l'arrivée, le reste est du geste.
+  if (route.name === 'eglise') { ensureGroupes(); const gEgl = egliseCourante(); if (gEgl) ensurePage(gEgl.code); }
+  el.querySelectorAll('[data-eglsel]').forEach(b => b.addEventListener('click', () => {
+    egliseSel = b.dataset.eglsel; pageEdit = null; pageNotice = pageError = null; render();
+    const gEgl = egliseCourante(); if (gEgl) ensurePage(gEgl.code);
+  }));
+  el.querySelectorAll('[data-pageedit]').forEach(b => b.addEventListener('click', () => pageOuvrirForm(b.dataset.pageedit, b.dataset.id ? +b.dataset.id : null)));
+  el.querySelectorAll('[data-pagedel]').forEach(b => b.addEventListener('click', () => doPageDelete(b.dataset.pagedel, +b.dataset.id, b.dataset.nom)));
+  el.querySelectorAll('[data-pagepin]').forEach(b => b.addEventListener('click', () => doPagePin(+b.dataset.pagepin)));
+  el.querySelectorAll('[data-svcmain]').forEach(b => b.addEventListener('click', () => doServiceMain(+b.dataset.svcmain, b.dataset.inscrit === '1')));
+  if (q('[data-pageform]')) q('[data-pageform]').addEventListener('submit', e => { e.preventDefault(); doPageSave(); });
+  if (q('[data-pagecancel]')) q('[data-pagecancel]').addEventListener('click', () => { pageEdit = null; render(); });
+  if (q('[data-pagepinform]')) q('[data-pagepinform]').addEventListener('click', () => { if (pageEdit) { pageEdit.epingle = !pageEdit.epingle; render(); } });
   // parcours compte (écrans successifs)
   el.querySelectorAll('form[data-authstep]').forEach(f => f.addEventListener('submit', e => { e.preventDefault(); authSubmit(f.dataset.authstep); }));
   if (q('#google-btn')) mountGoogleButton();
@@ -2242,6 +2601,16 @@ function wire() {
   bindInput('grpMailInput', v => { grpMailField = v; });
   bindInput('versetRefInput', v => { if (versetEdit) versetEdit.reference = v; });
   bindInput('versetTexteInput', v => { if (versetEdit) versetEdit.texte = v; });
+  // Formulaires de la page d'église (un seul ouvert à la fois).
+  bindInput('pageTitre', v => { if (pageEdit) pageEdit.titre = v; });
+  bindInput('pageTexte', v => { if (pageEdit) pageEdit.texte = v; });
+  bindInput('pageLibelle', v => { if (pageEdit) pageEdit.libelle = v; });
+  bindInput('pageJour', v => { if (pageEdit) pageEdit.jour = v; });
+  bindInput('pageHeure', v => { if (pageEdit) pageEdit.heure = v; });
+  bindInput('pageLieu', v => { if (pageEdit) pageEdit.lieu = v; });
+  bindInput('pageDate', v => { if (pageEdit) pageEdit.date = v; });
+  bindInput('pageDetails', v => { if (pageEdit) pageEdit.details = v; });
+  bindInput('pagePlaces', v => { if (pageEdit) pageEdit.places = v; });
 }
 function fillNext(pid) {
   const ex = session.ex; const k = ex.filled.findIndex(x => x === null);
@@ -2366,5 +2735,8 @@ function removeVerse(id) {
   // Synchronisation à l'ouverture si connecté — silencieuse, non bloquante :
   // hors-ligne, l'appli locale continue exactement comme avant.
   if (window.GraineAPI && GraineAPI.isLoggedIn()) syncNow();
+  // Les groupes se chargent dès l'ouverture : c'est eux qui font apparaître
+  // l'onglet « Mon église » dans la barre, sans attendre un passage par Moi.
+  ensureGroupes();
   loadPublicConfig(); // sait déjà, à l'ouverture de « Moi », si Google est proposé
 })();
