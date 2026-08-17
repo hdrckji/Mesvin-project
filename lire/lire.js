@@ -281,6 +281,13 @@ function migrate(raw) {
     });
     raw.plans = raw.plans.filter(p => p.seq.length > 0);
     if (raw.active && !raw.plans.some(p => p.id === raw.active)) raw.active = null;
+    // Passages surlignés : champ ADDITIF (un store existant reste valide).
+    // { livre → { chapitre → { verset → couleur } } } ; on jette ce qui ne
+    // tient pas debout plutôt que de planter un écran de lecture.
+    if (!raw.surlignages || typeof raw.surlignages !== 'object') raw.surlignages = {};
+    Object.keys(raw.surlignages).forEach(id => {
+      if (!BOOKS[id] || typeof raw.surlignages[id] !== 'object') delete raw.surlignages[id];
+    });
     return raw;
   }
   // ---- ancien format ----
@@ -424,7 +431,8 @@ function render() {
     cfgWhere: viewCfgWhere, cfgBook: viewCfgBook, cfgTime: viewCfgTime,
     cfgGoal: viewCfgGoal, cfgLecture: viewCfgLecture, home: viewHome,
     read: () => viewRead(route.param), chapterDone: () => viewChapterDone(route.param),
-    bookDone: () => viewBookDone(route.param), planDone: viewPlanDone
+    bookDone: () => viewBookDone(route.param), planDone: viewPlanDone,
+    passages: viewPassages
   };
   el.innerHTML = (views[route.name] || viewHome)();
   wire();
@@ -729,7 +737,56 @@ function viewHome() {
       : 'Affiner les estimations — lire un passage, à mon rythme'}</button>` : ''}
   </div>`;
 
-  return header() + main + gauge + ctx + switcher;
+  // Les passages gardés : une porte discrète, seulement s'il y en a.
+  const n = nbSurlignages();
+  const passages = n ? `<button class="card hub-card fade" data-passages="1" style="text-align:left;width:100%">
+      <span class="hub-ic">${icon('lecture', 24)}</span>
+      <span class="hub-txt"><span class="hub-title">Mes passages</span>
+        <span class="hub-sub">${n} verset${n > 1 ? 's' : ''} gardé${n > 1 ? 's' : ''} au fil de tes lectures.</span></span>
+      <span class="chev">›</span></button>` : '';
+
+  return header() + main + gauge + ctx + switcher + passages;
+}
+
+/* ============================================================================
+   Mes passages — les versets surlignés, rassemblés.
+   ========================================================================== */
+function viewPassages() {
+  const groupes = [];
+  Object.keys(store.surlignages || {}).forEach(livre => {
+    if (!BOOKS[livre]) return;
+    const chapitres = store.surlignages[livre];
+    Object.keys(chapitres).map(Number).sort((a, b) => a - b).forEach(ch => {
+      const versets = Object.keys(chapitres[ch]).map(Number).sort((a, b) => a - b);
+      groupes.push({ livre, ch, versets, couleurs: chapitres[ch] });
+    });
+  });
+
+  const corps = groupes.length
+    ? groupes.map(g => `<div class="card fade">
+        <div class="pass-tete"><b>${esc(BOOKS[g.livre].nom)} ${g.ch + 1}</b>
+          <button class="linklike" data-read="${g.livre}:${g.ch}">Rouvrir le chapitre ›</button></div>
+        ${g.versets.map(v => `<p class="pass-v hl hl-${g.couleurs[v]}"><span class="vnum">${v + 1}</span>${esc(texteGarde(g.livre, g.ch, v))}</p>`).join('')}
+      </div>`).join('')
+    : `<div class="card fade"><p class="muted" style="margin:0">Aucun passage gardé pour l'instant — en lisant, touche un verset pour le surligner.</p></div>`;
+
+  return `<div class="fade">
+    <button class="back-link" data-back-home="1">‹ Mon chemin</button>
+    <h2 style="margin:10px 4px 4px">Mes passages</h2>
+    <p class="muted" style="margin:0 4px 16px">Ce que tu as gardé au fil de tes lectures. Tout reste sur cet appareil.</p>
+    ${corps}
+  </div>`;
+}
+
+/* Le texte d'un verset gardé : présent si son livre est chargé, sinon une
+   invitation à rouvrir le chapitre (on ne télécharge pas 66 livres pour une
+   liste). */
+function texteGarde(livre, ch, v) {
+  if (currentBook && readingLivre === livre) {
+    const t = (currentBook.chapitres[ch] || [])[v];
+    if (t) return t;
+  }
+  return '— rouvre le chapitre pour relire ce verset.';
 }
 
 /* ============================================================================
@@ -746,7 +803,15 @@ function viewRead(p) {
   if (!currentBook || readingLivre !== p.livre) return header() + `<p class="muted center" style="padding:40px">Chargement du texte…</p>`;
 
   const verses = currentBook.chapitres[ci];
-  const body = verses.map((v, i) => `<span class="vnum">${i + 1}</span>${esc(v)}`).join(' ');
+  // Chaque verset devient touchable : c'est la porte vers « surligner » et
+  // « semer ». Le texte garde son flux continu — on enveloppe, on ne casse
+  // pas la mise en page de lecture.
+  const marques = surlignagesDuChapitre(p.livre, ci);
+  const body = verses.map((v, i) => {
+    const hl = marques[i] ? ` hl hl-${marques[i]}` : '';
+    const sel = (versetOuvert && versetOuvert.livre === p.livre && versetOuvert.ch === ci && versetOuvert.v === i) ? ' vsel' : '';
+    return `<span class="v${hl}${sel}" data-verset="${i}"><span class="vnum">${i + 1}</span>${esc(v)}</span>`;
+  }).join(' ');
   const isRead = st.read[ci];
 
   const finish = isRead
@@ -764,7 +829,105 @@ function viewRead(p) {
     <div class="card"><div class="scripture">${body}</div>
       <div class="ref" style="margin-top:18px">${esc(B.nom)} ${ci + 1} <span class="version">· Louis Segond 1910</span></div></div>
     <div class="finish-zone">${finish}</div>
+    ${barreVerset(p.livre, ci, verses)}
   </div>`;
+}
+
+/* ============================================================================
+   Un verset touché : le garder, ou le semer.
+
+   Deux gestes, une seule barre qui monte du bas — comme dans les applis de
+   Bible que chacun connaît. Tout reste sur l'appareil : les surlignages
+   vivent dans le store de Marcher, le verset semé rejoint le jardin de
+   Semer (store partagé, écrit avec précaution).
+   ========================================================================== */
+const COULEURS = { 1: 'Jaune', 2: 'Vert', 3: 'Bleu', 4: 'Rose' };
+let versetOuvert = null; // { livre, ch, v } — le verset dont la barre est ouverte
+
+/** Un mot qui passe, puis s'efface — même geste que l'appli principale. */
+function toast(message) {
+  const old = document.querySelector('.lire-toast');
+  if (old) old.remove();
+  const t = document.createElement('div');
+  t.className = 'lire-toast';
+  t.textContent = message;
+  document.body.appendChild(t);
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, 2400);
+}
+
+/** Les surlignages d'un chapitre : { indexVerset → couleur }. */
+function surlignagesDuChapitre(livre, ch) {
+  const tout = (store.surlignages || {})[livre] || {};
+  return tout[ch] || {};
+}
+function surligner(livre, ch, v, couleur) {
+  if (!store.surlignages) store.surlignages = {};
+  if (!store.surlignages[livre]) store.surlignages[livre] = {};
+  if (!store.surlignages[livre][ch]) store.surlignages[livre][ch] = {};
+  const m = store.surlignages[livre][ch];
+  if (couleur === null || m[v] === couleur) delete m[v]; else m[v] = couleur;
+  // On ne laisse pas de coquilles vides derrière soi.
+  if (!Object.keys(m).length) delete store.surlignages[livre][ch];
+  if (!Object.keys(store.surlignages[livre]).length) delete store.surlignages[livre];
+  saveStore();
+}
+function nbSurlignages() {
+  let n = 0;
+  Object.values(store.surlignages || {}).forEach(ch => Object.values(ch).forEach(m => { n += Object.keys(m).length; }));
+  return n;
+}
+
+function barreVerset(livre, ch, verses) {
+  if (!versetOuvert || versetOuvert.livre !== livre || versetOuvert.ch !== ch) return '';
+  const i = versetOuvert.v;
+  const B = BOOKS[livre];
+  const ref = `${B.nom} ${ch + 1}.${i + 1}`;
+  const couleurActuelle = surlignagesDuChapitre(livre, ch)[i];
+  const dejaSeme = versetDejaSeme(livre, ch, i);
+  return `<div class="verset-barre" role="dialog" aria-label="Actions sur ${esc(ref)}">
+    <div class="vb-tete"><b>${esc(ref)}</b>
+      <button class="vb-x" data-verset-fermer="1" aria-label="Fermer">✕</button></div>
+    <div class="vb-couleurs">
+      ${Object.keys(COULEURS).map(c => `<button class="vb-c vb-c${c}${String(couleurActuelle) === c ? ' on' : ''}"
+        data-surligne="${c}" aria-label="${COULEURS[c]}"></button>`).join('')}
+      ${couleurActuelle ? `<button class="linkbtn" data-surligne="0">Retirer</button>` : ''}
+    </div>
+    ${dejaSeme
+      ? `<p class="vb-deja">${icon('germe', 14)} Déjà dans ton jardin</p>`
+      : `<button class="btn btn-grow btn-block" data-semer="1">${icon('germe', 16)} Apprendre ce verset par cœur</button>`}
+  </div>`;
+}
+
+/* ---- Le pont vers Semer -------------------------------------------------------
+   Le jardin vit dans le store de l'appli principale (MEMO_KEY). On y touche
+   avec des pincettes : uniquement `cards` (la carte à réviser) et
+   `eglVersets` (le texte du verset, absent de la bibliothèque). L'appli
+   fond ce sac dans sa bibliothèque au démarrage — voir app.js. */
+const MEMO_KEY = 'graine.v3';
+const memoIdVerset = (livre, ch, v) => `lire-${livre}-${ch + 1}-${v + 1}`;
+
+function memoLu() {
+  try { const r = localStorage.getItem(MEMO_KEY); const s = r ? JSON.parse(r) : null; return (s && typeof s === 'object') ? s : null; }
+  catch (e) { return null; }
+}
+function versetDejaSeme(livre, ch, v) {
+  const s = memoLu();
+  return !!(s && s.cards && s.cards[memoIdVerset(livre, ch, v)]);
+}
+function semerVerset(livre, ch, v, texte) {
+  const s = memoLu() || {};
+  if (!s.cards || typeof s.cards !== 'object') s.cards = {};
+  if (!s.eglVersets || typeof s.eglVersets !== 'object') s.eglVersets = {};
+  const id = memoIdVerset(livre, ch, v);
+  if (s.cards[id]) return false; // déjà semé : on ne réinitialise jamais une révision
+  const ref = `${BOOKS[livre].nom} ${ch + 1}.${v + 1}`;
+  s.eglVersets[id] = { id, ref, text: texte };
+  // Même forme de carte que introduce() dans app.js — une graine toute neuve.
+  const jour = Math.round(new Date(new Date().setHours(0, 0, 0, 0)).getTime() / 86400000);
+  s.cards[id] = { id, ref, text: texte, ease: 2.5, interval: 0, due: jour,
+    validations: 0, attempts: 0, addedDay: jour };
+  try { localStorage.setItem(MEMO_KEY, JSON.stringify(s)); } catch (e) { return false; }
+  return true;
 }
 
 /* ---------- Petite confirmation après un chapitre ---------- */
@@ -922,6 +1085,30 @@ function wire() {
   on('[data-finish]', e => {
     const [livre, ci] = e.currentTarget.dataset.finish.split(':');
     finishChapter(livre, +ci);
+  });
+  /* un verset touché pendant la lecture : surligner, ou semer */
+  on('[data-verset]', e => {
+    const v = +e.currentTarget.dataset.verset;
+    const p = route.param;
+    versetOuvert = (versetOuvert && versetOuvert.v === v && versetOuvert.ch === p.ch && versetOuvert.livre === p.livre)
+      ? null : { livre: p.livre, ch: p.ch, v };
+    render();
+  });
+  on('[data-verset-fermer]', () => { versetOuvert = null; render(); });
+  on('[data-passages]', () => go('passages'));
+  on('[data-surligne]', e => {
+    const c = +e.currentTarget.dataset.surligne;
+    surligner(versetOuvert.livre, versetOuvert.ch, versetOuvert.v, c === 0 ? null : c);
+    render();
+  });
+  on('[data-semer]', () => {
+    const { livre, ch, v } = versetOuvert;
+    const texte = (currentBook && currentBook.chapitres[ch] || [])[v];
+    if (texte && semerVerset(livre, ch, v, texte)) {
+      toast(`${BOOKS[livre].nom} ${ch + 1}.${v + 1} rejoint ton jardin 🌱`);
+    }
+    versetOuvert = null;
+    render();
   });
   on('[data-expand]', e => { expandedLivre = e.currentTarget.dataset.expand; render(); });
   on('[data-toggle-books]', () => { showAllBooks = !showAllBooks; render(); });
