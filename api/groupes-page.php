@@ -51,11 +51,12 @@ function page_load_membre(PDO $pdo, string $rawCode, array $user): array {
     return [$groupe, $role];
 }
 
-/** Charge le groupe et exige d'en être le responsable (écritures de la page). */
+/** Charge le groupe et exige d'avoir le droit de nourrir la page (responsable
+    ou co-responsable — voir groupe_peut_animer dans groupes.php). */
 function page_load_responsable(PDO $pdo, string $rawCode, array $user): array {
     [$groupe, $role] = page_load_membre($pdo, $rawCode, $user);
-    if ($role !== 'responsable') {
-        json_error('Seul le responsable du groupe peut nourrir la page.', 403);
+    if (!groupe_peut_animer($role)) {
+        json_error('Seuls le responsable et ses co-responsables nourrissent la page.', 403);
     }
     return $groupe;
 }

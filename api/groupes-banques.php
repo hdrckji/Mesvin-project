@@ -48,8 +48,8 @@ function groupe_banque_responsable(PDO $pdo, string $rawCode, string $module): a
     }
     $user = require_user($pdo);
     $groupe = groupe_load($pdo, $rawCode);
-    if (groupe_role($pdo, (int) $groupe['id'], (int) $user['id']) !== 'responsable') {
-        json_error('Seul le responsable du groupe règle la banque de son église.', 403);
+    if (!groupe_peut_animer(groupe_role($pdo, (int) $groupe['id'], (int) $user['id']))) {
+        json_error('Seuls le responsable et ses co-responsables règlent la banque de leur église.', 403);
     }
     return $groupe;
 }

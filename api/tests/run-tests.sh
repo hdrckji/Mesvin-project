@@ -564,6 +564,35 @@ check "Chloé rend le groupe à Alice → 200" 200 "$(api POST "/api/groupes/$GC
 api GET "/api/groupes/$GCODE" "$TOKEN1" > /dev/null
 check "u1 est de nouveau responsable"   responsable "$(jval .groupe.role)"
 
+say "Groupes — co-responsables : nommés par le responsable, ils NOURRISSENT"
+check "u3 (membre) ne pose pas le verset → 403" 403 "$(api POST "/api/groupes/$GCODE/verset" "$TOKEN3" '{"reference":"Jean 1.1","texte":"Au commencement était la Parole."}')"
+check "u3 ne se nomme pas lui-même → 403" 403 "$(api POST "/api/groupes/$GCODE/coresponsables" "$TOKEN3" '{"pseudo":"Chloé"}')"
+check "pseudo inconnu → 404"            404 "$(api POST "/api/groupes/$GCODE/coresponsables" "$TOKEN1" '{"pseudo":"Personne"}')"
+check "u1 nomme Chloé → 200"            200 "$(api POST "/api/groupes/$GCODE/coresponsables" "$TOKEN1" '{"pseudo":"Chloé"}')"
+check "re-nommer → 409"                 409 "$(api POST "/api/groupes/$GCODE/coresponsables" "$TOKEN1" '{"pseudo":"Chloé"}')"
+api GET "/api/groupes/$GCODE" "$TOKEN3" > /dev/null
+check "u3 se voit co-responsable"       coresponsable "$(jval .groupe.role)"
+check "les rôles listés ont suivi"      "coresponsable,responsable" "$(jval '.groupe.membres | map(.role) | sort | join(",")')"
+# Ce qu'un co-responsable peut désormais faire : nourrir.
+check "il pose le verset → 200"         200 "$(api POST "/api/groupes/$GCODE/verset" "$TOKEN3" '{"reference":"Jean 1.1","texte":"Au commencement était la Parole."}')"
+check "→ son rôle reste co-responsable" coresponsable "$(jval .groupe.role)"
+check "il crée une annonce → 201"       201 "$(api POST "/api/groupes/$GCODE/annonces" "$TOKEN3" '{"titre":"Un mot de l équipe","texte":"Bonjour à tous."}')"
+check "il règle la banque de quiz → 200" 200 "$(api POST "/api/groupes/$GCODE/quiz/mode" "$TOKEN3" '{"mode":"toutes"}')"
+check "il règle une banque d épreuve → 200" 200 "$(api GET "/api/groupes/$GCODE/banques/quiadit" "$TOKEN3")"
+# Ce qu'il ne peut PAS : porter le groupe.
+check "il ne nomme pas un co-responsable → 403" 403 "$(api POST "/api/groupes/$GCODE/coresponsables" "$TOKEN3" '{"pseudo":"Alice"}')"
+check "il ne transmet pas le groupe → 403" 403 "$(api POST "/api/groupes/$GCODE/passation" "$TOKEN3" '{"pseudo":"Alice"}')"
+check "il ne met pas en forme le nom → 403" 403 "$(api POST "/api/groupes/$GCODE/identite" "$TOKEN3" '{"style":"moderne","taille":"posee"}')"
+check "il ne supprime pas le groupe → 403" 403 "$(api DELETE "/api/groupes/$GCODE" "$TOKEN3")"
+check "u2 (non-membre) reste dehors → 403" 403 "$(api GET "/api/groupes/$GCODE/banques/quiadit" "$TOKEN2")"
+# Retrait : il redevient membre, sans quitter le groupe.
+check "retrait d'un non-co-responsable → 404" 404 "$(api DELETE "/api/groupes/$GCODE/coresponsables/Alice" "$TOKEN1")"
+check "u1 retire Chloé → 200"           200 "$(api DELETE "/api/groupes/$GCODE/coresponsables/Chlo%C3%A9" "$TOKEN1")"
+api GET "/api/groupes/$GCODE" "$TOKEN3" > /dev/null
+check "→ elle redevient membre"         membre "$(jval .groupe.role)"
+check "→ toujours dans le groupe"       2   "$(jval .groupe.nbMembres)"
+check "et ne pose plus le verset → 403" 403 "$(api POST "/api/groupes/$GCODE/verset" "$TOKEN3" '{"reference":"Jean 1.1","texte":"Au commencement était la Parole."}')"
+
 say "Groupes — l'identité du nom (mots-clés à liste blanche, responsable seul)"
 check "par défaut : classique / posee"  "classique,posee" "$(api GET "/api/groupes/$GCODE" "$TOKEN1" > /dev/null; jval '.groupe.nomStyle + "," + .groupe.nomTaille')"
 check "posée par u3 (membre) → 403"     403 "$(api POST "/api/groupes/$GCODE/identite" "$TOKEN3" '{"style":"moderne","taille":"posee"}')"

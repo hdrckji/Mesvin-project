@@ -374,10 +374,13 @@ function delete_user_completely(PDO $pdo, array $user): void {
         $st = $pdo->prepare('SELECT id FROM groupes WHERE responsable_id = ?');
         $st->execute([$id]);
         foreach (array_column($st->fetchAll(), 'id') as $groupeId) {
+            // L'héritier naturel : un co-responsable d'abord (il nourrit déjà
+            // l'assemblée), sinon le membre le plus ancien.
             $st = $pdo->prepare(
-                'SELECT user_id FROM groupe_membres
+                "SELECT user_id FROM groupe_membres
                  WHERE groupe_id = ? AND user_id <> ?
-                 ORDER BY joined_at ASC, user_id ASC LIMIT 1'
+                 ORDER BY CASE WHEN role = 'coresponsable' THEN 0 ELSE 1 END ASC,
+                          joined_at ASC, user_id ASC LIMIT 1"
             );
             $st->execute([$groupeId, $id]);
             $heritier = $st->fetch();

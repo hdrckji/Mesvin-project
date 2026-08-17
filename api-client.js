@@ -127,6 +127,9 @@
     // Le nom de l'église, mis en forme — des MOTS-CLÉS d'une liste blanche
     // (style : classique|moderne|solennelle ; taille : discrete|posee|majestueuse).
     async groupeIdentite(code, style, taille) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/identite', { style, taille })).groupe; },
+    // L'équipe qui nourrit avec le responsable — nommée et retirée par LUI seul.
+    async groupeCorespAjouter(code, pseudo) { return call('POST', '/api/groupes/' + encodeURIComponent(code) + '/coresponsables', { pseudo }); },
+    async groupeCorespRetirer(code, pseudo) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/coresponsables/' + encodeURIComponent(pseudo)); },
     // La création d'un groupe passe par une DEMANDE validée par l'administrateur —
     // jamais de création directe depuis l'appli. L'adresse de l'église est
     // obligatoire ; l'e-mail de contact est facultatif (omis si vide).

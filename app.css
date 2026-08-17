@@ -663,7 +663,9 @@ summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; 
 .egl-service .es-actions .linkbtn { font-size: .82rem; }
 
 .linkbtn.danger { color: var(--danger); }
-.fr-passation { flex-shrink: 0; font-size: .8rem; text-align: right; }
+/* Les gestes du responsable sur un membre : empilés à droite, discrets. */
+.fr-actions { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.fr-actions .linkbtn { font-size: .78rem; padding: 2px 0; text-align: right; }
 
 /* L'écran de sélection des banques d'église : une longue liste qui défile
    dans son cadre, la page reste en place. */

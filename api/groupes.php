@@ -47,7 +47,23 @@ function groupe_load(PDO $pdo, string $rawCode): array {
     return $groupe;
 }
 
-/** Rôle de l'utilisateur dans le groupe ('responsable' | 'membre'), ou null. */
+/* ---- Les trois rôles -------------------------------------------------------
+   - responsable   : le porteur du groupe. Seul à nommer des co-responsables,
+                     transmettre le groupe, le supprimer, mettre en forme son
+                     nom. Il n'y en a qu'UN (groupe_set_responsable y veille).
+   - coresponsable : l'équipe qui NOURRIT avec lui — verset de la semaine,
+                     page de l'église, banques de questions, quiz d'église.
+                     Autant que nécessaire, dans la limite ci-dessous.
+   - membre        : lit la page, lève la main, apprend les versets.
+   Toute autorisation d'animation passe par groupe_peut_animer() — un seul
+   endroit à relire pour savoir qui peut nourrir l'assemblée. */
+const GROUPE_MAX_CORESPONSABLES = 10;
+
+function groupe_peut_animer(?string $role): bool {
+    return $role === 'responsable' || $role === 'coresponsable';
+}
+
+/** Rôle de l'utilisateur dans le groupe ('responsable' | 'coresponsable' | 'membre'), ou null. */
 function groupe_role(PDO $pdo, int $groupeId, int $userId): ?string {
     $st = $pdo->prepare('SELECT role FROM groupe_membres WHERE groupe_id = ? AND user_id = ?');
     $st->execute([$groupeId, $userId]);
@@ -251,8 +267,8 @@ function handle_groupes_verset(PDO $pdo, string $rawCode): never {
     $user = require_user($pdo);
     $groupe = groupe_load($pdo, $rawCode);
     $role = groupe_role($pdo, (int) $groupe['id'], (int) $user['id']);
-    if ($role !== 'responsable') {
-        json_error('Seul le responsable du groupe peut poser le verset de la semaine.', 403);
+    if (!groupe_peut_animer($role)) {
+        json_error('Seuls le responsable et ses co-responsables posent le verset de la semaine.', 403);
     }
 
     $body = read_json_body();
@@ -272,7 +288,81 @@ function handle_groupes_verset(PDO $pdo, string $rawCode): never {
 
     $st = $pdo->prepare('SELECT * FROM groupes WHERE id = ?');
     $st->execute([$groupe['id']]);
-    json_out(['groupe' => groupe_payload($pdo, $st->fetch(), 'responsable')]);
+    // Le rôle rendu est celui de l'appelant — un co-responsable ne se voit
+    // pas promu par le simple fait d'avoir posé le verset.
+    json_out(['groupe' => groupe_payload($pdo, $st->fetch(), $role)]);
+}
+
+/* ---- Les co-responsables : l'équipe qui nourrit avec le responsable ------------- */
+
+/**
+ * Le membre désigné par son pseudo, dans ce groupe, hors l'appelant — la
+ * seule identité que le groupe expose. 404 s'il n'y est pas, 409 si deux
+ * membres le portent (on refuse plutôt que de deviner).
+ */
+function groupe_membre_par_pseudo(PDO $pdo, int $groupeId, string $pseudo, int $saufUserId): array {
+    $st = $pdo->prepare(
+        'SELECT u.id, m.role FROM groupe_membres m JOIN users u ON u.id = m.user_id
+         WHERE m.groupe_id = ? AND u.pseudo = ? AND u.id <> ?'
+    );
+    $st->execute([$groupeId, $pseudo, $saufUserId]);
+    $trouves = $st->fetchAll();
+    if ($trouves === []) {
+        json_error('Aucun autre membre de ce groupe ne porte ce pseudo.', 404);
+    }
+    if (count($trouves) > 1) {
+        json_error('Deux membres portent ce pseudo — demande à l\'un d\'eux d\'en changer, puis réessaie.', 409);
+    }
+    return $trouves[0];
+}
+
+/* ---- POST /api/groupes/{code}/coresponsables — nommer -------------------------- */
+
+function handle_groupes_coresp_add(PDO $pdo, string $rawCode): never {
+    $user = require_user($pdo);
+    $groupe = groupe_load($pdo, $rawCode);
+    $groupeId = (int) $groupe['id'];
+    // Nommer et retirer restent au responsable SEUL : une équipe ne se
+    // co-opte pas elle-même, sinon le porteur perd la main sur son groupe.
+    if (groupe_role($pdo, $groupeId, (int) $user['id']) !== 'responsable') {
+        json_error('Seul le responsable du groupe nomme ses co-responsables.', 403);
+    }
+    $body = read_json_body();
+    $pseudo = trim((string) ($body['pseudo'] ?? ''));
+    if ($pseudo === '' || mb_strlen($pseudo) > 40) {
+        json_error('Indique le pseudo du membre à nommer co-responsable.', 400);
+    }
+    $membre = groupe_membre_par_pseudo($pdo, $groupeId, $pseudo, (int) $user['id']);
+    if ($membre['role'] === 'coresponsable') {
+        json_error('Ce membre est déjà co-responsable.', 409);
+    }
+    $st = $pdo->prepare("SELECT COUNT(*) AS n FROM groupe_membres WHERE groupe_id = ? AND role = 'coresponsable'");
+    $st->execute([$groupeId]);
+    if ((int) $st->fetch()['n'] >= GROUPE_MAX_CORESPONSABLES) {
+        json_error('Ce groupe a déjà ' . GROUPE_MAX_CORESPONSABLES . ' co-responsables — c\'est le maximum.', 400);
+    }
+    $pdo->prepare("UPDATE groupe_membres SET role = 'coresponsable' WHERE groupe_id = ? AND user_id = ?")
+        ->execute([$groupeId, (int) $membre['id']]);
+    json_out(['ok' => true]);
+}
+
+/* ---- DELETE /api/groupes/{code}/coresponsables/{pseudo} — retirer -------------- */
+
+function handle_groupes_coresp_remove(PDO $pdo, string $rawCode, string $pseudo): never {
+    $user = require_user($pdo);
+    $groupe = groupe_load($pdo, $rawCode);
+    $groupeId = (int) $groupe['id'];
+    if (groupe_role($pdo, $groupeId, (int) $user['id']) !== 'responsable') {
+        json_error('Seul le responsable du groupe retire un co-responsable.', 403);
+    }
+    $membre = groupe_membre_par_pseudo($pdo, $groupeId, $pseudo, (int) $user['id']);
+    if ($membre['role'] !== 'coresponsable') {
+        json_error('Ce membre n\'est pas co-responsable.', 404);
+    }
+    // Il redevient simple membre — il ne perd jamais sa place dans le groupe.
+    $pdo->prepare("UPDATE groupe_membres SET role = 'membre' WHERE groupe_id = ? AND user_id = ?")
+        ->execute([$groupeId, (int) $membre['id']]);
+    json_out(['ok' => true]);
 }
 
 /* ---- La passation de responsabilité --------------------------------------------- */
@@ -318,22 +408,10 @@ function handle_groupes_passation(PDO $pdo, string $rawCode): never {
     if ($pseudo === '' || mb_strlen($pseudo) > 40) {
         json_error('Indique le pseudo du membre à qui confier le groupe.', 400);
     }
-    $st = $pdo->prepare(
-        'SELECT u.id FROM groupe_membres m JOIN users u ON u.id = m.user_id
-         WHERE m.groupe_id = ? AND u.pseudo = ? AND u.id <> ?'
-    );
-    $st->execute([$groupeId, $pseudo, $user['id']]);
-    $candidats = $st->fetchAll();
-    if ($candidats === []) {
-        json_error('Aucun autre membre de ce groupe ne porte ce pseudo.', 404);
-    }
-    if (count($candidats) > 1) {
-        // Les pseudos ne sont pas uniques : deux homonymes dans le groupe et
-        // la désignation devient ambiguë — on refuse plutôt que de deviner.
-        json_error('Deux membres portent ce pseudo — demande à l\'un d\'eux d\'en changer, puis réessaie.', 409);
-    }
-
-    groupe_set_responsable($pdo, $groupeId, (int) $candidats[0]['id']);
+    // Les pseudos ne sont pas uniques : la recherche refuse les homonymes
+    // plutôt que de deviner (groupe_membre_par_pseudo).
+    $successeur = groupe_membre_par_pseudo($pdo, $groupeId, $pseudo, (int) $user['id']);
+    groupe_set_responsable($pdo, $groupeId, (int) $successeur['id']);
 
     // L'appelant est désormais simple membre : son nouveau regard sur le groupe.
     $st = $pdo->prepare('SELECT * FROM groupes WHERE id = ?');

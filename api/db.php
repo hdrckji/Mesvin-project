@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 3;
+const DB_MIGRATION_DERNIERE = 4;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1037,10 +1037,18 @@ function db_migrate(PDO $pdo): void {
             "ALTER TABLE groupe_service_inscriptions ADD COLUMN rappel_envoye INTEGER NOT NULL DEFAULT 0",
         ];
 
+    /* ---- Étape 4 — de la place pour « coresponsable » ---------------------------
+       Le rôle tenait en VARCHAR(12) ; « coresponsable » fait 13 caractères et
+       serait tronqué (voire refusé) par MySQL. SQLite ignore la longueur d'un
+       VARCHAR : l'étape est vide de son côté, mais elle prend son tampon. */
+    $etape4 = db_driver($pdo) === 'mysql'
+        ? ['ALTER TABLE groupe_membres MODIFY role VARCHAR(20) NOT NULL']
+        : [];
+
     /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
-    foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3] as $version => $liste) {
+    foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }

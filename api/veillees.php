@@ -398,8 +398,8 @@ function handle_veillees_create(PDO $pdo): never {
         if ($groupeLie === false) {
             json_error('Groupe introuvable — vérifie le code.', 404);
         }
-        if (groupe_role($pdo, (int) $groupeLie['id'], (int) $user['id']) !== 'responsable') {
-            json_error('Seul le responsable du groupe peut lancer un quiz dans son église.', 403);
+        if (!groupe_peut_animer(groupe_role($pdo, (int) $groupeLie['id'], (int) $user['id']))) {
+            json_error('Seuls le responsable et ses co-responsables lancent un quiz dans leur église.', 403);
         }
     }
 

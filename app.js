@@ -2122,6 +2122,10 @@ function viewEglise() {
     </div>`;
   }
   const g = egliseCourante();
+  // Deux niveaux : NOURRIR l'assemblée (responsable et co-responsables) et
+  // PORTER le groupe (le responsable seul : nommer l'équipe, transmettre,
+  // mettre en forme le nom). Le serveur revérifie l'un comme l'autre.
+  const anime = peutAnimer(g);
   const resp = g.role === 'responsable';
   const d = groupeDetails[g.code];
   const p = pageCache[g.code];
@@ -2161,15 +2165,15 @@ function viewEglise() {
 
   const tete = `<div class="card fade">
     <div class="egl-nom egl-nom-${style} egl-nom-t-${taille}">${esc(g.nom)}</div>
-    <p class="muted center" style="margin:4px 0 0;font-size:.85rem">${resp ? 'Tu es responsable' : 'Tu es membre'} · ${g.nbMembres} membre${g.nbMembres > 1 ? 's' : ''}</p>
+    <p class="muted center" style="margin:4px 0 0;font-size:.85rem">Tu es ${ROLE_NOMS[g.role] || 'membre'} · ${g.nbMembres} membre${g.nbMembres > 1 ? 's' : ''}</p>
     ${identite}
     ${g.verset
       ? `<div class="grp-verset"><div class="gv-label">Verset de la semaine</div>
           <p class="gv-texte">« ${esc(g.verset.texte)} »</p>
           <p class="gv-ref">${esc(g.verset.reference)}</p></div>`
-      : `<p class="muted" style="margin:10px 2px 0">Pas encore de verset de la semaine${resp ? ' — à toi de l\'offrir au groupe.' : '.'}</p>`}
+      : `<p class="muted" style="margin:10px 2px 0">Pas encore de verset de la semaine${anime ? ' — à toi de l\'offrir au groupe.' : '.'}</p>`}
     ${apprendre}
-    ${resp ? egliseVersetForm(g) : ''}
+    ${anime ? egliseVersetForm(g) : ''}
   </div>`;
 
   const alerte = (pageNotice ? `<p class="field-ok" style="margin:8px 2px">${esc(pageNotice)}</p>` : '')
@@ -2184,13 +2188,13 @@ function viewEglise() {
   } else {
     const vieux = meta && meta.horsLigne && meta.quand
       ? `<p class="muted" style="font-size:.85rem;margin:6px 2px 0">Hors-ligne — page du ${dateAnnonceFr(meta.quand)}.</p>` : '';
-    corpsPage = vieux + egliseAnnonces(g, p, resp) + egliseRdv(g, p, resp) + egliseServices(g, p, resp);
+    corpsPage = vieux + egliseAnnonces(g, p, anime) + egliseRdv(g, p, anime) + egliseServices(g, p, anime);
   }
 
-  // Le coin du responsable : le code qui ouvre la porte, et la porte de la
-  // banque de questions (l'écran lui-même vit dans le module Défi).
-  const coinResp = resp ? `
-    <div class="section-title">${icon('outil')} Coin du responsable</div>
+  // Le coin de l'équipe : le code qui ouvre la porte, et la porte des banques
+  // de questions — ouvert au responsable comme à ses co-responsables.
+  const coinResp = anime ? `
+    <div class="section-title">${icon('outil')} Coin de l'équipe</div>
     <div class="card fade">
       <div class="friend-code-row">
         <div><div class="fc-label">Code du groupe</div><div class="friend-code">${esc(g.code)}</div></div>
@@ -2208,9 +2212,13 @@ function viewEglise() {
       ${d && Array.isArray(d.membres)
         ? d.membres.map(m => `<div class="friend-row">
             <span class="fr-avatar">${icon('moi', 18)}</span>
-            <span class="fr-main"><b>${esc(m.pseudo)}</b><br><span class="muted fr-since">${m.role === 'responsable' ? 'responsable' : 'membre'}</span></span>
-            ${resp && m.role !== 'responsable'
-              ? `<button class="linkbtn fr-passation" data-passation="${esc(m.pseudo)}">Confier la responsabilité</button>` : ''}
+            <span class="fr-main"><b>${esc(m.pseudo)}</b><br><span class="muted fr-since">${ROLE_NOMS[m.role] || 'membre'}</span></span>
+            ${resp && m.role !== 'responsable' ? `<span class="fr-actions">
+              ${m.role === 'coresponsable'
+                ? `<button class="linkbtn" data-corespoff="${esc(m.pseudo)}">Retirer des co-responsables</button>`
+                : `<button class="linkbtn" data-corespon="${esc(m.pseudo)}">Nommer co-responsable</button>`}
+              <button class="linkbtn" data-passation="${esc(m.pseudo)}">Confier la responsabilité</button>
+            </span>` : ''}
           </div>`).join('')
         : `<p class="muted fr-empty">La liste des membres apparaîtra dès que tu seras en ligne.</p>`}
       <button class="linkbtn" data-grpleave="${esc(g.code)}" data-nom="${esc(g.nom)}">Quitter ce groupe</button>
@@ -2237,40 +2245,40 @@ function egliseVersetForm(g) {
   return `<button class="btn btn-soft btn-block" data-versetedit="${esc(g.code)}" style="margin-top:12px">${g.verset ? 'Changer le verset de la semaine' : 'Définir le verset de la semaine'}</button>`;
 }
 
-function egliseAnnonces(g, p, resp) {
+function egliseAnnonces(g, p, anime) {
   const forme = pageEdit && pageEdit.type === 'annonce' ? egliseFormAnnonce() : '';
   const liste = p.annonces.length
     ? p.annonces.map(a => `<div class="egl-annonce fade ${a.epingle ? 'epingle' : ''}">
         <div class="ea-titre">${a.epingle ? '<span class="ea-pin" title="Épinglée">📌</span> ' : ''}<b>${esc(a.titre)}</b></div>
         <p class="ea-texte">${multiligne(a.texte)}</p>
-        <div class="ea-meta muted">${dateAnnonceFr(a.date)}${resp ? ` ·
+        <div class="ea-meta muted">${dateAnnonceFr(a.date)}${anime ? ` ·
           <button class="linkbtn" data-pageedit="annonce" data-id="${a.id}">Modifier</button>
           <button class="linkbtn" data-pagepin="${a.id}">${a.epingle ? 'Désépingler' : 'Épingler'}</button>
           <button class="linkbtn danger" data-pagedel="annonce" data-id="${a.id}" data-nom="${esc(a.titre)}">Supprimer</button>` : ''}</div>
       </div>`).join('')
-    : `<p class="muted fr-empty">${resp ? 'Aucune annonce — la première nouvelle de l\'assemblée se pose ici.' : 'Pas d\'annonce pour l\'instant.'}</p>`;
+    : `<p class="muted fr-empty">${anime ? 'Aucune annonce — la première nouvelle de l\'assemblée se pose ici.' : 'Pas d\'annonce pour l\'instant.'}</p>`;
   return `<div class="section-title">${icon('cloche')} Annonces</div>
     ${forme || `<div class="card fade">${liste}
-      ${resp && !pageEdit ? `<button class="btn btn-soft btn-block" data-pageedit="annonce" style="margin-top:10px">Nouvelle annonce</button>` : ''}</div>`}`;
+      ${anime && !pageEdit ? `<button class="btn btn-soft btn-block" data-pageedit="annonce" style="margin-top:10px">Nouvelle annonce</button>` : ''}</div>`}`;
 }
 
-function egliseRdv(g, p, resp) {
+function egliseRdv(g, p, anime) {
   const forme = pageEdit && pageEdit.type === 'rdv' ? egliseFormRdv() : '';
   const liste = p.rdv.length
     ? p.rdv.map(r => `<div class="egl-rdv">
         <span class="er-quand"><b>${JOURS_SEMAINE[r.jour] || '?'}</b> ${esc(r.heure)}</span>
         <span class="er-quoi">${esc(r.libelle)}${r.lieu ? `<br><span class="muted">${esc(r.lieu)}</span>` : ''}</span>
-        ${resp ? `<span class="er-actions">
+        ${anime ? `<span class="er-actions">
           <button class="linkbtn" data-pageedit="rdv" data-id="${r.id}">Modifier</button>
           <button class="linkbtn danger" data-pagedel="rdv" data-id="${r.id}" data-nom="${esc(r.libelle)}">Supprimer</button></span>` : ''}
       </div>`).join('')
-    : `<p class="muted fr-empty">${resp ? 'Aucun rendez-vous — pose le culte, la prière, l\'étude…' : 'Pas encore de rendez-vous réguliers.'}</p>`;
+    : `<p class="muted fr-empty">${anime ? 'Aucun rendez-vous — pose le culte, la prière, l\'étude…' : 'Pas encore de rendez-vous réguliers.'}</p>`;
   return `<div class="section-title">${icon('assiduite')} La semaine de l'assemblée</div>
     ${forme || `<div class="card fade">${liste}
-      ${resp && !pageEdit ? `<button class="btn btn-soft btn-block" data-pageedit="rdv" style="margin-top:10px">Ajouter un rendez-vous</button>` : ''}</div>`}`;
+      ${anime && !pageEdit ? `<button class="btn btn-soft btn-block" data-pageedit="rdv" style="margin-top:10px">Ajouter un rendez-vous</button>` : ''}</div>`}`;
 }
 
-function egliseServices(g, p, resp) {
+function egliseServices(g, p, anime) {
   const forme = pageEdit && pageEdit.type === 'service' ? egliseFormService() : '';
   const liste = p.services.length
     ? p.services.map(s => {
@@ -2286,17 +2294,17 @@ function egliseServices(g, p, resp) {
         <div class="muted" style="font-size:.88rem">${dateServiceFr(s.date)}</div>
         ${s.details ? `<p class="es-details">${multiligne(s.details)}</p>` : ''}
         ${s.inscrits.length ? `<p class="muted es-inscrits">${s.inscrits.map(esc).join(' · ')}</p>` : ''}
-        <div class="es-actions">${main}${resp ? `
+        <div class="es-actions">${main}${anime ? `
           <button class="linkbtn" data-pageedit="service" data-id="${s.id}">Modifier</button>
           <button class="linkbtn danger" data-pagedel="service" data-id="${s.id}" data-nom="${esc(s.titre)}">Supprimer</button>` : ''}</div>
       </div>`;
     }).join('')
-    : `<p class="muted fr-empty">${resp ? 'Aucun service à venir — propose un coup de main, chacun lèvera la main s\'il le veut.' : 'Pas de service proposé pour l\'instant.'}</p>`;
+    : `<p class="muted fr-empty">${anime ? 'Aucun service à venir — propose un coup de main, chacun lèvera la main s\'il le veut.' : 'Pas de service proposé pour l\'instant.'}</p>`;
   return `<div class="section-title">${icon('partage')} Services — je lève la main</div>
     ${forme || `<div class="card fade">${liste}
       ${p.services.some(s => s.jeSuisInscrit)
         ? `<p class="muted" style="font-size:.82rem;margin:10px 2px 0">Si les notifications de l'appli sont activées, un rappel doux te parvient la veille de ton service.</p>` : ''}
-      ${resp && !pageEdit ? `<button class="btn btn-soft btn-block" data-pageedit="service" style="margin-top:10px">Proposer un service</button>` : ''}</div>`}`;
+      ${anime && !pageEdit ? `<button class="btn btn-soft btn-block" data-pageedit="service" style="margin-top:10px">Proposer un service</button>` : ''}</div>`}`;
 }
 
 /* ---- Les trois formulaires du responsable (création et modification) ---- */
@@ -2423,6 +2431,29 @@ async function doPagePin(id) {
 
 /* ---- L'identité du nom et le pont verset → jardin ---- */
 let egliseIdEdit = false; // les pastilles de mise en forme du nom, dépliées ?
+const ROLE_NOMS = { responsable: 'responsable', coresponsable: 'co-responsable', membre: 'membre' };
+// Qui peut nourrir l'assemblée (miroir de groupe_peut_animer, côté serveur) :
+// le client ne fait que montrer ou cacher — chaque écriture est revérifiée.
+const peutAnimer = g => !!g && (g.role === 'responsable' || g.role === 'coresponsable');
+
+async function doCoresponsable(pseudo, nommer) {
+  const g = egliseCourante(); if (!g) return;
+  if (nommer && !confirm(`Nommer ${pseudo} co-responsable de « ${g.nom} » ? ${pseudo} pourra nourrir la page, poser le verset et animer les quiz — mais ne pourra ni transmettre ni supprimer le groupe.`)) return;
+  pageNotice = pageError = null;
+  try {
+    if (nommer) {
+      await GraineAPI.groupeCorespAjouter(g.code, pseudo);
+      pageNotice = `${pseudo} nourrit l'assemblée avec toi 🙂`;
+    } else {
+      await GraineAPI.groupeCorespRetirer(g.code, pseudo);
+      pageNotice = `${pseudo} redevient membre — toujours des vôtres.`;
+    }
+    egliseRecharger();
+  } catch (e) {
+    pageError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
+  }
+  render();
+}
 
 /* L'id de carte du verset de la semaine : stable pour une même référence —
    retaper le bouton ne crée jamais de doublon dans le jardin. */
@@ -2571,7 +2602,7 @@ function bqItemMeta(module, it) {
 function viewEgliseBanques() {
   const user = window.GraineAPI ? GraineAPI.user() : null;
   const g = egliseCourante();
-  if (!user || !g || g.role !== 'responsable') {
+  if (!user || !peutAnimer(g)) {
     return topbar() + `<div class="card fade" style="margin-top:14px">
       <p style="margin:0 0 12px"><b>Les banques de questions</b> se règlent par le responsable d'une église.</p>
       <button class="btn btn-soft btn-block" data-tab="eglise">Revenir à Mon église</button>
@@ -3116,6 +3147,8 @@ function wire() {
   el.querySelectorAll('[data-pagepin]').forEach(b => b.addEventListener('click', () => doPagePin(+b.dataset.pagepin)));
   el.querySelectorAll('[data-svcmain]').forEach(b => b.addEventListener('click', () => doServiceMain(+b.dataset.svcmain, b.dataset.inscrit === '1')));
   el.querySelectorAll('[data-passation]').forEach(b => b.addEventListener('click', () => doGroupePassation(b.dataset.passation)));
+  el.querySelectorAll('[data-corespon]').forEach(b => b.addEventListener('click', () => doCoresponsable(b.dataset.corespon, true)));
+  el.querySelectorAll('[data-corespoff]').forEach(b => b.addEventListener('click', () => doCoresponsable(b.dataset.corespoff, false)));
   if (q('[data-apprendre]')) q('[data-apprendre]').addEventListener('click', doApprendreVerset);
   if (q('[data-eglidopen]')) q('[data-eglidopen]').addEventListener('click', () => { egliseIdEdit = true; render(); });
   if (q('[data-eglidclose]')) q('[data-eglidclose]').addEventListener('click', () => { egliseIdEdit = false; render(); });

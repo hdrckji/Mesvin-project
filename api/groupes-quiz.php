@@ -42,8 +42,8 @@ function groupe_quiz_ctx(PDO $pdo, string $rawCode, bool $responsableSeul): arra
     if ($role === null) {
         json_error('Réservé aux membres du groupe.', 403);
     }
-    if ($responsableSeul && $role !== 'responsable') {
-        json_error('Seul le responsable du groupe peut gérer la banque de quiz.', 403);
+    if ($responsableSeul && !groupe_peut_animer($role)) {
+        json_error('Seuls le responsable et ses co-responsables gèrent la banque de quiz.', 403);
     }
     return $groupe;
 }
