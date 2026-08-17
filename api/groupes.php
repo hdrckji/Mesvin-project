@@ -241,6 +241,72 @@ function handle_groupes_verset(PDO $pdo, string $rawCode): never {
     json_out(['groupe' => groupe_payload($pdo, $st->fetch(), 'responsable')]);
 }
 
+/* ---- La passation de responsabilité --------------------------------------------- */
+
+/**
+ * L'entonnoir UNIQUE du changement de responsable : les deux écritures
+ * (groupes.responsable_id et groupe_membres.role) ne se font jamais
+ * ailleurs, et jamais séparément — sinon un groupe finirait avec deux
+ * responsables, ou aucun. Utilisé par la passation volontaire ci-dessous
+ * ET par l'héritage à la suppression d'un compte (auth.php).
+ */
+function groupe_set_responsable(PDO $pdo, int $groupeId, int $userId): void {
+    $ownTx = !$pdo->inTransaction();
+    if ($ownTx) $pdo->beginTransaction();
+    try {
+        $pdo->prepare('UPDATE groupes SET responsable_id = ? WHERE id = ?')
+            ->execute([$userId, $groupeId]);
+        $pdo->prepare("UPDATE groupe_membres SET role = 'membre' WHERE groupe_id = ? AND role = 'responsable'")
+            ->execute([$groupeId]);
+        $pdo->prepare("UPDATE groupe_membres SET role = 'responsable' WHERE groupe_id = ? AND user_id = ?")
+            ->execute([$groupeId, $userId]);
+        if ($ownTx) $pdo->commit();
+    } catch (Throwable $e) {
+        if ($ownTx) $pdo->rollBack();
+        throw $e;
+    }
+}
+
+/* ---- POST /api/groupes/{code}/passation — confier la responsabilité ------------- */
+
+function handle_groupes_passation(PDO $pdo, string $rawCode): never {
+    $user = require_user($pdo);
+    $groupe = groupe_load($pdo, $rawCode);
+    $groupeId = (int) $groupe['id'];
+    if (groupe_role($pdo, $groupeId, (int) $user['id']) !== 'responsable') {
+        json_error('Seul le responsable du groupe peut transmettre la responsabilité.', 403);
+    }
+
+    // Le successeur se désigne par son pseudo — la seule identité que le
+    // groupe expose (jamais d'e-mail, jamais d'identifiant technique).
+    $body = read_json_body();
+    $pseudo = trim((string) ($body['pseudo'] ?? ''));
+    if ($pseudo === '' || mb_strlen($pseudo) > 40) {
+        json_error('Indique le pseudo du membre à qui confier le groupe.', 400);
+    }
+    $st = $pdo->prepare(
+        'SELECT u.id FROM groupe_membres m JOIN users u ON u.id = m.user_id
+         WHERE m.groupe_id = ? AND u.pseudo = ? AND u.id <> ?'
+    );
+    $st->execute([$groupeId, $pseudo, $user['id']]);
+    $candidats = $st->fetchAll();
+    if ($candidats === []) {
+        json_error('Aucun autre membre de ce groupe ne porte ce pseudo.', 404);
+    }
+    if (count($candidats) > 1) {
+        // Les pseudos ne sont pas uniques : deux homonymes dans le groupe et
+        // la désignation devient ambiguë — on refuse plutôt que de deviner.
+        json_error('Deux membres portent ce pseudo — demande à l\'un d\'eux d\'en changer, puis réessaie.', 409);
+    }
+
+    groupe_set_responsable($pdo, $groupeId, (int) $candidats[0]['id']);
+
+    // L'appelant est désormais simple membre : son nouveau regard sur le groupe.
+    $st = $pdo->prepare('SELECT * FROM groupes WHERE id = ?');
+    $st->execute([$groupeId]);
+    json_out(['groupe' => groupe_payload($pdo, $st->fetch(), 'membre')]);
+}
+
 /* ---- DELETE /api/groupes/{code}/membres/moi — quitter le groupe ----------------- */
 
 function handle_groupes_leave(PDO $pdo, string $rawCode): never {
@@ -254,10 +320,10 @@ function handle_groupes_leave(PDO $pdo, string $rawCode): never {
     if ($role === 'responsable') {
         $nb = groupe_nb_membres($pdo, (int) $groupe['id']);
         if ($nb > 1) {
-            // Pas d'assemblée sans berger : la passation de responsabilité
-            // viendra dans une prochaine version.
+            // Pas d'assemblée sans berger : on transmet d'abord (la passation,
+            // ci-dessus), on quitte ensuite.
             json_error(
-                'Tu es responsable de ce groupe : transmets d\'abord la responsabilité avant de le quitter (la passation arrive dans une prochaine version).',
+                'Tu es responsable de ce groupe : confie d\'abord la responsabilité à un membre (depuis la liste des membres), puis quitte le groupe.',
                 400
             );
         }
@@ -290,6 +356,7 @@ function groupe_delete_completely(PDO $pdo, int $groupeId): void {
     if ($ownTx) $pdo->beginTransaction();
     try {
         groupe_quiz_purge($pdo, $groupeId);
+        groupe_banques_purge($pdo, $groupeId); // banques des épreuves (groupes-banques.php)
         $pdo->prepare(
             'DELETE FROM groupe_service_inscriptions
              WHERE service_id IN (SELECT id FROM groupe_services WHERE groupe_id = ?)'

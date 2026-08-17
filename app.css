@@ -652,6 +652,19 @@ summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; 
 .egl-service .es-actions .linkbtn { font-size: .82rem; }
 
 .linkbtn.danger { color: var(--danger); }
+.fr-passation { flex-shrink: 0; font-size: .8rem; text-align: right; }
+
+/* « Animer dans mon église » : une porte par épreuve, à parts égales. */
+.egl-animer { display: flex; flex-wrap: wrap; gap: 8px; }
+.egl-animer .btn { flex: 1 1 45%; padding: 11px 10px; font-size: .92rem; text-decoration: none; }
+
+/* L'écran de sélection des banques d'église : une longue liste qui défile
+   dans son cadre, la page reste en place. */
+.bq-liste { max-height: 55vh; overflow-y: auto; margin-top: 10px; }
+.bq-choix { display: flex; gap: 10px; align-items: flex-start; padding: 9px 2px; border-top: 1px solid var(--line); cursor: pointer; }
+.bq-choix input { margin-top: 4px; flex-shrink: 0; }
+.bq-choix-txt { min-width: 0; font-size: .92rem; }
+.bq-choix-txt .muted { font-size: .82rem; }
 
 /* ============================================================================
    Les pierres du chemin — badges-souvenirs (Josué 4.21), voir pierres.js

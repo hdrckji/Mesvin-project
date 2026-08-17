@@ -527,7 +527,7 @@ const go = (name, param) => {
 };
 
 function render() {
-  const v = { home: viewHome, memo: viewMemo, study: viewStudy, session: viewSession, moi: viewMoi, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections, account: viewAccount, eglise: viewEglise }[route.name] || viewHome;
+  const v = { home: viewHome, memo: viewMemo, study: viewStudy, session: viewSession, moi: viewMoi, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections, account: viewAccount, eglise: viewEglise, banques: viewEgliseBanques }[route.name] || viewHome;
   el.innerHTML = v() + tabbar();
   wire();
 }
@@ -551,7 +551,8 @@ function tabbar() {
   // L'écran « Mémoriser » (et ses sous-écrans) reste rattaché à l'onglet Accueil ;
   // le jardin et ses versets restent rattachés à l'onglet Moi.
   const cur = ['memo', 'study', 'collections'].includes(route.name) ? 'home'
-    : ['garden', 'verse', 'account'].includes(route.name) ? 'moi' : route.name;
+    : ['garden', 'verse', 'account'].includes(route.name) ? 'moi'
+    : route.name === 'banques' ? 'eglise' : route.name;
   const tab = (n, ic, l) => `<button data-tab="${n}" class="${cur === n ? 'active' : ''}"><span class="ic">${ic}</span>${l}</button>`;
   // L'onglet « Mon église » n'existe que pour qui est dans un groupe : la
   // barre reste à trois onglets pour tous les autres, et l'onglet APPARAÎT
@@ -1447,7 +1448,7 @@ function syncStatusText() {
 // Re-rendre sans gêner : seulement sur Moi, le parcours compte et l'onglet
 // Mon église, et jamais pendant que l'utilisateur écrit dans un champ.
 function renderIfIdle() {
-  if (route.name !== 'moi' && route.name !== 'account' && route.name !== 'eglise') return;
+  if (!['moi', 'account', 'eglise', 'banques'].includes(route.name)) return;
   const a = document.activeElement;
   if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return;
   render();
@@ -1703,6 +1704,8 @@ function egliseOublier() { // à la déconnexion / suppression : plus rien d'ég
   // L'onglet et sa page partent avec le compte — copies hors-ligne comprises :
   // sur un appareil partagé, la page de l'assemblée ne survit pas à la session.
   egliseSel = null; pageCache = {}; pageMeta = {}; pageTentee = {}; pageEdit = null; pageNotice = pageError = null;
+  bqCache = {}; bqTentee = {}; bqSel = null; bqEdit = null; bqNotice = bqError = null;
+  if (route.name === 'banques') route = { name: 'moi', param: null };
   try {
     Object.keys(localStorage)
       .filter(k => k.startsWith(PAGE_CACHE_PREFIX))
@@ -2144,11 +2147,21 @@ function viewEglise() {
         <button class="btn btn-soft" data-copygrp="${esc(g.code)}">Copier</button></div>
       <p class="muted" style="font-size:.85rem;margin:8px 2px 0">Partage-le aux membres de ton église : c'est lui qui ouvre la porte du groupe.</p>
     </div>
-    <a class="card hub-card fade" href="defi/#banque">
+    <button class="card hub-card fade" data-tab="banques">
       <span class="hub-ic">${icon('defi', 26)}</span>
-      <span class="hub-txt"><span class="hub-title">Banque de questions de mon église</span>
-        <span class="hub-sub">Ce que tes quiz d'église utilisent : la banque commune, ta sélection, tes propres questions.</span></span>
-      <span class="chev">›</span></a>` : '';
+      <span class="hub-txt"><span class="hub-title">Banques de questions de mon église</span>
+        <span class="hub-sub">Ce que tes parties d'église utilisent, épreuve par épreuve : la banque commune, ta sélection, tes propres questions.</span></span>
+      <span class="chev">›</span></button>
+    <div class="card fade">
+      <div class="fc-label" style="margin-bottom:4px">Animer dans mon église</div>
+      <p class="muted" style="margin:0 0 10px;font-size:.88rem">Chaque partie lancée d'ici tire dans la banque de ton église.</p>
+      <div class="egl-animer">
+        <a class="btn btn-soft" href="defi/">Qui, où, quand ?</a>
+        <a class="btn btn-soft" href="quiadit/?eglise=${esc(g.code)}">Qui a dit ?</a>
+        <a class="btn btn-soft" href="ecritoupas/?eglise=${esc(g.code)}">Écrit… ou pas ?</a>
+        <a class="btn btn-soft" href="portrait/?eglise=${esc(g.code)}">De qui parle-t-on ?</a>
+      </div>
+    </div>` : '';
 
   const membres = `<div class="section-title">${icon('amis')} Membres</div>
     <div class="card friends-card fade">
@@ -2156,6 +2169,8 @@ function viewEglise() {
         ? d.membres.map(m => `<div class="friend-row">
             <span class="fr-avatar">${icon('moi', 18)}</span>
             <span class="fr-main"><b>${esc(m.pseudo)}</b><br><span class="muted fr-since">${m.role === 'responsable' ? 'responsable' : 'membre'}</span></span>
+            ${resp && m.role !== 'responsable'
+              ? `<button class="linkbtn fr-passation" data-passation="${esc(m.pseudo)}">Confier la responsabilité</button>` : ''}
           </div>`).join('')
         : `<p class="muted fr-empty">La liste des membres apparaîtra dès que tu seras en ligne.</p>`}
       <button class="linkbtn" data-grpleave="${esc(g.code)}" data-nom="${esc(g.nom)}">Quitter ce groupe</button>
@@ -2360,6 +2375,334 @@ async function doPagePin(id) {
     pageRafraichir(g.code);
   } catch (e) {
     pageError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
+  }
+  render();
+}
+
+/* La passation : le groupe change de mains — geste rare et lourd de sens,
+   donc confirmé en toutes lettres. Le serveur revérifie que l'appelant est
+   bien le responsable, et refuse les pseudos ambigus (homonymes). */
+async function doGroupePassation(pseudo) {
+  const g = egliseCourante(); if (!g) return;
+  if (!confirm(`Confier la responsabilité de « ${g.nom} » à ${pseudo} ? Tu resteras membre du groupe, mais ${pseudo} en deviendra le responsable.`)) return;
+  pageNotice = pageError = null;
+  try {
+    await GraineAPI.groupePassation(g.code, pseudo);
+    pageNotice = `« ${g.nom} » est maintenant entre les mains de ${pseudo} 🙂`;
+    egliseRecharger();
+  } catch (e) {
+    pageError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
+  }
+  render();
+}
+
+/* ============================================================================
+   Les banques de mon église — l'éditeur multi-épreuves (responsable seul).
+
+   Une pastille par épreuve « à fichier » (Qui a dit ?, Écrit… ou pas ?,
+   De qui parle-t-on ?) : le mode toutes/sélection, la sélection dans la
+   banque commune, et les items PROPRES de l'église — mêmes règles de
+   validation que l'administration, revérifiées par le serveur (403 pour
+   quiconque n'est pas responsable, lecture comprise : les items portent la
+   bonne réponse). « Qui, où, quand ? » garde son écran dans le module Défi
+   (autre moteur, même esprit) — une carte y mène.
+   ========================================================================== */
+const BQ_MODULES = [
+  { id: 'quiadit', nom: 'Qui a dit ?' },
+  { id: 'ecritoupas', nom: 'Écrit… ou pas ?' },
+  { id: 'portrait', nom: 'De qui parle-t-on ?' },
+];
+let bqModule = 'quiadit';
+let bqCache = {};          // `${code}|${module}` → réglages + items du serveur
+let bqLoading = {}, bqTentee = {};
+let bqCommune = {};        // module → items de la banque commune (écran de sélection)
+let bqSel = null;          // écran de sélection ouvert : { ids: {}, filtre: '' }
+let bqEdit = null;         // formulaire d'item ouvert : { id|null, champs…, busy, error }
+let bqBusy = false;        // changement de mode en vol
+let bqNotice = null, bqError = null;
+
+function bqCle() { const g = egliseCourante(); return g ? g.code + '|' + bqModule : null; }
+
+function ensureBanqueEglise() {
+  const g = egliseCourante(); if (!g) return;
+  const cle = bqCle();
+  if (bqLoading[cle] || bqTentee[cle]) return;
+  bqTentee[cle] = true;
+  bqLoading[cle] = true;
+  GraineAPI.groupeBanque(g.code, bqModule)
+    .then(b => { bqCache[cle] = b; })
+    .catch(e => { bqError = (e && e.offline) ? 'Pas de connexion — la banque apparaîtra en ligne.' : friendlyError(e); })
+    .then(() => { bqLoading[cle] = false; renderIfIdle(); });
+}
+function bqRafraichir() { const cle = bqCle(); delete bqCache[cle]; delete bqTentee[cle]; ensureBanqueEglise(); }
+
+/* L'étiquette d'un item selon sa forme — pour les listes (sélection, propres). */
+function bqItemLibelle(module, it) {
+  if (module === 'quiadit') return it.parole || '';
+  if (module === 'ecritoupas') return it.phrase || '';
+  return it.reponse || '';
+}
+function bqItemMeta(module, it) {
+  if (module === 'quiadit') return `${esc((it.options || [])[it.bonne] || '')} · ${esc(it.reference || '')}`;
+  if (module === 'ecritoupas') return `${it.ecrit ? 'écrit' : 'pas écrit'}${it.reference ? ' · ' + esc(it.reference) : ''}`;
+  return `${esc(it.genre || '')} · ${esc(it.reference || '')}`;
+}
+
+function viewEgliseBanques() {
+  const user = window.GraineAPI ? GraineAPI.user() : null;
+  const g = egliseCourante();
+  if (!user || !g || g.role !== 'responsable') {
+    return topbar() + `<div class="card fade" style="margin-top:14px">
+      <p style="margin:0 0 12px"><b>Les banques de questions</b> se règlent par le responsable d'une église.</p>
+      <button class="btn btn-soft btn-block" data-tab="eglise">Revenir à Mon église</button>
+    </div>`;
+  }
+  const b = bqCache[bqCle()];
+
+  const tete = `<button class="back-link" data-tab="eglise">‹ Mon église</button>
+    <div class="section-title" style="margin-top:6px">${icon('eglise')} Banques de ${esc(g.nom)}</div>
+    <p class="muted" style="margin:0 4px 12px;font-size:.9rem">Ce que les parties lancées « dans mon église » utilisent — les pages publiques restent mondiales.</p>
+    <div class="pill-row" style="margin:0 0 14px">
+      ${BQ_MODULES.map(m => `<button class="pill ${m.id === bqModule ? 'on' : ''}" data-bqmodule="${m.id}">${m.nom}</button>`).join('')}
+    </div>`;
+
+  const alerte = (bqNotice ? `<p class="field-ok" style="margin:0 4px 10px">${esc(bqNotice)}</p>` : '')
+    + (bqError ? `<p class="field-error" style="margin:0 4px 10px">${esc(bqError)}</p>` : '');
+
+  let corps;
+  if (bqEdit) corps = bqFormHTML();
+  else if (bqSel) corps = bqSelectionHTML();
+  else if (!b) corps = `<div class="card fade"><p class="muted fr-empty" style="margin:0">Chargement…</p></div>`;
+  else {
+    const selection = b.mode === 'selection';
+    const reglages = `<div class="card fade">
+      <label class="lbl" style="margin-top:0">La banque commune</label>
+      <div class="pill-row">
+        <button class="pill ${selection ? '' : 'on'}" data-bqmode="toutes" ${bqBusy ? 'disabled' : ''}>Toute la banque commune</button>
+        <button class="pill ${selection ? 'on' : ''}" data-bqmode="selection" ${bqBusy ? 'disabled' : ''}>Ma sélection</button>
+      </div>
+      ${selection ? `
+      <p class="prepa-note">${b.nbSelection
+        ? `${b.nbSelection} item${b.nbSelection > 1 ? 's' : ''} de la banque commune retenu${b.nbSelection > 1 ? 's' : ''}.`
+        : `Rien de retenu pour l'instant — choisis, sinon tes parties d'église n'auront que les items propres.`}</p>
+      <button class="btn btn-soft btn-block" data-bqselouvrir="1" style="margin-top:10px">Choisir les items retenus</button>` : `
+      <p class="prepa-note">Tes parties d'église tirent dans toute la banque commune${b.nbSelection ? ` — ta sélection (${b.nbSelection}) est gardée en attendant` : ''}.</p>`}
+      <p class="prepa-note">En tout : <b>${b.nbTotal}</b> item${b.nbTotal > 1 ? 's' : ''} (banque commune ${selection ? 'retenue' : 'entière'} + items de ton église).</p>
+    </div>`;
+
+    const propres = `<div class="section-title">Les items de ton église${b.nbPropres ? ` (${b.nbPropres})` : ''}</div>
+      <div class="card fade">
+        ${b.items.length ? b.items.map(it => `<div class="egl-annonce">
+            <div class="ea-titre"><b>${esc(bqItemLibelle(bqModule, it))}</b></div>
+            <div class="ea-meta muted">${bqItemMeta(bqModule, it)} ·
+              <button class="linkbtn" data-bqedit="${esc(it.id)}">Modifier</button>
+              <button class="linkbtn danger" data-bqdel="${esc(it.id)}">Supprimer</button></div>
+          </div>`).join('')
+          : `<p class="muted fr-empty" style="margin-top:0">Ton église peut écrire ses propres items — ils s'ajoutent à la banque commune dans ses parties.</p>`}
+        <button class="btn btn-grow btn-block" data-bqedit="" style="margin-top:10px">Nouvel item</button>
+      </div>`;
+
+    corps = reglages + propres;
+  }
+
+  // « Qui, où, quand ? » : sa banque d'église vit dans le module Défi.
+  const defiCard = (bqEdit || bqSel) ? '' : `<a class="card hub-card fade" href="defi/#banque">
+    <span class="hub-ic">${icon('defi', 26)}</span>
+    <span class="hub-txt"><span class="hub-title">Qui, où, quand ?</span>
+      <span class="hub-sub">La banque du grand quiz se règle dans le module Défi — même esprit, autre moteur.</span></span>
+    <span class="chev">›</span></a>`;
+
+  return topbar() + tete + alerte + corps + defiCard;
+}
+
+/* ---- L'écran de sélection dans la banque commune ---- */
+
+function bqSelectionHTML() {
+  const commune = bqCommune[bqModule];
+  if (!commune) return `<div class="card fade"><p class="muted fr-empty" style="margin:0">Chargement de la banque commune…</p></div>`;
+  const filtre = (bqSel.filtre || '').toLowerCase();
+  const visibles = filtre
+    ? commune.filter(it => (bqItemLibelle(bqModule, it) + ' ' + (it.reference || '')).toLowerCase().includes(filtre))
+    : commune;
+  const nb = Object.keys(bqSel.ids).length;
+  return `<div class="card fade">
+    <label class="lbl" for="bqFiltre" style="margin-top:0">Choisir les items retenus (${nb})</label>
+    <input class="field" type="search" id="bqFiltre" placeholder="Filtrer…" value="${esc(bqSel.filtre)}">
+    <div class="bq-liste">
+      ${visibles.map(it => `<label class="bq-choix">
+        <input type="checkbox" data-bqcoche="${esc(String(it.id))}" ${bqSel.ids[it.id] ? 'checked' : ''}>
+        <span class="bq-choix-txt">${esc(bqItemLibelle(bqModule, it))}<br><span class="muted">${bqItemMeta(bqModule, it)}</span></span>
+      </label>`).join('') || `<p class="muted fr-empty">Rien ne correspond au filtre.</p>`}
+    </div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-grow" data-bqselsave="1" ${bqBusy ? 'disabled' : ''}>Retenir (${nb})</button>
+      <button class="btn btn-ghost" data-bqselannuler="1">Annuler</button>
+    </div>
+  </div>`;
+}
+
+/* ---- Le formulaire d'un item, selon la forme de l'épreuve ---- */
+
+function bqFormHTML() {
+  const e = bqEdit;
+  const boutons = `${e.error ? `<p class="field-error">${esc(e.error)}</p>` : ''}
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-grow" type="submit" ${e.busy ? 'disabled' : ''}>${e.id ? 'Enregistrer' : 'Ajouter'}</button>
+      <button class="btn btn-ghost" type="button" data-bqannuler="1">Annuler</button>
+    </div>`;
+  if (bqModule === 'quiadit') {
+    return `<form class="card fade" data-bqform="1">
+      <label class="lbl" for="bqParole" style="margin-top:0">${e.id ? 'Modifier la parole' : 'Nouvelle parole'}</label>
+      <textarea class="field" id="bqParole" maxlength="300" placeholder="« La parole à attribuer… »">${esc(e.parole)}</textarea>
+      ${[0, 1, 2, 3].map(i => `<label class="lbl" for="bqOpt${i}">Voix ${i + 1}${i === Number(e.bonne) ? ' — la bonne' : ''}</label>
+        <input class="field" type="text" id="bqOpt${i}" maxlength="90" autocomplete="off" value="${esc(e.options[i] || '')}">`).join('')}
+      <label class="lbl">La bonne voix</label>
+      <div class="pill-row">${[0, 1, 2, 3].map(i =>
+        `<button class="pill ${Number(e.bonne) === i ? 'on' : ''}" type="button" data-bqbonne="${i}">Voix ${i + 1}</button>`).join('')}</div>
+      <label class="lbl" for="bqRef">Référence</label>
+      <input class="field" type="text" id="bqRef" maxlength="60" placeholder="Jean 14.6" autocomplete="off" value="${esc(e.reference)}">
+      <label class="lbl" for="bqContexte">Contexte révélé (facultatif)</label>
+      <textarea class="field" id="bqContexte" maxlength="300" placeholder="Une précision montrée après la réponse…">${esc(e.contexte)}</textarea>
+      ${boutons}
+    </form>`;
+  }
+  if (bqModule === 'ecritoupas') {
+    return `<form class="card fade" data-bqform="1">
+      <label class="lbl" for="bqPhrase" style="margin-top:0">${e.id ? 'Modifier la phrase' : 'Nouvelle phrase'}</label>
+      <textarea class="field" id="bqPhrase" maxlength="300" placeholder="La phrase — écrite dans la Bible, ou pas ?">${esc(e.phrase)}</textarea>
+      <label class="lbl">Verdict</label>
+      <div class="pill-row">
+        <button class="pill ${e.ecrit ? 'on' : ''}" type="button" data-bqecrit="1">C'est écrit</button>
+        <button class="pill ${e.ecrit ? '' : 'on'}" type="button" data-bqecrit="0">Ce n'est pas écrit</button>
+      </div>
+      <label class="lbl" for="bqRef">Référence${e.ecrit ? ' (une phrase écrite se prouve)' : ' (facultative)'}</label>
+      <input class="field" type="text" id="bqRef" maxlength="60" placeholder="Proverbes 3.5" autocomplete="off" value="${esc(e.reference)}">
+      <label class="lbl" for="bqPrecision">Précision révélée (facultatif)</label>
+      <textarea class="field" id="bqPrecision" maxlength="300" placeholder="D'où vient la confusion, ce que dit vraiment le texte…">${esc(e.precision)}</textarea>
+      ${boutons}
+    </form>`;
+  }
+  return `<form class="card fade" data-bqform="1">
+    <label class="lbl" for="bqReponse" style="margin-top:0">${e.id ? 'Modifier le portrait' : 'Nouveau portrait'}</label>
+    <input class="field" type="text" id="bqReponse" maxlength="60" placeholder="Qui est-ce ? (la réponse)" autocomplete="off" value="${esc(e.reponse)}">
+    <label class="lbl" for="bqAccepte">Orthographes acceptées (séparées par des virgules)</label>
+    <input class="field" type="text" id="bqAccepte" placeholder="Moïse, Moise" autocomplete="off" value="${esc(e.accepte)}">
+    <label class="lbl">Genre</label>
+    <div class="pill-row">${['personnage', 'lieu', 'chose'].map(gr =>
+      `<button class="pill ${e.genre === gr ? 'on' : ''}" type="button" data-bqgenre="${gr}">${gr}</button>`).join('')}</div>
+    ${[0, 1, 2, 3, 4].map(i => `<label class="lbl" for="bqInd${i}">Indice ${i + 1}${i === 0 ? ' (le plus difficile)' : i === 4 ? ' (le plus facile)' : ''}</label>
+      <input class="field" type="text" id="bqInd${i}" maxlength="240" autocomplete="off" value="${esc(e.indices[i] || '')}">`).join('')}
+    <label class="lbl" for="bqRef">Référence</label>
+    <input class="field" type="text" id="bqRef" maxlength="60" placeholder="Exode 2" autocomplete="off" value="${esc(e.reference)}">
+    ${boutons}
+  </form>`;
+}
+
+/* ---- Les actions de l'éditeur ---- */
+
+function bqOuvrirForm(id) {
+  const b = bqCache[bqCle()]; if (!b) return;
+  const it = id ? b.items.find(x => x.id === id) : null;
+  bqNotice = bqError = null;
+  if (bqModule === 'quiadit') {
+    bqEdit = { id: it ? it.id : null, parole: it ? it.parole : '', options: it ? it.options.slice() : ['', '', '', ''],
+      bonne: it ? it.bonne : 0, reference: it ? it.reference : '', contexte: it && it.contexte ? it.contexte : '', busy: false, error: null };
+  } else if (bqModule === 'ecritoupas') {
+    bqEdit = { id: it ? it.id : null, phrase: it ? it.phrase : '', ecrit: it ? !!it.ecrit : true,
+      reference: it && it.reference ? it.reference : '', precision: it && it.precision ? it.precision : '', busy: false, error: null };
+  } else {
+    bqEdit = { id: it ? it.id : null, reponse: it ? it.reponse : '', accepte: it ? (it.accepte || []).join(', ') : '',
+      genre: it ? it.genre : 'personnage', indices: it ? it.indices.slice() : ['', '', '', '', ''],
+      reference: it ? it.reference : '', busy: false, error: null };
+  }
+  render();
+}
+
+async function doBqMode(mode) {
+  const g = egliseCourante(); if (!g || bqBusy) return;
+  bqBusy = true; bqNotice = bqError = null; render();
+  try {
+    bqCache[bqCle()] = await GraineAPI.groupeBanqueMode(g.code, bqModule, mode);
+  } catch (e) {
+    bqError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
+  }
+  bqBusy = false;
+  render();
+}
+
+async function doBqSelOuvrir() {
+  const b = bqCache[bqCle()]; if (!b) return;
+  const ids = {};
+  b.selection.forEach(id => { ids[id] = true; });
+  bqSel = { ids, filtre: '' };
+  bqNotice = bqError = null;
+  render();
+  if (!bqCommune[bqModule]) {
+    try {
+      const d = await GraineAPI.banque(bqModule);
+      bqCommune[bqModule] = (d && d.items) || [];
+    } catch (e) {
+      bqSel = null;
+      bqError = (e && e.offline) ? 'Pas de connexion — la banque commune est introuvable.' : friendlyError(e);
+    }
+    render();
+  }
+}
+
+async function doBqSelSave() {
+  const g = egliseCourante(); if (!g || !bqSel || bqBusy) return;
+  bqBusy = true; render();
+  try {
+    bqCache[bqCle()] = await GraineAPI.groupeBanqueSelection(g.code, bqModule, Object.keys(bqSel.ids));
+    bqSel = null;
+    bqNotice = 'Sélection retenue pour tes parties d\'église.';
+  } catch (e) {
+    bqError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
+  }
+  bqBusy = false;
+  render();
+}
+
+async function doBqItemSave() {
+  const g = egliseCourante(); const e = bqEdit;
+  if (!g || !e || e.busy) return;
+  e.busy = true; e.error = null; render();
+  let corps;
+  if (bqModule === 'quiadit') {
+    corps = { parole: e.parole, options: e.options.map(o => o || ''), bonne: Number(e.bonne),
+      reference: e.reference, contexte: e.contexte.trim() === '' ? null : e.contexte };
+  } else if (bqModule === 'ecritoupas') {
+    corps = { phrase: e.phrase, ecrit: !!e.ecrit,
+      reference: e.reference.trim() === '' ? null : e.reference,
+      precision: e.precision.trim() === '' ? null : e.precision };
+  } else {
+    corps = { reponse: e.reponse, accepte: e.accepte.split(',').map(a => a.trim()).filter(Boolean),
+      genre: e.genre, indices: e.indices.map(i => i || ''), reference: e.reference };
+  }
+  if (e.id) corps.id = e.id;
+  try {
+    await GraineAPI.groupeBanqueItemSave(g.code, bqModule, corps);
+    bqEdit = null;
+    bqNotice = e.id ? 'C\'est enregistré.' : 'L\'item rejoint la banque de ton église 🙂';
+    bqRafraichir();
+  } catch (err) {
+    e.busy = false;
+    e.error = (err && err.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(err);
+  }
+  render();
+}
+
+async function doBqItemDelete(id) {
+  const g = egliseCourante(); if (!g) return;
+  const b = bqCache[bqCle()];
+  const it = b && b.items.find(x => x.id === id);
+  if (!confirm(`Supprimer « ${it ? bqItemLibelle(bqModule, it) : id} » de la banque de ton église ?`)) return;
+  bqNotice = bqError = null;
+  try {
+    await GraineAPI.groupeBanqueItemDelete(g.code, bqModule, id);
+    bqRafraichir();
+  } catch (e) {
+    bqError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
   }
   render();
 }
@@ -2571,6 +2914,32 @@ function wire() {
   if (q('[data-grpversetform]')) q('[data-grpversetform]').addEventListener('submit', e => { e.preventDefault(); doGroupeVerset(); });
   // L'onglet Mon église : la page se charge à l'arrivée, le reste est du geste.
   if (route.name === 'eglise') { ensureGroupes(); const gEgl = egliseCourante(); if (gEgl) ensurePage(gEgl.code); }
+  if (route.name === 'banques') { ensureGroupes(); ensureBanqueEglise(); }
+  // L'éditeur des banques d'église
+  el.querySelectorAll('[data-bqmodule]').forEach(b => b.addEventListener('click', () => {
+    bqModule = b.dataset.bqmodule; bqSel = null; bqEdit = null; bqNotice = bqError = null;
+    render(); ensureBanqueEglise();
+  }));
+  el.querySelectorAll('[data-bqmode]').forEach(b => b.addEventListener('click', () => doBqMode(b.dataset.bqmode)));
+  if (q('[data-bqselouvrir]')) q('[data-bqselouvrir]').addEventListener('click', doBqSelOuvrir);
+  if (q('[data-bqselsave]')) q('[data-bqselsave]').addEventListener('click', doBqSelSave);
+  if (q('[data-bqselannuler]')) q('[data-bqselannuler]').addEventListener('click', () => { bqSel = null; render(); });
+  el.querySelectorAll('[data-bqcoche]').forEach(c => c.addEventListener('change', () => {
+    if (!bqSel) return;
+    if (c.checked) bqSel.ids[c.dataset.bqcoche] = true; else delete bqSel.ids[c.dataset.bqcoche];
+    // Les compteurs se retouchent en place : re-rendre ferait perdre le fil
+    // (défilement, focus) au milieu d'une longue liste.
+    const nb = Object.keys(bqSel.ids).length;
+    const btn = q('[data-bqselsave]'); if (btn) btn.textContent = `Retenir (${nb})`;
+    const lbl = q('label[for="bqFiltre"]'); if (lbl) lbl.textContent = `Choisir les items retenus (${nb})`;
+  }));
+  el.querySelectorAll('[data-bqedit]').forEach(b => b.addEventListener('click', () => bqOuvrirForm(b.dataset.bqedit || null)));
+  el.querySelectorAll('[data-bqdel]').forEach(b => b.addEventListener('click', () => doBqItemDelete(b.dataset.bqdel)));
+  if (q('[data-bqform]')) q('[data-bqform]').addEventListener('submit', e => { e.preventDefault(); doBqItemSave(); });
+  if (q('[data-bqannuler]')) q('[data-bqannuler]').addEventListener('click', () => { bqEdit = null; render(); });
+  el.querySelectorAll('[data-bqbonne]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.bonne = +b.dataset.bqbonne; render(); } }));
+  el.querySelectorAll('[data-bqecrit]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.ecrit = b.dataset.bqecrit === '1'; render(); } }));
+  el.querySelectorAll('[data-bqgenre]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.genre = b.dataset.bqgenre; render(); } }));
   el.querySelectorAll('[data-eglsel]').forEach(b => b.addEventListener('click', () => {
     egliseSel = b.dataset.eglsel; pageEdit = null; pageNotice = pageError = null; render();
     const gEgl = egliseCourante(); if (gEgl) ensurePage(gEgl.code);
@@ -2579,6 +2948,7 @@ function wire() {
   el.querySelectorAll('[data-pagedel]').forEach(b => b.addEventListener('click', () => doPageDelete(b.dataset.pagedel, +b.dataset.id, b.dataset.nom)));
   el.querySelectorAll('[data-pagepin]').forEach(b => b.addEventListener('click', () => doPagePin(+b.dataset.pagepin)));
   el.querySelectorAll('[data-svcmain]').forEach(b => b.addEventListener('click', () => doServiceMain(+b.dataset.svcmain, b.dataset.inscrit === '1')));
+  el.querySelectorAll('[data-passation]').forEach(b => b.addEventListener('click', () => doGroupePassation(b.dataset.passation)));
   if (q('[data-pageform]')) q('[data-pageform]').addEventListener('submit', e => { e.preventDefault(); doPageSave(); });
   if (q('[data-pagecancel]')) q('[data-pagecancel]').addEventListener('click', () => { pageEdit = null; render(); });
   if (q('[data-pagepinform]')) q('[data-pagepinform]').addEventListener('click', () => { if (pageEdit) { pageEdit.epingle = !pageEdit.epingle; render(); } });
@@ -2611,6 +2981,29 @@ function wire() {
   bindInput('pageDate', v => { if (pageEdit) pageEdit.date = v; });
   bindInput('pageDetails', v => { if (pageEdit) pageEdit.details = v; });
   bindInput('pagePlaces', v => { if (pageEdit) pageEdit.places = v; });
+  // Formulaires des banques d'église (un seul ouvert à la fois, forme par épreuve).
+  bindInput('bqFiltre', v => {
+    if (!bqSel) return;
+    // Filtrer re-rend la liste ; le champ retrouve son focus et son curseur.
+    bqSel.filtre = v; render();
+    const f = q('#bqFiltre'); if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
+  });
+  bindInput('bqParole', v => { if (bqEdit) bqEdit.parole = v; });
+  bindInput('bqOpt0', v => { if (bqEdit) bqEdit.options[0] = v; });
+  bindInput('bqOpt1', v => { if (bqEdit) bqEdit.options[1] = v; });
+  bindInput('bqOpt2', v => { if (bqEdit) bqEdit.options[2] = v; });
+  bindInput('bqOpt3', v => { if (bqEdit) bqEdit.options[3] = v; });
+  bindInput('bqRef', v => { if (bqEdit) bqEdit.reference = v; });
+  bindInput('bqContexte', v => { if (bqEdit) bqEdit.contexte = v; });
+  bindInput('bqPhrase', v => { if (bqEdit) bqEdit.phrase = v; });
+  bindInput('bqPrecision', v => { if (bqEdit) bqEdit.precision = v; });
+  bindInput('bqReponse', v => { if (bqEdit) bqEdit.reponse = v; });
+  bindInput('bqAccepte', v => { if (bqEdit) bqEdit.accepte = v; });
+  bindInput('bqInd0', v => { if (bqEdit) bqEdit.indices[0] = v; });
+  bindInput('bqInd1', v => { if (bqEdit) bqEdit.indices[1] = v; });
+  bindInput('bqInd2', v => { if (bqEdit) bqEdit.indices[2] = v; });
+  bindInput('bqInd3', v => { if (bqEdit) bqEdit.indices[3] = v; });
+  bindInput('bqInd4', v => { if (bqEdit) bqEdit.indices[4] = v; });
 }
 function fillNext(pid) {
   const ex = session.ex; const k = ex.filled.findIndex(x => x === null);

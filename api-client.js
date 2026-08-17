@@ -121,6 +121,9 @@
       return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/verset', { reference, texte })).groupe;
     },
     async groupeQuitter(code) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/membres/moi'); },
+    // Confier la responsabilité à un membre, désigné par son pseudo (la seule
+    // identité que le groupe expose). L'appelant devient simple membre.
+    async groupePassation(code, pseudo) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/passation', { pseudo })).groupe; },
     // La création d'un groupe passe par une DEMANDE validée par l'administrateur —
     // jamais de création directe depuis l'appli. L'adresse de l'église est
     // obligatoire ; l'e-mail de contact est facultatif (omis si vide).
@@ -156,6 +159,18 @@
     async groupeServiceDelete(code, id) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/services/' + encodeURIComponent(id)); },
     async groupeServiceLeverLaMain(code, id) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/services/' + encodeURIComponent(id) + '/inscription')).service; },
     async groupeServiceRetirer(code, id) { return (await call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/services/' + encodeURIComponent(id) + '/inscription')).service; },
+
+    /* ---- banques d'église par épreuve (api/groupes-banques.php) ----
+       quiadit | ecritoupas | portrait. TOUT est réservé au responsable,
+       lecture comprise : les items portent la bonne réponse. */
+    async groupeBanque(code, module) { return (await call('GET', '/api/groupes/' + encodeURIComponent(code) + '/banques/' + encodeURIComponent(module))).banque; },
+    async groupeBanqueMode(code, module, mode) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/banques/' + encodeURIComponent(module) + '/mode', { mode })).banque; },
+    async groupeBanqueSelection(code, module, ids) { return (await call('PUT', '/api/groupes/' + encodeURIComponent(code) + '/banques/' + encodeURIComponent(module) + '/selection', { ids })).banque; },
+    async groupeBanqueItemSave(code, module, corps) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/banques/' + encodeURIComponent(module) + '/items', corps)).item; },
+    async groupeBanqueItemDelete(code, module, id) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/banques/' + encodeURIComponent(module) + '/items/' + encodeURIComponent(id)); },
+    // La banque FUSIONNÉE de l'église — même format que /api/banque/{module} :
+    // c'est elle que les pages d'épreuves chargent pour animer « dans mon église ».
+    async groupeBanqueFusion(code, module) { return call('GET', '/api/groupes/' + encodeURIComponent(code) + '/banque/' + encodeURIComponent(module)); },
 
     /* ---- questions du Défi (banque fusionnée, publique) ---- */
     async questions() { return call('GET', '/api/questions'); },

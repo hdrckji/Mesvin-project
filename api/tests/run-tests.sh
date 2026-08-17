@@ -53,25 +53,33 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# db_migrate() sort aussitôt si la table qu'elle sonde existe déjà. Sur une base
-# DÉJÀ DÉPLOYÉE, une sonde restée sur une table plus ancienne ferait manquer la
-# dernière ajoutée — sans le moindre message. On simule exactement ce cas : base
-# complète, puis on retire la table la plus récente ; la migration doit la
-# remettre. À TENIR À JOUR : la liste ci-dessous suit la sonde de db_migrate().
-say "Migration sur une base déjà déployée (la sonde porte sur la table la plus récente)"
+# db_migrate() applique des étapes versionnées tamponnées dans
+# schema_migrations. Trois invariants : une base neuve reçoit tout et le
+# journal s'arrête à DB_MIGRATION_DERNIERE ; une base déployée d'AVANT le
+# journal (schéma présent, pas de tampons) rattrape les étapes récentes sans
+# rien casser ; re-migrer une base à jour ne fait rien.
+say "Migrations versionnées (journal schema_migrations)"
 MIG="$(php -r '
 define("GRAINE_API", 1);
 require $argv[1] . "/api/db.php";
 $pdo = new PDO("sqlite:" . $argv[2]);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 db_migrate($pdo);
-$recentes = ["visites", "banque_surcharges", "groupe_demandes", "groupe_demande_details"];
-foreach ($recentes as $t) { $pdo->exec("DROP TABLE " . $t); }
+$v = (int) $pdo->query("SELECT MAX(version) FROM schema_migrations")->fetchColumn();
+if ($v !== DB_MIGRATION_DERNIERE) { echo "journal-incomplet"; exit; }
+// Base déployée d avant le journal : schéma là, aucun tampon, étape 2 absente.
+$pdo->exec("DROP TABLE schema_migrations");
+$pdo->exec("DROP TABLE groupe_banques");
+$pdo->exec("DROP TABLE groupe_banque_items");
 db_migrate($pdo);
 $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type = \"table\"")->fetchAll(PDO::FETCH_COLUMN);
-echo array_diff($recentes, $tables) === [] ? "oui" : "non";
+if (!in_array("groupe_banques", $tables) || !in_array("groupe_banque_items", $tables)) { echo "rattrapage-manque"; exit; }
+// Base à jour : re-migrer doit être un non-événement.
+db_migrate($pdo);
+$n = (int) $pdo->query("SELECT COUNT(*) FROM schema_migrations")->fetchColumn();
+echo $n === DB_MIGRATION_DERNIERE ? "oui" : "tampons-en-double";
 ' "$ROOT" "$TMP/deja-deploye.sqlite" 2>>"$TMP/migration.log")"
-check "la table la plus récente est (re)créée" oui "$MIG"
+check "neuve, rattrapage d'avant-journal, à jour : les trois chemins passent" oui "$MIG"
 
 # ---------------------------------------------------------------------------
 say "Démarrage du serveur de test (php -S, SQLite, mode dev)"
@@ -532,6 +540,23 @@ check "→ verset.depuis en ISO"          Z   "$(jval .groupe.verset.depuis | ta
 api GET "/api/groupes/$GCODE" "$TOKEN3" > /dev/null
 check "le verset est visible des membres" "Car Dieu a tant aimé le monde…" "$(jval .groupe.verset.texte)"
 
+say "Groupes — passation de responsabilité (par pseudo, responsable seul)"
+check "u3 (membre) tente → 403"         403 "$(api POST "/api/groupes/$GCODE/passation" "$TOKEN3" '{"pseudo":"Alice"}')"
+check "pseudo vide → 400"               400 "$(api POST "/api/groupes/$GCODE/passation" "$TOKEN1" '{"pseudo":"  "}')"
+check "pseudo inconnu du groupe → 404"  404 "$(api POST "/api/groupes/$GCODE/passation" "$TOKEN1" '{"pseudo":"Personne"}')"
+check "son propre pseudo → 404"         404 "$(api POST "/api/groupes/$GCODE/passation" "$TOKEN1" '{"pseudo":"Alice"}')"
+check "u1 confie à Chloé → 200"         200 "$(api POST "/api/groupes/$GCODE/passation" "$TOKEN1" '{"pseudo":"Chloé"}')"
+check "→ u1 est désormais membre"       membre "$(jval .groupe.role)"
+check "→ toujours 2 membres"            2   "$(jval .groupe.nbMembres)"
+api GET "/api/groupes/$GCODE" "$TOKEN3" > /dev/null
+check "u3 se voit responsable"          responsable "$(jval .groupe.role)"
+check "les rôles listés ont suivi"      "membre,responsable" "$(jval '.groupe.membres | map(.role) | sort | join(",")')"
+check "u1 (membre) pose le verset → 403" 403 "$(api POST "/api/groupes/$GCODE/verset" "$TOKEN1" '{"reference":"Jean 1.1","texte":"Au commencement était la Parole."}')"
+check "u3 (responsable) le pose → 200"  200 "$(api POST "/api/groupes/$GCODE/verset" "$TOKEN3" '{"reference":"Jean 1.1","texte":"Au commencement était la Parole."}')"
+check "Chloé rend le groupe à Alice → 200" 200 "$(api POST "/api/groupes/$GCODE/passation" "$TOKEN3" '{"pseudo":"Alice"}')"
+api GET "/api/groupes/$GCODE" "$TOKEN1" > /dev/null
+check "u1 est de nouveau responsable"   responsable "$(jval .groupe.role)"
+
 say "Groupes — quitter"
 check "u1 responsable ne peut pas quitter (u3 est là) → 400" 400 "$(api DELETE "/api/groupes/$GCODE/membres/moi" "$TOKEN1")"
 check "u3 quitte → 200"                 200 "$(api DELETE "/api/groupes/$GCODE/membres/moi" "$TOKEN3")"
@@ -662,12 +687,61 @@ done
 check "les 5 questions viennent TOUTES de la sélection" 5 "$DANS_SELECTION"
 check "une veillée ordinaire n'a pas d'église" false "$(api GET "/api/veillees/$VCODE/state" > /dev/null; jval '.veillee | has("eglise")')"
 
+# ---------------------------------------------------------------------------
+# Banques d'église par épreuve (groupes-banques.php) : quiadit, ecritoupas,
+# portrait. Tout est réservé au responsable, LECTURE COMPRISE (les items
+# portent la bonne réponse — un membre qui lirait avant la veillée pourrait
+# tricher). Réutilise le groupe du quiz : u1 responsable, u3 membre, u2 dehors.
+say "Banques d'église par épreuve — responsable seul, lecture comprise"
+NBQA="$(api GET /api/banque/quiadit > /dev/null; jval '.items | length')"
+check "module inconnu → 404"            404 "$(api GET "/api/groupes/$QGCODE/banques/inconnu" "$TOKEN1")"
+check "GET par u3 (membre) → 403"       403 "$(api GET "/api/groupes/$QGCODE/banques/quiadit" "$TOKEN3")"
+check "GET par u2 (non-membre) → 403"   403 "$(api GET "/api/groupes/$QGCODE/banques/quiadit" "$TOKEN2")"
+check "GET responsable → 200"           200 "$(api GET "/api/groupes/$QGCODE/banques/quiadit" "$TOKEN1")"
+check "mode par défaut : toutes"        toutes "$(jval .banque.mode)"
+check "nbCommune = banque publique"     "$NBQA" "$(jval .banque.nbCommune)"
+check "nbTotal = commune (rien en propre)" "$NBQA" "$(jval .banque.nbTotal)"
+
+say "Banques d'église — la sélection remplace, recoupée avec la banque commune"
+QAID1="$(jq -r '.items[0].id' "$ROOT/quiadit/data/banque.json")"
+QAIDS="$(jq -c '[.items[0:3][].id]' "$ROOT/quiadit/data/banque.json")"
+check "posée par u3 (membre) → 403"     403 "$(api PUT "/api/groupes/$QGCODE/banques/quiadit/selection" "$TOKEN3" '{"ids":[]}')"
+check "3 ids du fichier → 200"          200 "$(api PUT "/api/groupes/$QGCODE/banques/quiadit/selection" "$TOKEN1" "{\"ids\":$QAIDS}")"
+check "nbSelection 3"                   3   "$(jval .banque.nbSelection)"
+check "un id fantaisiste est écarté sans bruit" 1 \
+  "$(api PUT "/api/groupes/$QGCODE/banques/quiadit/selection" "$TOKEN1" "{\"ids\":[\"$QAID1\",\"pas-un-id\"]}" > /dev/null; jval .banque.nbSelection)"
+api PUT "/api/groupes/$QGCODE/banques/quiadit/selection" "$TOKEN1" "{\"ids\":$QAIDS}" > /dev/null
+check "mode selection → 200"            200 "$(api POST "/api/groupes/$QGCODE/banques/quiadit/mode" "$TOKEN1" '{"mode":"selection"}')"
+check "nbTotal rétrécit à la sélection" 3   "$(jval .banque.nbTotal)"
+
+say "Banques d'église — items propres (mêmes validations que l'admin)"
+check "parole manquante → 400"          400 "$(api POST "/api/groupes/$QGCODE/banques/quiadit/items" "$TOKEN1" '{"options":["A","B","C","D"],"bonne":0,"reference":"R"}')"
+check "3 options au lieu de 4 → 400"    400 "$(api POST "/api/groupes/$QGCODE/banques/quiadit/items" "$TOKEN1" '{"parole":"P","options":["A","B","C"],"bonne":0,"reference":"R"}')"
+check "création quiadit → 201"          201 "$(api POST "/api/groupes/$QGCODE/banques/quiadit/items" "$TOKEN1" '{"parole":"Une parole de notre assemblée","options":["Moïse","David","Paul","Pierre"],"bonne":2,"reference":"Actes 20.35"}')"
+BQIID="$(jval .item.id)"
+check "→ id de la famille egl-"         egl "${BQIID%-*}"
+check "modification → 200"              200 "$(api POST "/api/groupes/$QGCODE/banques/quiadit/items" "$TOKEN1" "{\"id\":\"$BQIID\",\"parole\":\"Une parole retouchée\",\"options\":[\"Moïse\",\"David\",\"Paul\",\"Pierre\"],\"bonne\":2,\"reference\":\"Actes 20.35\"}")"
+check "portrait sans ses 5 indices → 400" 400 "$(api POST "/api/groupes/$QGCODE/banques/portrait/items" "$TOKEN1" '{"reponse":"Moïse","accepte":["Moïse"],"genre":"personnage","indices":["Un seul indice"],"reference":"Exode 2"}')"
+check "item inconnu supprimé → 404"     404 "$(api DELETE "/api/groupes/$QGCODE/banques/quiadit/items/egl-000000" "$TOKEN1")"
+check "nbPropres 1 · nbTotal suit"      4   "$(api GET "/api/groupes/$QGCODE/banques/quiadit" "$TOKEN1" > /dev/null; jval .banque.nbTotal)"
+
+say "Banques d'église — la banque fusionnée, même format que la publique"
+check "membre → 403"                    403 "$(api GET "/api/groupes/$QGCODE/banque/quiadit" "$TOKEN3")"
+check "responsable → 200"               200 "$(api GET "/api/groupes/$QGCODE/banque/quiadit" "$TOKEN1")"
+check "le format porte version + items" true "$(jval 'has("version") and has("items")')"
+check "sélection (3) + propres (1)"     4   "$(jval '.items | length')"
+check "l'item de l'église est servi"    "Une parole retouchée" "$(jval ".items[] | select(.id == \"$BQIID\") | .parole")"
+check "repasser en toutes → tout revient" $((NBQA + 1)) \
+  "$(api POST "/api/groupes/$QGCODE/banques/quiadit/mode" "$TOKEN1" '{"mode":"toutes"}' > /dev/null; api GET "/api/groupes/$QGCODE/banque/quiadit" "$TOKEN1" > /dev/null; jval '.items | length')"
+
 say "Quiz d'église — suppression du groupe : tout est purgé"
 QSQL() { php -r '$p = new PDO("sqlite:" . $argv[1]); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
 check "u1 supprime le groupe → 200"     200 "$(api DELETE "/api/groupes/$QGCODE" "$TOKEN1")"
 check "GET quiz sur le groupe disparu → 404" 404 "$(api GET "/api/groupes/$QGCODE/quiz" "$TOKEN1")"
 check "réglages + sélection + propres + liens : 0 ligne" 0 \
   "$(QSQL 'SELECT (SELECT COUNT(*) FROM groupe_quiz_reglages) + (SELECT COUNT(*) FROM groupe_quiz_selection) + (SELECT COUNT(*) FROM groupe_questions) + (SELECT COUNT(*) FROM veillee_groupes)')"
+check "banques d'épreuves : 0 ligne aussi" 0 \
+  "$(QSQL 'SELECT (SELECT COUNT(*) FROM groupe_banques) + (SELECT COUNT(*) FROM groupe_banque_items)')"
 check "la veillée liée survit, sans église" false "$(api GET "/api/veillees/$VQCODE/state" > /dev/null; jval '.veillee | has("eglise")')"
 
 # ---------------------------------------------------------------------------

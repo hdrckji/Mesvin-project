@@ -7,7 +7,11 @@
    - Sinon → repli SQLite dans api/data/dev.sqlite : permet de tester en local
      avec `php -S` et de démarrer sans base configurée.
 
-   Les tables sont créées au premier appel (CREATE TABLE IF NOT EXISTS).
+   Le schéma évolue par MIGRATIONS versionnées : la table schema_migrations
+   tamponne chaque étape appliquée. L'étape 1 est le schéma historique
+   (CREATE TABLE IF NOT EXISTS, idempotent) ; les suivantes peuvent tout
+   faire, ALTER TABLE compris. Règle d'or : on ne retouche JAMAIS une étape
+   passée — on en ajoute une nouvelle, et on incrémente DB_MIGRATION_DERNIERE.
    ========================================================================== */
 
 defined('GRAINE_API') || exit;
@@ -54,16 +58,26 @@ function db_driver(PDO $pdo): string {
     return $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
 }
 
-/** Crée les tables si elles n'existent pas encore. */
+/** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
+const DB_MIGRATION_DERNIERE = 2;
+
+/** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
-    // Test rapide : si la table la PLUS RÉCENTE existe déjà, tout est en place.
-    // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
-    // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
-    try {
-        $pdo->query('SELECT 1 FROM groupe_demande_details LIMIT 1');
-        return;
-    } catch (PDOException $e) {
-        // Tables absentes : on les crée ci-dessous.
+    // Le journal remplace l'ancienne « sonde » sur la table la plus récente :
+    // chaque étape s'applique une seule fois puis se tamponne — c'est ce qui
+    // rend les ALTER TABLE possibles sur les bases déjà déployées.
+    $pdo->exec(db_driver($pdo) === 'mysql'
+        ? 'CREATE TABLE IF NOT EXISTS schema_migrations (
+              version INT UNSIGNED NOT NULL PRIMARY KEY,
+              applied_at DATETIME NOT NULL
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        : 'CREATE TABLE IF NOT EXISTS schema_migrations (
+              version INTEGER NOT NULL PRIMARY KEY,
+              applied_at TEXT NOT NULL
+          )');
+    $fait = (int) $pdo->query('SELECT COALESCE(MAX(version), 0) FROM schema_migrations')->fetchColumn();
+    if ($fait >= DB_MIGRATION_DERNIERE) {
+        return; // tout est en place — le chemin de toutes les requêtes sauf la première
     }
 
     if (db_driver($pdo) === 'mysql') {
@@ -957,7 +971,70 @@ function db_migrate(PDO $pdo): void {
         ];
     }
 
-    foreach ($ddl as $sql) {
-        $pdo->exec($sql);
+    /* ---- Étape 2 — la banque d'église par épreuve ------------------------------
+       Réglages (mode toutes/sélection + sélection d'ids de la banque commune)
+       et questions propres par couple (groupe, module), pour quiadit,
+       ecritoupas et portrait — voir api/groupes-banques.php. */
+    if (db_driver($pdo) === 'mysql') {
+        $etape2 = [
+            "CREATE TABLE IF NOT EXISTS groupe_banques (
+                groupe_id INT UNSIGNED NOT NULL,
+                module VARCHAR(20) NOT NULL,
+                mode ENUM('toutes','selection') NOT NULL DEFAULT 'toutes',
+                selection MEDIUMTEXT NULL,
+                updated_at DATETIME NOT NULL,
+                PRIMARY KEY (groupe_id, module)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+            "CREATE TABLE IF NOT EXISTS groupe_banque_items (
+                groupe_id INT UNSIGNED NOT NULL,
+                module VARCHAR(20) NOT NULL,
+                item_id VARCHAR(60) NOT NULL,
+                item MEDIUMTEXT NOT NULL,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL,
+                PRIMARY KEY (groupe_id, module, item_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        ];
+    } else {
+        $etape2 = [
+            "CREATE TABLE IF NOT EXISTS groupe_banques (
+                groupe_id INTEGER NOT NULL,
+                module TEXT NOT NULL,
+                mode TEXT NOT NULL DEFAULT 'toutes',
+                selection TEXT NULL,
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY (groupe_id, module)
+            )",
+
+            "CREATE TABLE IF NOT EXISTS groupe_banque_items (
+                groupe_id INTEGER NOT NULL,
+                module TEXT NOT NULL,
+                item_id TEXT NOT NULL,
+                item TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY (groupe_id, module, item_id)
+            )",
+        ];
+    }
+
+    /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
+       déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
+       est en IF NOT EXISTS) et prend simplement son tampon. */
+    foreach ([1 => $ddl, 2 => $etape2] as $version => $liste) {
+        if ($version <= $fait) {
+            continue;
+        }
+        foreach ($liste as $sql) {
+            $pdo->exec($sql);
+        }
+        try {
+            $pdo->prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)')
+                ->execute([$version, gmdate('Y-m-d H:i:s')]);
+        } catch (PDOException $e) {
+            // Base neuve, deux requêtes simultanées : l'autre a posé le
+            // tampon — les étapes sont idempotentes, rien n'est perdu.
+        }
     }
 }

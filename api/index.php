@@ -25,6 +25,7 @@ require __DIR__ . '/friends.php';
 require __DIR__ . '/groupes.php';
 require __DIR__ . '/groupes-demandes.php';
 require __DIR__ . '/groupes-quiz.php';
+require __DIR__ . '/groupes-banques.php';
 require __DIR__ . '/groupes-page.php';
 require __DIR__ . '/duels.php';
 require __DIR__ . '/veillees.php';
@@ -148,6 +149,9 @@ if (preg_match('#^/api/groupes/([^/]+)/verset$#', $path, $m) && $method === 'POS
 if (preg_match('#^/api/groupes/([^/]+)/membres/moi$#', $path, $m) && $method === 'DELETE') {
     handle_groupes_leave($pdo, $m[1]);
 }
+if (preg_match('#^/api/groupes/([^/]+)/passation$#', $path, $m) && $method === 'POST') {
+    handle_groupes_passation($pdo, $m[1]);
+}
 
 /* ---- La page de l'église : annonces, rendez-vous, services (groupes-page.php) --- */
 if (preg_match('#^/api/groupes/([^/]+)/page$#', $path, $m) && $method === 'GET') {
@@ -197,6 +201,28 @@ if (preg_match('#^/api/groupes/([^/]+)/quiz/questions$#', $path, $m)) {
 }
 if (preg_match('#^/api/groupes/([^/]+)/quiz/questions/([A-Za-z0-9-]{1,60})$#', $path, $m) && $method === 'DELETE') {
     handle_groupe_quiz_question_delete($pdo, $m[1], $m[2]);
+}
+
+/* ---- Banques d'église par épreuve : quiadit, ecritoupas, portrait
+       (voir groupes-banques.php — responsable seul, lecture comprise) ------------- */
+if (preg_match('#^/api/groupes/([^/]+)/banques/([a-z]{1,20})$#', $path, $m) && $method === 'GET') {
+    handle_groupe_banque_get($pdo, $m[1], $m[2]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/banques/([a-z]{1,20})/mode$#', $path, $m) && $method === 'POST') {
+    handle_groupe_banque_mode($pdo, $m[1], $m[2]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/banques/([a-z]{1,20})/selection$#', $path, $m) && $method === 'PUT') {
+    handle_groupe_banque_selection($pdo, $m[1], $m[2]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/banques/([a-z]{1,20})/items$#', $path, $m) && $method === 'POST') {
+    handle_groupe_banque_item_save($pdo, $m[1], $m[2]);
+}
+if (preg_match('#^/api/groupes/([^/]+)/banques/([a-z]{1,20})/items/([A-Za-z0-9-]{1,60})$#', $path, $m) && $method === 'DELETE') {
+    handle_groupe_banque_item_delete($pdo, $m[1], $m[2], $m[3]);
+}
+// La banque FUSIONNÉE de l'église — celle que chargent les pages d'épreuves.
+if (preg_match('#^/api/groupes/([^/]+)/banque/([a-z]{1,20})$#', $path, $m) && $method === 'GET') {
+    handle_groupe_banque_fusion($pdo, $m[1], $m[2]);
 }
 
 /* ---- Duels -------------------------------------------------------------------- */

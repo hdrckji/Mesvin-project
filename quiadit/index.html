@@ -195,6 +195,10 @@
 <body>
 <div class="wrap" id="app"></div>
 <script src="../icons.js"></script>
+<script src="../api-client.js"></script>
+<!-- Banque d'église (?eglise=GRP-XXXXX) ajoutée À LA MAIN dans les trois
+     pages : le gabarit gen-epreuve.py, absent du dépôt, ne la connaît pas —
+     à reporter dedans si la page est réengendrée un jour. -->
 <script src="../visite.js" defer></script>
 <script>
 'use strict';
@@ -239,6 +243,21 @@ async function telechargerBanque() {
 }
 async function chargerBanque() {
   if (BANQUE) return BANQUE;
+  // La banque de MON ÉGLISE passe d'abord (?eglise=GRP-XXXXX, responsable
+  // connecté — le serveur revérifie, 403 sinon). Jamais de copie locale pour
+  // elle : elle change au gré du responsable ; inaccessible ou trop maigre
+  // (moins de 3 items), la banque commune reprend la main et l'accueil dit
+  // d'où l'on tire.
+  if (EGLISE && window.GraineAPI && GraineAPI.isLoggedIn()) {
+    try {
+      const d = await GraineAPI.groupeBanqueFusion(EGLISE, 'quiadit');
+      if (d && Array.isArray(d.items) && d.items.length >= 3) {
+        egliseActive = true;
+        BANQUE = adapter(d);
+        return BANQUE;
+      }
+    } catch (e) { /* 403, hors-ligne : la banque commune ci-dessous */ }
+  }
   const locale = lireBanqueLocale();
   if (locale && Array.isArray(locale.items) && locale.items.length > 0) {
     // Copie locale : on la sert tout de suite, et on rafraîchit derrière —
@@ -326,6 +345,9 @@ function vueAccueil() {
     <button class="quit" data-retour-defi="1">‹ Défi</button>
     <h1 style="margin-top:10px">Qui a dit ça <span class="seed">?</span></h1>
     <p class="muted" style="margin:4px 0 16px">Une parole, quatre voix possibles — sauras-tu reconnaître la sienne ? Chaque réponse ramène vers le texte.</p>
+    ${egliseActive
+      ? `<p class="muted" style="margin:-8px 0 16px;color:var(--grow)">Les parties lancées d'ici tirent dans la banque de ton église.</p>`
+      : EGLISE ? `<p class="muted" style="margin:-8px 0 16px">Banque de ton église indisponible pour l'instant — les parties tirent dans la banque commune.</p>` : ''}
 
     <button class="card hub-card" data-solo="1">
       <span class="hub-ic">${icon('seul', 26)}</span>
@@ -943,6 +965,19 @@ async function verifierRepriseAnim() {
     if (etat && etat.phase && etat.phase !== 'fin') { repriseAnim = { code: a.code, cle: a.cle }; if (ecran === 'vmenu') render(); }
     else animOubli();
   } catch (e) { if (e && e.status === 404) animOubli(); } // veillée disparue : on oublie
+}
+
+/* Animer avec la banque de MON ÉGLISE : ?eglise=GRP-XXXXX (responsable
+   connecté seulement — le serveur revérifie). Seul le fetch de la banque
+   change ; tirage, défis et veillées restent exactement les mêmes. */
+const EGLISE = (() => {
+  const e = (new URLSearchParams(location.search).get('eglise') || '').toUpperCase();
+  return /^GRP-[A-Z0-9]{5}$/.test(e) ? e : null;
+})();
+let egliseActive = false; // la banque servie est bien celle de l'église
+if (EGLISE) {
+  // Chargée tout de suite : l'accueil dit d'où viennent les questions.
+  chargerBanque().then(() => { if (ecran === 'accueil') render(); }).catch(() => {});
 }
 
 /* Arrivée directe sur le grand écran : ?direct=EV-XXXXX. */

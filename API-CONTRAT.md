@@ -309,10 +309,19 @@ Corps : `{ "code": "GRP-XXXXX" }` — on rejoint en **membre**.
 "texte": "…" (1–500) }` — pose le verset de la semaine (remplace le précédent,
 `depuis` est horodaté par le serveur). → `{ "groupe": { … } }`
 
+### POST /api/groupes/{code}/passation
+**Responsable seulement** (403 sinon). Corps : `{ "pseudo": "…" }` — confie
+la responsabilité au membre portant ce pseudo (la seule identité que le
+groupe expose). L'appelant devient simple membre. 404 si aucun **autre**
+membre ne porte ce pseudo ; 409 si deux le portent (homonymes : l'un doit
+d'abord changer de pseudo). Les deux écritures du rôle passent par
+l'entonnoir unique `groupe_set_responsable` — le même que l'héritage à la
+suppression d'un compte. → `{ "groupe": { …, "role": "membre" } }`
+
 ### DELETE /api/groupes/{code}/membres/moi
 Quitter le groupe. → `{ "ok": true }` — un responsable ne peut pas quitter
-tant qu'il reste d'autres membres (400 : il faut d'abord transmettre la
-responsabilité — la passation viendra plus tard) ; s'il est le dernier, le
+tant qu'il reste d'autres membres (400 : il transmet d'abord la
+responsabilité, voir la passation ci-dessus) ; s'il est le dernier, le
 groupe est supprimé avec lui. 404 si l'on n'est pas membre.
 
 ### DELETE /api/groupes/{code}
@@ -378,10 +387,58 @@ pour le grand écran. Le lien vit dans la table `veillee_groupes` — la table
 À la suppression du groupe (route DELETE, dernier membre qui part,
 suppression de compte) : réglages, sélection, questions propres et liens
 veillée ↔ groupe sont **purgés** ; une veillée liée survit, simplement sans
-`eglise`. À la **passation** (responsable supprimé, membre promu), les
-réglages du groupe sont conservés.
+`eglise`. À la **passation** (volontaire ou par héritage), les réglages du
+groupe sont conservés.
 
-## La page de l'église : annonces, rendez-vous, services (fondations — aucune interface)
+## Banques d'église par épreuve (quiadit, ecritoupas, portrait)
+
+Le pendant du quiz d'église pour les trois épreuves « à fichier »
+(banques.php) : par couple (groupe, module), un mode `toutes`/`selection`,
+une sélection d'ids de la banque commune, et des items **propres** (id
+`egl-<6 hex>`), validés par les **mêmes règles** que ceux de
+l'administration (`banque_item_propre`). Tables `groupe_banques` et
+`groupe_banque_items` (étape 2 des migrations, `schema_migrations`).
+
+**TOUT est réservé au responsable, lecture comprise** (403 sinon — les items
+portent la bonne réponse, un membre pourrait tricher avant la veillée).
+Module inconnu → 404. Plafonds : 2000 ids de sélection, 300 items propres
+par (groupe, module).
+
+### GET /api/groupes/{code}/banques/{module}
+→ `{ "banque": { "module", "mode", "selection": [ids], "nbSelection",
+"nbCommune", "nbPropres", "nbTotal", "items": [ { "id", …champs du
+module } ] } }` — la sélection est recoupée avec la banque commune du
+moment (un item retiré par l'administration en disparaît sans bruit).
+
+### POST /api/groupes/{code}/banques/{module}/mode
+Corps : `{ "mode": "toutes" | "selection" }` — la sélection est **gardée**
+en changeant de mode. → `{ "banque": { … } }`
+
+### PUT /api/groupes/{code}/banques/{module}/selection
+Corps : `{ "ids": [ … ] }` — **remplace** la sélection (doublons fondus) ;
+les ids absents de la banque commune sont **écartés sans erreur**.
+→ `{ "banque": { … } }`
+
+### POST /api/groupes/{code}/banques/{module}/items
+Créer (sans `id`) ou modifier (`id` en `egl-` du groupe — 404 sinon) un
+item propre, au format du module (quiadit : parole/options[4]/bonne/
+reference/contexte ; ecritoupas : phrase/ecrit/reference/precision ;
+portrait : reponse/accepte[]/genre/indices[5]/reference).
+→ `{ "item": { "id", … } }` (201 à la création)
+
+### DELETE /api/groupes/{code}/banques/{module}/items/{id}
+→ `{ "ok": true }` — 404 si l'item n'est pas de ce groupe.
+
+### GET /api/groupes/{code}/banque/{module}
+La banque **fusionnée** de l'église, au **même format** que la banque
+publique `/api/banque/{module}` : `{ "version", "items": [ … ] }` —
+banque commune (entière ou sélection, selon le mode) + items propres.
+C'est elle que chargent les pages d'épreuves pour animer « dans mon
+église » (`?eglise=GRP-XXXXX`) — seul le fetch change, les moteurs de
+défis et veillées sont inchangés. À la suppression du groupe, tout est
+purgé (`groupe_banques_purge`).
+
+## La page de l'église : annonces, rendez-vous, services (l'onglet « Mon église » les affiche)
 
 Chaque groupe-église a sa « page », trois blocs : les **annonces** du
 responsable (épinglables en tête), les **rendez-vous réguliers** de

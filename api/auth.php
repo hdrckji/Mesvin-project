@@ -386,13 +386,9 @@ function delete_user_completely(PDO $pdo, array $user): void {
                 // d'église et page compris (groupe_delete_completely).
                 groupe_delete_completely($pdo, (int) $groupeId);
             } else {
-                $pdo->prepare('UPDATE groupes SET responsable_id = ? WHERE id = ?')
-                    ->execute([$heritier['user_id'], $groupeId]);
-                $st = $pdo->prepare(
-                    'UPDATE groupe_membres SET role = \'responsable\'
-                     WHERE groupe_id = ? AND user_id = ?'
-                );
-                $st->execute([$groupeId, $heritier['user_id']]);
+                // Par l'entonnoir unique (groupe_set_responsable, groupes.php) :
+                // les deux écritures du rôle ne se font jamais à la main.
+                groupe_set_responsable($pdo, (int) $groupeId, (int) $heritier['user_id']);
             }
         }
         // Puis toutes ses adhésions (simples membres comme responsable sortant).
