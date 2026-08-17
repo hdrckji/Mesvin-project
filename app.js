@@ -527,7 +527,7 @@ const go = (name, param) => {
 };
 
 function render() {
-  const v = { home: viewHome, memo: viewMemo, study: viewStudy, session: viewSession, moi: viewMoi, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections, account: viewAccount, eglise: viewEglise, banques: viewEgliseBanques }[route.name] || viewHome;
+  const v = { home: viewHome, memo: viewMemo, study: viewStudy, session: viewSession, moi: viewMoi, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections, account: viewAccount, eglise: viewEglise, banques: viewEgliseBanques, rejoindre: viewRejoindre }[route.name] || viewHome;
   el.innerHTML = v() + tabbar();
   wire();
 }
@@ -547,7 +547,8 @@ function topbar(withAccount) {
     <span class="top-right">${flame}${account}</span></div>`;
 }
 function tabbar() {
-  if (route.name === 'session') return '';
+  // Séance d'exercice et écran d'invitation : rien ne doit distraire.
+  if (route.name === 'session' || route.name === 'rejoindre') return '';
   // L'écran « Mémoriser » (et ses sous-écrans) reste rattaché à l'onglet Accueil ;
   // le jardin et ses versets restent rattachés à l'onglet Moi.
   const cur = ['memo', 'study', 'collections'].includes(route.name) ? 'home'
@@ -2200,6 +2201,8 @@ function viewEglise() {
         <div><div class="fc-label">Code du groupe</div><div class="friend-code">${esc(g.code)}</div></div>
         <button class="btn btn-soft" data-copygrp="${esc(g.code)}">Copier</button></div>
       <p class="muted" style="font-size:.85rem;margin:8px 2px 0">Partage-le aux membres de ton église : c'est lui qui ouvre la porte du groupe.</p>
+      <button class="btn btn-grow btn-block" data-inviter="1" style="margin-top:12px">Envoyer une invitation</button>
+      <p class="muted" style="font-size:.85rem;margin:8px 2px 0">Un lien qui fait tout : le compte se crée et le groupe se rejoint d'une traite, sans code à recopier.</p>
     </div>
     <button class="card hub-card fade" data-tab="banques">
       <span class="hub-ic">${icon('defi', 26)}</span>
@@ -2425,6 +2428,84 @@ async function doPagePin(id) {
     pageRafraichir(g.code);
   } catch (e) {
     pageError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
+  }
+  render();
+}
+
+/* ============================================================================
+   L'invitation : biblehorizon.fr/#rejoindre=GRP-XXXXX
+
+   Le vrai obstacle d'une assemblée n'est pas dans l'appli, il est AVANT :
+   installer, créer un compte, trouver « J'ai un code », taper le code sans
+   se tromper. Le lien fait tout cela d'une traite — et l'ancre ne quitte
+   jamais le navigateur (elle n'est pas envoyée au serveur).
+   ========================================================================== */
+let invitation = null; // { code, etat: 'accueil'|'encours'|'faite'|'erreur', nom, message }
+
+function lienInvitation(code) { return location.origin + '/#rejoindre=' + code; }
+
+/** Lu UNE fois au démarrage : le code part de l'URL aussitôt reconnu. */
+function invitationDepuisURL() {
+  const m = (location.hash || '').match(/^#rejoindre=(GRP-[A-Za-z0-9]{5})$/);
+  if (!m) return;
+  invitation = { code: m[1].toUpperCase(), etat: 'accueil', nom: null, message: null };
+  // L'ancre disparaît : recharger la page ne rejoue pas l'invitation, et le
+  // code ne traîne pas dans la barre d'adresse.
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* sans gravité */ }
+  route = { name: 'rejoindre', param: null };
+}
+
+function viewRejoindre() {
+  if (!invitation) { go('home'); return ''; }
+  const connecte = window.GraineAPI && GraineAPI.isLoggedIn();
+
+  if (invitation.etat === 'faite') {
+    return topbar() + `<div class="card hero fade" style="margin-top:20px;text-align:center">
+      <div class="hero-emblem">${icon('eglise', 40)}</div>
+      <h1 class="hero-name" style="font-size:1.5rem">Bienvenue${invitation.nom ? ` à ${esc(invitation.nom)}` : ''} 🙂</h1>
+      <p class="muted" style="margin:10px 0 0">Ton église a maintenant son onglet, en bas de l'écran : le verset de la semaine, les annonces et les rendez-vous de l'assemblée t'y attendent.</p>
+      <button class="btn btn-primary" data-tab="eglise" style="margin-top:18px">Voir ma page d'église</button>
+    </div>`;
+  }
+
+  const alerte = invitation.message
+    ? `<p class="${invitation.etat === 'erreur' ? 'field-error' : 'field-ok'}" style="margin:0 2px 12px">${esc(invitation.message)}</p>` : '';
+
+  return topbar() + `<div class="card hero fade" style="margin-top:20px;text-align:center">
+      <div class="hero-emblem">${icon('eglise', 40)}</div>
+      <h1 class="hero-name" style="font-size:1.5rem">Tu es invité</h1>
+      <p class="hero-tag">Quelqu'un de ton église t'invite à rejoindre son groupe sur Bible Horizon — le verset de la semaine, les annonces et les rendez-vous de l'assemblée, au même endroit.</p>
+    </div>
+    ${alerte}
+    <div class="card fade">
+      ${connecte
+        ? `<button class="btn btn-grow btn-block" data-rejoindreok="1" ${invitation.etat === 'encours' ? 'disabled' : ''}>${invitation.etat === 'encours' ? 'Un instant…' : 'Rejoindre mon église'}</button>`
+        : `<p style="margin:0 0 12px">Il te faut un compte — c'est gratuit, un e-mail et un pseudo suffisent, et ton église te retrouvera aussitôt.</p>
+           <button class="btn btn-primary" data-rejoindrecompte="1">Créer mon compte / Me connecter</button>`}
+      <button class="linkbtn" data-rejoindrenon="1" style="display:block;margin:12px auto 0">Plus tard</button>
+    </div>`;
+}
+
+/** Rejoindre pour de bon — appelé au clic, ou tout seul au retour du compte. */
+async function doInvitationRejoindre() {
+  if (!invitation || invitation.etat === 'encours') return;
+  if (!window.GraineAPI || !GraineAPI.isLoggedIn()) { invitation.etat = 'accueil'; render(); return; }
+  invitation.etat = 'encours'; invitation.message = null; render();
+  try {
+    const g = await GraineAPI.groupeRejoindre(invitation.code);
+    invitation.etat = 'faite';
+    invitation.nom = g && g.nom ? g.nom : null;
+    egliseOngletMemorise(true);
+    egliseRecharger();
+  } catch (e) {
+    invitation.etat = 'erreur';
+    if (e && e.offline) invitation.message = 'Pas de connexion — réessaie quand tu seras en ligne.';
+    else if (e && e.status === 404) invitation.message = "Ce lien ne mène à aucun groupe — demande-en un nouveau à ton responsable.";
+    else if (e && e.status === 409) {
+      // Déjà membre : ce n'est pas une erreur, c'est une bonne nouvelle.
+      invitation.etat = 'faite';
+      invitation.message = null;
+    } else invitation.message = friendlyError(e);
   }
   render();
 }
@@ -3162,7 +3243,20 @@ function wire() {
   if (q('#google-btn')) mountGoogleButton();
   if (q('[data-authback]')) q('[data-authback]').addEventListener('click', () => { if (auth) { auth.step = 'email'; auth.error = auth.notice = null; render(); } });
   if (q('[data-authresend]')) q('[data-authresend]').addEventListener('click', authResend);
-  if (q('[data-authdone]')) q('[data-authdone]').addEventListener('click', () => { auth = null; go('moi'); });
+  // Fin du parcours compte : si une invitation attendait, on la reprend là où
+  // elle s'était arrêtée — le membre n'a rien à ressaisir.
+  if (q('[data-authdone]')) q('[data-authdone]').addEventListener('click', () => {
+    auth = null;
+    if (invitation && invitation.etat !== 'faite') { go('rejoindre'); doInvitationRejoindre(); return; }
+    go('moi');
+  });
+  if (q('[data-rejoindreok]')) q('[data-rejoindreok]').addEventListener('click', doInvitationRejoindre);
+  if (q('[data-rejoindrecompte]')) q('[data-rejoindrecompte]').addEventListener('click', startAccountFlow);
+  if (q('[data-rejoindrenon]')) q('[data-rejoindrenon]').addEventListener('click', () => { invitation = null; go('home'); });
+  if (q('[data-inviter]')) q('[data-inviter]').addEventListener('click', () => {
+    const g = egliseCourante(); if (!g) return;
+    partager(`Rejoins l'église « ${g.nom} » sur Bible Horizon — le verset de la semaine, les annonces et les rendez-vous de l'assemblée.\n${lienInvitation(g.code)}`);
+  });
   // les saisies survivent aux re-rendus (l'état est la source de vérité)
   const bindInput = (id, fn) => { const n = q('#' + id); if (n) n.addEventListener('input', () => fn(n.value)); };
   bindInput('auth-email', v => { if (auth) auth.email = v; });
@@ -3323,6 +3417,18 @@ function removeVerse(id) {
     if (window.GrainePierres) GrainePierres.verifier();
     await Promise.all([loadLibrary(), loadCollections()]);
     syncCompletedCollections();
+    // Une invitation dans l'URL prend la main sur l'écran d'accueil.
+    invitationDepuisURL();
+    // Appli DÉJÀ ouverte et lien touché (depuis un message, par exemple) :
+    // seule l'ancre change, la page ne se recharge pas — sans cette écoute,
+    // l'invitation passerait inaperçue.
+    window.addEventListener('hashchange', () => {
+      invitationDepuisURL();
+      if (invitation && invitation.etat === 'accueil') {
+        render();
+        if (window.GraineAPI && GraineAPI.isLoggedIn()) doInvitationRejoindre();
+      }
+    });
     render();
   } catch (e) {
     el.innerHTML = `<div class="card center" style="margin-top:40px;padding:30px 18px">
@@ -3338,5 +3444,8 @@ function removeVerse(id) {
   // Les groupes se chargent dès l'ouverture : c'est eux qui font apparaître
   // l'onglet « Mon église » dans la barre, sans attendre un passage par Moi.
   ensureGroupes();
+  // Invitation reçue alors qu'on est DÉJÀ connecté : rien à demander, on
+  // rejoint tout de suite — l'écran annonce simplement la bienvenue.
+  if (invitation && window.GraineAPI && GraineAPI.isLoggedIn()) doInvitationRejoindre();
   loadPublicConfig(); // sait déjà, à l'ouverture de « Moi », si Google est proposé
 })();
