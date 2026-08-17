@@ -31,6 +31,7 @@ require __DIR__ . '/frise.php';
 require __DIR__ . '/epreuve.php';
 require __DIR__ . '/portrait.php';
 require __DIR__ . '/admin.php';
+require __DIR__ . '/banques.php';
 require __DIR__ . '/visites.php';
 require __DIR__ . '/push.php';
 
@@ -202,6 +203,11 @@ if (preg_match('#^/api/duels/([0-9]+)/result$#', $path, $m) && $method === 'POST
 /* ---- Questions du Défi (banque fusionnée, publique) ---------------------------- */
 if ($path === '/api/questions' && $method === 'GET') handle_questions_get($pdo);
 
+/* ---- Banques des épreuves à fichier (fusionnées, publiques — banques.php) ------- */
+if (preg_match('#^/api/banque/([a-z]{1,20})$#', $path, $m) && $method === 'GET') {
+    handle_banque_get($pdo, $m[1]);
+}
+
 /* ---- Notifications — « le verset offert » (voir push.php) ----------------------- */
 if ($path === '/api/push/cle'         && $method === 'GET')  handle_push_key($pdo);
 if ($path === '/api/push/subscribe'   && $method === 'POST') handle_push_subscribe($pdo);
@@ -223,6 +229,15 @@ if (preg_match('#^/api/admin/questions/([A-Za-z0-9-]{1,40})$#', $path, $m) && $m
 }
 if (preg_match('#^/api/admin/questions/([A-Za-z0-9-]{1,40})/restore$#', $path, $m) && $method === 'POST') {
     handle_admin_question_restore($pdo, $m[1]);
+}
+if (preg_match('#^/api/admin/banque/([a-z]{1,20})$#', $path, $m) && $method === 'POST') {
+    handle_admin_banque_save($pdo, $m[1]);
+}
+if (preg_match('#^/api/admin/banque/([a-z]{1,20})/([A-Za-z0-9-]{1,40})$#', $path, $m) && $method === 'DELETE') {
+    handle_admin_banque_delete($pdo, $m[1], $m[2]);
+}
+if (preg_match('#^/api/admin/banque/([a-z]{1,20})/([A-Za-z0-9-]{1,40})/restore$#', $path, $m) && $method === 'POST') {
+    handle_admin_banque_restore($pdo, $m[1], $m[2]);
 }
 
 /* ---- Veillées en direct -------------------------------------------------------- */

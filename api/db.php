@@ -60,7 +60,7 @@ function db_migrate(PDO $pdo): void {
     // (sonder une table plus ancienne empêcherait les nouvelles d'être créées
     // sur une base déjà déployée — les CREATE IF NOT EXISTS sont idempotents)
     try {
-        $pdo->query('SELECT 1 FROM visites LIMIT 1');
+        $pdo->query('SELECT 1 FROM banque_surcharges LIMIT 1');
         return;
     } catch (PDOException $e) {
         // Tables absentes : on les crée ci-dessous.
@@ -504,6 +504,22 @@ function db_migrate(PDO $pdo): void {
                 n INT UNSIGNED NOT NULL DEFAULT 0,
                 PRIMARY KEY (jour, page)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+
+            // Retouches des banques d'épreuves à fichier JSON (« Qui a dit
+            // ça ? », « Écrit… ou pas ? », « De qui parle-t-on ? ») — même
+            // principe que quiz_questions : un id présent dans le fichier
+            // = SURCHARGE (édition, ou désactivation si actif = 0), un id
+            // nouveau (préfixe adm-) = AJOUT. corps porte l'item COMPLET en
+            // JSON — chaque module garde sa propre forme, c'est voulu.
+            // Voir api/banques.php.
+            "CREATE TABLE IF NOT EXISTS banque_surcharges (
+                module ENUM('quiadit','ecritoupas','portrait') NOT NULL,
+                id VARCHAR(40) NOT NULL,
+                corps MEDIUMTEXT NOT NULL,
+                actif TINYINT NOT NULL DEFAULT 1,
+                created_at DATETIME NOT NULL,
+                PRIMARY KEY (module, id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         ];
     } else {
         $ddl = [
@@ -883,6 +899,17 @@ function db_migrate(PDO $pdo): void {
                 n INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (jour, page)
             )',
+
+            // Retouches des banques d'épreuves à fichier JSON — voir le
+            // commentaire du dialecte MySQL ci-dessus.
+            "CREATE TABLE IF NOT EXISTS banque_surcharges (
+                module TEXT NOT NULL CHECK (module IN ('quiadit','ecritoupas','portrait')),
+                id TEXT NOT NULL,
+                corps TEXT NOT NULL,
+                actif INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (module, id)
+            )",
         ];
     }
 

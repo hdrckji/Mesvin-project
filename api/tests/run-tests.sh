@@ -65,7 +65,7 @@ require $argv[1] . "/api/db.php";
 $pdo = new PDO("sqlite:" . $argv[2]);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 db_migrate($pdo);
-$recentes = ["visites"];
+$recentes = ["visites", "banque_surcharges"];
 foreach ($recentes as $t) { $pdo->exec("DROP TABLE " . $t); }
 db_migrate($pdo);
 $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type = \"table\"")->fetchAll(PDO::FETCH_COLUMN);
@@ -829,6 +829,108 @@ api GET /api/questions > /dev/null
 check "banque revenue à N"              "$NBQ" "$(jval '.questions | length')"
 check "per-01 toujours version fichier" "$P01_FICHIER" \
   "$(jval '.questions[] | select(.id == "per-01") | .question')"
+
+# ---------------------------------------------------------------------------
+# Banques des épreuves à fichier (quiadit, ecritoupas, portrait) : même
+# système que les questions du Défi — fichier + surcharges en base, banque
+# fusionnée servie par GET /api/banque/{module} (voir api/banques.php).
+
+say "Banques d'épreuves — route publique fusionnée"
+check "module inconnu → 404"            404 "$(api GET /api/banque/inconnu)"
+check "GET /api/banque/quiadit → 200"   200 "$(api GET /api/banque/quiadit)"
+NBQD="$(jval '.items | length')"
+check "quiadit : items du fichier présents" "$(jq '.items | length' "$ROOT/quiadit/data/banque.json")" "$NBQD"
+check "quiadit : qd-001 servie"         "Jean 14.6" "$(jval '.items[] | select(.id == "qd-001") | .reference')"
+check "GET /api/banque/ecritoupas → 200" 200 "$(api GET /api/banque/ecritoupas)"
+NBEO="$(jval '.items | length')"
+check "ecritoupas : eo-001 servie"      false "$(jval '.items[] | select(.id == "eo-001") | .ecrit')"
+check "GET /api/banque/portrait → 200"  200 "$(api GET /api/banque/portrait)"
+NBPO="$(jval '.items | length')"
+check "portrait : po-001 avec 5 indices" 5 "$(jval '.items[] | select(.id == "po-001") | .indices | length')"
+
+say "Banques — écriture réservée à l'admin"
+BQD_OK='{"parole":"Parole de test ?","options":["Un","Deux","Trois","Quatre"],"bonne":1,"reference":"Test 1.1","contexte":"Contexte de test."}'
+check "POST sans token → 401"           401 "$(api POST /api/admin/banque/quiadit '' "$BQD_OK")"
+check "POST non-admin → 403"            403 "$(api POST /api/admin/banque/quiadit "$TOKEN3" "$BQD_OK")"
+check "POST module inconnu → 404"       404 "$(api POST /api/admin/banque/inconnu "$TOKEN1" "$BQD_OK")"
+check "DELETE non-admin → 403"          403 "$(api DELETE /api/admin/banque/quiadit/qd-001 "$TOKEN3")"
+check "restore non-admin → 403"         403 "$(api POST /api/admin/banque/quiadit/qd-001/restore "$TOKEN3")"
+
+say "Banques — validations (quiadit)"
+check "parole vide → 400"               400 "$(api POST /api/admin/banque/quiadit "$TOKEN1" '{"parole":"  ","options":["A","B","C","D"],"bonne":0,"reference":"R"}')"
+check "3 options seulement → 400"       400 "$(api POST /api/admin/banque/quiadit "$TOKEN1" '{"parole":"P ?","options":["A","B","C"],"bonne":0,"reference":"R"}')"
+check "option vide → 400"               400 "$(api POST /api/admin/banque/quiadit "$TOKEN1" '{"parole":"P ?","options":["A","","C","D"],"bonne":0,"reference":"R"}')"
+check "bonne hors bornes → 400"         400 "$(api POST /api/admin/banque/quiadit "$TOKEN1" '{"parole":"P ?","options":["A","B","C","D"],"bonne":4,"reference":"R"}')"
+check "référence vide → 400"            400 "$(api POST /api/admin/banque/quiadit "$TOKEN1" '{"parole":"P ?","options":["A","B","C","D"],"bonne":0,"reference":""}')"
+check "id ni fichier ni adm- → 404"     404 "$(api POST /api/admin/banque/quiadit "$TOKEN1" '{"id":"xyz-99","parole":"P ?","options":["A","B","C","D"],"bonne":0,"reference":"R"}')"
+
+say "Banques — validations (ecritoupas)"
+check "ecrit non booléen → 400"         400 "$(api POST /api/admin/banque/ecritoupas "$TOKEN1" '{"phrase":"Phrase.","ecrit":"oui","reference":"R"}')"
+check "phrase vide → 400"               400 "$(api POST /api/admin/banque/ecritoupas "$TOKEN1" '{"phrase":"","ecrit":true,"reference":"R"}')"
+check "écrit sans référence → 400"      400 "$(api POST /api/admin/banque/ecritoupas "$TOKEN1" '{"phrase":"Phrase.","ecrit":true,"reference":null}')"
+
+say "Banques — validations (portrait)"
+check "4 indices seulement → 400"       400 "$(api POST /api/admin/banque/portrait "$TOKEN1" '{"reponse":"Testeur","accepte":["testeur"],"genre":"personnage","indices":["a","b","c","d"],"reference":"R"}')"
+check "indice vide → 400"               400 "$(api POST /api/admin/banque/portrait "$TOKEN1" '{"reponse":"Testeur","accepte":["testeur"],"genre":"personnage","indices":["a","b","c","d",""],"reference":"R"}')"
+check "accepte vide → 400"              400 "$(api POST /api/admin/banque/portrait "$TOKEN1" '{"reponse":"Testeur","accepte":[],"genre":"personnage","indices":["a","b","c","d","e"],"reference":"R"}')"
+check "genre hors liste → 400"          400 "$(api POST /api/admin/banque/portrait "$TOKEN1" '{"reponse":"Testeur","accepte":["testeur"],"genre":"animal","indices":["a","b","c","d","e"],"reference":"R"}')"
+check "réponse trop longue → 400"       400 "$(api POST /api/admin/banque/portrait "$TOKEN1" "{\"reponse\":\"$(printf 'x%.0s' $(seq 1 61))\",\"accepte\":[\"testeur\"],\"genre\":\"personnage\",\"indices\":[\"a\",\"b\",\"c\",\"d\",\"e\"],\"reference\":\"R\"}")"
+
+say "Banques — ajout admin (quiadit), visible dans la banque publique"
+check "ajout sans id → 200"             200 "$(api POST /api/admin/banque/quiadit "$TOKEN1" "$BQD_OK")"
+BQD_ID="$(jval .item.id)"
+check "id généré préfixé adm-"          adm- "$(printf '%s' "$BQD_ID" | cut -c1-4)"
+api GET /api/banque/quiadit > /dev/null
+check "banque à N+1 (ajout)"            "$(( NBQD + 1 ))" "$(jval '.items | length')"
+check "l'ajout est servi"               "Parole de test ?" "$(jval ".items[] | select(.id == \"$BQD_ID\") | .parole")"
+
+say "Banques — ajouts admin (ecritoupas, portrait)"
+check "ajout ecritoupas → 200"          200 "$(api POST /api/admin/banque/ecritoupas "$TOKEN1" '{"id":"adm-eo-test","phrase":"Phrase de test.","ecrit":false,"reference":null,"precision":"Précision de test."}')"
+api GET /api/banque/ecritoupas > /dev/null
+check "ecritoupas à N+1"                "$(( NBEO + 1 ))" "$(jval '.items | length')"
+check "ajout portrait → 200"            200 "$(api POST /api/admin/banque/portrait "$TOKEN1" '{"id":"adm-po-test","reponse":"Testeur","accepte":["testeur"],"genre":"personnage","indices":["Indice 1","Indice 2","Indice 3","Indice 4","Indice 5"],"reference":"Test 1.1"}')"
+api GET /api/banque/portrait > /dev/null
+check "portrait à N+1"                  "$(( NBPO + 1 ))" "$(jval '.items | length')"
+check "les modules restent étanches (quiadit toujours à N+1)" "$(( NBQD + 1 ))" "$(api GET /api/banque/quiadit > /dev/null; jval '.items | length')"
+
+say "Banques — surcharge d'un item du fichier (qd-001)"
+QD01_FICHIER="$(jq -r '.items[] | select(.id == "qd-001") | .parole' "$ROOT/quiadit/data/banque.json")"
+check "modification qd-001 → 200"       200 "$(api POST /api/admin/banque/quiadit "$TOKEN1" '{"id":"qd-001","parole":"Parole retouchée (version admin).","options":["Jésus","Pierre","Paul","Jean"],"bonne":0,"reference":"Jean 14.6","contexte":"Contexte retouché."}')"
+api GET /api/banque/quiadit > /dev/null
+check "la banque reste à N+1"           "$(( NBQD + 1 ))" "$(jval '.items | length')"
+check "qd-001 : version modifiée servie" "Parole retouchée (version admin)." "$(jval '.items[] | select(.id == "qd-001") | .parole')"
+check "qd-001 : une seule occurrence"   1   "$(jval '[.items[] | select(.id == "qd-001")] | length')"
+
+say "Banques — désactivation puis restauration (qd-001)"
+check "DELETE qd-001 (désactive) → 200" 200 "$(api DELETE /api/admin/banque/quiadit/qd-001 "$TOKEN1")"
+api GET /api/banque/quiadit > /dev/null
+check "banque à N (qd-001 retirée, l'ajout encore là)" "$NBQD" "$(jval '.items | length')"
+check "qd-001 absente de la banque"     0   "$(jval '[.items[] | select(.id == "qd-001")] | length')"
+check "restore sans surcharge (qd-002) → 404" 404 "$(api POST /api/admin/banque/quiadit/qd-002/restore "$TOKEN1")"
+check "restore qd-001 → 200"            200 "$(api POST /api/admin/banque/quiadit/qd-001/restore "$TOKEN1")"
+api GET /api/banque/quiadit > /dev/null
+check "banque repasse à N+1"            "$(( NBQD + 1 ))" "$(jval '.items | length')"
+check "qd-001 : version du fichier de retour" "$QD01_FICHIER" "$(jval '.items[] | select(.id == "qd-001") | .parole')"
+
+say "Banques — désactivation d'un item jamais surchargé (eo-001), puis retour"
+check "DELETE eo-001 → 200"             200 "$(api DELETE /api/admin/banque/ecritoupas/eo-001 "$TOKEN1")"
+api GET /api/banque/ecritoupas > /dev/null
+check "eo-001 absente"                  0   "$(jval '[.items[] | select(.id == "eo-001")] | length')"
+check "restore eo-001 → 200"            200 "$(api POST /api/admin/banque/ecritoupas/eo-001/restore "$TOKEN1")"
+api GET /api/banque/ecritoupas > /dev/null
+check "eo-001 de retour"                1   "$(jval '[.items[] | select(.id == "eo-001")] | length')"
+
+say "Banques — suppression des ajouts (réelle pour les adm-)"
+check "DELETE d'un id inconnu → 404"    404 "$(api DELETE /api/admin/banque/quiadit/adm-inconnu "$TOKEN1")"
+check "DELETE de l'ajout quiadit → 200" 200 "$(api DELETE "/api/admin/banque/quiadit/$BQD_ID" "$TOKEN1")"
+check "DELETE adm-eo-test → 200"        200 "$(api DELETE /api/admin/banque/ecritoupas/adm-eo-test "$TOKEN1")"
+check "DELETE adm-po-test → 200"        200 "$(api DELETE /api/admin/banque/portrait/adm-po-test "$TOKEN1")"
+api GET /api/banque/quiadit > /dev/null
+check "quiadit revenue à N"             "$NBQD" "$(jval '.items | length')"
+api GET /api/banque/ecritoupas > /dev/null
+check "ecritoupas revenue à N"          "$NBEO" "$(jval '.items | length')"
+api GET /api/banque/portrait > /dev/null
+check "portrait revenue à N"            "$NBPO" "$(jval '.items | length')"
 
 # ---------------------------------------------------------------------------
 # Notifications — « le verset offert ». Les clés du vecteur RFC 8291 servent
