@@ -607,6 +607,17 @@ summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; 
 .friend-row .fr-x { background: none; border: 0; color: var(--ink-soft); cursor: pointer; font-size: 1.05rem; padding: 8px; }
 .fr-empty { margin: 12px 0 0; font-size: .9rem; }
 
+/* L'en-tête d'identité de la page Mon église : le nom, mis en forme par des
+   MOTS-CLÉS à liste blanche — trois styles (familles déjà embarquées, aucune
+   fonte externe) et trois tailles. Rien d'autre ne peut être injecté. */
+.egl-nom { text-align: center; line-height: 1.2; overflow-wrap: break-word; }
+.egl-nom-classique { font-family: var(--serif); font-weight: 600; }
+.egl-nom-moderne { font-family: var(--sans); font-weight: 700; letter-spacing: .01em; }
+.egl-nom-solennelle { font-family: var(--serif); font-variant: small-caps; letter-spacing: .08em; font-weight: 600; }
+.egl-nom-t-discrete { font-size: 1.15rem; }
+.egl-nom-t-posee { font-size: 1.6rem; }
+.egl-nom-t-majestueuse { font-size: 2.1rem; }
+
 /* Mon église : le verset de la semaine, mis en avant doucement */
 .grp-verset {
   background: var(--surface-2); border-radius: 12px;

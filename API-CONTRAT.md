@@ -309,6 +309,14 @@ Corps : `{ "code": "GRP-XXXXX" }` — on rejoint en **membre**.
 "texte": "…" (1–500) }` — pose le verset de la semaine (remplace le précédent,
 `depuis` est horodaté par le serveur). → `{ "groupe": { … } }`
 
+### POST /api/groupes/{code}/identite
+**Responsable seulement** (403 sinon). Corps : `{ "style": "classique" |
+"moderne" | "solennelle", "taille": "discrete" | "posee" | "majestueuse" }` —
+la mise en forme du nom sur la page Mon église. Des **mots-clés à liste
+blanche**, rendus par des classes CSS : jamais une police ni une taille
+libres (400 hors liste). Le payload d'un groupe porte `nomStyle` et
+`nomTaille` (défauts : classique / posee). → `{ "groupe": { … } }`
+
 ### POST /api/groupes/{code}/passation
 **Responsable seulement** (403 sinon). Corps : `{ "pseudo": "…" }` — confie
 la responsabilité au membre portant ce pseudo (la seule identité que le
@@ -520,6 +528,16 @@ Le compte est **facultatif** : un abonnement anonyme reçoit la bibliothèque
 abonnement relié à un compte qui a un jardin synchronisé (blob `memo`) reçoit
 **un verset de son jardin** — celui dont la révision (`due`) est la plus
 proche : l'offrir, c'est déjà l'arroser.
+
+La seule notification **d'église** (décision produit) : le **rappel de MON
+service, la veille au soir** — « tu as levé la main pour demain ». Elle sert
+le membre dans son propre engagement, jamais l'assemblée pour le faire
+revenir. Une fois par inscription (`rappel_envoye` marqué **avant** l'envoi,
+comme les défis : rater vaut mieux que harceler), entre 17 h et 22 h locales
+la veille, et seulement si les notifications de l'appli sont déjà actives —
+lever la main n'abonne personne. Écartés délibérément : rappels des
+rendez-vous réguliers, « il reste des places », arrivée d'un membre, et tout
+« tu n'es pas venu ».
 
 Toute la pile est maison (RFC 8291 aes128gcm + RFC 8292 VAPID, en PHP pur,
 validée à l'octet près contre l'annexe A du RFC 8291 — voir

@@ -152,6 +152,9 @@ if (preg_match('#^/api/groupes/([^/]+)/membres/moi$#', $path, $m) && $method ===
 if (preg_match('#^/api/groupes/([^/]+)/passation$#', $path, $m) && $method === 'POST') {
     handle_groupes_passation($pdo, $m[1]);
 }
+if (preg_match('#^/api/groupes/([^/]+)/identite$#', $path, $m) && $method === 'POST') {
+    handle_groupes_identite($pdo, $m[1]);
+}
 
 /* ---- La page de l'église : annonces, rendez-vous, services (groupes-page.php) --- */
 if (preg_match('#^/api/groupes/([^/]+)/page$#', $path, $m) && $method === 'GET') {

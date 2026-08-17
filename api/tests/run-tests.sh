@@ -67,13 +67,20 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 db_migrate($pdo);
 $v = (int) $pdo->query("SELECT MAX(version) FROM schema_migrations")->fetchColumn();
 if ($v !== DB_MIGRATION_DERNIERE) { echo "journal-incomplet"; exit; }
-// Base déployée d avant le journal : schéma là, aucun tampon, étape 2 absente.
+// Base déployée d avant le journal : schéma là, aucun tampon, étapes 2 et 3
+// absentes (les ALTER de l étape 3 ne sont PAS idempotents — c est le journal
+// qui garantit leur exécution unique, la simulation doit donc les défaire).
 $pdo->exec("DROP TABLE schema_migrations");
 $pdo->exec("DROP TABLE groupe_banques");
 $pdo->exec("DROP TABLE groupe_banque_items");
+$pdo->exec("ALTER TABLE groupes DROP COLUMN nom_style");
+$pdo->exec("ALTER TABLE groupes DROP COLUMN nom_taille");
+$pdo->exec("ALTER TABLE groupe_service_inscriptions DROP COLUMN rappel_envoye");
 db_migrate($pdo);
 $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type = \"table\"")->fetchAll(PDO::FETCH_COLUMN);
 if (!in_array("groupe_banques", $tables) || !in_array("groupe_banque_items", $tables)) { echo "rattrapage-manque"; exit; }
+$cols = $pdo->query("SELECT name FROM pragma_table_info(\"groupes\")")->fetchAll(PDO::FETCH_COLUMN);
+if (!in_array("nom_style", $cols)) { echo "alter-manque"; exit; }
 // Base à jour : re-migrer doit être un non-événement.
 db_migrate($pdo);
 $n = (int) $pdo->query("SELECT COUNT(*) FROM schema_migrations")->fetchColumn();
@@ -556,6 +563,15 @@ check "u3 (responsable) le pose → 200"  200 "$(api POST "/api/groupes/$GCODE/v
 check "Chloé rend le groupe à Alice → 200" 200 "$(api POST "/api/groupes/$GCODE/passation" "$TOKEN3" '{"pseudo":"Alice"}')"
 api GET "/api/groupes/$GCODE" "$TOKEN1" > /dev/null
 check "u1 est de nouveau responsable"   responsable "$(jval .groupe.role)"
+
+say "Groupes — l'identité du nom (mots-clés à liste blanche, responsable seul)"
+check "par défaut : classique / posee"  "classique,posee" "$(api GET "/api/groupes/$GCODE" "$TOKEN1" > /dev/null; jval '.groupe.nomStyle + "," + .groupe.nomTaille')"
+check "posée par u3 (membre) → 403"     403 "$(api POST "/api/groupes/$GCODE/identite" "$TOKEN3" '{"style":"moderne","taille":"posee"}')"
+check "style hors liste → 400"          400 "$(api POST "/api/groupes/$GCODE/identite" "$TOKEN1" '{"style":"comic-sans","taille":"posee"}')"
+check "taille hors liste → 400"         400 "$(api POST "/api/groupes/$GCODE/identite" "$TOKEN1" '{"style":"moderne","taille":"96px"}')"
+check "u1 pose solennelle / majestueuse → 200" 200 "$(api POST "/api/groupes/$GCODE/identite" "$TOKEN1" '{"style":"solennelle","taille":"majestueuse"}')"
+check "→ nomStyle suit"                 solennelle "$(jval .groupe.nomStyle)"
+check "les membres la voient aussi"     "solennelle,majestueuse" "$(api GET "/api/groupes/$GCODE" "$TOKEN3" > /dev/null; jval '.groupe.nomStyle + "," + .groupe.nomTaille')"
 
 say "Groupes — quitter"
 check "u1 responsable ne peut pas quitter (u3 est là) → 400" 400 "$(api DELETE "/api/groupes/$GCODE/membres/moi" "$TOKEN1")"
@@ -1175,6 +1191,32 @@ check "unsubscribe rejoué (déjà parti) → 200" 200 "$(api POST /api/push/uns
 # abonnement doit être DÉTACHÉ (user_id NULL), pas supprimé.
 check "abonnement de u2 (compte) → 200"  200 "$(api POST /api/push/subscribe "$TOKEN2" "{\"subscription\":{\"endpoint\":\"https://exemple.invalide/push/abo-u2\",\"keys\":{\"p256dh\":\"$P256DH\",\"auth\":\"$AUTHK\"}},\"heure\":20,\"tz\":-60}")"
 check "relié au compte de u2"            1   "$(sqlval 'SELECT COUNT(*) FROM push_abonnements WHERE user_id IS NOT NULL')"
+
+say "Notifications — le rappel de MON service, la veille au soir"
+# u2 porte l'abonnement créé ci-dessus. Une église neuve, un service DEMAIN,
+# u2 lève la main ; le « soir de la veille » se simule en réglant le fuseau
+# de l'abonné pour que son heure locale vaille 18 h au moment du test.
+RGCODE="$(groupe_via_demande "$TOKEN1" "Église du Rappel")"
+api POST /api/groupes/rejoindre "$TOKEN2" "{\"code\":\"$RGCODE\"}" > /dev/null
+DEMAIN="$(date -u -d '+1 day' +%F)"
+api POST "/api/groupes/$RGCODE/services" "$TOKEN1" "{\"titre\":\"Accueil du dimanche\",\"date\":\"$DEMAIN\",\"places\":2}" > /dev/null
+SVCID="$(jval .service.id)"
+check "u2 lève la main → 200"           200 "$(api POST "/api/groupes/$RGCODE/services/$SVCID/inscription" "$TOKEN2")"
+sqlexec "UPDATE push_abonnements SET tz_offset = $(( ( $(date -u +%-H) - 18 ) * 60 )) WHERE user_id IS NOT NULL"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "le rappel est marqué (une seule chance, même si l'envoi rate)" 1 \
+  "$(sqlval "SELECT rappel_envoye FROM groupe_service_inscriptions WHERE service_id = $SVCID")"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "cron rejoué : aucun nouveau rappel (services = 0)" 0 "$(jval .services)"
+# Hors de la fenêtre du soir (ici 3 h du matin locales) : rien ne part, rien
+# n'est marqué — on repassera aux heures suivantes.
+api DELETE "/api/groupes/$RGCODE/services/$SVCID/inscription" "$TOKEN2" > /dev/null
+api POST "/api/groupes/$RGCODE/services/$SVCID/inscription" "$TOKEN2" > /dev/null
+sqlexec "UPDATE push_abonnements SET tz_offset = $(( ( $(date -u +%-H) - 3 ) * 60 )) WHERE user_id IS NOT NULL"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "à 3 h locales, pas de rappel (ni de marque)" 0 \
+  "$(sqlval "SELECT rappel_envoye FROM groupe_service_inscriptions WHERE service_id = $SVCID")"
+api DELETE "/api/groupes/$RGCODE" "$TOKEN1" > /dev/null # tout part avec le groupe
 
 # ---------------------------------------------------------------------------
 say "Limites : essais de code et demandes par heure (u3)"

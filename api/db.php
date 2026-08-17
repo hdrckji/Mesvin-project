@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 2;
+const DB_MIGRATION_DERNIERE = 3;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1019,10 +1019,28 @@ function db_migrate(PDO $pdo): void {
         ];
     }
 
+    /* ---- Étape 3 — identité de l'église + rappel de service ---------------------
+       Les premiers ALTER TABLE du projet (rendus possibles par le journal) :
+       - groupes.nom_style / nom_taille : l'en-tête de la page Mon église,
+         par MOTS-CLÉS à liste blanche (jamais une police ni une taille libres) ;
+       - groupe_service_inscriptions.rappel_envoye : le rappel push de la
+         veille ne part qu'une fois (marqué avant l'envoi, comme push_defis). */
+    $etape3 = db_driver($pdo) === 'mysql'
+        ? [
+            "ALTER TABLE groupes ADD COLUMN nom_style VARCHAR(20) NULL",
+            "ALTER TABLE groupes ADD COLUMN nom_taille VARCHAR(20) NULL",
+            "ALTER TABLE groupe_service_inscriptions ADD COLUMN rappel_envoye TINYINT NOT NULL DEFAULT 0",
+        ]
+        : [
+            "ALTER TABLE groupes ADD COLUMN nom_style TEXT NULL",
+            "ALTER TABLE groupes ADD COLUMN nom_taille TEXT NULL",
+            "ALTER TABLE groupe_service_inscriptions ADD COLUMN rappel_envoye INTEGER NOT NULL DEFAULT 0",
+        ];
+
     /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
-    foreach ([1 => $ddl, 2 => $etape2] as $version => $liste) {
+    foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }

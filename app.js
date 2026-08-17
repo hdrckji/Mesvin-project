@@ -2132,14 +2132,43 @@ function viewEglise() {
       ${gs.map(x => `<button class="pill ${x.code === g.code ? 'on' : ''}" data-eglsel="${esc(x.code)}">${esc(x.nom)}</button>`).join('')}
     </div>` : '';
 
+  // L'en-tête d'identité : le nom, mis en forme par le responsable — des
+  // mots-clés à liste blanche rendus en classes CSS, jamais du style libre.
+  const style = g.nomStyle || 'classique', taille = g.nomTaille || 'posee';
+  const identite = resp ? (egliseIdEdit ? `
+    <div class="pill-row" style="justify-content:center;margin-top:10px">
+      ${[['classique', 'Classique'], ['moderne', 'Moderne'], ['solennelle', 'Solennelle']].map(([v, l]) =>
+        `<button class="pill ${style === v ? 'on' : ''}" data-eglstyle="${v}">${l}</button>`).join('')}
+    </div>
+    <div class="pill-row" style="justify-content:center;margin-top:8px">
+      ${[['discrete', 'Discrète'], ['posee', 'Posée'], ['majestueuse', 'Majestueuse']].map(([v, l]) =>
+        `<button class="pill ${taille === v ? 'on' : ''}" data-egltaille="${v}">${l}</button>`).join('')}
+    </div>
+    <p class="muted center" style="font-size:.82rem;margin:8px 0 0"><button class="linkbtn" data-eglidclose="1">C'est bien ainsi</button></p>`
+    : `<p class="muted center" style="font-size:.82rem;margin:6px 0 0"><button class="linkbtn" data-eglidopen="1">Mettre en forme le nom</button></p>`) : '';
+
+  // Le verset de la semaine, et le PONT vers le jardin : chacun peut
+  // l'apprendre d'un geste — en silence, personne ne voit qui l'apprend.
+  let apprendre = '';
+  if (g.verset) {
+    const vid = eglVersetId(g);
+    const deja = !!store.cards[vid];
+    apprendre = deja
+      ? `<button class="btn btn-ghost btn-block" disabled style="margin-top:10px">Dans ton jardin 🌱</button>`
+      : `<button class="btn btn-grow btn-block" data-apprendre="1" style="margin-top:10px">Apprendre ce verset par cœur</button>
+         <p class="muted" style="font-size:.82rem;margin:6px 2px 0;text-align:center">Il rejoint ton jardin — quelques minutes par jour, à ton rythme.</p>`;
+  }
+
   const tete = `<div class="card fade">
-    <p style="margin:0"><b>${esc(g.nom)}</b><br>
-      <span class="muted" style="font-size:.85rem">${resp ? 'Tu es responsable' : 'Tu es membre'} · ${g.nbMembres} membre${g.nbMembres > 1 ? 's' : ''}</span></p>
+    <div class="egl-nom egl-nom-${style} egl-nom-t-${taille}">${esc(g.nom)}</div>
+    <p class="muted center" style="margin:4px 0 0;font-size:.85rem">${resp ? 'Tu es responsable' : 'Tu es membre'} · ${g.nbMembres} membre${g.nbMembres > 1 ? 's' : ''}</p>
+    ${identite}
     ${g.verset
       ? `<div class="grp-verset"><div class="gv-label">Verset de la semaine</div>
           <p class="gv-texte">« ${esc(g.verset.texte)} »</p>
           <p class="gv-ref">${esc(g.verset.reference)}</p></div>`
       : `<p class="muted" style="margin:10px 2px 0">Pas encore de verset de la semaine${resp ? ' — à toi de l\'offrir au groupe.' : '.'}</p>`}
+    ${apprendre}
     ${resp ? egliseVersetForm(g) : ''}
   </div>`;
 
@@ -2265,6 +2294,8 @@ function egliseServices(g, p, resp) {
     : `<p class="muted fr-empty">${resp ? 'Aucun service à venir — propose un coup de main, chacun lèvera la main s\'il le veut.' : 'Pas de service proposé pour l\'instant.'}</p>`;
   return `<div class="section-title">${icon('partage')} Services — je lève la main</div>
     ${forme || `<div class="card fade">${liste}
+      ${p.services.some(s => s.jeSuisInscrit)
+        ? `<p class="muted" style="font-size:.82rem;margin:10px 2px 0">Si les notifications de l'appli sont activées, un rappel doux te parvient la veille de ton service.</p>` : ''}
       ${resp && !pageEdit ? `<button class="btn btn-soft btn-block" data-pageedit="service" style="margin-top:10px">Proposer un service</button>` : ''}</div>`}`;
 }
 
@@ -2384,6 +2415,43 @@ async function doPagePin(id) {
   try {
     await GraineAPI.groupeAnnonceSave(g.code, { id: a.id, titre: a.titre, texte: a.texte, epingle: !a.epingle });
     pageRafraichir(g.code);
+  } catch (e) {
+    pageError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
+  }
+  render();
+}
+
+/* ---- L'identité du nom et le pont verset → jardin ---- */
+let egliseIdEdit = false; // les pastilles de mise en forme du nom, dépliées ?
+
+/* L'id de carte du verset de la semaine : stable pour une même référence —
+   retaper le bouton ne crée jamais de doublon dans le jardin. */
+function eglVersetId(g) {
+  return 'eglv-' + (g.verset.reference || '').toLowerCase().normalize('NFD')
+    .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function doApprendreVerset() {
+  const g = egliseCourante(); if (!g || !g.verset) return;
+  const vid = eglVersetId(g);
+  if (!store.cards[vid]) {
+    introduce({ id: vid, ref: g.verset.reference, text: g.verset.texte });
+    pageNotice = 'Le verset est dans ton jardin — rendez-vous dans Semer pour le faire grandir 🙂';
+  }
+  render();
+}
+
+async function doEgliseIdentite(style, taille) {
+  const g = egliseCourante(); if (!g) return;
+  pageNotice = pageError = null;
+  try {
+    const maj = await GraineAPI.groupeIdentite(g.code,
+      style || g.nomStyle || 'classique', taille || g.nomTaille || 'posee');
+    // Le groupe rafraîchi se replace dans la liste : l'en-tête suit aussitôt.
+    if (Array.isArray(groupesCache)) {
+      const k = groupesCache.findIndex(x => x.code === g.code);
+      if (k >= 0) groupesCache[k] = Object.assign({}, groupesCache[k], maj);
+    }
   } catch (e) {
     pageError = (e && e.offline) ? 'Pas de connexion — réessaie quand tu seras en ligne.' : friendlyError(e);
   }
@@ -3048,6 +3116,11 @@ function wire() {
   el.querySelectorAll('[data-pagepin]').forEach(b => b.addEventListener('click', () => doPagePin(+b.dataset.pagepin)));
   el.querySelectorAll('[data-svcmain]').forEach(b => b.addEventListener('click', () => doServiceMain(+b.dataset.svcmain, b.dataset.inscrit === '1')));
   el.querySelectorAll('[data-passation]').forEach(b => b.addEventListener('click', () => doGroupePassation(b.dataset.passation)));
+  if (q('[data-apprendre]')) q('[data-apprendre]').addEventListener('click', doApprendreVerset);
+  if (q('[data-eglidopen]')) q('[data-eglidopen]').addEventListener('click', () => { egliseIdEdit = true; render(); });
+  if (q('[data-eglidclose]')) q('[data-eglidclose]').addEventListener('click', () => { egliseIdEdit = false; render(); });
+  el.querySelectorAll('[data-eglstyle]').forEach(b => b.addEventListener('click', () => doEgliseIdentite(b.dataset.eglstyle, null)));
+  el.querySelectorAll('[data-egltaille]').forEach(b => b.addEventListener('click', () => doEgliseIdentite(null, b.dataset.egltaille)));
   if (q('[data-pageform]')) q('[data-pageform]').addEventListener('submit', e => { e.preventDefault(); doPageSave(); });
   if (q('[data-pagecancel]')) q('[data-pagecancel]').addEventListener('click', () => { pageEdit = null; render(); });
   if (q('[data-pagepinform]')) q('[data-pagepinform]').addEventListener('click', () => { if (pageEdit) { pageEdit.epingle = !pageEdit.epingle; render(); } });

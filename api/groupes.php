@@ -79,10 +79,44 @@ function groupe_payload(PDO $pdo, array $groupe, string $role, ?int $nbMembres =
     return [
         'code'      => $groupe['code'],
         'nom'       => $groupe['nom'],
+        // L'identité visuelle du nom (en-tête de la page Mon église) : des
+        // MOTS-CLÉS d'une liste blanche, jamais une police ou une taille
+        // libres — voir handle_groupes_identite.
+        'nomStyle'  => in_array($groupe['nom_style'] ?? null, GROUPE_NOM_STYLES, true) ? $groupe['nom_style'] : 'classique',
+        'nomTaille' => in_array($groupe['nom_taille'] ?? null, GROUPE_NOM_TAILLES, true) ? $groupe['nom_taille'] : 'posee',
         'role'      => $role,
         'nbMembres' => $nbMembres ?? groupe_nb_membres($pdo, (int) $groupe['id']),
         'verset'    => $verset,
     ];
+}
+
+/* ---- POST /api/groupes/{code}/identite — le nom, mis en forme ------------------- */
+
+// Les seules valeurs admises — le client n'envoie jamais une police ni une
+// taille : des mots-clés, rendus par des classes CSS. Rien d'autre ne passe.
+const GROUPE_NOM_STYLES  = ['classique', 'moderne', 'solennelle'];
+const GROUPE_NOM_TAILLES = ['discrete', 'posee', 'majestueuse'];
+
+function handle_groupes_identite(PDO $pdo, string $rawCode): never {
+    $user = require_user($pdo);
+    $groupe = groupe_load($pdo, $rawCode);
+    if (groupe_role($pdo, (int) $groupe['id'], (int) $user['id']) !== 'responsable') {
+        json_error('Seul le responsable du groupe met en forme le nom de son église.', 403);
+    }
+    $body = read_json_body();
+    $style = $body['style'] ?? null;
+    $taille = $body['taille'] ?? null;
+    if (!in_array($style, GROUPE_NOM_STYLES, true)) {
+        json_error('Style inconnu (classique, moderne ou solennelle).', 400);
+    }
+    if (!in_array($taille, GROUPE_NOM_TAILLES, true)) {
+        json_error('Taille inconnue (discrete, posee ou majestueuse).', 400);
+    }
+    $pdo->prepare('UPDATE groupes SET nom_style = ?, nom_taille = ? WHERE id = ?')
+        ->execute([$style, $taille, $groupe['id']]);
+    $st = $pdo->prepare('SELECT * FROM groupes WHERE id = ?');
+    $st->execute([$groupe['id']]);
+    json_out(['groupe' => groupe_payload($pdo, $st->fetch(), 'responsable')]);
 }
 
 /* ---- POST /api/groupes — la création directe est FERMÉE ----------------------- */

@@ -124,6 +124,9 @@
     // Confier la responsabilité à un membre, désigné par son pseudo (la seule
     // identité que le groupe expose). L'appelant devient simple membre.
     async groupePassation(code, pseudo) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/passation', { pseudo })).groupe; },
+    // Le nom de l'église, mis en forme — des MOTS-CLÉS d'une liste blanche
+    // (style : classique|moderne|solennelle ; taille : discrete|posee|majestueuse).
+    async groupeIdentite(code, style, taille) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/identite', { style, taille })).groupe; },
     // La création d'un groupe passe par une DEMANDE validée par l'administrateur —
     // jamais de création directe depuis l'appli. L'adresse de l'église est
     // obligatoire ; l'e-mail de contact est facultatif (omis si vide).

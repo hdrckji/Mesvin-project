@@ -568,7 +568,65 @@ function handle_cron_notify(PDO $pdo): never {
     }
     // Les défis entre amis restés sans réponse : la notification PATIENTE.
     $defis = push_defis_en_attente($pdo, $cfg);
-    json_out(['ok' => true, 'envoyes' => $envoyes, 'supprimes' => $supprimes, 'defis' => $defis]);
+    // Les services d'église de demain : UN rappel, la veille au soir, à ceux
+    // qui ont levé la main ET activé les notifications de l'appli.
+    $services = push_rappels_services($pdo, $cfg);
+    json_out(['ok' => true, 'envoyes' => $envoyes, 'supprimes' => $supprimes, 'defis' => $defis, 'services' => $services]);
+}
+
+/* ---- Le rappel de MON service, la veille ------------------------------------
+   La seule notification d'église (décision produit) : elle sert le membre
+   dans son propre engagement — « tu as levé la main pour demain » — jamais
+   l'assemblée pour le faire revenir. Une seule fois par inscription
+   (rappel_envoye marqué AVANT l'envoi, comme push_defis : rater vaut mieux
+   que harceler), le soir de la veille dans le fuseau de l'abonné, et
+   seulement si les notifications de l'appli sont déjà actives — lever la
+   main n'abonne personne à quoi que ce soit. */
+function push_rappels_services(PDO $pdo, array $cfg): int {
+    $envoyes = 0;
+    $st = $pdo->prepare(
+        'SELECT i.service_id, i.user_id, s.titre, g.nom AS eglise
+         FROM groupe_service_inscriptions i
+         JOIN groupe_services s ON s.id = i.service_id
+         JOIN groupes g ON g.id = s.groupe_id
+         WHERE i.rappel_envoye = 0 AND s.date_service = ?'
+    );
+    $st->execute([gmdate('Y-m-d', time() + 86400)]);
+    foreach ($st->fetchAll() as $r) {
+        $abos = $pdo->prepare('SELECT * FROM push_abonnements WHERE user_id = ?');
+        $abos->execute([(int) $r['user_id']]);
+        // Le soir de la veille chez l'abonné (17 h – 22 h locales) : avant,
+        // on repassera à l'heure suivante ; sans abonnement, on repassera
+        // aussi — activer ses notifications dans la journée suffit.
+        $prets = array_filter($abos->fetchAll(), static function (array $abo): bool {
+            $h = (int) gmdate('G', time() - ((int) $abo['tz_offset']) * 60);
+            return $h >= 17 && $h <= 22;
+        });
+        if ($prets === []) {
+            continue;
+        }
+        $pdo->prepare('UPDATE groupe_service_inscriptions SET rappel_envoye = 1 WHERE service_id = ? AND user_id = ?')
+            ->execute([(int) $r['service_id'], (int) $r['user_id']]);
+
+        $payload = (string) json_encode([
+            'title' => '🤝 Ton service, demain',
+            'body'  => $r['titre'] . ' (' . $r['eglise'] . ') — merci de t\'être proposé 🙂',
+            'url'   => '/',
+            'tag'   => 'service-demain',
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        foreach ($prets as $abo) {
+            $res = push_send($abo, $payload, $cfg);
+            if ($res['ok']) {
+                $envoyes++;
+            } elseif ($res['gone']) {
+                $pdo->prepare('DELETE FROM push_abonnements WHERE id = ?')->execute([$abo['id']]);
+            }
+            // échec passager : tant pis pour cette fois — le compteur
+            // d'échecs de l'abonnement vit dans la boucle quotidienne.
+        }
+    }
+    return $envoyes;
 }
 
 /* ---- Les défis qui attendent ------------------------------------------------
