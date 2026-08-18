@@ -6,7 +6,16 @@
    bloc (tout ou rien) ; la Bible complète suit en best-effort : un livre qui
    rate ne prive pas du hors-ligne de base, il se rattrapera à l'usage. */
 
-const CACHE = 'graine-v70';
+/* DEUX caches, et c'est tout l'enjeu.
+   La coquille change à chaque version du code : son cache porte le numéro.
+   La Bible, elle, ne change JAMAIS — 4,4 Mo qui n'ont aucune raison d'être
+   retéléchargés parce qu'on a corrigé trois lignes de JavaScript. Elle vit
+   donc dans un cache à part, dont le nom ne bouge pas. Avant cette séparation,
+   chaque publication coûtait 5,7 Mo à chaque appareil : vingt publications
+   dans une soirée, et un téléphone passait la soirée à télécharger pendant
+   que l'appli rampait derrière. */
+const CACHE = 'graine-v71';
+const CACHE_BIBLE = 'graine-bible-v1';
 // La coquille : le minimum pour que l'appli s'ouvre et vive hors-ligne.
 const SHELL = [
   '.', 'index.html', 'app.css', 'app.js', 'icons.js', 'api-client.js', 'pierres.js', 'visite.js',
@@ -43,20 +52,34 @@ const BIBLE = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE)
-      // Coquille : atomique — si elle rate, on réessaiera une autre fois.
-      .then(c => c.addAll(SHELL)
-        // Bible : chaque livre pour lui-même — sur un réseau fragile, en
-        // garder 60 sur 66 vaut infiniment mieux que tout perdre.
-        .then(() => Promise.allSettled(BIBLE.map(u => c.add(u)))))
-      .then(() => self.skipWaiting())
-  );
+  e.waitUntil((async () => {
+    // Coquille : atomique — si elle rate, on réessaiera une autre fois.
+    const coquille = await caches.open(CACHE);
+    await coquille.addAll(SHELL);
+
+    // Bible : chaque livre pour lui-même — sur un réseau fragile, en garder 60
+    // sur 66 vaut infiniment mieux que tout perdre. Et surtout : on ne
+    // retélécharge que ce qu'on n'a PAS déjà, en récupérant au passage les
+    // livres restés dans le cache d'une version précédente. Le jour où l'on
+    // passe à ce découpage, la migration ne coûte donc pas un octet de réseau.
+    const bible = await caches.open(CACHE_BIBLE);
+    await Promise.allSettled(BIBLE.map(async u => {
+      if (await bible.match(u)) return;              // déjà à sa place
+      const ancien = await caches.match(u);          // laissé par une version passée ?
+      if (ancien) { await bible.put(u, ancien.clone()); return; }
+      const res = await fetch(u);
+      if (res && res.ok) await bible.put(u, res);
+    }));
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+    // Le cache de la Bible SURVIT au changement de version : c'est tout l'objet
+    // de la séparation. Seules les vieilles coquilles s'en vont.
+    caches.keys().then(keys => Promise.all(
+      keys.filter(k => k !== CACHE && k !== CACHE_BIBLE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -72,14 +95,19 @@ self.addEventListener('fetch', e => {
   // L'API n'est JAMAIS mise en cache ni servie depuis le cache : données
   // privées et toujours fraîches ; hors-ligne, l'appli gère l'échec elle-même.
   if (url.pathname.includes('/api/')) return;
+  // Un livre de la Bible est immuable : il va dans son cache à lui, et une fois
+  // là il se sert SANS attendre le réseau — trois secondes de patience pour un
+  // fichier qui ne changera jamais, c'est trois secondes volées au lecteur.
+  const estBible = url.pathname.includes('/lire/data/');
   e.respondWith((async () => {
     const enCache = await caches.match(e.request);
+    if (estBible && enCache) return enCache;
     const reseau = fetch(e.request).then(res => {
       // Seules les réponses SAINES entrent au cache : une 404/500 passagère
       // ne doit jamais remplacer une bonne copie ni être servie hors-ligne.
       if (res && res.ok) {
         const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+        caches.open(estBible ? CACHE_BIBLE : CACHE).then(c => c.put(e.request, copy)).catch(() => {});
       }
       return res;
     });
