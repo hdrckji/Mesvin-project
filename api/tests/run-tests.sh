@@ -611,16 +611,17 @@ check "u3 : liste vide"                 0   "$(api GET /api/groupes "$TOKEN3" > 
 check "u1, resté seul, quitte → 200"    200 "$(api DELETE "/api/groupes/$GCODE/membres/moi" "$TOKEN1")"
 check "le groupe a disparu avec lui → 404" 404 "$(api POST /api/groupes/rejoindre "$TOKEN3" "{\"code\":\"$GCODE\"}")"
 
-say "Groupes — plafond de 5 groupes par responsable, puis suppression"
+say "Groupes — plafond de 2 églises par responsable, puis suppression"
 GCODES=""
-for i in 1 2 3 4 5; do
+for i in 1 2; do
   GCODES="$GCODES $(groupe_via_demande "$TOKEN1" "Groupe numéro $i")"
 done
-check "u1 responsable de 5 groupes"     5   "$(api GET /api/groupes "$TOKEN1" > /dev/null; jval '.groupes | length')"
-check "6e demande → 409 (plafond)"      409 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"Groupe de trop","adresse":"12 rue des Oliviers, Mons"}')"
-# Le plafond se REVÉRIFIE à l'acceptation : une demande déposée avant le 5e
-# groupe peut être tranchée après lui. Insertion directe en base pour simuler
-# ce décalage (le dépôt normal refuse déjà à 5), demande CONSERVÉE au 409.
+check "u1 responsable de 2 églises"     2   "$(api GET /api/groupes "$TOKEN1" > /dev/null; jval '.groupes | length')"
+check "3e demande → 409 (plafond)"      409 "$(api POST /api/groupes/demande "$TOKEN1" '{"nom":"Groupe de trop","adresse":"12 rue des Oliviers, Mons"}')"
+check "le refus nomme la sortie (transmettre)" true "$(jval '.error | test("[Tt]ransmet")')"
+# Le plafond se REVÉRIFIE à l'acceptation : une demande déposée avant la 2e
+# église peut être tranchée après elle. Insertion directe en base pour simuler
+# ce décalage (le dépôt normal refuse déjà au plafond), demande CONSERVÉE au 409.
 php -r '
 $pdo = new PDO("sqlite:" . $argv[1]);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -642,7 +643,7 @@ SUPPRIMES=0
 for c in $GCODES; do
   [ "$(api DELETE "/api/groupes/$c" "$TOKEN1")" = 200 ] && SUPPRIMES=$((SUPPRIMES + 1))
 done
-check "u1 supprime ses 5 groupes"       5   "$SUPPRIMES"
+check "u1 supprime ses 2 églises"       2   "$SUPPRIMES"
 check "u1 : liste vide"                 0   "$(api GET /api/groupes "$TOKEN1" > /dev/null; jval '.groupes | length')"
 
 say "Groupes — deuxième groupe : u2 responsable, u3 membre (passation testée après la suppression de u2)"
@@ -843,7 +844,16 @@ check "l'archivée n'est pas perdue"     archivee \
 # porte une assemblée et fréquente la voisine ne doit rien pouvoir y faire de
 # plus qu'un membre — et ne doit pas voir ses brouillons.
 say "Séries d'église — responsable ailleurs ne donne aucun droit ici"
+# u3 est DÉJÀ membre de QGCODE au moment où il ouvre la sienne : porter une
+# église et fréquenter une autre est un usage normal, jamais un empêchement.
+check "u3 est bien membre de QGCODE avant" true \
+  "$(api GET /api/groupes "$TOKEN3" > /dev/null; jval "[.groupes[] | select(.code == \"$QGCODE\")] | length > 0")"
 AUTRE="$(groupe_via_demande "$TOKEN3" "Assemblée de u3")"
+check "…et il ouvre la sienne malgré tout" GRP "${AUTRE%-*}"
+check "il reste membre de QGCODE après"   membre \
+  "$(api GET /api/groupes "$TOKEN3" > /dev/null; jval "[.groupes[] | select(.code == \"$QGCODE\")] | last | .role")"
+check "et responsable de la sienne"       responsable \
+  "$(jval "[.groupes[] | select(.code == \"$AUTRE\")] | last | .role")"
 check "u3 est responsable chez lui → 201" 201 "$(api POST "/api/groupes/$AUTRE/series/quiadit" "$TOKEN3" '{"nom":"Chez u3"}')"
 check "…et toujours refusé chez QGCODE → 403" 403 "$(api POST "/api/groupes/$QGCODE/series/quiadit" "$TOKEN3" '{"nom":"Intrusion"}')"
 check "il n y anime pas"                  false "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN3" > /dev/null; jval .anime)"

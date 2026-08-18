@@ -197,6 +197,11 @@ function handle_groupe_series_list(PDO $pdo, string $rawCode, string $module): n
     }
     json_out([
         'module'      => $module,
+        // Le nom de l'église voyage avec la liste : les pages d'épreuve
+        // vivent hors de l'application et ne connaissent qu'un code. Sans
+        // lui, quelqu'un qui appartient à deux assemblées ne saurait pas
+        // laquelle lui propose ces séries.
+        'eglise'      => (string) $groupe['nom'],
         'anime'       => $anime,
         'series'      => $series,
         'maxPubliees' => GROUPE_SERIE_MAX_PUBLIEES,

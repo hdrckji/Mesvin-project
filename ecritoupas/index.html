@@ -303,7 +303,8 @@ function choixBanqueHTML() {
          >Signaler un contenu de cette série</a></p>`
     : '';
   return `<div style="margin:-4px 0 16px">
-    <div class="muted" style="font-size:.82rem;margin-bottom:6px">Avec quelles questions ?</div>
+    <div class="muted" style="font-size:.82rem;margin-bottom:6px">Avec quelles questions ?${
+      EGLISE_NOM ? ` <b>· ${esc(EGLISE_NOM)}</b>` : ''}</div>
     <div class="pill-row">
       ${pastille(null, 'Banque complète', false)}
       ${SERIES.map(x => pastille(x.id, x.nom, serieDejaJouee(x.id))).join('')}
@@ -1021,6 +1022,7 @@ const EGLISE = (() => {
 })();
 let egliseActive = false; // la banque servie est bien celle de l'église
 let SERIES = null;        // séries publiées de mon église (null = pas encore demandé)
+let EGLISE_NOM = '';      // son nom — on appartient parfois à deux assemblées
 let serieChoisie = null;  // la série avec laquelle on joue, ou null = banque complète
 const SERIES_JOUEES = 'graine.series.jouees';
 function serieJouees() {
@@ -1040,6 +1042,7 @@ async function chargerSeries() {
   try {
     const d = await GraineAPI.groupeSeries(EGLISE, 'ecritoupas');
     SERIES = ((d && d.series) || []).filter(x => x.etat === 'publiee');
+    EGLISE_NOM = (d && d.eglise) || '';
   } catch (e) { /* pas membre, hors-ligne : on jouera la banque commune */ }
   render();
 }

@@ -27,7 +27,14 @@
 
 defined('GRAINE_API') || exit;
 
-const GROUPE_MAX_PAR_RESPONSABLE = 5;    // anti-abus : pas d'usine à groupes
+/* Deux assemblées au plus par responsable. Cinq n'avait jamais été décidé :
+   c'était un chiffre rond posé contre la création en masse. Deux couvre les
+   cas réels — un pasteur qui dessert deux petites assemblées, une église qui
+   tient un groupe séparé pour sa jeunesse — et ferme l'usine à groupes, qui
+   élargirait la surface de contenu à surveiller. Être MEMBRE d'autant
+   d'églises qu'on veut reste libre : ce plafond porte sur la charge, jamais
+   sur la fréquentation. La passation (groupes.php) est la porte de sortie. */
+const GROUPE_MAX_PAR_RESPONSABLE = 2;
 const GROUPE_MAX_MEMBRES         = 500;  // largement assez pour une assemblée
 
 /* ---- Aides ------------------------------------------------------------------ */

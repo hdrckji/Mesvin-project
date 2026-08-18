@@ -2182,9 +2182,13 @@ function viewEglise() {
   const meta = pageMeta[g.code];
 
   // Plusieurs assemblées : une pastille par groupe, comme la banque du Défi.
-  const choix = gs.length > 1 ? `<div class="pill-row" style="margin:0 0 14px">
+  // On dit aussi ce que le choix COMMANDE — il ne règle pas que cet écran :
+  // c'est lui qui décide quelles séries les épreuves proposeront.
+  const choix = gs.length > 1 ? `<div class="pill-row" style="margin:0 0 6px">
       ${gs.map(x => `<button class="pill ${x.code === g.code ? 'on' : ''}" data-eglsel="${esc(x.code)}">${esc(x.nom)}</button>`).join('')}
-    </div>` : '';
+    </div>
+    <p class="muted" style="font-size:.82rem;margin:0 2px 14px">L'église choisie ici est aussi celle dont
+    les séries de questions te seront proposées dans les épreuves.</p>` : '';
 
   // L'en-tête d'identité : le nom, mis en forme par le responsable — des
   // mots-clés à liste blanche rendus en classes CSS, jamais du style libre.

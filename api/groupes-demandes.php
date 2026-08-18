@@ -110,7 +110,8 @@ function handle_groupe_demande_create(PDO $pdo): never {
     // Même plafond qu'à l'acceptation : inutile de laisser mûrir une demande
     // condamnée d'avance.
     if (groupe_nb_en_responsable($pdo, (int) $user['id']) >= GROUPE_MAX_PAR_RESPONSABLE) {
-        json_error('Tu es déjà responsable de ' . GROUPE_MAX_PAR_RESPONSABLE . ' groupes — c\'est le maximum.', 409);
+        json_error('Tu portes déjà ' . GROUPE_MAX_PAR_RESPONSABLE . ' églises — c\'est le maximum. '
+            . 'Transmets-en une à quelqu\'un de ton assemblée pour en ouvrir une autre.', 409);
     }
 
     $existante = groupe_demande_de($pdo, (int) $user['id']);
@@ -243,7 +244,8 @@ function handle_admin_eglise_accepter(PDO $pdo, int $id): never {
     // Le plafond se revérifie ICI : le demandeur a pu devenir responsable
     // d'autres groupes depuis le dépôt. Refus doux, demande conservée.
     if (groupe_nb_en_responsable($pdo, (int) $demande['user_id']) >= GROUPE_MAX_PAR_RESPONSABLE) {
-        json_error('Ce compte est déjà responsable de ' . GROUPE_MAX_PAR_RESPONSABLE . ' groupes — c\'est le maximum.', 409);
+        json_error('Ce compte porte déjà ' . GROUPE_MAX_PAR_RESPONSABLE . ' églises — c\'est le maximum. '
+            . 'Il lui faut en transmettre une avant d\'en ouvrir une autre.', 409);
     }
 
     // La demande est REVENDIQUÉE d'abord, par une suppression conditionnelle :
