@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 5;
+const DB_MIGRATION_DERNIERE = 6;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1076,10 +1076,63 @@ function db_migrate(PDO $pdo): void {
             )",
            'CREATE INDEX IF NOT EXISTS idx_gpropositions_groupe ON groupe_propositions (groupe_id, genre)'];
 
+    /* ---- Étape 6 — les séries de questions de l'église ---------------------------
+       Une église ne REMPLACE plus la banque commune : elle propose des SÉRIES
+       nommées (« Prédication du 10 août — Jonas »), que le joueur choisit au
+       lancement. Trois états : brouillon (invisible des membres), publiée
+       (jouable), archivée (rangée mais jamais perdue — l'archivage libère une
+       place sous le plafond de séries visibles, sans rien détruire).
+
+       Chaque item d'église appartient désormais à une série. Les items déjà
+       présents sont rattachés à une série « Questions de notre église »,
+       laissée en BROUILLON : rien n'apparaît aux membres sans une décision
+       explicite du responsable. */
+    $tsMigration = gmdate('Y-m-d H:i:s');
+    $etape6 = db_driver($pdo) === 'mysql'
+        ? ["CREATE TABLE IF NOT EXISTS groupe_series (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                groupe_id INT UNSIGNED NOT NULL,
+                module VARCHAR(20) NOT NULL,
+                nom VARCHAR(80) NOT NULL,
+                etat VARCHAR(12) NOT NULL DEFAULT 'brouillon',
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL,
+                publiee_at DATETIME NULL,
+                INDEX idx_gseries_groupe (groupe_id, module, etat)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+           'ALTER TABLE groupe_banque_items ADD COLUMN serie_id INT UNSIGNED NULL',
+           'ALTER TABLE groupe_banque_items ADD INDEX idx_gbitems_serie (serie_id)']
+        : ["CREATE TABLE IF NOT EXISTS groupe_series (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                groupe_id INTEGER NOT NULL,
+                module TEXT NOT NULL,
+                nom TEXT NOT NULL,
+                etat TEXT NOT NULL DEFAULT 'brouillon',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                publiee_at TEXT NULL
+            )",
+           'CREATE INDEX IF NOT EXISTS idx_gseries_groupe ON groupe_series (groupe_id, module, etat)',
+           'ALTER TABLE groupe_banque_items ADD COLUMN serie_id INTEGER NULL',
+           'CREATE INDEX IF NOT EXISTS idx_gbitems_serie ON groupe_banque_items (serie_id)'];
+    // Reprise des items existants — une série par couple (église, épreuve).
+    // Même SQL des deux côtés : la sous-requête corrélée ne touche pas la
+    // table mise à jour, ce que MySQL comme SQLite acceptent.
+    $etape6[] = "INSERT INTO groupe_series (groupe_id, module, nom, etat, created_at, updated_at)
+                 SELECT DISTINCT groupe_id, module, 'Questions de notre église', 'brouillon',
+                        '$tsMigration', '$tsMigration'
+                 FROM groupe_banque_items";
+    $etape6[] = 'UPDATE groupe_banque_items SET serie_id = (
+                     SELECT s.id FROM groupe_series s
+                     WHERE s.groupe_id = groupe_banque_items.groupe_id
+                       AND s.module = groupe_banque_items.module)
+                 WHERE serie_id IS NULL';
+
     /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
-    foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4, 5 => $etape5] as $version => $liste) {
+    foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4, 5 => $etape5,
+              6 => $etape6] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }

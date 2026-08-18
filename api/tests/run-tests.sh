@@ -578,13 +578,13 @@ check "il pose le verset → 200"         200 "$(api POST "/api/groupes/$GCODE/v
 check "→ son rôle reste co-responsable" coresponsable "$(jval .groupe.role)"
 check "il crée une annonce → 201"       201 "$(api POST "/api/groupes/$GCODE/annonces" "$TOKEN3" '{"titre":"Un mot de l équipe","texte":"Bonjour à tous."}')"
 check "il règle la banque de quiz → 200" 200 "$(api POST "/api/groupes/$GCODE/quiz/mode" "$TOKEN3" '{"mode":"toutes"}')"
-check "il règle une banque d épreuve → 200" 200 "$(api GET "/api/groupes/$GCODE/banques/quiadit" "$TOKEN3")"
+check "il tient les séries d une épreuve → 200" 200 "$(api GET "/api/groupes/$GCODE/series/quiadit" "$TOKEN3")"
 # Ce qu'il ne peut PAS : porter le groupe.
 check "il ne nomme pas un co-responsable → 403" 403 "$(api POST "/api/groupes/$GCODE/coresponsables" "$TOKEN3" '{"pseudo":"Alice"}')"
 check "il ne transmet pas le groupe → 403" 403 "$(api POST "/api/groupes/$GCODE/passation" "$TOKEN3" '{"pseudo":"Alice"}')"
 check "il ne met pas en forme le nom → 403" 403 "$(api POST "/api/groupes/$GCODE/identite" "$TOKEN3" '{"style":"moderne","taille":"posee"}')"
 check "il ne supprime pas le groupe → 403" 403 "$(api DELETE "/api/groupes/$GCODE" "$TOKEN3")"
-check "u2 (non-membre) reste dehors → 403" 403 "$(api GET "/api/groupes/$GCODE/banques/quiadit" "$TOKEN2")"
+check "u2 (non-membre) reste dehors → 403" 403 "$(api GET "/api/groupes/$GCODE/series/quiadit" "$TOKEN2")"
 # Retrait : il redevient membre, sans quitter le groupe.
 check "retrait d'un non-co-responsable → 404" 404 "$(api DELETE "/api/groupes/$GCODE/coresponsables/Alice" "$TOKEN1")"
 check "u1 retire Chloé → 200"           200 "$(api DELETE "/api/groupes/$GCODE/coresponsables/Chlo%C3%A9" "$TOKEN1")"
@@ -733,51 +733,123 @@ check "les 5 questions viennent TOUTES de la sélection" 5 "$DANS_SELECTION"
 check "une veillée ordinaire n'a pas d'église" false "$(api GET "/api/veillees/$VCODE/state" > /dev/null; jval '.veillee | has("eglise")')"
 
 # ---------------------------------------------------------------------------
-# Banques d'église par épreuve (groupes-banques.php) : quiadit, ecritoupas,
-# portrait. Tout est réservé au responsable, LECTURE COMPRISE (les items
-# portent la bonne réponse — un membre qui lirait avant la veillée pourrait
-# tricher). Réutilise le groupe du quiz : u1 responsable, u3 membre, u2 dehors.
-say "Banques d'église par épreuve — responsable seul, lecture comprise"
-NBQA="$(api GET /api/banque/quiadit > /dev/null; jval '.items | length')"
-check "module inconnu → 404"            404 "$(api GET "/api/groupes/$QGCODE/banques/inconnu" "$TOKEN1")"
-check "GET par u3 (membre) → 403"       403 "$(api GET "/api/groupes/$QGCODE/banques/quiadit" "$TOKEN3")"
-check "GET par u2 (non-membre) → 403"   403 "$(api GET "/api/groupes/$QGCODE/banques/quiadit" "$TOKEN2")"
-check "GET responsable → 200"           200 "$(api GET "/api/groupes/$QGCODE/banques/quiadit" "$TOKEN1")"
-check "mode par défaut : toutes"        toutes "$(jval .banque.mode)"
-check "nbCommune = banque publique"     "$NBQA" "$(jval .banque.nbCommune)"
-check "nbTotal = commune (rien en propre)" "$NBQA" "$(jval .banque.nbTotal)"
+# Séries de questions d'une église (groupes-banques.php) : quiadit,
+# ecritoupas, portrait. L'écriture et les brouillons sont réservés au
+# responsable ; un MEMBRE lit les séries publiées, sans quoi il ne pourrait
+# pas y jouer. Réutilise le groupe du quiz : u1 responsable, u3 membre, u2 dehors.
+say "Séries d'église — qui voit quoi"
+check "module inconnu → 404"            404 "$(api GET "/api/groupes/$QGCODE/series/inconnu" "$TOKEN1")"
+check "u2 (non-membre) → 403"           403 "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN2")"
+check "u3 (membre) → 200"               200 "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN3")"
+check "le membre n'anime pas"           false "$(jval .anime)"
+check "aucune série au départ"          0   "$(jval '.series | length')"
+check "responsable → 200"               200 "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN1")"
+check "le responsable anime"            true "$(jval .anime)"
+check "le plafond est annoncé"          8   "$(jval .maxPubliees)"
 
-say "Banques d'église — la sélection remplace, recoupée avec la banque commune"
-QAID1="$(jq -r '.items[0].id' "$ROOT/quiadit/data/banque.json")"
-QAIDS="$(jq -c '[.items[0:3][].id]' "$ROOT/quiadit/data/banque.json")"
-check "posée par u3 (membre) → 403"     403 "$(api PUT "/api/groupes/$QGCODE/banques/quiadit/selection" "$TOKEN3" '{"ids":[]}')"
-check "3 ids du fichier → 200"          200 "$(api PUT "/api/groupes/$QGCODE/banques/quiadit/selection" "$TOKEN1" "{\"ids\":$QAIDS}")"
-check "nbSelection 3"                   3   "$(jval .banque.nbSelection)"
-check "un id fantaisiste est écarté sans bruit" 1 \
-  "$(api PUT "/api/groupes/$QGCODE/banques/quiadit/selection" "$TOKEN1" "{\"ids\":[\"$QAID1\",\"pas-un-id\"]}" > /dev/null; jval .banque.nbSelection)"
-api PUT "/api/groupes/$QGCODE/banques/quiadit/selection" "$TOKEN1" "{\"ids\":$QAIDS}" > /dev/null
-check "mode selection → 200"            200 "$(api POST "/api/groupes/$QGCODE/banques/quiadit/mode" "$TOKEN1" '{"mode":"selection"}')"
-check "nbTotal rétrécit à la sélection" 3   "$(jval .banque.nbTotal)"
+say "Séries d'église — création"
+check "u3 (membre) ne crée pas → 403"   403 "$(api POST "/api/groupes/$QGCODE/series/quiadit" "$TOKEN3" '{"nom":"Interdite"}')"
+check "nom vide → 400"                  400 "$(api POST "/api/groupes/$QGCODE/series/quiadit" "$TOKEN1" '{"nom":"   "}')"
+NOMLONG="$(printf 'x%.0s' $(seq 1 81))"
+check "nom de 81 caractères → 400"      400 "$(api POST "/api/groupes/$QGCODE/series/quiadit" "$TOKEN1" "{\"nom\":\"$NOMLONG\"}")"
+check "création → 201"                  201 "$(api POST "/api/groupes/$QGCODE/series/quiadit" "$TOKEN1" '{"nom":"Prédication du 10 août — Jonas"}')"
+SID="$(jval .serie.id)"
+check "elle naît en brouillon"          brouillon "$(jval .serie.etat)"
+check "et vide"                         0   "$(jval .serie.nbItems)"
+check "le membre ne voit pas le brouillon" 0 "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN3" > /dev/null; jval '.series | length')"
+check "le responsable, si"              1   "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN1" > /dev/null; jval '.series | length')"
 
-say "Banques d'église — items propres (mêmes validations que l'admin)"
-check "parole manquante → 400"          400 "$(api POST "/api/groupes/$QGCODE/banques/quiadit/items" "$TOKEN1" '{"options":["A","B","C","D"],"bonne":0,"reference":"R"}')"
-check "3 options au lieu de 4 → 400"    400 "$(api POST "/api/groupes/$QGCODE/banques/quiadit/items" "$TOKEN1" '{"parole":"P","options":["A","B","C"],"bonne":0,"reference":"R"}')"
-check "création quiadit → 201"          201 "$(api POST "/api/groupes/$QGCODE/banques/quiadit/items" "$TOKEN1" '{"parole":"Une parole de notre assemblée","options":["Moïse","David","Paul","Pierre"],"bonne":2,"reference":"Actes 20.35"}')"
-BQIID="$(jval .item.id)"
-check "→ id de la famille egl-"         egl "${BQIID%-*}"
-check "modification → 200"              200 "$(api POST "/api/groupes/$QGCODE/banques/quiadit/items" "$TOKEN1" "{\"id\":\"$BQIID\",\"parole\":\"Une parole retouchée\",\"options\":[\"Moïse\",\"David\",\"Paul\",\"Pierre\"],\"bonne\":2,\"reference\":\"Actes 20.35\"}")"
-check "portrait sans ses 5 indices → 400" 400 "$(api POST "/api/groupes/$QGCODE/banques/portrait/items" "$TOKEN1" '{"reponse":"Moïse","accepte":["Moïse"],"genre":"personnage","indices":["Un seul indice"],"reference":"Exode 2"}')"
-check "item inconnu supprimé → 404"     404 "$(api DELETE "/api/groupes/$QGCODE/banques/quiadit/items/egl-000000" "$TOKEN1")"
-check "nbPropres 1 · nbTotal suit"      4   "$(api GET "/api/groupes/$QGCODE/banques/quiadit" "$TOKEN1" > /dev/null; jval .banque.nbTotal)"
+say "Séries d'église — les items gardent les validations de l'admin"
+IT="/api/groupes/$QGCODE/series/quiadit/$SID/items"
+check "u3 (membre) n'écrit pas → 403"   403 "$(api POST "$IT" "$TOKEN3" '{"parole":"P","options":["A","B","C","D"],"bonne":0,"reference":"Actes 20.35"}')"
+check "parole manquante → 400"          400 "$(api POST "$IT" "$TOKEN1" '{"options":["A","B","C","D"],"bonne":0,"reference":"R"}')"
+check "3 options au lieu de 4 → 400"    400 "$(api POST "$IT" "$TOKEN1" '{"parole":"P","options":["A","B","C"],"bonne":0,"reference":"R"}')"
+check "série inconnue → 404"            404 "$(api POST "/api/groupes/$QGCODE/series/quiadit/999999/items" "$TOKEN1" '{"parole":"P","options":["A","B","C","D"],"bonne":0,"reference":"Actes 20.35"}')"
 
-say "Banques d'église — la banque fusionnée, même format que la publique"
-check "membre → 403"                    403 "$(api GET "/api/groupes/$QGCODE/banque/quiadit" "$TOKEN3")"
-check "responsable → 200"               200 "$(api GET "/api/groupes/$QGCODE/banque/quiadit" "$TOKEN1")"
-check "le format porte version + items" true "$(jval 'has("version") and has("items")')"
-check "sélection (3) + propres (1)"     4   "$(jval '.items | length')"
-check "l'item de l'église est servi"    "Une parole retouchée" "$(jval ".items[] | select(.id == \"$BQIID\") | .parole")"
-check "repasser en toutes → tout revient" $((NBQA + 1)) \
-  "$(api POST "/api/groupes/$QGCODE/banques/quiadit/mode" "$TOKEN1" '{"mode":"toutes"}' > /dev/null; api GET "/api/groupes/$QGCODE/banque/quiadit" "$TOKEN1" > /dev/null; jval '.items | length')"
+say "Séries d'église — l'avertissement de conformité, qui ne bloque jamais"
+check "parole absente du verset → 201 quand même" 201 \
+  "$(api POST "$IT" "$TOKEN1" '{"parole":"Une parole de notre assemblée","options":["Moïse","David","Paul","Pierre"],"bonne":2,"reference":"Actes 20.35"}')"
+IID1="$(jval .item.id)"
+check "→ id de la famille egl-"         egl "${IID1%-*}"
+check "et un avertissement est rendu"   true "$(jval '.avertissement != null')"
+check "l'avertissement nomme la référence" true "$(jval '.avertissement | test("Actes 20.35")')"
+check "parole exacte → aucun avertissement" true \
+  "$(api POST "$IT" "$TOKEN1" '{"parole":"Il y a plus de bonheur à donner qu à recevoir","options":["Jésus","Paul","Pierre","Jean"],"bonne":1,"reference":"Actes 20.35"}' > /dev/null; jval '.avertissement == null')"
+IID2="$(jval .item.id)"
+check "référence illisible → on se tait" true \
+  "$(api POST "$IT" "$TOKEN1" '{"parole":"Question propre à notre organisation","options":["A","B","C","D"],"bonne":0,"reference":"Notre règlement 3"}' > /dev/null; jval '.avertissement == null')"
+IID3="$(jval .item.id)"
+check "3 items dans la série"           3 "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN1" > /dev/null; jval '.series[0].nbItems')"
+
+say "Séries d'église — publier, et le plancher de 3 questions"
+check "état inconnu → 400"              400 "$(api POST "/api/groupes/$QGCODE/series/quiadit/$SID" "$TOKEN1" '{"etat":"visible"}')"
+check "u3 ne publie pas → 403"          403 "$(api POST "/api/groupes/$QGCODE/series/quiadit/$SID" "$TOKEN3" '{"etat":"publiee"}')"
+check "publication → 200"               200 "$(api POST "/api/groupes/$QGCODE/series/quiadit/$SID" "$TOKEN1" '{"etat":"publiee"}')"
+check "état publiee"                    publiee "$(jval .serie.etat)"
+check "renommer → 200"                  200 "$(api POST "/api/groupes/$QGCODE/series/quiadit/$SID" "$TOKEN1" '{"nom":"Série sur Jonas"}')"
+check "le nom a changé"                 "Série sur Jonas" "$(jval .serie.nom)"
+check "le membre la voit enfin"         1   "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN3" > /dev/null; jval '.series | length')"
+
+say "Séries d'église — jouer une série"
+JOUE="/api/groupes/$QGCODE/series/quiadit/$SID/items"
+check "u2 (non-membre) → 403"           403 "$(api GET "$JOUE" "$TOKEN2")"
+check "u3 (membre) → 200"               200 "$(api GET "$JOUE" "$TOKEN3")"
+check "format : version + items"        true "$(jval 'has("version") and has("items")')"
+check "3 items servis"                  3   "$(jval '.items | length')"
+check "la série est nommée"             "Série sur Jonas" "$(jval .serie.nom)"
+check "l'item de l'église est bien là"  "Une parole de notre assemblée" \
+  "$(jval ".items[] | select(.id == \"$IID1\") | .parole")"
+
+say "Séries d'église — retomber sous le plancher dépublie"
+check "suppression d'un item → 200"     200 "$(api DELETE "/api/groupes/$QGCODE/series/quiadit/$SID/items/$IID3" "$TOKEN1")"
+check "il en reste 2"                   2   "$(jval .nbItems)"
+check "la série est repassée en brouillon" true "$(jval .depubliee)"
+check "le membre ne la voit plus"       0   "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN3" > /dev/null; jval '.series | length')"
+check "et ne peut plus y jouer → 403"   403 "$(api GET "$JOUE" "$TOKEN3")"
+check "republier à 2 questions → 400"   400 "$(api POST "/api/groupes/$QGCODE/series/quiadit/$SID" "$TOKEN1" '{"etat":"publiee"}')"
+check "item inconnu supprimé → 404"     404 "$(api DELETE "/api/groupes/$QGCODE/series/quiadit/$SID/items/egl-000000" "$TOKEN1")"
+
+say "Séries d'église — le plafond de séries publiées, et l'archivage qui libère"
+# On remonte la série d'origine à 3 items, puis on en publie 7 autres : 8 au total.
+api POST "$IT" "$TOKEN1" '{"parole":"Troisième parole","options":["A","B","C","D"],"bonne":0,"reference":"Actes 20.35"}' > /dev/null
+api POST "/api/groupes/$QGCODE/series/quiadit/$SID" "$TOKEN1" '{"etat":"publiee"}' > /dev/null
+for n in 2 3 4 5 6 7 8; do
+  api POST "/api/groupes/$QGCODE/series/quiadit" "$TOKEN1" "{\"nom\":\"Série $n\"}" > /dev/null
+  SN="$(jval .serie.id)"
+  for q in 1 2 3; do
+    api POST "/api/groupes/$QGCODE/series/quiadit/$SN/items" "$TOKEN1" \
+      "{\"parole\":\"Parole $n-$q\",\"options\":[\"A\",\"B\",\"C\",\"D\"],\"bonne\":0,\"reference\":\"Actes 20.35\"}" > /dev/null
+  done
+  api POST "/api/groupes/$QGCODE/series/quiadit/$SN" "$TOKEN1" '{"etat":"publiee"}' > /dev/null
+  [ "$n" = "8" ] && SDERN="$SN"
+done
+check "8 séries publiées"               8 "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN3" > /dev/null; jval '.series | length')"
+api POST "/api/groupes/$QGCODE/series/quiadit" "$TOKEN1" '{"nom":"La neuvième"}' > /dev/null
+SNEUF="$(jval .serie.id)"
+for q in 1 2 3; do
+  api POST "/api/groupes/$QGCODE/series/quiadit/$SNEUF/items" "$TOKEN1" \
+    "{\"parole\":\"Parole 9-$q\",\"options\":[\"A\",\"B\",\"C\",\"D\"],\"bonne\":0,\"reference\":\"Actes 20.35\"}" > /dev/null
+done
+check "publier la 9e → 409"             409 "$(api POST "/api/groupes/$QGCODE/series/quiadit/$SNEUF" "$TOKEN1" '{"etat":"publiee"}')"
+check "le refus dit d'archiver"         true "$(jval '.error | test("archive")')"
+check "archiver la 8e → 200"            200 "$(api POST "/api/groupes/$QGCODE/series/quiadit/$SDERN" "$TOKEN1" '{"etat":"archivee"}')"
+check "la 9e passe alors → 200"         200 "$(api POST "/api/groupes/$QGCODE/series/quiadit/$SNEUF" "$TOKEN1" '{"etat":"publiee"}')"
+check "toujours 8 visibles pour le membre" 8 "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN3" > /dev/null; jval '.series | length')"
+check "l'archivée n'est pas perdue"     archivee \
+  "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN1" > /dev/null; jval ".series[] | select(.id == $SDERN) | .etat")"
+
+say "Séries d'église — suppression d'une série, items compris"
+check "série inconnue → 404"            404 "$(api DELETE "/api/groupes/$QGCODE/series/quiadit/999999" "$TOKEN1")"
+check "u3 ne supprime pas → 403"        403 "$(api DELETE "/api/groupes/$QGCODE/series/quiadit/$SNEUF" "$TOKEN3")"
+check "suppression → 200"               200 "$(api DELETE "/api/groupes/$QGCODE/series/quiadit/$SNEUF" "$TOKEN1")"
+check "ses items ne se jouent plus → 404" 404 "$(api GET "/api/groupes/$QGCODE/series/quiadit/$SNEUF/items" "$TOKEN1")"
+
+say "Séries d'église — une épreuve n'empiète pas sur l'autre"
+check "portrait : aucune série"         0 "$(api GET "/api/groupes/$QGCODE/series/portrait" "$TOKEN1" > /dev/null; jval '.series | length')"
+check "portrait sans ses 5 indices → 400" 400 \
+  "$(api POST "/api/groupes/$QGCODE/series/portrait" "$TOKEN1" '{"nom":"Portraits de Jonas"}' > /dev/null; SP="$(jval .serie.id)"; api POST "/api/groupes/$QGCODE/series/portrait/$SP/items" "$TOKEN1" '{"reponse":"Moïse","accepte":["Moïse"],"genre":"personnage","indices":["Un seul indice"],"reference":"Exode 2"}')"
+check "la série de quiadit est introuvable côté portrait → 404" 404 \
+  "$(api GET "/api/groupes/$QGCODE/series/portrait/$SID/items" "$TOKEN1")"
 
 say "Quiz d'église — suppression du groupe : tout est purgé"
 QSQL() { php -r '$p = new PDO("sqlite:" . $argv[1]); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
@@ -785,8 +857,8 @@ check "u1 supprime le groupe → 200"     200 "$(api DELETE "/api/groupes/$QGCOD
 check "GET quiz sur le groupe disparu → 404" 404 "$(api GET "/api/groupes/$QGCODE/quiz" "$TOKEN1")"
 check "réglages + sélection + propres + liens : 0 ligne" 0 \
   "$(QSQL 'SELECT (SELECT COUNT(*) FROM groupe_quiz_reglages) + (SELECT COUNT(*) FROM groupe_quiz_selection) + (SELECT COUNT(*) FROM groupe_questions) + (SELECT COUNT(*) FROM veillee_groupes)')"
-check "banques d'épreuves : 0 ligne aussi" 0 \
-  "$(QSQL 'SELECT (SELECT COUNT(*) FROM groupe_banques) + (SELECT COUNT(*) FROM groupe_banque_items)')"
+check "séries et items d'épreuves : 0 ligne aussi" 0 \
+  "$(QSQL 'SELECT (SELECT COUNT(*) FROM groupe_banques) + (SELECT COUNT(*) FROM groupe_banque_items) + (SELECT COUNT(*) FROM groupe_series)')"
 check "la veillée liée survit, sans église" false "$(api GET "/api/veillees/$VQCODE/state" > /dev/null; jval '.veillee | has("eglise")')"
 
 # ---------------------------------------------------------------------------

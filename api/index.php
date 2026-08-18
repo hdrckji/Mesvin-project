@@ -25,6 +25,7 @@ require __DIR__ . '/friends.php';
 require __DIR__ . '/groupes.php';
 require __DIR__ . '/groupes-demandes.php';
 require __DIR__ . '/groupes-quiz.php';
+require __DIR__ . '/segond.php';
 require __DIR__ . '/groupes-banques.php';
 require __DIR__ . '/groupes-propositions.php';
 require __DIR__ . '/groupes-page.php';
@@ -222,26 +223,31 @@ if (preg_match('#^/api/groupes/([^/]+)/quiz/questions/([A-Za-z0-9-]{1,60})$#', $
     handle_groupe_quiz_question_delete($pdo, $m[1], $m[2]);
 }
 
-/* ---- Banques d'église par épreuve : quiadit, ecritoupas, portrait
-       (voir groupes-banques.php — responsable seul, lecture comprise) ------------- */
-if (preg_match('#^/api/groupes/([^/]+)/banques/([a-z]{1,20})$#', $path, $m) && $method === 'GET') {
-    handle_groupe_banque_get($pdo, $m[1], $m[2]);
+/* ---- Séries de questions d'une église : quiadit, ecritoupas, portrait
+       (voir groupes-banques.php). Écriture et brouillons : responsable et
+       co-responsables. Lecture des séries PUBLIÉES : tout membre — sans quoi
+       il ne pourrait pas y jouer. --------------------------------------------- */
+if (preg_match('#^/api/groupes/([^/]+)/series/([a-z]{1,20})$#', $path, $m) && $method === 'GET') {
+    handle_groupe_series_list($pdo, $m[1], $m[2]);
 }
-if (preg_match('#^/api/groupes/([^/]+)/banques/([a-z]{1,20})/mode$#', $path, $m) && $method === 'POST') {
-    handle_groupe_banque_mode($pdo, $m[1], $m[2]);
+if (preg_match('#^/api/groupes/([^/]+)/series/([a-z]{1,20})$#', $path, $m) && $method === 'POST') {
+    handle_groupe_serie_creer($pdo, $m[1], $m[2]);
 }
-if (preg_match('#^/api/groupes/([^/]+)/banques/([a-z]{1,20})/selection$#', $path, $m) && $method === 'PUT') {
-    handle_groupe_banque_selection($pdo, $m[1], $m[2]);
+if (preg_match('#^/api/groupes/([^/]+)/series/([a-z]{1,20})/([0-9]{1,10})$#', $path, $m) && $method === 'POST') {
+    handle_groupe_serie_maj($pdo, $m[1], $m[2], (int) $m[3]);
 }
-if (preg_match('#^/api/groupes/([^/]+)/banques/([a-z]{1,20})/items$#', $path, $m) && $method === 'POST') {
-    handle_groupe_banque_item_save($pdo, $m[1], $m[2]);
+if (preg_match('#^/api/groupes/([^/]+)/series/([a-z]{1,20})/([0-9]{1,10})$#', $path, $m) && $method === 'DELETE') {
+    handle_groupe_serie_supprimer($pdo, $m[1], $m[2], (int) $m[3]);
 }
-if (preg_match('#^/api/groupes/([^/]+)/banques/([a-z]{1,20})/items/([A-Za-z0-9-]{1,60})$#', $path, $m) && $method === 'DELETE') {
-    handle_groupe_banque_item_delete($pdo, $m[1], $m[2], $m[3]);
+if (preg_match('#^/api/groupes/([^/]+)/series/([a-z]{1,20})/([0-9]{1,10})/items$#', $path, $m) && $method === 'POST') {
+    handle_groupe_serie_item_save($pdo, $m[1], $m[2], (int) $m[3]);
 }
-// La banque FUSIONNÉE de l'église — celle que chargent les pages d'épreuves.
-if (preg_match('#^/api/groupes/([^/]+)/banque/([a-z]{1,20})$#', $path, $m) && $method === 'GET') {
-    handle_groupe_banque_fusion($pdo, $m[1], $m[2]);
+if (preg_match('#^/api/groupes/([^/]+)/series/([a-z]{1,20})/([0-9]{1,10})/items/([A-Za-z0-9-]{1,60})$#', $path, $m) && $method === 'DELETE') {
+    handle_groupe_serie_item_delete($pdo, $m[1], $m[2], (int) $m[3], $m[4]);
+}
+// Les items d'une série — c'est ce que chargent les pages d'épreuve pour jouer.
+if (preg_match('#^/api/groupes/([^/]+)/series/([a-z]{1,20})/([0-9]{1,10})/items$#', $path, $m) && $method === 'GET') {
+    handle_groupe_serie_jouer($pdo, $m[1], $m[2], (int) $m[3]);
 }
 
 /* ---- Duels -------------------------------------------------------------------- */
