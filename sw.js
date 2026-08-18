@@ -6,7 +6,7 @@
    bloc (tout ou rien) ; la Bible complète suit en best-effort : un livre qui
    rate ne prive pas du hors-ligne de base, il se rattrapera à l'usage. */
 
-const CACHE = 'graine-v58';
+const CACHE = 'graine-v59';
 // La coquille : le minimum pour que l'appli s'ouvre et vive hors-ligne.
 const SHELL = [
   '.', 'index.html', 'app.css', 'app.js', 'icons.js', 'api-client.js', 'pierres.js', 'visite.js',

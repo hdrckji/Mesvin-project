@@ -71,6 +71,8 @@
 	redir /plan-lecture-bible /plan-lecture-bible/ permanent
 	redir /memoriser-versets /memoriser-versets/ permanent
 	redir /eglises /eglises/ permanent
+	redir /confidentialite /confidentialite/ permanent
+	redir /mentions-legales /mentions-legales/ permanent
 	@pquiz path /quiz-biblique/
 	rewrite @pquiz /quiz-biblique/index.html
 	@pplan path /plan-lecture-bible/
@@ -79,6 +81,10 @@
 	rewrite @pmemo /memoriser-versets/index.html
 	@peglises path /eglises/
 	rewrite @peglises /eglises/index.html
+	@pconf path /confidentialite/
+	rewrite @pconf /confidentialite/index.html
+	@pml path /mentions-legales/
+	rewrite @pml /mentions-legales/index.html
 
 	# Le service worker ne doit jamais être mis en cache,
 	# sinon les mises à jour de l'appli ne parviennent pas aux utilisateurs.

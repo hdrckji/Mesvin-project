@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Politique de confidentialité — Bible Horizon</title>
+  <meta name="description" content="Ce que Bible Horizon enregistre, pourquoi, combien de temps, et comment tout faire effacer. Sans compte, rien ne quitte votre appareil." />
+  <link rel="canonical" href="https://biblehorizon.fr/confidentialite/" />
+  <meta name="robots" content="index, follow" />
+  <link rel="icon" href="../icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../app.css" />
+  <script>
+    /* Anti-flash : applique le thème choisi AVANT le chargement du CSS. */
+    (function () {
+      try {
+        var choix = localStorage.getItem('graine.theme');
+        if (choix === 'clair' || choix === 'sombre' || choix === 'sepia') {
+          document.documentElement.setAttribute('data-theme', choix);
+        }
+      } catch (e) { /* stockage indisponible : on suit le système */ }
+    })();
+  </script>
+  <style>
+    .lp { max-width: 660px; margin: 0 auto; padding: 20px 18px 44px; }
+    .lp-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+    .lp-top a.home { text-decoration: none; }
+    .lp h1 { font-family: var(--serif); font-size: 1.7rem; line-height: 1.25; margin: 6px 0 12px; }
+    .lp h2 { font-family: var(--serif); font-size: 1.2rem; margin: 30px 0 8px; }
+    .lp h3 { font-size: 1rem; margin: 20px 0 4px; }
+    .lp p, .lp li { line-height: 1.65; }
+    .lp .lead { font-size: 1.05rem; color: var(--ink-soft); margin-top: 0; }
+    .lp .maj { font-size: .85rem; color: var(--ink-soft); }
+    .lp table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; font-size: .95rem; }
+    .lp th, .lp td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .lp th { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); }
+    .lp .encadre { background: var(--surface-2); border-radius: 12px; padding: 14px 16px; margin: 16px 0; }
+    .lp .encadre p:last-child { margin-bottom: 0; }
+    .lp footer { margin-top: 40px; border-top: 1px solid var(--line); padding-top: 18px; }
+    .lp footer nav { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 12px; }
+    .lp footer a { color: var(--accent-ink); }
+    .lp .tableau-defile { overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <main class="lp">
+    <header class="lp-top">
+      <a class="home" href="../"><strong>Bible&nbsp;Horizon</strong></a>
+      <a href="../">← Retour à l'application</a>
+    </header>
+    <h1>Politique de confidentialité</h1>
+    <p class="lead">Bible Horizon collecte le strict minimum, et rien du tout tant que vous
+    n'ouvrez pas de compte. Cette page décrit exactement ce qui est enregistré, pourquoi,
+    combien de temps, et comment le faire effacer.</p>
+    <p class="maj">Dernière mise à jour : 17 août 2026.</p>
+
+    <h2>Qui est responsable</h2>
+    <p>Jimmy Hendrickx, personne physique établie en Belgique, développe et exploite
+    Bible Horizon à titre bénévole. Le projet n'est adossé à aucune société ni association.<br />
+    Contact : <a href="mailto:contact@biblehorizon.fr">contact@biblehorizon.fr</a></p>
+
+    <h2>Sans compte, rien n'est collecté</h2>
+    <p>L'application fonctionne entièrement sans compte. Dans ce cas, votre progression
+    — versets mémorisés, avancée de lecture, passages surlignés, scores — reste
+    <strong>sur votre appareil</strong>, dans le stockage local du navigateur. Rien n'est
+    envoyé au serveur, et effacer les données du site suffit à tout supprimer.</p>
+    <p>Une seule mesure existe côté serveur : un compteur de fréquentation qui enregistre
+    uniquement <em>une date, un nom de page, et un nombre</em>. Aucun identifiant, aucune
+    adresse IP, aucun cookie de mesure d'audience. Il est impossible d'en déduire qui a
+    visité quoi.</p>
+
+    <h2>Avec un compte, ce qui est enregistré</h2>
+    <p>Le compte est facultatif. Il sert à synchroniser votre progression entre appareils,
+    retrouver des amis, et rejoindre une église.</p>
+    <div class="tableau-defile">
+    <table>
+      <tr><th>Donnée</th><th>Pourquoi</th><th>Conservation</th></tr>
+      <tr><td>Adresse e-mail</td><td>Vous identifier et vous envoyer le code de connexion</td><td>Jusqu'à suppression du compte</td></tr>
+      <tr><td>Pseudo</td><td>Vous afficher auprès de vos amis et des membres de votre église</td><td>Jusqu'à suppression du compte</td></tr>
+      <tr><td>Code ami</td><td>Permettre à quelqu'un de vous ajouter sans connaître votre e-mail</td><td>Jusqu'à suppression du compte</td></tr>
+      <tr><td>Dates de création et de dernière visite</td><td>Faire fonctionner le compte et repérer les comptes inactifs</td><td>Jusqu'à suppression du compte</td></tr>
+      <tr><td>Progression synchronisée</td><td>Retrouver vos versets et votre lecture sur un autre appareil</td><td>Jusqu'à suppression du compte</td></tr>
+      <tr><td>Code de connexion à six chiffres</td><td>Vous connecter sans mot de passe. Il est enregistré haché, jamais en clair</td><td>45 minutes, puis effacé automatiquement</td></tr>
+      <tr><td>Jeton de session</td><td>Vous garder connecté</td><td>90 jours</td></tr>
+      <tr><td>Appartenance à une église, rôle, inscriptions aux services</td><td>Faire vivre l'espace de votre communauté</td><td>Jusqu'à votre départ du groupe ou suppression du compte</td></tr>
+      <tr><td>Abonnement aux notifications</td><td>Vous envoyer le rappel que vous avez demandé</td><td>Jusqu'au désabonnement</td></tr>
+    </table>
+    </div>
+
+    <h3>Connexion par compte Google</h3>
+    <p>Si vous choisissez ce moyen plutôt que le code par e-mail, Google nous transmet votre
+    adresse e-mail et un identifiant de compte. Nous ne recevons rien d'autre — ni vos
+    contacts, ni vos fichiers, ni votre historique.</p>
+
+    <h3>Protection contre les abus</h3>
+    <p>Pour empêcher qu'on inonde le service de demandes, un compteur horaire est tenu par
+    adresse IP. Cette adresse n'est jamais rattachée à votre compte, ne sert à rien d'autre,
+    et le compteur est <strong>effacé automatiquement au bout de deux heures</strong>.</p>
+
+    <h3>Quiz en direct</h3>
+    <p>Les participants d'une veillée n'ont aucun compte à créer : seul leur prénom est
+    affiché, et toute la partie est supprimée du serveur <strong>24 heures</strong> après.</p>
+
+    <h2>Ce que nous ne faisons pas</h2>
+    <div class="encadre">
+      <p>Pas de publicité. Pas de revente ni de partage commercial de vos données.
+      Pas de traceur publicitaire, pas de pixel, pas de réseau social embarqué.
+      Pas de profilage ni de décision automatisée. Aucun cookie déposé à des fins
+      de suivi — l'application n'utilise que le stockage local de votre navigateur,
+      pour son propre fonctionnement.</p>
+    </div>
+
+    <h2>Bases légales</h2>
+    <ul>
+      <li><strong>Exécution du service</strong> que vous demandez : compte, synchronisation,
+      appartenance à un groupe.</li>
+      <li><strong>Consentement</strong>, pour les notifications — retirable à tout moment
+      dans l'application ou dans les réglages du navigateur.</li>
+      <li><strong>Intérêt légitime</strong>, pour la protection contre les abus et la mesure
+      de fréquentation agrégée.</li>
+    </ul>
+
+    <h2>Qui d'autre traite ces données</h2>
+    <ul>
+      <li><strong>Railway Corporation</strong> — hébergement du site et de la base de données.</li>
+      <li><strong>Brevo</strong> — envoi des e-mails contenant le code de connexion.</li>
+      <li><strong>Google</strong> — uniquement si vous utilisez la connexion par compte Google.</li>
+      <li><strong>Le service de notifications de votre navigateur</strong> (Google, Mozilla ou
+      Apple selon le navigateur) — pour acheminer les rappels que vous avez demandés.</li>
+    </ul>
+    <p>Railway est une société américaine. Selon la région d'hébergement retenue pour le
+    service, les données peuvent être traitées en dehors de l'Union européenne ; ce transfert
+    est alors encadré par le contrat conclu avec l'hébergeur.</p>
+
+    <h2>Vos droits</h2>
+    <p>Vous pouvez à tout moment accéder à vos données, les corriger, les faire effacer,
+    en demander une copie, ou vous opposer à un traitement.</p>
+    <p>La suppression est directement dans l'application : onglet <strong>Moi</strong>,
+    puis <strong>« Supprimer mon compte »</strong>. Elle efface votre compte et vos données
+    du serveur. Pour toute autre demande, écrivez à
+    <a href="mailto:contact@biblehorizon.fr">contact@biblehorizon.fr</a> ; il y sera répondu
+    dans un délai d'un mois.</p>
+    <p>Si une réponse ne vous satisfait pas, vous pouvez saisir l'Autorité de protection des
+    données (APD), rue de la Presse 35, 1000 Bruxelles —
+    <a href="https://www.autoriteprotectiondonnees.be" rel="noopener">autoriteprotectiondonnees.be</a>.
+    Si vous résidez dans un autre pays de l'Union, vous pouvez saisir l'autorité de votre pays.</p>
+
+    <h2>Âge minimum</h2>
+    <p>La création d'un compte est réservée aux personnes de <strong>13 ans et plus</strong>.
+    En dessous de cet âge, l'application reste utilisable librement <em>sans compte</em> :
+    tout fonctionne alors sur l'appareil, sans qu'aucune donnée ne nous parvienne.</p>
+
+    <h2>Sécurité</h2>
+    <p>Les échanges se font en HTTPS. Les codes de connexion sont enregistrés hachés. Le
+    nombre de tentatives est limité. Aucun mot de passe n'est stocké, puisque le service
+    n'en utilise pas.</p>
+
+    <h2>Modifications</h2>
+    <p>Cette page peut évoluer si le service change. La date de dernière mise à jour, en
+    haut, fait foi.</p>
+    <footer>
+      <nav>
+        <a href="../">Accueil</a> ·
+        <a href="../confidentialite/">Confidentialité</a> ·
+        <a href="../mentions-legales/">Mentions légales</a> ·
+        <a href="../eglises/">Pour les églises</a>
+      </nav>
+      <p class="muted" style="font-size:.9rem">Bible Horizon est gratuit, sans publicité, et le restera.
+      Le texte biblique est la Segond 1910 (domaine public).
+      Une question ? <a href="mailto:contact@biblehorizon.fr">contact@biblehorizon.fr</a></p>
+    </footer>
+  </main>
+</body>
+</html>

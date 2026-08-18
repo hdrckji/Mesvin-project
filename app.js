@@ -1220,6 +1220,10 @@ function viewAbout() {
       <p class="muted center" style="font-size:.85rem;margin-top:10px"><a href="eglises/" style="color:var(--accent-ink)">Tout savoir sur le quiz dans ton église →</a></p>
     </div>
     <p class="muted center" style="margin-top:20px">« La semence, c'est la parole de Dieu. » — Luc 8.11</p>
+    <p class="muted center" style="font-size:.85rem;margin-top:14px">
+      <a href="confidentialite/" style="color:var(--accent-ink)">Confidentialité</a>
+      &nbsp;·&nbsp;
+      <a href="mentions-legales/" style="color:var(--accent-ink)">Mentions légales</a></p>
     <p class="muted center" style="font-size:.8rem;margin-top:10px">Version 0.3 · projet en construction</p>`;
 }
 

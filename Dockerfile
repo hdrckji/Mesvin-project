@@ -34,6 +34,9 @@ COPY memoriser-versets/ ./memoriser-versets/
 COPY eglises/ ./eglises/
 # Dossier de presse (PDF) : adresse stable, citée dans les envois aux médias.
 COPY presse/ ./presse/
+# Pages légales — obligatoires et référencées depuis le pied de l'application.
+COPY confidentialite/ ./confidentialite/
+COPY mentions-legales/ ./mentions-legales/
 COPY data/ ./data/
 COPY lire/ ./lire/
 COPY defi/ ./defi/
