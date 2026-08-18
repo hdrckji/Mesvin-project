@@ -839,6 +839,29 @@ check "toujours 8 visibles pour le membre" 8 "$(api GET "/api/groupes/$QGCODE/se
 check "l'archivée n'est pas perdue"     archivee \
   "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN1" > /dev/null; jval ".series[] | select(.id == $SDERN) | .etat")"
 
+# Le rôle est ATTACHÉ À UNE ÉGLISE, jamais à la personne. Quelqu'un qui
+# porte une assemblée et fréquente la voisine ne doit rien pouvoir y faire de
+# plus qu'un membre — et ne doit pas voir ses brouillons.
+say "Séries d'église — responsable ailleurs ne donne aucun droit ici"
+AUTRE="$(groupe_via_demande "$TOKEN3" "Assemblée de u3")"
+check "u3 est responsable chez lui → 201" 201 "$(api POST "/api/groupes/$AUTRE/series/quiadit" "$TOKEN3" '{"nom":"Chez u3"}')"
+check "…et toujours refusé chez QGCODE → 403" 403 "$(api POST "/api/groupes/$QGCODE/series/quiadit" "$TOKEN3" '{"nom":"Intrusion"}')"
+check "il n y anime pas"                  false "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN3" > /dev/null; jval .anime)"
+check "il anime bien chez lui"            true  "$(api GET "/api/groupes/$AUTRE/series/quiadit" "$TOKEN3" > /dev/null; jval .anime)"
+# Un brouillon de QGCODE reste invisible, et injouable même en devinant son id.
+api POST "/api/groupes/$QGCODE/series/quiadit" "$TOKEN1" '{"nom":"Brouillon du responsable"}' > /dev/null
+BROU="$(jval .serie.id)"
+check "le brouillon n apparaît pas à u3"  0 \
+  "$(api GET "/api/groupes/$QGCODE/series/quiadit" "$TOKEN3" > /dev/null; jval "[.series[] | select(.id == $BROU)] | length")"
+check "et ne se joue pas → 403"           403 "$(api GET "/api/groupes/$QGCODE/series/quiadit/$BROU/items" "$TOKEN3")"
+check "u3 ne le publie pas → 403"         403 "$(api POST "/api/groupes/$QGCODE/series/quiadit/$BROU" "$TOKEN3" '{"etat":"publiee"}')"
+check "ni ne le supprime → 403"           403 "$(api DELETE "/api/groupes/$QGCODE/series/quiadit/$BROU" "$TOKEN3")"
+# Viser une série d'une autre église avec SON code : introuvable, pas servie.
+check "série d une autre église → 404"    404 "$(api GET "/api/groupes/$AUTRE/series/quiadit/$BROU/items" "$TOKEN3")"
+check "u3 ne voit pas le contenu admin de QGCODE → 403" 403 "$(api GET "/api/admin/groupes/$QGCODE" "$TOKEN3")"
+api DELETE "/api/groupes/$AUTRE" "$TOKEN3" > /dev/null
+api DELETE "/api/groupes/$QGCODE/series/quiadit/$BROU" "$TOKEN1" > /dev/null
+
 say "Séries d'église — suppression d'une série, items compris"
 check "série inconnue → 404"            404 "$(api DELETE "/api/groupes/$QGCODE/series/quiadit/999999" "$TOKEN1")"
 check "u3 ne supprime pas → 403"        403 "$(api DELETE "/api/groupes/$QGCODE/series/quiadit/$SNEUF" "$TOKEN3")"

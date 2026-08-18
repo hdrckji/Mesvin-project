@@ -1964,14 +1964,7 @@ function ensureGroupes() {
   GraineAPI.mesGroupes()
     .then(async gs => {
       groupesCache = Array.isArray(gs) ? gs : [];
-      // Les pages d'épreuve vivent hors de l'application et ne connaissent
-      // l'église que par l'URL. On retient donc son code ici — sans quoi un
-      // membre arrivant par l'accueil ne verrait jamais les séries de sa
-      // communauté. Écrit seulement quand la liste est VRAIMENT chargée.
-      try {
-        if (groupesCache.length) localStorage.setItem('graine.eglise.code', groupesCache[0].code);
-        else localStorage.removeItem('graine.eglise.code');
-      } catch (e) { /* stockage refusé : on s'en passe */ }
+      retenirEglise();
       if (groupesCache.length) {
         // Le détail apporte la liste des membres ; s'il manque (réseau), la
         // carte s'affiche quand même — sans la liste, jamais d'erreur brute.
@@ -2088,6 +2081,20 @@ function egliseOngletMemorise(v) {
 }
 
 let egliseSel = null;      // code du groupe affiché (utile à partir de 2 groupes)
+
+/* Les pages d'épreuve vivent hors de l'application et ne connaissent
+   l'église que par l'URL : on retient son code pour qu'un membre arrivant
+   par l'accueil voie les séries de sa communauté. On retient CELLE QU'IL
+   REGARDE, pas la première de la liste — quelqu'un qui est responsable d'une
+   église et simple membre d'une autre se verrait sinon proposer les séries
+   de la mauvaise, sans jamais pouvoir atteindre les siennes. */
+function retenirEglise() {
+  try {
+    const g = egliseCourante();
+    if (g) localStorage.setItem('graine.eglise.code', g.code);
+    else if (Array.isArray(groupesCache)) localStorage.removeItem('graine.eglise.code');
+  } catch (e) { /* stockage refusé : on s'en passe */ }
+}
 let pageCache = {};        // code → { annonces, rdv, services }
 let pageMeta = {};         // code → { quand: ISO, horsLigne: bool }
 let pageLoading = {};
@@ -3503,7 +3510,7 @@ async function doGroupeQuitter(code, nom) {
     egliseRecharger();
     // Depuis l'onglet Mon église : il peut disparaître avec le groupe quitté —
     // on ramène vers Moi, où vit le message d'au revoir.
-    if (route.name === 'eglise') { egliseSel = null; go('moi'); return; }
+    if (route.name === 'eglise') { egliseSel = null; retenirEglise(); go('moi'); return; }
   } catch (e) {
     // Le responsable qui n'est pas seul reçoit ici le message du serveur
     // (transmettre d'abord la responsabilité) — on l'affiche tel quel.
@@ -3704,7 +3711,8 @@ function wire() {
   el.querySelectorAll('[data-bqgenre]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.genre = b.dataset.bqgenre; render(); } }));
   el.querySelectorAll('[data-bqniveau]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.niveau = +b.dataset.bqniveau; render(); } }));
   el.querySelectorAll('[data-eglsel]').forEach(b => b.addEventListener('click', () => {
-    egliseSel = b.dataset.eglsel; pageEdit = null; pageNotice = pageError = null; render();
+    egliseSel = b.dataset.eglsel; pageEdit = null; pageNotice = pageError = null;
+    retenirEglise(); render();
     const gEgl = egliseCourante(); if (gEgl) ensurePage(gEgl.code);
   }));
   el.querySelectorAll('[data-pageedit]').forEach(b => b.addEventListener('click', () => pageOuvrirForm(b.dataset.pageedit, b.dataset.id ? +b.dataset.id : null)));

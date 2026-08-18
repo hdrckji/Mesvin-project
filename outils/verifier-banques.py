@@ -53,5 +53,18 @@ for i in items:
         print(f"✗ po {i['id']} : la réponse « {i['reponse']} » n'est pas dans accepte"); souci += 1
 print(f"De qui parle-t-on ?   {len(items):3d} items")
 
+# --- La bibliothèque de versets --------------------------------------------
+# Le texte doit se trouver MOT POUR MOT à sa référence : sans ce contrôle, un
+# verset mémorisé peut renvoyer à un autre passage quand on va le lire — c'est
+# arrivé sur trois psaumes, dont la source comptait la suscription comme
+# premier verset.
+verses = json.load(io.open('data/verses.json', encoding='utf-8'))['verses']
+for v in verses:
+    if not segond.contient(v['ref'], v['text']):
+        print(f"✗ verset {v['id']} : le texte ne se trouve pas en {v['ref']}"); souci += 1
+    if not v.get('contexte'):
+        print(f"✗ verset {v['id']} : sans contexte"); souci += 1
+print(f"Bibliothèque          {len(verses):3d} versets")
+
 print("\n" + ("✓ tout est cohérent" if souci == 0 else f"✗ {souci} problème(s)"))
 sys.exit(1 if souci else 0)
