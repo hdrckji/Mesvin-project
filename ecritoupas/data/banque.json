@@ -659,6 +659,209 @@
    "ecrit": false,
    "reference": null,
    "precision": "Proverbe français ; l'idée voisine se lit en Proverbes 13.24 et Hébreux 12.6, mais pas cette phrase."
+  },
+  {
+   "id": "eo-101",
+   "phrase": "Il y a un temps pour tout, un temps pour toute chose sous les cieux",
+   "ecrit": true,
+   "reference": "Ecclésiaste 3.1",
+   "precision": "Ouverture de la liste des temps opposés : naître et mourir, planter et arracher."
+  },
+  {
+   "id": "eo-102",
+   "phrase": "Ne jugez point, afin que vous ne soyez point jugés.",
+   "ecrit": true,
+   "reference": "Matthieu 7.1",
+   "precision": "Premier verset du chapitre, dans le sermon sur la montagne."
+  },
+  {
+   "id": "eo-103",
+   "phrase": "la lettre tue, mais l'esprit vivifie",
+   "ecrit": true,
+   "reference": "2 Corinthiens 3.6",
+   "precision": "Paul y oppose l'ancienne et la nouvelle alliance."
+  },
+  {
+   "id": "eo-104",
+   "phrase": "Rendez donc à César ce qui est à César, et à Dieu ce qui est à Dieu.",
+   "ecrit": true,
+   "reference": "Matthieu 22.21",
+   "precision": "Réponse donnée après avoir fait montrer la monnaie du tribut et son effigie."
+  },
+  {
+   "id": "eo-105",
+   "phrase": "Que l'homme donc ne sépare pas ce que Dieu a joint.",
+   "ecrit": true,
+   "reference": "Matthieu 19.6",
+   "precision": "Attention à la formule : la Segond dit « ne sépare pas ce que Dieu a joint », et non « ce que Dieu a uni »."
+  },
+  {
+   "id": "eo-106",
+   "phrase": "Le sabbat a été fait pour l'homme, et non l'homme pour le sabbat",
+   "ecrit": true,
+   "reference": "Marc 2.27",
+   "precision": "Dit après que les disciples eurent arraché des épis un jour de sabbat."
+  },
+  {
+   "id": "eo-107",
+   "phrase": "Puisqu'ils ont semé du vent, ils moissonneront la tempête",
+   "ecrit": true,
+   "reference": "Osée 8.7",
+   "precision": "Le proverbe courant « qui sème le vent récolte la tempête » vient de là, mais le texte le dit autrement."
+  },
+  {
+   "id": "eo-108",
+   "phrase": "l'amour de l'argent est une racine de tous les maux",
+   "ecrit": true,
+   "reference": "1 Timothée 6.10",
+   "precision": "Noter les deux écarts avec la formule courante : c'est l'AMOUR de l'argent, et UNE racine, pas la racine."
+  },
+  {
+   "id": "eo-109",
+   "phrase": "Une réponse douce calme la fureur, Mais une parole dure excite la colère.",
+   "ecrit": true,
+   "reference": "Proverbes 15.1",
+   "precision": "Proverbe de la collection attribuée à Salomon."
+  },
+  {
+   "id": "eo-110",
+   "phrase": "Instruis l'enfant selon la voie qu'il doit suivre",
+   "ecrit": true,
+   "reference": "Proverbes 22.6",
+   "precision": "Le verset ajoute : « et quand il sera vieux, il ne s'en détournera pas »."
+  },
+  {
+   "id": "eo-111",
+   "phrase": "que tout homme soit prompt à écouter, lent à parler, lent à se mettre en colère",
+   "ecrit": true,
+   "reference": "Jacques 1.19",
+   "precision": "Adressé aux « frères bien-aimés » au début de l'épître."
+  },
+  {
+   "id": "eo-112",
+   "phrase": "Ce qu'un homme aura semé, il le moissonnera aussi.",
+   "ecrit": true,
+   "reference": "Galates 6.7",
+   "precision": "Précédé de « on ne se moque pas de Dieu »."
+  },
+  {
+   "id": "eo-113",
+   "phrase": "Ne te laisse pas vaincre par le mal, mais surmonte le mal par le bien.",
+   "ecrit": true,
+   "reference": "Romains 12.21",
+   "precision": "Conclusion du passage sur l'attitude envers l'ennemi."
+  },
+  {
+   "id": "eo-114",
+   "phrase": "Honore ton père et ta mère",
+   "ecrit": true,
+   "reference": "Exode 20.12",
+   "precision": "Cinquième des dix commandements donnés au Sinaï."
+  },
+  {
+   "id": "eo-115",
+   "phrase": "C'est que tu pratiques la justice, Que tu aimes la miséricorde, Et que tu marches humblement avec ton Dieu.",
+   "ecrit": true,
+   "reference": "Michée 6.8",
+   "precision": "Réponse à la question de ce qu'il faudrait offrir à l'Éternel."
+  },
+  {
+   "id": "eo-116",
+   "phrase": "ceux qui se confient en l'Eternel renouvellent leur force. Ils prennent le vol comme les aigles",
+   "ecrit": true,
+   "reference": "Ésaïe 40.31",
+   "precision": "Fin du chapitre sur le Dieu qui ne se fatigue pas."
+  },
+  {
+   "id": "eo-117",
+   "phrase": "Heureux ceux qui procurent la paix, car ils seront appelés fils de Dieu!",
+   "ecrit": true,
+   "reference": "Matthieu 5.9",
+   "precision": "Septième des béatitudes."
+  },
+  {
+   "id": "eo-118",
+   "phrase": "Un coeur joyeux est un bon remède, Mais un esprit abattu dessèche les os.",
+   "ecrit": true,
+   "reference": "Proverbes 17.22",
+   "precision": "Proverbe sur les effets de la disposition intérieure."
+  },
+  {
+   "id": "eo-119",
+   "phrase": "La fin justifie les moyens.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Maxime politique moderne, souvent prêtée à Machiavel ; étrangère au texte biblique."
+  },
+  {
+   "id": "eo-120",
+   "phrase": "Le travail, c'est la santé.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Adage populaire du XXe siècle."
+  },
+  {
+   "id": "eo-121",
+   "phrase": "La voix du peuple est la voix de Dieu.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Formule latine médiévale, « vox populi, vox Dei ». Absente de la Bible."
+  },
+  {
+   "id": "eo-122",
+   "phrase": "Prudence est mère de sûreté.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français, parfois cru biblique à cause du ton sentencieux."
+  },
+  {
+   "id": "eo-123",
+   "phrase": "Loin des yeux, loin du coeur.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe attesté dans plusieurs langues européennes, jamais dans le texte."
+  },
+  {
+   "id": "eo-124",
+   "phrase": "Le temps, c'est de l'argent.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Formule de Benjamin Franklin, 1748."
+  },
+  {
+   "id": "eo-125",
+   "phrase": "Un homme averti en vaut deux.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français."
+  },
+  {
+   "id": "eo-126",
+   "phrase": "Après la pluie, le beau temps.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français."
+  },
+  {
+   "id": "eo-127",
+   "phrase": "Dieu écrit droit avec des lignes courbes.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe d'origine portugaise, popularisé par Paul Claudel."
+  },
+  {
+   "id": "eo-128",
+   "phrase": "Il n'y a que la vérité qui blesse.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français."
+  },
+  {
+   "id": "eo-129",
+   "phrase": "Qui ne dit mot consent.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Adage juridique latin passé en français."
   }
  ]
 }

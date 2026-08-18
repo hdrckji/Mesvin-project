@@ -1041,6 +1041,409 @@
    "bonne": 1,
    "reference": "Esther 4.16",
    "contexte": "Message envoyé à Mardochée, à Suse, avant de paraître devant le roi."
+  },
+  {
+   "id": "qd-081",
+   "parole": "Mais je sais que mon rédempteur est vivant, Et qu'il se lèvera le dernier sur la terre.",
+   "options": [
+    "Job",
+    "David",
+    "Abraham",
+    "Daniel"
+   ],
+   "bonne": 0,
+   "reference": "Job 19.25",
+   "contexte": "Réponse d'un homme dépouillé de ses biens et de ses enfants, couvert d'ulcères, à ceux de ses amis venus le consoler."
+  },
+  {
+   "id": "qd-082",
+   "parole": "Femme, voilà ton fils.",
+   "options": [
+    "Jean",
+    "Jésus",
+    "Pierre",
+    "Joseph d'Arimathée"
+   ],
+   "bonne": 1,
+   "reference": "Jean 19.26",
+   "contexte": "Parole adressée depuis la croix à sa mère, en voyant près d'elle le disciple qu'il aimait."
+  },
+  {
+   "id": "qd-083",
+   "parole": "Seigneur, ne leur impute pas ce péché!",
+   "options": [
+    "Pierre",
+    "Paul",
+    "Étienne",
+    "Jacques"
+   ],
+   "bonne": 2,
+   "reference": "Actes 7.60",
+   "contexte": "Le verset précédent le nomme. Il est à genoux, lapidé hors de la ville, tandis que les témoins ont déposé leurs vêtements aux pieds d'un jeune homme nommé Saul."
+  },
+  {
+   "id": "qd-084",
+   "parole": "Ton peuple sera mon peuple, et ton Dieu sera mon Dieu",
+   "options": [
+    "Anne",
+    "Noémi",
+    "Orpa",
+    "Ruth"
+   ],
+   "bonne": 3,
+   "reference": "Ruth 1.16",
+   "contexte": "Réponse d'une veuve moabite à sa belle-mère qui la pressait de retourner dans sa famille."
+  },
+  {
+   "id": "qd-085",
+   "parole": "L'Eternel a donné, et l'Eternel a ôté; que le nom de l'Eternel soit béni!",
+   "options": [
+    "Job",
+    "Moïse",
+    "Néhémie",
+    "Salomon"
+   ],
+   "bonne": 0,
+   "reference": "Job 1.21",
+   "contexte": "Prononcé après l'annonce, en une même journée, de la perte de ses troupeaux, de ses serviteurs et de ses dix enfants."
+  },
+  {
+   "id": "qd-086",
+   "parole": "suis-je le gardien de mon frère?",
+   "options": [
+    "Ésaü",
+    "Caïn",
+    "Ruben",
+    "Laban"
+   ],
+   "bonne": 1,
+   "reference": "Genèse 4.9",
+   "contexte": "Réponse à la question « Où est ton frère Abel ? », posée après le meurtre commis dans les champs."
+  },
+  {
+   "id": "qd-087",
+   "parole": "Et que sert-il à un homme de gagner tout le monde, s'il perd son âme?",
+   "options": [
+    "Paul",
+    "Salomon",
+    "Jésus",
+    "Jacques"
+   ],
+   "bonne": 2,
+   "reference": "Marc 8.36",
+   "contexte": "Dit à la foule et aux disciples appelés ensemble, après l'annonce des souffrances à venir."
+  },
+  {
+   "id": "qd-088",
+   "parole": "Qu'est-ce que la vérité?",
+   "options": [
+    "Hérode",
+    "Pilate",
+    "Caïphe",
+    "Festus"
+   ],
+   "bonne": 1,
+   "reference": "Jean 18.38",
+   "contexte": "Question du gouverneur pendant l'interrogatoire ; il sort ensuite déclarer qu'il ne trouve aucun crime en l'accusé."
+  },
+  {
+   "id": "qd-089",
+   "parole": "Non, jamais tu ne me laveras les pieds.",
+   "options": [
+    "Judas",
+    "Thomas",
+    "Pierre",
+    "Jacques"
+   ],
+   "bonne": 2,
+   "reference": "Jean 13.8",
+   "contexte": "Refus opposé pendant le repas, avant la fête de Pâque, quand Jésus s'était ceint d'un linge."
+  },
+  {
+   "id": "qd-090",
+   "parole": "Homme de peu de foi, pourquoi as-tu douté?",
+   "options": [
+    "Pierre",
+    "Jean-Baptiste",
+    "Élie",
+    "Jésus"
+   ],
+   "bonne": 3,
+   "reference": "Matthieu 14.31",
+   "contexte": "Dit en saisissant la main de Pierre, qui avait marché sur les eaux puis commencé à enfoncer."
+  },
+  {
+   "id": "qd-091",
+   "parole": "Va, ta foi t'a sauvé.",
+   "options": [
+    "Jésus",
+    "Pierre",
+    "Paul",
+    "Ananias"
+   ],
+   "bonne": 0,
+   "reference": "Marc 10.52",
+   "contexte": "Adressé à un aveugle assis au bord du chemin à la sortie de Jéricho, qui recouvre aussitôt la vue."
+  },
+  {
+   "id": "qd-092",
+   "parole": "Seigneur, retire-toi de moi, parce que je suis un homme pécheur.",
+   "options": [
+    "Jacques",
+    "Simon Pierre",
+    "Jean",
+    "Matthieu"
+   ],
+   "bonne": 1,
+   "reference": "Luc 5.8",
+   "contexte": "Dit à genoux, après une pêche si abondante que les filets se rompaient et que deux barques enfonçaient."
+  },
+  {
+   "id": "qd-093",
+   "parole": "Mon âme exalte le Seigneur",
+   "options": [
+    "Anne",
+    "Élisabeth",
+    "Marie",
+    "Débora"
+   ],
+   "bonne": 2,
+   "reference": "Luc 1.46",
+   "contexte": "Prononcé chez Élisabeth, dans une ville de Juda, après la salutation reçue à son arrivée."
+  },
+  {
+   "id": "qd-094",
+   "parole": "Maintenant, Seigneur, tu laisses ton serviteur S'en aller en paix, selon ta parole.",
+   "options": [
+    "Joseph",
+    "Zacharie",
+    "Jean-Baptiste",
+    "Siméon"
+   ],
+   "bonne": 3,
+   "reference": "Luc 2.29",
+   "contexte": "Les versets qui précèdent le nomment : un homme juste de Jérusalem, à qui il avait été révélé qu'il ne mourrait pas avant d'avoir vu le Christ. Il tient l'enfant dans ses bras."
+  },
+  {
+   "id": "qd-095",
+   "parole": "Comment m'est-il accordé que la mère de mon Seigneur vienne auprès de moi?",
+   "options": [
+    "Élisabeth",
+    "Marie",
+    "Anne",
+    "Marthe"
+   ],
+   "bonne": 0,
+   "reference": "Luc 1.43",
+   "contexte": "Dit au moment de la visitation ; le verset précédent la nomme et la dit remplie du Saint-Esprit."
+  },
+  {
+   "id": "qd-096",
+   "parole": "Nous avons trouvé le Messie",
+   "options": [
+    "Philippe",
+    "André",
+    "Nathanaël",
+    "Thomas"
+   ],
+   "bonne": 1,
+   "reference": "Jean 1.41",
+   "contexte": "Le verset précédent le nomme : il va d'abord chercher son frère Simon."
+  },
+  {
+   "id": "qd-097",
+   "parole": "Peut-il venir de Nazareth quelque chose de bon?",
+   "options": [
+    "Judas",
+    "Thomas",
+    "Nathanaël",
+    "Zachée"
+   ],
+   "bonne": 2,
+   "reference": "Jean 1.46",
+   "contexte": "Objection faite à Philippe, qui lui répond simplement « Viens, et vois »."
+  },
+  {
+   "id": "qd-098",
+   "parole": "Seigneur, à qui irions-nous? Tu as les paroles de la vie éternelle.",
+   "options": [
+    "Barthélemy",
+    "Jean",
+    "Thomas",
+    "Simon Pierre"
+   ],
+   "bonne": 3,
+   "reference": "Jean 6.68",
+   "contexte": "Réponse aux Douze interrogés après le départ de nombreux disciples : « Et vous, ne voulez-vous pas aussi vous en aller ? »"
+  },
+  {
+   "id": "qd-099",
+   "parole": "Allons aussi, afin de mourir avec lui.",
+   "options": [
+    "Thomas",
+    "Pierre",
+    "Jacques",
+    "André"
+   ],
+   "bonne": 0,
+   "reference": "Jean 11.16",
+   "contexte": "Dit aux autres disciples au moment de repartir vers la Judée, où l'on avait cherché à lapider Jésus."
+  },
+  {
+   "id": "qd-100",
+   "parole": "Tu vas bientôt me persuader de devenir chrétien!",
+   "options": [
+    "Festus",
+    "Agrippa",
+    "Félix",
+    "Gallion"
+   ],
+   "bonne": 1,
+   "reference": "Actes 26.28",
+   "contexte": "Réplique du roi à Paul, qui plaidait sa cause devant lui à Césarée."
+  },
+  {
+   "id": "qd-101",
+   "parole": "Tu es fou, Paul! Ton grand savoir te fait déraisonner.",
+   "options": [
+    "Pilate",
+    "Agrippa",
+    "Festus",
+    "Démétrius"
+   ],
+   "bonne": 2,
+   "reference": "Actes 26.24",
+   "contexte": "Interruption à haute voix du gouverneur, pendant la défense de Paul."
+  },
+  {
+   "id": "qd-102",
+   "parole": "Dieu te frappera, muraille blanchie!",
+   "options": [
+    "Jean-Baptiste",
+    "Étienne",
+    "Pierre",
+    "Paul"
+   ],
+   "bonne": 3,
+   "reference": "Actes 23.3",
+   "contexte": "Dit au souverain sacrificateur qui venait d'ordonner qu'on le frappe sur la bouche, devant le sanhédrin."
+  },
+  {
+   "id": "qd-103",
+   "parole": "Qui es-tu, Seigneur?",
+   "options": [
+    "Ananias",
+    "Saul",
+    "Corneille",
+    "Philippe"
+   ],
+   "bonne": 1,
+   "reference": "Actes 9.5",
+   "contexte": "Question posée à terre, sur le chemin de Damas, après avoir été entouré d'une lumière venue du ciel."
+  },
+  {
+   "id": "qd-104",
+   "parole": "L'homme ne vivra pas de pain seulement, mais de toute parole qui sort de la bouche de Dieu.",
+   "options": [
+    "Jean-Baptiste",
+    "Moïse",
+    "Jésus",
+    "Paul"
+   ],
+   "bonne": 2,
+   "reference": "Matthieu 4.4",
+   "contexte": "Première réponse au tentateur, au désert, après quarante jours et quarante nuits de jeûne."
+  },
+  {
+   "id": "qd-105",
+   "parole": "Retire-toi, Satan!",
+   "options": [
+    "Pierre",
+    "Michel",
+    "Élie",
+    "Jésus"
+   ],
+   "bonne": 3,
+   "reference": "Matthieu 4.10",
+   "contexte": "Dernière des trois réponses au désert, après la proposition de tous les royaumes du monde."
+  },
+  {
+   "id": "qd-106",
+   "parole": "Certainement, cet homme était juste.",
+   "options": [
+    "Nicodème",
+    "Pilate",
+    "Le centenier",
+    "Barabbas"
+   ],
+   "bonne": 2,
+   "reference": "Luc 23.47",
+   "contexte": "Dit en voyant ce qui était arrivé, après les ténèbres et le voile du temple déchiré par le milieu."
+  },
+  {
+   "id": "qd-107",
+   "parole": "choisissez aujourd'hui qui vous voulez servir",
+   "options": [
+    "Néhémie",
+    "Moïse",
+    "Samuel",
+    "Josué"
+   ],
+   "bonne": 3,
+   "reference": "Josué 24.15",
+   "contexte": "Adressé au peuple assemblé à Sichem, à la fin de sa vie ; il ajoute que lui et sa maison serviront l'Éternel."
+  },
+  {
+   "id": "qd-108",
+   "parole": "Jusqu'à quand clocherez-vous des deux côtés?",
+   "options": [
+    "Élie",
+    "Élisée",
+    "Michée",
+    "Jérémie"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 18.21",
+   "contexte": "Question posée à tout le peuple rassemblé sur le mont Carmel, avant l'épreuve des deux autels. Le peuple ne répond rien."
+  },
+  {
+   "id": "qd-109",
+   "parole": "je suis resté, moi seul, et ils cherchent à m'ôter la vie.",
+   "options": [
+    "Job",
+    "Élie",
+    "David",
+    "Néhémie"
+   ],
+   "bonne": 1,
+   "reference": "1 Rois 19.10",
+   "contexte": "Dit dans une caverne à Horeb, après la fuite devant les menaces de Jézabel."
+  },
+  {
+   "id": "qd-110",
+   "parole": "Mon père, j'ai péché contre le ciel et contre toi, je ne suis plus digne d'être appelé ton fils.",
+   "options": [
+    "Le publicain du temple",
+    "Zachée",
+    "Le fils cadet de la parabole",
+    "Le fils aîné de la parabole"
+   ],
+   "bonne": 2,
+   "reference": "Luc 15.21",
+   "contexte": "Parole du plus jeune fils à son retour, dans la parabole racontée aux pharisiens et aux scribes qui murmuraient."
+  },
+  {
+   "id": "qd-111",
+   "parole": "Qui de vous me convaincra de péché?",
+   "options": [
+    "Samuel",
+    "Paul",
+    "Job",
+    "Jésus"
+   ],
+   "bonne": 3,
+   "reference": "Jean 8.46",
+   "contexte": "Question posée aux Juifs pendant la controverse du temple, sur la descendance d'Abraham."
   }
  ]
 }
