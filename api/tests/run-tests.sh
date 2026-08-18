@@ -53,6 +53,21 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Le moteur de recherche biblique est du JavaScript pur (lire/recherche.js) :
+# son test tourne sous Node. Si Node manque sur la machine, on le DIT plutôt
+# que d'échouer — le reste de la suite n'en dépend pas.
+say "Recherche biblique : pliage, index, références, et requêtes hostiles"
+if command -v node > /dev/null 2>&1; then
+  if node "$ROOT/lire/tests/recherche-test.mjs" > "$TMP/rech.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/rech.log") — dont regex, bornes et traversée de chemin"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL recherche biblique\n'; sed 's/^/        /' "$TMP/rech.log"
+  fi
+else
+  printf '   --   node absent : test de recherche non joué\n'
+fi
+
+# ---------------------------------------------------------------------------
 say "Lettres envoyées : le corps de la lettre d'accueil d'un responsable"
 if php "$ROOT/api/tests/mail-test.php" > "$TMP/mail.log" 2>&1; then
   ok "la lettre porte le nom, le code, le guide et le contact"

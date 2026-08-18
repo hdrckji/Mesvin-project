@@ -6,13 +6,13 @@
    bloc (tout ou rien) ; la Bible complète suit en best-effort : un livre qui
    rate ne prive pas du hors-ligne de base, il se rattrapera à l'usage. */
 
-const CACHE = 'graine-v68';
+const CACHE = 'graine-v69';
 // La coquille : le minimum pour que l'appli s'ouvre et vive hors-ligne.
 const SHELL = [
   '.', 'index.html', 'app.css', 'app.js', 'icons.js', 'api-client.js', 'pierres.js', 'visite.js',
   'data/verses.json', 'data/collections.json', 'icon.svg', 'manifest.webmanifest',
   'icon-180.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'badge-96.png',
-  'lire/', 'lire/index.html', 'lire/lire.css', 'lire/lire.js',
+  'lire/', 'lire/index.html', 'lire/lire.css', 'lire/lire.js', 'lire/recherche.js',
   'defi/', 'defi/index.html', 'defi/defi.css', 'defi/defi.js',
   'defi/data/questions.json',
   'frise/', 'frise/index.html',

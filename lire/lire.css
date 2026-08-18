@@ -170,3 +170,24 @@
 .linklike { background: none; border: 0; font: inherit; font-size: .9rem;
   color: var(--ink-soft); cursor: pointer; padding: 8px 4px; text-decoration: underline;
   text-underline-offset: 3px; display: block; margin: 10px auto 0; }
+
+/* ---------- Chercher dans la Bible ----------
+   Le champ et le bouton sur une ligne ; les résultats en cartes touchables,
+   avec le passage trouvé surligné à l'or discret de la marque. */
+.rech-form { display: flex; gap: 8px; align-items: stretch; margin: 0 0 14px; }
+.rech-form .field { flex: 1; margin: 0; }
+.rech-form .btn { width: auto; white-space: nowrap; padding-left: 18px; padding-right: 18px; }
+
+.rech-etat { font-size: .88rem; margin: 2px 4px 10px; }
+.rech-livre { font-family: var(--serif); font-size: 1.02rem; color: var(--ink);
+  margin: 16px 4px 6px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+
+.rech-res { display: block; border: 0; width: 100%; cursor: pointer;
+  padding: 12px 14px; margin-bottom: 8px; }
+.rech-res .rech-ref { display: block; font-size: .82rem; font-weight: 600;
+  color: var(--accent-ink); margin-bottom: 3px; }
+.rech-res .rech-txt { display: block; font-family: var(--serif); font-size: .98rem;
+  line-height: 1.5; color: var(--ink); }
+.rech-res mark { background: var(--surface-2); color: var(--ink);
+  border-bottom: 2px solid var(--accent); border-radius: 2px; padding: 0 1px; }
+.rech-res:active { transform: scale(.995); }

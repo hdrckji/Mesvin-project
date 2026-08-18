@@ -238,7 +238,12 @@ const OBJECTIFS = [
 
 /* ---------- Aides ---------- */
 const el = document.getElementById('app');
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+/* L'apostrophe est échappée ICI et pas dans les autres modules : c'est le
+   seul écran où du texte librement tapé (la requête de recherche) est rendu.
+   Aucun attribut du projet n'est délimité par des apostrophes simples — mais
+   le jour où quelqu'un en écrit un, cet échappement fera la différence. */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 /* ============================================================================
    Stockage local (v2) + migration silencieuse depuis l'ancien format.
@@ -416,6 +421,26 @@ function estimation(plan) {
 /* ============================================================================
    Navigation
    ========================================================================== */
+/* ============================================================================
+   Chercher dans la Bible.
+
+   Le texte entier est déjà sur l'appareil (66 fichiers, pré-cachés par le
+   service worker) : la recherche ne parle à AUCUN serveur. Ce que quelqu'un
+   cherche dans sa Bible ne sort pas de son téléphone.
+
+   Le moteur (pliage, comparaison, découpe, références) vit dans
+   lire/recherche.js — fonctions pures, relues par lire/tests/recherche-test.mjs.
+   Ici on ne fait que charger les livres, orchestrer, et RENDRE — c'est-à-dire
+   échapper : la requête est du texte d'un inconnu, elle ne traverse jamais
+   `esc` sans y passer, et elle n'entre jamais dans un attribut.
+   ========================================================================== */
+const RECH_PARALLELE = 6;   // livres chargés de front : assez pour aller vite,
+                            // assez peu pour ne pas noyer un réseau d'église
+const plieCache = {};       // livre → versets pliés (le vrai coût, gardé)
+let rech = null;            // { requete, resultats, tronque, explores, fini, ref, jeton }
+let rechJeton = 0;          // une recherche plus récente annule la précédente
+let rechChamp = '';         // ce qui est tapé dans le champ
+
 let route = { name: 'home', param: null };
 let readingLivre = null;   // livre ouvert en lecture
 let currentBook = null;    // ses données une fois chargées
@@ -427,15 +452,23 @@ let draft = null;          // réponses du configurateur en cours
 function go(name, param) { route = { name, param: param === undefined ? null : param }; render(); window.scrollTo(0, 0); }
 
 function render() {
+  // Les résultats arrivent par paquets : chaque render() remplace l'écran.
+  // Si le champ de recherche avait le curseur, on le lui rend — sinon taper
+  // pendant une recherche deviendrait impossible.
+  const avaitFocus = document.activeElement && document.activeElement.id === 'rechInput';
   const views = {
     cfgWhere: viewCfgWhere, cfgBook: viewCfgBook, cfgTime: viewCfgTime,
     cfgGoal: viewCfgGoal, cfgLecture: viewCfgLecture, home: viewHome,
     read: () => viewRead(route.param), chapterDone: () => viewChapterDone(route.param),
     bookDone: () => viewBookDone(route.param), planDone: viewPlanDone,
-    passages: viewPassages
+    passages: viewPassages, recherche: viewRecherche
   };
   el.innerHTML = (views[route.name] || viewHome)();
   wire();
+  if (avaitFocus) {
+    const n = el.querySelector('#rechInput');
+    if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+  }
 }
 
 function header() {
@@ -745,7 +778,155 @@ function viewHome() {
         <span class="hub-sub">${n} verset${n > 1 ? 's' : ''} gardé${n > 1 ? 's' : ''} au fil de tes lectures.</span></span>
       <span class="chev">›</span></button>` : '';
 
-  return header() + main + gauge + ctx + switcher + passages;
+  // Chercher : toujours là, avant les passages gardés. C'est la porte qu'on
+  // pousse quand on se souvient d'un verset sans savoir où il est.
+  const chercher = `<button class="card hub-card fade" data-chercher="1" style="text-align:left;width:100%">
+      <span class="hub-ic">${icon('lecture', 24)}</span>
+      <span class="hub-txt"><span class="hub-title">Chercher dans la Bible</span>
+        <span class="hub-sub">Un mot, une phrase, une référence — hors ligne, sur ton appareil.</span></span>
+      <span class="chev">›</span></button>`;
+
+  return header() + main + gauge + ctx + switcher + chercher + passages;
+}
+
+/* ============================================================================
+   L'écran de recherche.
+   ========================================================================== */
+
+function viewRecherche() {
+  const R = window.GraineRecherche;
+  const entete = `<div class="fade">
+    <button class="back-link" data-back-home="1">‹ Mon chemin</button>
+    <h2 style="margin:10px 4px 4px">Chercher dans la Bible</h2>
+    <p class="muted" style="margin:0 4px 14px">Un mot, un bout de phrase, ou une référence
+    (« Jean 3.16 »). Tout se cherche sur ton appareil — même sans connexion.</p>
+    <form class="rech-form" data-rechform="1">
+      <input class="field" type="search" id="rechInput" enterkeyhint="search"
+             autocomplete="off" autocorrect="off" spellcheck="false"
+             maxlength="${R ? R.REQUETE_MAX : 80}" placeholder="Ex. : lampe à mes pieds"
+             value="${esc(rechChamp)}" aria-label="Texte à chercher">
+      <button class="btn btn-primary" type="submit">Chercher</button>
+    </form>`;
+
+  if (!R) {
+    return entete + `<div class="card fade"><p class="muted" style="margin:0">La recherche n'a pas
+      pu se charger. Recharge la page — ta progression est bien gardée.</p></div></div>`;
+  }
+  if (!rech) {
+    return entete + `<div class="card fade"><p class="muted" style="margin:0">Les 66 livres de la
+      Segond 1910 sont déjà sur ton appareil. Rien de ce que tu cherches ici n'est envoyé
+      nulle part.</p></div></div>`;
+  }
+  return entete + rechCorpsHTML(R) + `</div>`;
+}
+
+/* Le corps des résultats. TOUT ce qui vient de la requête ou du texte passe
+   par esc() ; le <mark> n'entoure QUE le morceau déjà échappé. */
+function rechCorpsHTML(R) {
+  const parts = [];
+
+  // Une référence reconnue : la porte directe, avant les résultats de texte.
+  if (rech.ref) {
+    const B = BOOKS[rech.ref.livreId];
+    parts.push(`<button class="card hub-card fade" data-read="${rech.ref.livreId}:${rech.ref.ch}"
+        style="text-align:left;width:100%">
+        <span class="hub-ic">${icon('lecture', 24)}</span>
+        <span class="hub-txt"><span class="hub-title">Aller à ${esc((B.chapLabel || B.nom) + ' ' + (rech.ref.ch + 1))}</span>
+          <span class="hub-sub">Ouvrir le chapitre.</span></span>
+        <span class="chev">›</span></button>`);
+  }
+
+  if (rech.invalide) {
+    const pourquoi = rech.invalide === 'trop-longue'
+      ? `C'est un peu long — quelques mots suffisent.`
+      : `Il faut au moins ${R.REQUETE_MIN} caractères pour chercher.`;
+    parts.push(`<div class="card fade"><p class="muted" style="margin:0">${esc(pourquoi)}</p></div>`);
+    return parts.join('');
+  }
+
+  const n = rech.resultats.length;
+  if (!rech.fini) {
+    parts.push(`<p class="muted center rech-etat">${rech.explores} / ${TOTAL_LIVRES} livres explorés…</p>`);
+  } else if (n === 0 && !rech.ref) {
+    parts.push(`<div class="card fade"><p style="margin:0 0 6px">Rien trouvé pour
+      <b>« ${esc(rech.requete)} »</b>.</p>
+      <p class="muted" style="margin:0">Essaie moins de mots, ou une autre tournure — le texte
+      est celui de la Segond 1910.</p></div>`);
+  } else if (n > 0) {
+    parts.push(`<p class="muted rech-etat">${n}${rech.tronque ? ' premiers' : ''} passage${n > 1 ? 's' : ''}
+      pour <b>« ${esc(rech.requete)} »</b>${rech.tronque ? ' — affine ta recherche pour en voir moins.' : ''}</p>`);
+  }
+
+  // Groupés par livre, dans l'ordre canonique — on lit une Bible, pas une liste.
+  let livreCourant = null;
+  rech.resultats.forEach(r => {
+    if (r.livre !== livreCourant) {
+      livreCourant = r.livre;
+      parts.push(`<div class="rech-livre">${esc(BOOKS[r.livre].nom)}</div>`);
+    }
+    const B = BOOKS[r.livre];
+    const e = R.extrait(r);
+    parts.push(`<button class="card rech-res fade" data-read="${r.livre}:${r.ch}" style="text-align:left;width:100%">
+      <span class="rech-ref">${esc((B.chapLabel || B.nom) + ' ' + (r.ch + 1) + '.' + (r.v + 1))}</span>
+      <span class="rech-txt">${e.coupeAvant ? '…' : ''}${esc(e.avant)}<mark>${esc(e.trouve)}</mark>${esc(e.apres)}${e.coupeApres ? '…' : ''}</span>
+    </button>`);
+  });
+
+  return parts.join('');
+}
+
+const TOTAL_LIVRES = Object.keys(BOOKS).length;
+
+/* Lance une recherche. Asynchrone et par paquets : l'écran reste vivant, les
+   résultats tombent au fur et à mesure, et une nouvelle recherche annule
+   proprement la précédente (jeton). */
+async function lancerRecherche(brute) {
+  const R = window.GraineRecherche;
+  if (!R) return;
+  const v = R.requeteValide(brute);
+  if (!v.ok) {
+    rech = { requete: String(brute || '').trim(), resultats: [], tronque: false,
+      explores: 0, fini: true, ref: null, invalide: v.raison };
+    render();
+    return;
+  }
+  const jeton = ++rechJeton;
+  const motif = R.plier(v.requete);
+  rech = { requete: v.requete, resultats: [], tronque: false, explores: 0, fini: false,
+    ref: R.analyserReference(v.requete, BOOKS), jeton };
+  render();
+
+  const ids = Object.keys(BOOKS);
+  for (let i = 0; i < ids.length; i += RECH_PARALLELE) {
+    if (jeton !== rechJeton) return;                       // dépassée : on s'efface
+    const paquet = ids.slice(i, i + RECH_PARALLELE);
+    const livres = await Promise.all(paquet.map(id =>
+      loadBook(id).then(d => ({ id, d })).catch(() => null)));  // un livre manquant
+                                                                // ne casse pas la recherche
+    if (jeton !== rechJeton) return;
+    // On rend la main à l'écran ENTRE CHAQUE LIVRE, pas seulement entre les
+    // paquets : plier les Psaumes prend un instant, et sur un vieux téléphone
+    // ce serait le seul moment où l'interface accrocherait.
+    for (const x of livres) {
+      rech.explores++;
+      if (x) {
+        if (!plieCache[x.id]) plieCache[x.id] = R.plierLivre(x.d.chapitres);
+        const restant = R.MAX_RESULTATS - rech.resultats.length;
+        if (restant <= 0) { rech.tronque = true; }
+        else {
+          const trouves = R.chercherDansLivre(x.d.chapitres, plieCache[x.id], motif, restant);
+          trouves.forEach(t => rech.resultats.push(Object.assign({ livre: x.id }, t)));
+          if (rech.resultats.length >= R.MAX_RESULTATS) rech.tronque = true;
+        }
+      }
+      await new Promise(r => setTimeout(r, 0));
+      if (jeton !== rechJeton) return;
+    }
+    render();
+  }
+  if (jeton !== rechJeton) return;
+  rech.fini = true;
+  render();
 }
 
 /* ============================================================================
@@ -1096,6 +1277,19 @@ function wire() {
   });
   on('[data-verset-fermer]', () => { versetOuvert = null; render(); });
   on('[data-passages]', () => go('passages'));
+  on('[data-chercher]', () => { go('recherche'); const n = el.querySelector('#rechInput'); if (n) n.focus(); });
+  const formRech = el.querySelector('[data-rechform]');
+  if (formRech) {
+    formRech.addEventListener('submit', e => {
+      e.preventDefault();
+      const n = el.querySelector('#rechInput');
+      rechChamp = n ? n.value : rechChamp;
+      if (n) n.blur();                       // le clavier se referme : on lit les résultats
+      lancerRecherche(rechChamp);
+    });
+    const n = el.querySelector('#rechInput');
+    if (n) n.addEventListener('input', () => { rechChamp = n.value; });
+  }
   on('[data-surligne]', e => {
     const c = +e.currentTarget.dataset.surligne;
     surligner(versetOuvert.livre, versetOuvert.ch, versetOuvert.v, c === 0 ? null : c);
