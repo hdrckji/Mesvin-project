@@ -149,6 +149,38 @@ function proxy_hops(): int {
 }
 
 /**
+ * Ramène une adresse à sa forme canonique avant tout jugement.
+ * `::ffff:1.2.3.4` désigne exactement 1.2.3.4 — c'est ce qu'écrit un écouteur
+ * double-pile. PHP, lui, juge TOUT `::ffff:0:0/96` réservé, quelle que soit
+ * l'IPv4 derrière : sans cette remise à plat, l'adresse d'un visiteur bien réel
+ * passerait pour celle d'un relais interne.
+ */
+function ip_normaliser(string $ip): string {
+    if (preg_match('/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i', $ip, $m)
+        && filter_var($m[1], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
+        return $m[1];
+    }
+    return $ip;
+}
+
+/**
+ * Cette adresse est-elle celle d'un RELAIS plutôt que d'un visiteur ?
+ * Privée (10/8, 172.16/12, 192.168/16, fd00::/7…), réservée (127/8, ::1,
+ * fe80::/10…), ou dans l'espace partagé 100.64.0.0/10 — que PHP juge public
+ * alors qu'il sert précisément aux répartiteurs de charge des hébergeurs et
+ * aux opérateurs : personne n'y est joignable depuis l'extérieur.
+ * $ip doit déjà être une adresse valide et normalisée.
+ */
+function ip_interne(string $ip): bool {
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+        return true;
+    }
+    $v4 = ip2long($ip);
+    // 100.64.0.0/10 : masque /10 = 0xFFC00000.
+    return $v4 !== false && ($v4 & 0xFFC00000) === (ip2long('100.64.0.0') & 0xFFC00000);
+}
+
+/**
  * Adresse IP du client. Derrière le proxy de Railway, REMOTE_ADDR est celle
  * du proxy : la véritable adresse se lit dans X-Forwarded-For.
  *
@@ -197,20 +229,23 @@ function client_ip(): string {
     // France entière, des veillées coupées. On continue donc vers la GAUCHE
     // tant qu'on tombe sur une adresse privée, et on ne s'arrête que sur une
     // adresse publique : la seule qui identifie vraiment un visiteur.
-    // Cette marche ne rouvre pas la faille : à droite du point de départ se
-    // trouvent NOS relais, et celui qui est le plus à l'extérieur y inscrit
-    // l'adresse publique du visiteur — on s'y arrête donc avant d'atteindre la
-    // partie forgeable. Elle ne fait que rattraper un PROXY_HOPS trop petit.
+    // Cette marche ne rouvre pas la faille TANT QUE le relais le plus à
+    // l'extérieur inscrit bien l'adresse PUBLIQUE du visiteur : on s'arrête sur
+    // elle avant d'atteindre la partie forgeable, et la marche ne fait que
+    // rattraper un PROXY_HOPS trop petit. Devant une installation où aucun de
+    // nos relais n'écrirait d'adresse publique, la chaîne ne dit rien de fiable
+    // et il faut alors régler PROXY_HOPS=0 : l'en-tête est ignoré, les plafonds
+    // comptent sur REMOTE_ADDR. Le bloc « reseau » du health admin le montre.
     for (; $index >= 0; $index--) {
+        $ip = ip_normaliser($chaine[$index]);
         // Une entrée qui n'est pas une IP (« unknown », en-tête tronqué,
         // obfuscation d'un relais…) ne doit JAMAIS servir de clé de plafond —
         // et on ne devine pas ce qu'il y a derrière : on s'arrête net.
-        if (filter_var($chaine[$index], FILTER_VALIDATE_IP) === false) {
+        if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
             return $remote;
         }
-        if (filter_var($chaine[$index], FILTER_VALIDATE_IP,
-                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false) {
-            return substr($chaine[$index], 0, 45);
+        if (!ip_interne($ip)) {
+            return substr($ip, 0, 45);
         }
     }
     // Que des adresses privées : personne d'identifiable dans cette chaîne.

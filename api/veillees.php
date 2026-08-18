@@ -13,7 +13,8 @@
    que l'heure en est venue (temps écoulé ou tous les présents ont répondu),
    sur le premier sondage venu — cf. veillee_reveler_si_besoin. Sans cela, un
    téléphone d'animateur qui se verrouille figeait le grand écran pour toute
-   l'assemblée.
+   l'assemblée. Le passage à la question SUIVANTE reste à l'animateur, et c'est
+   voulu : la salle commente la réponse, on ne lui coupe pas la parole.
 
    Principes hérités des duels :
    - le SERVEUR tire les questions et fixe l'ordre des options ;
@@ -374,7 +375,8 @@ function veillee_touch(PDO $pdo, int $id, array $set = []): void {
  * l'assemblée, sans que l'animateur comprenne pourquoi puisqu'il regarde le
  * mur. Désormais N'IMPORTE QUEL sondage d'état suffit à faire tomber la
  * révélation : un participant, le grand écran, l'animateur — un seul client
- * qui sonde, et la veillée continue d'avancer.
+ * qui sonde, et la réponse s'affiche. (La question SUIVANTE, elle, reste
+ * commandée par l'animateur : cf. l'en-tête du fichier.)
  *
  * Deux motifs, les mêmes que côté client :
  * - le temps est écoulé, GRÂCE COMPRISE : `handle_veillees_answer` accepte une

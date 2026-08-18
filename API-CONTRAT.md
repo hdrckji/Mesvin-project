@@ -37,9 +37,11 @@
   droite ; le début de la chaîne est fourni par le client, donc forgeable).
   Défaut `PROXY_HOPS` = 1 ; `0` = aucun relais devant, en-tête ignoré ; toute
   valeur qui n'est pas une IP valide retombe sur `REMOTE_ADDR`. Si la valeur
-  désignée est une adresse **privée** (un relais interne de plus que prévu), la
-  lecture se poursuit vers la gauche jusqu'à la première adresse **publique** —
-  un `PROXY_HOPS` trop petit se rattrape ainsi de lui-même.
+  désignée est une adresse **privée, réservée ou en `100.64.0.0/10`** (un relais
+  interne de plus que prévu), la lecture se poursuit vers la gauche jusqu'à la
+  première adresse **publique** — un `PROXY_HOPS` trop petit se rattrape ainsi
+  de lui-même, tant qu'un relais inscrit bien l'adresse publique du visiteur.
+  Les formes IPv4-mappées (`::ffff:1.2.3.4`) sont ramenées à leur IPv4.
 - Chaque action d'administration est tracée (table `admin_log`) et
   consultable via `GET /api/admin/log` (admins, 100 dernières entrées).
 - Les en-têtes de sécurité (CSP, nosniff, frame-ancestors, HSTS…) sont posés
@@ -202,7 +204,9 @@ ou animateur), dès que le temps est écoulé — grâce réseau comprise — ou
 tous les présents ont répondu. Sans cela, un téléphone d'animateur qui se
 verrouille laissait le grand écran figé sur la question devant l'assemblée.
 L'animateur garde la main : il peut toujours révéler ou enchaîner quand il
-veut, et son `advance` arrivé après coup répond simplement 409.
+veut, et son `advance` arrivé après coup répond simplement 409. Le passage
+`reveal → question suivante` reste, lui, à l'animateur seul — c'est voulu : on
+ne coupe pas la parole à une salle en train de commenter la réponse.
 
 ### POST /api/veillees (authentifié — l'animateur)
 Corps (tout facultatif) : `{ "nb": 5–20 (10), "seconds": 10–90 (25),

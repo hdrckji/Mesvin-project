@@ -1800,6 +1800,24 @@ check "chaîne entièrement privée → repli sur REMOTE_ADDR" 127.0.0.1 \
 # derrière, et surtout on ne descend pas jusqu'à la partie forgeable.
 check "valeur illisible pendant la marche → repli, jamais la forgée" 127.0.0.1 \
   "$(retenue $PORT_RELAIS '9.9.9.9, 10.0.0.5, unknown')"
+# 100.64.0.0/10 : l'espace partagé des répartiteurs d'hébergeurs. PHP le juge
+# public ; il ne désigne pourtant aucun visiteur — la marche doit l'enjamber,
+# sans quoi toute l'appli partagerait le compteur du répartiteur.
+check "relais en 100.64/10 enjambé comme un interne" 5.6.7.8 \
+  "$(retenue $PORT_RELAIS '9.9.9.9, 5.6.7.8, 100.64.0.1')"
+check "haut de 100.64/10 enjambé aussi"     5.6.7.8 \
+  "$(retenue $PORT_RELAIS '9.9.9.9, 5.6.7.8, 100.127.255.254')"
+check "juste EN DEHORS de 100.64/10 : adresse retenue" 100.128.0.1 \
+  "$(retenue $PORT_RELAIS '9.9.9.9, 100.128.0.1')"
+check "juste EN DESSOUS de 100.64/10 : adresse retenue" 100.63.255.254 \
+  "$(retenue $PORT_RELAIS '9.9.9.9, 100.63.255.254')"
+# ::ffff:1.2.3.4 désigne 1.2.3.4 — PHP juge tout ::ffff:0:0/96 réservé. Sans
+# remise à plat, l'adresse d'un visiteur bien réel passerait pour celle d'un
+# relais et la marche continuerait jusqu'à la partie forgeable.
+check "forme IPv4-mappée : ramenée à son IPv4" 5.6.7.8 \
+  "$(retenue $PORT_RELAIS '9.9.9.9, ::ffff:5.6.7.8')"
+check "IPv4-mappée d'une adresse privée : enjambée" 9.9.9.9 \
+  "$(retenue $PORT_RELAIS '9.9.9.9, ::ffff:10.0.0.5')"
 arreter_annexe
 
 # --- Une valeur illisible ne doit pas ouvrir la porte : on reste au défaut ---
@@ -1845,6 +1863,28 @@ done
 [ "$(api POST /api/auth/request-code '' '{"email":"forge-chaine@example.org"}' 'X-Forwarded-For: 1.2.3.4, 5.6.7.8')" = 429 ] \
   || PLAFOND_TIENT=non
 check "X-Forwarded-For forgé : le plafond ne se contourne plus" oui "$PLAFOND_TIENT"
+
+# ET SURTOUT dans la configuration de la PRODUCTION (PROXY_HOPS=1), la seule
+# qui compte : le contrôle ci-dessus est joué à PROXY_HOPS=0, où l'en-tête est
+# ignoré par construction — il ne prouve donc rien sur le réglage réel.
+# On rejoue ici l'attaque telle qu'elle se présenterait derrière un relais :
+# le visiteur forge une valeur DIFFÉRENTE à chaque appel, et le relais ajoute
+# À DROITE son adresse à lui — 203.0.113.7, la même à chaque fois puisque c'est
+# le même visiteur. Le compteur doit se caler sur cette adresse-là et mordre,
+# quoi que le visiteur invente à gauche.
+serveur_annexe $PORT_RELAIS
+PLAFOND_RELAIS=inconnu
+for i in $(seq 1 45); do
+  CODE="$(curl -s -o "$TMP/body.json" -w '%{http_code}' -X POST \
+    "http://127.0.0.1:$PORT_RELAIS/api/auth/request-code" -H 'Content-Type: application/json' \
+    -H "X-Forwarded-For: 198.51.100.$i, 203.0.113.7" \
+    --data "{\"email\":\"relais$i@example.org\"}")"
+  if [ "$CODE" = 429 ]; then PLAFOND_RELAIS=oui; break; fi
+done
+check "derrière un relais : la valeur forgée ne rouvre pas le plafond" oui "$PLAFOND_RELAIS"
+check "c'est bien l'adresse du visiteur qui sert de compteur" 203.0.113.7 \
+  "$(retenue $PORT_RELAIS '198.51.100.9, 203.0.113.7')"
+arreter_annexe
 
 # ---------------------------------------------------------------------------
 say "Divers"

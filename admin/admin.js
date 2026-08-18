@@ -684,6 +684,43 @@ function htmlConfiguration() {
     </div>`;
 }
 
+/* La section « Réseau » : ce que le relais nous envoie VRAIMENT, et l'adresse
+   que les plafonds anti-abus retiennent. Sans elle, PROXY_HOPS se règle à
+   l'aveugle — /api/health n'est lisible qu'avec un jeton, donc jamais depuis
+   la barre d'adresse du navigateur. La marche à suivre est écrite en toutes
+   lettres : ouvrir cet écran en wifi, puis en 4G ; l'adresse retenue doit
+   changer, et valoir l'adresse publique de la connexion. */
+function htmlReseau() {
+  // Absente d'une réponse encore en cache (ancienne version de l'API en cours
+  // de déploiement) : la section s'efface plutôt que d'alarmer.
+  const r = sys.reseau;
+  if (!r) return '';
+  const recu = r.xForwardedFor ? r.xForwardedFor : 'aucun en-tête reçu';
+  // Deux réglages visiblement faux, et un seul geste pour chacun.
+  let avis = '';
+  if (!r.xForwardedFor && r.proxyHops > 0) {
+    avis = `Aucun relais ne se signale alors que <code class="sys-var">PROXY_HOPS</code> vaut ${r.proxyHops} :
+      l'en-tête, entièrement fourni par le visiteur, ne devrait pas être cru. Mettre la variable à <b>0</b>.`;
+  } else if (r.xForwardedFor && r.ipRetenue === r.remoteAddr) {
+    avis = `L'adresse retenue est celle de la connexion, pas celle du visiteur :
+      <code class="sys-var">PROXY_HOPS</code> est trop grand. Le baisser d'un cran.`;
+  }
+  return `
+    <div class="section-title">Réseau</div>
+    <div class="card">
+      ${ligneSys('Adresse retenue pour toi', r.ipRetenue || '?')}
+      ${ligneSys('Reçu du relais', recu)}
+      ${ligneSys('Adresse de la connexion', r.remoteAddr || '?')}
+      ${ligneSys('Relais de confiance (PROXY_HOPS)', r.proxyHops)}
+      ${avis ? `<p class="muted sys-alerte" style="font-size:.85rem;margin:10px 2px 0">${avis}</p>` : ''}
+      <p class="muted" style="font-size:.85rem;margin:10px 2px 0">Les plafonds anti-abus comptent par adresse :
+        c'est « adresse retenue » qui sert de compteur. Pour la vérifier, ouvre cet écran en wifi, puis
+        avec le téléphone en 4G — elle doit <b>changer</b> et valoir l'adresse publique de la connexion.
+        Si elle ne change pas, tout le monde partage un seul compteur et de vraies personnes seront bloquées :
+        c'est <code class="sys-var">PROXY_HOPS</code> qu'il faut corriger, sans redéployer.</p>
+    </div>`;
+}
+
 function htmlSysteme() {
   if (sysErreur) return `<div class="card"><p class="field-error" style="margin:0">${esc(sysErreur)}</p></div>`;
   if (!sys) return `<div class="card center" style="padding:30px"><p class="muted" style="margin:0">Chargement…</p></div>`;
@@ -697,6 +734,7 @@ function htmlSysteme() {
       ${ligneSys('Dernier envoi', sys.lastMailError ? sys.lastMailError : 'aucun échec récent', !sys.lastMailError)}
     </div>
     ${htmlConfiguration()}
+    ${htmlReseau()}
 
     <div class="section-title">Le verset offert (notifications)</div>
     <div class="card">
