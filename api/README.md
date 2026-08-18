@@ -182,3 +182,25 @@ elle sera recréée vide au prochain appel.
   et le score est toujours recalculé côté serveur.
 - Suppression de compte = effacement total (profil, synchro, amitiés,
   duels, sessions, codes).
+
+## Lancer les tests
+
+```bash
+# SQLite seul — rapide, rien à installer
+bash api/tests/run-tests.sh
+
+# Les DEUX dialectes : SQLite puis MySQL (celui de la production)
+BH_TEST_MYSQL_URL='mysql://user:pass@127.0.0.1:3306/bh_test' \
+  bash api/tests/run-tests-dialectes.sh
+```
+
+`db_migrate()` porte **deux blocs DDL distincts** qui divergent réellement
+(ENUM contre CHECK, sémantique de `rowCount()`, types de dates). Ne jouer que
+SQLite revient à déployer le bloc MySQL sans l'avoir jamais exécuté — alors
+que la production tourne sur MySQL. **Avant tout déploiement qui touche à la
+base, jouer les deux.**
+
+La base MySQL indiquée est **vidée à chaque passe** : ne jamais y pointer une
+base contenant quoi que ce soit d'utile. Une seconde base suffixée `_mig` (ici
+`bh_test_mig`) sert au contrôle de migration et doit être accessible au même
+compte.

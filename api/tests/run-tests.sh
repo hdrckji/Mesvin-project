@@ -53,6 +53,55 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# DIALECTE. Par défaut SQLite (rapide, sans rien à installer). Si
+# BH_TEST_MYSQL_URL est définie, la MÊME suite tourne contre MySQL — le
+# dialecte réellement déployé. Les deux blocs DDL de db_migrate() divergent
+# (ENUM contre CHECK, sémantique de rowCount…) : ne jouer qu'un seul dialecte
+# revient à déployer l'autre sans l'avoir jamais exécuté.
+if [ -n "${BH_TEST_MYSQL_URL:-}" ]; then
+  DIALECTE=mysql
+  # mysql://user:pass@host:port/base → les morceaux dont PDO a besoin.
+  eval "$(php -r '
+    $u = parse_url($argv[1]);
+    printf("BH_HOST=%s\nBH_PORT=%s\nBH_BASE=%s\nBH_USER=%s\nBH_PASS=%s\n",
+      escapeshellarg($u["host"] ?? "127.0.0.1"), escapeshellarg((string) ($u["port"] ?? 3306)),
+      escapeshellarg(ltrim($u["path"] ?? "", "/")), escapeshellarg(urldecode($u["user"] ?? "")),
+      escapeshellarg(urldecode($u["pass"] ?? "")));
+  ' "$BH_TEST_MYSQL_URL")"
+  BH_DSN="mysql:host=$BH_HOST;port=$BH_PORT;dbname=$BH_BASE;charset=utf8mb4"
+  BH_DSN_MIG="mysql:host=$BH_HOST;port=$BH_PORT;dbname=${BH_BASE}_mig;charset=utf8mb4"
+else
+  DIALECTE=sqlite
+  BH_USER=""; BH_PASS=""
+  BH_DSN="sqlite:$ROOT/api/data/dev.sqlite"
+  BH_DSN_MIG="sqlite:$TMP/deja-deploye.sqlite"
+fi
+export BH_DSN BH_DSN_MIG BH_USER BH_PASS
+
+# Table rase avant de commencer : un reste de la passe précédente fausserait
+# tous les comptages. En SQLite on efface le fichier, en MySQL les tables.
+if [ "$DIALECTE" = mysql ]; then
+  php -r '
+    foreach ([getenv("BH_DSN"), getenv("BH_DSN_MIG")] as $i => $dsn) {
+      $base = $i === 0 ? null : preg_replace("/^.*dbname=([^;]+).*$/", "$1", $dsn);
+      try { $p = new PDO($dsn, getenv("BH_USER"), getenv("BH_PASS")); }
+      catch (PDOException $e) {
+        /* Base de migration absente au premier lancement : on la fabrique. */
+        $sans = preg_replace("/dbname=[^;]+;?/", "", $dsn);
+        $p = new PDO($sans, getenv("BH_USER"), getenv("BH_PASS"));
+        $p->exec("CREATE DATABASE IF NOT EXISTS `" . $base . "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        $p = new PDO($dsn, getenv("BH_USER"), getenv("BH_PASS"));
+      }
+      $p->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+      $p->exec("SET FOREIGN_KEY_CHECKS = 0");
+      foreach ($p->query("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()")->fetchAll(PDO::FETCH_COLUMN) as $t) {
+        $p->exec("DROP TABLE IF EXISTS `" . $t . "`");
+      }
+    }'
+fi
+say "Dialecte de cette passe : $DIALECTE"
+
+# ---------------------------------------------------------------------------
 # Le moteur de recherche biblique est du JavaScript pur (lire/recherche.js) :
 # son test tourne sous Node. Si Node manque sur la machine, on le DIT plutôt
 # que d'échouer — le reste de la suite n'en dépend pas.
@@ -85,7 +134,7 @@ say "Migrations versionnées (journal schema_migrations)"
 MIG="$(php -r '
 define("GRAINE_API", 1);
 require $argv[1] . "/api/db.php";
-$pdo = new PDO("sqlite:" . $argv[2]);
+$pdo = new PDO(getenv("BH_DSN_MIG"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 db_migrate($pdo);
 $v = (int) $pdo->query("SELECT MAX(version) FROM schema_migrations")->fetchColumn();
@@ -101,9 +150,13 @@ $pdo->exec("ALTER TABLE groupes DROP COLUMN nom_style");
 $pdo->exec("ALTER TABLE groupes DROP COLUMN nom_taille");
 $pdo->exec("ALTER TABLE groupe_service_inscriptions DROP COLUMN rappel_envoye");
 db_migrate($pdo);
-$tables = $pdo->query("SELECT name FROM sqlite_master WHERE type = \"table\"")->fetchAll(PDO::FETCH_COLUMN);
+$tables = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql"
+  ? $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()")->fetchAll(PDO::FETCH_COLUMN)
+  : $pdo->query("SELECT name FROM sqlite_master WHERE type = \"table\"")->fetchAll(PDO::FETCH_COLUMN);
 if (!in_array("groupe_banques", $tables) || !in_array("groupe_banque_items", $tables)) { echo "rattrapage-manque"; exit; }
-$cols = $pdo->query("SELECT name FROM pragma_table_info(\"groupes\")")->fetchAll(PDO::FETCH_COLUMN);
+$cols = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql"
+  ? $pdo->query("SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = \"groupes\"")->fetchAll(PDO::FETCH_COLUMN)
+  : $pdo->query("SELECT name FROM pragma_table_info(\"groupes\")")->fetchAll(PDO::FETCH_COLUMN);
 if (!in_array("nom_style", $cols)) { echo "alter-manque"; exit; }
 // Base à jour : re-migrer doit être un non-événement.
 db_migrate($pdo);
@@ -113,11 +166,19 @@ echo $n === DB_MIGRATION_DERNIERE ? "oui" : "tampons-en-double";
 check "neuve, rattrapage d'avant-journal, à jour : les trois chemins passent" oui "$MIG"
 
 # ---------------------------------------------------------------------------
-say "Démarrage du serveur de test (php -S, SQLite, mode dev)"
-rm -f "$ROOT"/api/data/dev.sqlite "$ROOT"/api/data/dev.sqlite-*
+say "Démarrage du serveur de test (php -S, $DIALECTE, mode dev)"
+[ "$DIALECTE" = sqlite ] && rm -f "$ROOT"/api/data/dev.sqlite "$ROOT"/api/data/dev.sqlite-*
 cd "$ROOT"
-env -u MYSQL_URL -u BREVO_API_KEY -u SMTP_HOST ADMIN_EMAILS=alice@example.org \
-  php -S 127.0.0.1:$PORT api/tests/router.php > "$TMP/server.log" 2>&1 &
+# En MySQL, MYSQL_URL est TRANSMISE : c'est elle que db() lit pour choisir son
+# pilote. En SQLite on la retire, sinon une variable d'environnement traînante
+# détournerait la suite vers une vraie base.
+if [ "$DIALECTE" = mysql ]; then
+  env -u BREVO_API_KEY -u SMTP_HOST MYSQL_URL="$BH_TEST_MYSQL_URL" ADMIN_EMAILS=alice@example.org \
+    php -S 127.0.0.1:$PORT api/tests/router.php > "$TMP/server.log" 2>&1 &
+else
+  env -u MYSQL_URL -u BREVO_API_KEY -u SMTP_HOST ADMIN_EMAILS=alice@example.org \
+    php -S 127.0.0.1:$PORT api/tests/router.php > "$TMP/server.log" 2>&1 &
+fi
 SERVER_PID=$!
 trap 'kill "$SERVER_PID" 2>/dev/null; rm -rf "$TMP"' EXIT
 
@@ -316,7 +377,7 @@ check "4 présents"                      4 "$(jval .veillee.nPresent)"
 # rapide. Les quatre lignes touchées prouvent au passage que veillee_presence
 # est bien écrite, une par participant.
 VIEILLIS="$(php -r '
-$pdo = new PDO("sqlite:" . $argv[1]);
+$pdo = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $st = $pdo->prepare(
   "UPDATE veillee_presence SET last_seen = ?
@@ -363,7 +424,7 @@ check "Marc, présent, a répondu"        1    "$(jval .veillee.nPresentRepondu)
 # nPresentRepondu non — sans cette distinction, comparer nAnswered à nPresent
 # franchirait le seuil et couperait la parole à ceux qui réfléchissent encore.
 php -r '
-$pdo = new PDO("sqlite:" . $argv[1]);
+$pdo = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $pdo->prepare(
   "UPDATE veillee_presence SET last_seen = ?
@@ -646,7 +707,7 @@ check "le refus nomme la sortie (transmettre)" true "$(jval '.error | test("[Tt]
 # église peut être tranchée après elle. Insertion directe en base pour simuler
 # ce décalage (le dépôt normal refuse déjà au plafond), demande CONSERVÉE au 409.
 php -r '
-$pdo = new PDO("sqlite:" . $argv[1]);
+$pdo = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $pdo->exec("INSERT INTO groupe_demandes (user_id, nom, statut, created_at)
   SELECT id, \"Demande en décalage\", \"attente\", \"2000-01-01 00:00:00\"
@@ -657,7 +718,7 @@ DEC_ID="$(jval '.demandes[0].id')"
 check "accepter au plafond → 409"       409 "$(api POST "/api/admin/eglises/demandes/$DEC_ID/accepter" "$TOKEN1")"
 check "la demande est conservée"        1   "$(api GET /api/admin/eglises "$TOKEN1" > /dev/null; jval '.demandes | length')"
 php -r '
-$pdo = new PDO("sqlite:" . $argv[1]);
+$pdo = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
 $pdo->exec("DELETE FROM groupe_demandes WHERE nom = \"Demande en décalage\"");
 ' "$ROOT/api/data/dev.sqlite"
 set -- $GCODES
@@ -953,7 +1014,7 @@ check "ses questions sont parties avec"    true \
 check "église inconnue → 404"              404 "$(api GET "/api/admin/groupes/GRP-ZZZZZ" "$TOKEN1")"
 
 say "Quiz d'église — suppression du groupe : tout est purgé"
-QSQL() { php -r '$p = new PDO("sqlite:" . $argv[1]); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
+QSQL() { php -r '$p = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
 check "u1 supprime le groupe → 200"     200 "$(api DELETE "/api/groupes/$QGCODE" "$TOKEN1")"
 check "GET quiz sur le groupe disparu → 404" 404 "$(api GET "/api/groupes/$QGCODE/quiz" "$TOKEN1")"
 check "réglages + sélection + propres + liens : 0 ligne" 0 \
@@ -966,8 +1027,8 @@ check "la veillée liée survit, sans église" false "$(api GET "/api/veillees/$
 # La page de l'église (fondations serveur — aucune interface encore).
 # Toujours aucun appel request-code : TOKEN1/TOKEN2/TOKEN3 suffisent.
 # Regards directs dans la base SQLite (aussi utilisés plus bas, Notifications).
-sqlval()  { php -r '$p = new PDO("sqlite:" . $argv[1]); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
-sqlexec() { php -r '$p = new PDO("sqlite:" . $argv[1]); $p->exec($argv[2]);' "$ROOT/api/data/dev.sqlite" "$1"; }
+sqlval()  { php -r '$p = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
+sqlexec() { php -r '$p = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null); $p->exec($argv[2]);' "$ROOT/api/data/dev.sqlite" "$1"; }
 
 say "La page de l'église — vide au départ, réservée aux membres"
 PGCODE="$(groupe_via_demande "$TOKEN1" "Assemblée du Chemin")"
@@ -1513,7 +1574,7 @@ check "la synchro de u1 est intacte"    3 "$(api GET /api/sync "$TOKEN1B" > /dev
 
 # ---------------------------------------------------------------------------
 say "Santé détaillée et journal (admin seulement)"
-check "health admin : db sqlite"        sqlite "$(api GET /api/health "$TOKEN1B" > /dev/null; jval .db)"
+check "health admin : db $DIALECTE"     "$DIALECTE" "$(api GET /api/health "$TOKEN1B" > /dev/null; jval .db)"
 check "health admin : mail dev"         dev    "$(jval .mail)"
 check "journal sans token → 401"        401    "$(api GET /api/admin/log)"
 check "journal admin → 200"             200    "$(api GET /api/admin/log "$TOKEN1B")"
