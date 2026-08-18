@@ -289,6 +289,22 @@ async function chargerBanque() {
    publié des séries : sans cela, ouvrir l'épreuve reste un seul geste. La
    banque complète est toujours là, en tête — une série s'ajoute au choix,
    elle ne remplace rien. */
+/* Le défi qu'on a lancé, et sa réponse. Il n'existe pas d'écran de retour
+   pour celui qui l'a lancé : la carte porte donc le résultat elle-même. */
+function duelLanceHTML() {
+  if (!repriseDuel) return '';
+  const d = repriseDuel;
+  const moi = d.p1 && d.p1.score !== null ? d.p1.score : null;
+  const corps = d.p2
+    ? `<b>${esc(d.p2.pseudo)}</b> a répondu : <b>${d.p2.score} / ${d.total}</b>`
+        + (moi !== null ? ` — toi, ${moi} / ${d.total}.` : '.')
+    : `Personne n'a encore répondu. Le code à partager : <b>${esc(d.code)}</b>`;
+  return `<div class="card fade" style="margin:-4px 0 16px">
+    <p style="margin:0 0 8px">${corps}</p>
+    <button class="btn btn-ghost btn-block" data-duel-oubli="1">Ne plus l'afficher</button>
+  </div>`;
+}
+
 function choixBanqueHTML() {
   if (!SERIES || !SERIES.length) return '';
   const pastille = (id, nom, jouee) =>
@@ -334,6 +350,14 @@ let repriseAnim = null; // veillée animée retrouvée au chargement : { code, c
    l'onglet — on la garde sur l'appareil pour qu'un rechargement (ou une mise
    en veille du téléphone) ne fige plus la veillée pour toute la salle. */
 const ANIM_KEY = 'graine.ecritoupas.anim.v1';
+/* Le duel qu'on a LANCÉ. Sans cette mémoire, fermer l'onglet perdait le code
+   pour toujours : le duel vivait sept jours sur le serveur, l'ami pouvait y
+   répondre, et son score restait à jamais invisible. */
+const DUEL_KEY = 'graine.ecritoupas.duel.v1';
+function duelEcrire(o) { try { localStorage.setItem(DUEL_KEY, JSON.stringify(o)); } catch (e) {} }
+function duelLire() { try { return JSON.parse(localStorage.getItem(DUEL_KEY) || 'null'); } catch (e) { return null; } }
+function duelOubli() { try { localStorage.removeItem(DUEL_KEY); } catch (e) {} }
+let repriseDuel = null;   // { code, p1, p2, total } une fois relu du serveur
 function animEcrire(o) { try { localStorage.setItem(ANIM_KEY, JSON.stringify(o)); } catch (e) {} }
 function animLire() { try { return JSON.parse(localStorage.getItem(ANIM_KEY) || 'null'); } catch (e) { return null; } }
 function animOubli() { try { localStorage.removeItem(ANIM_KEY); } catch (e) {} }
@@ -381,6 +405,7 @@ function vueAccueil() {
     <h1 style="margin-top:10px">Écrit… ou pas <span class="seed">?</span></h1>
     <p class="muted" style="margin:4px 0 16px">Cette phrase se trouve-t-elle vraiment dans la Bible ? Certaines « citations » célèbres n'y ont jamais mis les pieds…</p>
     ${choixBanqueHTML()}
+    ${duelLanceHTML()}
 
     <button class="card hub-card" data-solo="1">
       <span class="hub-ic">${icon('seul', 26)}</span>
@@ -864,6 +889,9 @@ function render() {
     try { online.etat = await api('veillee/' + online.code + '/etat?cle=' + online.cle); render(); } catch (e) {}
     pollDemarre();
   });
+  if (q1('[data-duel-oubli]')) q1('[data-duel-oubli]').addEventListener('click', () => {
+    duelOubli(); repriseDuel = null; render();
+  });
   el.querySelectorAll('[data-serie]').forEach(b => b.addEventListener('click', () => {
     const v = b.dataset.serie;
     serieChoisie = v === '' ? null : Number(v);
@@ -905,6 +933,7 @@ function render() {
       await chargerBanque();
       const deck = tirage(CARTES_PAR_SEANCE);
       const r = await api('duel', { pseudo: pseudo, mode: TITRE, deck: deck });
+      duelEcrire({ code: r.code, ts: Date.now() });
       demarrer(null, { code: r.code, cle: r.cle }, deck);
     } catch (e) { duelgo.disabled = false; erreurLigne(e.message); }
   });
@@ -996,6 +1025,19 @@ function render() {
   if (ecran === 'dres' && online && !online.erreur && !minuterie) pollDemarre();
 }
 
+/* Au retour sur l'épreuve : où en est le défi qu'on a lancé ? Sept jours,
+   c'est la durée de vie du code côté serveur — au-delà, on oublie. */
+async function verifierRepriseDuel() {
+  const d = duelLire();
+  if (!d || !d.code) return;
+  if (Date.now() - (d.ts || 0) > 7 * 86400000) { duelOubli(); return; }
+  try {
+    const etat = await api('duel/' + d.code);
+    repriseDuel = { code: d.code, p1: etat.p1, p2: etat.p2, total: etat.total };
+    render();
+  } catch (e) { if (e && e.status === 404) duelOubli(); }  // duel expiré
+}
+
 async function verifierRepriseAnim() {
   const a = animLire();
   if (!a || !a.code || !a.cle) return;
@@ -1060,6 +1102,7 @@ if (direct && /^EV-[A-Z2-9]{5}$/.test(direct.toUpperCase())) {
 }
 render();
 chargerSeries();   // les séries publiées de mon église, s'il y en a
+verifierRepriseDuel();  // et le défi qu'on a lancé, s'il en reste un
 if (!online) verifierRepriseAnim(); // pas de projection en cours : propose la reprise si besoin
 </script>
 </body>

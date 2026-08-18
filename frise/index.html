@@ -324,6 +324,31 @@ const ANIM_KEY = 'graine.frise.anim.v1';
 function animEcrire(o) { try { localStorage.setItem(ANIM_KEY, JSON.stringify(o)); } catch (e) {} }
 function animLire() { try { return JSON.parse(localStorage.getItem(ANIM_KEY) || 'null'); } catch (e) { return null; } }
 function animOubli() { try { localStorage.removeItem(ANIM_KEY); } catch (e) {} }
+
+/* Le duel qu'on a LANCÉ. Sans cette mémoire, fermer l'onglet perdait le code
+   pour toujours : le duel vivait sept jours sur le serveur, l'ami pouvait y
+   répondre, et son score restait à jamais invisible. */
+const DUEL_KEY = 'graine.frise.duel.v1';
+function duelEcrire(o) { try { localStorage.setItem(DUEL_KEY, JSON.stringify(o)); } catch (e) {} }
+function duelLire() { try { return JSON.parse(localStorage.getItem(DUEL_KEY) || 'null'); } catch (e) { return null; } }
+function duelOubli() { try { localStorage.removeItem(DUEL_KEY); } catch (e) {} }
+let repriseDuel = null;   // { code, p1, p2, total } une fois relu du serveur
+
+/* Le défi qu'on a lancé, et sa réponse. Il n'existe pas d'écran de retour
+   pour celui qui l'a lancé : la carte porte donc le résultat elle-même. */
+function duelLanceHTML() {
+  if (!repriseDuel) return '';
+  const d = repriseDuel;
+  const moi = d.p1 && d.p1.score !== null ? d.p1.score : null;
+  const corps = d.p2
+    ? `<b>${esc(d.p2.pseudo)}</b> a répondu : <b>${d.p2.score} / ${d.total}</b>`
+        + (moi !== null ? ` — toi, ${moi} / ${d.total}.` : '.')
+    : `Personne n'a encore répondu. Le code à partager : <b>${esc(d.code)}</b>`;
+  return `<div class="card fade" style="margin:-4px 0 16px">
+    <p style="margin:0 0 8px">${corps}</p>
+    <button class="btn btn-ghost btn-block" data-duel-oubli="1">Ne plus l'afficher</button>
+  </div>`;
+}
 let minuterie = null; // l'interrogation régulière du serveur (écrans en ligne)
 
 /* ---- Réseau : les points d'entrée dédiés /api/frise/* (sans compte) ---- */
@@ -471,6 +496,7 @@ function vueAccueil() {
     <button class="quit" data-retour-defi="1">‹ Défi</button>
     <h1 style="margin-top:10px">Avant ou après <span class="seed">?</span></h1>
     <p class="muted" style="margin:4px 0 16px">Chaque carte doit trouver sa place dans la frise : les livres dans l'ordre de la Bible, les événements dans l'ordre où elle les raconte.</p>
+    ${duelLanceHTML()}
 
     <button class="card hub-card" data-solo="1">
       <span class="hub-ic">${icon('seul', 26)}</span>
@@ -1105,6 +1131,9 @@ function render() {
     if (n) n.textContent = msg;
   };
 
+  const oubli = el.querySelector('[data-duel-oubli]');
+  if (oubli) oubli.addEventListener('click', () => { duelOubli(); repriseDuel = null; render(); });
+
   const duelgo = el.querySelector('[data-duelgo]');
   if (duelgo) duelgo.addEventListener('click', async () => {
     const pseudo = saisie.pseudo.trim();
@@ -1113,6 +1142,7 @@ function render() {
     try {
       const deck = deckServeur(config.mode, config.portee, CARTES_PAR_SEANCE);
       const r = await api('duel', { pseudo: pseudo, mode: titrePaquet(config.mode, config.portee), deck: deck });
+      duelEcrire({ code: r.code, ts: Date.now() });
       demarrerServi(deck, titrePaquet(config.mode, config.portee), { code: r.code, cle: r.cle });
     } catch (e) { duelgo.disabled = false; erreurLigne(e.message); }
   });
@@ -1216,6 +1246,19 @@ function render() {
 }
 /* Arrivée directe sur le grand écran : ?direct=FV-XXXXX (l'adresse que
    l'animateur copie pour l'ordinateur du projecteur). */
+/* Au retour sur l'épreuve : où en est le défi qu'on a lancé ? Sept jours,
+   c'est la durée de vie du code côté serveur — au-delà, on oublie. */
+async function verifierRepriseDuel() {
+  const d = duelLire();
+  if (!d || !d.code) return;
+  if (Date.now() - (d.ts || 0) > 7 * 86400000) { duelOubli(); return; }
+  try {
+    const etat = await api('duel/' + d.code);
+    repriseDuel = { code: d.code, p1: etat.p1, p2: etat.p2, total: etat.total };
+    render();
+  } catch (e) { if (e && e.status === 404) duelOubli(); }  // duel expiré
+}
+
 async function verifierRepriseAnim() {
   const a = animLire();
   if (!a || !a.code || !a.cle) return;
@@ -1234,6 +1277,7 @@ if (direct && /^FV-[A-Z2-9]{5}$/.test(direct.toUpperCase())) {
   pollDemarre();
 }
 render();
+verifierRepriseDuel();  // et le défi qu'on a lancé, s'il en reste un
 if (!online) verifierRepriseAnim(); // pas de projection en cours : propose la reprise si besoin
 </script>
 </body>

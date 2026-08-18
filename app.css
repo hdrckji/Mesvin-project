@@ -780,3 +780,20 @@ summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; 
   border-radius: 4px 10px 10px 4px; padding: 9px 12px;
   color: var(--ink-soft); font-size: .9rem; line-height: 1.5;
 }
+
+/* « On t'attend » — un ami patiente sur un défi. Le ton reste celui de
+   l'appli : on informe, on ne réclame pas. Pas de pastille rouge, pas de
+   compteur en retard ; et la croix écarte la carte pour de bon. */
+.card.attente { display: flex; align-items: stretch; gap: 0; padding: 0; overflow: hidden; }
+.card.attente .attente-corps {
+  display: flex; align-items: center; gap: 12px; flex: 1;
+  padding: 14px 4px 14px 16px; text-decoration: none; color: inherit;
+}
+.card.attente .hub-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.card.attente .hub-title { font-family: var(--serif); font-size: 1.25rem; font-weight: 650; color: var(--grow); }
+.card.attente .hub-sub { color: var(--ink-soft); font-size: .92rem; }
+.card.attente .attente-x {
+  background: none; border: 0; color: var(--ink-soft); font-size: 1.3rem;
+  line-height: 1; padding: 0 16px; cursor: pointer; align-self: stretch;
+}
+.card.attente .attente-x:hover { color: var(--ink); }

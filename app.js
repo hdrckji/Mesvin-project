@@ -644,7 +644,67 @@ function viewHome() {
         <span class="hub-sub">${defiDuJourFait() ? 'Relevé aujourd\'hui ✓ — reviens demain' : 'Ton rendez-vous quotidien, le même pour tous'}</span></span>
       <span class="chev">›</span></a>`;
 
-  return topbar(true) + hero + hub;
+  return topbar(true) + hero + carteAttente() + hub;
+}
+
+/* ---------- « On t'attend » : les défis où c'est à toi de jouer ----------
+   La seule sollicitation vraiment légitime de l'appli : quelqu'un attend
+   pour de bon. On l'affiche donc tant que le défi n'est pas joué — une
+   carte qui s'efface toute seule laisserait l'ami attendre sans plus aucune
+   trace. Mais elle s'écarte d'un geste, et ne revient plus pour ce défi-là :
+   c'est un choix de l'utilisateur, jamais un oubli du produit.
+
+   Rien de tout cela n'est possible pour les duels par CODE des trois
+   épreuves et de la frise : ils se jouent sans compte, le serveur ignore
+   qui est le destinataire. Là-bas, c'est le lanceur qui retrouve son duel,
+   depuis son propre appareil (voir chaque page d'épreuve). */
+const ATTENTE_ECARTES = 'graine.duels.ecartes';
+let duelsAttente = null;      // null = pas encore demandé
+let duelsTentee = false;
+
+function ecartesLus() {
+  try { return JSON.parse(localStorage.getItem(ATTENTE_ECARTES) || '[]') || []; } catch (e) { return []; }
+}
+function ecarterDuel(id) {
+  try {
+    const v = ecartesLus();
+    if (!v.includes(id)) v.push(id);
+    // On ne garde que les cinquante derniers : la liste ne doit pas enfler
+    // indéfiniment pour des défis depuis longtemps réglés.
+    localStorage.setItem(ATTENTE_ECARTES, JSON.stringify(v.slice(-50)));
+  } catch (e) { /* stockage refusé : la carte reviendra, tant pis */ }
+}
+
+function ensureDuelsAttente() {
+  if (duelsTentee || !window.GraineAPI || !GraineAPI.isLoggedIn()) return;
+  duelsTentee = true;
+  GraineAPI.duels()
+    .then(ds => { duelsAttente = Array.isArray(ds) ? ds.filter(d => d.status === 'waiting_me') : []; })
+    .catch(() => { duelsAttente = []; })   // hors-ligne : l'accueil ne change pas
+    .then(() => renderIfIdle());
+}
+
+function carteAttente() {
+  if (!Array.isArray(duelsAttente)) return '';
+  const ecartes = ecartesLus();
+  const attendus = duelsAttente.filter(d => !ecartes.includes(d.id));
+  if (!attendus.length) return '';
+  const noms = attendus.map(d => d.opponent && d.opponent.pseudo).filter(Boolean);
+  const titre = attendus.length === 1
+    ? `${esc(noms[0] || 'Un ami')} t'attend`
+    : `${attendus.length} amis t'attendent`;
+  const sous = attendus.length === 1
+    ? 'Un défi de connaissance biblique — quand tu veux, rien ne presse.'
+    : esc(noms.slice(0, 3).join(', ')) + (noms.length > 3 ? '…' : '') + ' — quand tu veux.';
+  return `<div class="card attente fade">
+      <a class="attente-corps" href="defi/">
+        <span class="hub-ic">${icon('amis', 24)}</span>
+        <span class="hub-txt"><span class="hub-title">${titre}</span>
+          <span class="hub-sub">${sous}</span></span>
+      </a>
+      <button class="attente-x" data-attente-x="${attendus.map(d => d.id).join(',')}"
+              aria-label="Écarter">×</button>
+    </div>`;
 }
 
 /* ---------- Mémoriser : session du jour, apprendre, objectif, jardin ---------- */
@@ -3609,6 +3669,7 @@ function wire() {
   });
 
   // Compte, synchro, amis & église
+  if (route.name === 'home') ensureDuelsAttente();
   if (route.name === 'moi') { ensureFriends(); ensureGroupes(); }
   if (q('[data-account]')) q('[data-account]').addEventListener('click', startAccountFlow);
   if (q('[data-accchip]')) q('[data-accchip]').addEventListener('click', () => {
@@ -3714,6 +3775,11 @@ function wire() {
   el.querySelectorAll('[data-bqecrit]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.ecrit = b.dataset.bqecrit === '1'; render(); } }));
   el.querySelectorAll('[data-bqgenre]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.genre = b.dataset.bqgenre; render(); } }));
   el.querySelectorAll('[data-bqniveau]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.niveau = +b.dataset.bqniveau; render(); } }));
+  const attX = q('[data-attente-x]');
+  if (attX) attX.addEventListener('click', () => {
+    attX.dataset.attenteX.split(',').forEach(id => ecarterDuel(Number(id)));
+    render();
+  });
   el.querySelectorAll('[data-eglsel]').forEach(b => b.addEventListener('click', () => {
     egliseSel = b.dataset.eglsel; pageEdit = null; pageNotice = pageError = null;
     retenirEglise(); render();
