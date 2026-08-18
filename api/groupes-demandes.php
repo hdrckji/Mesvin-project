@@ -237,6 +237,30 @@ function groupe_demande_en_attente(PDO $pdo, int $id): array {
 
 /* ---- POST /api/admin/eglises/demandes/{id}/accepter — le groupe naît ------------ */
 
+/**
+ * Prévient le nouveau responsable, à l'adresse de son COMPTE — pas à
+ * l'e-mail de contact de la demande, qui est celui de l'église (un secrétariat,
+ * une adresse partagée) et pas forcément le sien. Ne lève jamais.
+ */
+function groupe_eglise_ouverte_prevenir(PDO $pdo, int $userId, array $groupe, array $admin): void {
+    try {
+        $st = $pdo->prepare('SELECT email FROM users WHERE id = ?');
+        $st->execute([$userId]);
+        $email = (string) ($st->fetchColumn() ?: '');
+        if ($email === '') {
+            return;
+        }
+        if (!mail_send_eglise_ouverte($email, (string) $groupe['nom'], (string) $groupe['code'])) {
+            // mail_last_error() n'est renseignée que par le chemin Brevo : on nomme
+            // aussi le mode, sans quoi un échec SMTP ne dit rien du tout.
+            admin_log($pdo, $admin, 'eglise.accueil.echec',
+                $groupe['code'] . ' — ' . mail_mode() . ' : ' . (mail_last_error() ?? 'envoi refusé'));
+        }
+    } catch (Throwable $e) {
+        admin_log($pdo, $admin, 'eglise.accueil.echec', $groupe['code'] . ' — ' . $e->getMessage());
+    }
+}
+
 function handle_admin_eglise_accepter(PDO $pdo, int $id): never {
     $admin = require_admin($pdo);
     $demande = groupe_demande_en_attente($pdo, $id);
@@ -278,6 +302,12 @@ function handle_admin_eglise_accepter(PDO $pdo, int $id): never {
     }
 
     admin_log($pdo, $admin, 'eglise.acceptation', $groupe['code'] . ' — ' . $groupe['nom']);
+
+    // La lettre d'accueil part MAINTENANT, mais l'église est déjà née : un
+    // courrier qui échoue (adresse morte, Brevo en panne) ne doit jamais
+    // annuler une acceptation. On trace l'échec, et on continue.
+    groupe_eglise_ouverte_prevenir($pdo, (int) $demande['user_id'], $groupe, $admin);
+
     json_out(['code' => $groupe['code'], 'nom' => $groupe['nom']]);
 }
 

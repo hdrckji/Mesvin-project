@@ -2325,7 +2325,10 @@ function viewEglise() {
       <span class="hub-ic">${icon('defi', 26)}</span>
       <span class="hub-txt"><span class="hub-title">Les séries de questions de mon église</span>
         <span class="hub-sub">Des séries que tes membres choisissent en lançant une épreuve — la banque commune reste toujours là.</span></span>
-      <span class="chev">›</span></button>` : '';
+      <span class="chev">›</span></button>
+    <p class="muted center" style="font-size:.82rem;margin:10px 2px 0">
+      <a href="guide/guide-du-responsable.pdf" target="_blank" rel="noopener"
+         style="color:var(--accent-ink)">Le guide du responsable</a> — tout ce que tu peux faire, en PDF.</p>` : '';
 
   const membres = `<div class="section-title">${icon('amis')} Membres</div>
     <div class="card friends-card fade">

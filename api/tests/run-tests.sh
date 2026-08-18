@@ -39,7 +39,7 @@ jval() { jq -r "$1" "$TMP/body.json"; }
 # ---------------------------------------------------------------------------
 say "Analyse syntaxique (php -l) de chaque fichier PHP"
 LINT_OK=oui
-for f in "$ROOT"/api/*.php "$ROOT"/api/tests/router.php "$ROOT"/api/tests/push-crypto-test.php; do
+for f in "$ROOT"/api/*.php "$ROOT"/api/tests/router.php "$ROOT"/api/tests/push-crypto-test.php "$ROOT"/api/tests/mail-test.php; do
   if ! php -l "$f" > /dev/null 2>&1; then LINT_OK=non; php -l "$f"; fi
 done
 check "php -l sans erreur" oui "$LINT_OK"
@@ -50,6 +50,14 @@ if php "$ROOT/api/tests/push-crypto-test.php" > "$TMP/crypto.log" 2>&1; then
   ok "vecteur RFC 8291 reproduit à l'octet près + VAPID vérifié (openssl_verify)"
 else
   FAIL=$((FAIL + 1)); printf '   FAIL crypto Web Push\n'; sed 's/^/        /' "$TMP/crypto.log"
+fi
+
+# ---------------------------------------------------------------------------
+say "Lettres envoyées : le corps de la lettre d'accueil d'un responsable"
+if php "$ROOT/api/tests/mail-test.php" > "$TMP/mail.log" 2>&1; then
+  ok "la lettre porte le nom, le code, le guide et le contact"
+else
+  FAIL=$((FAIL + 1)); printf '   FAIL lettre accueil\n'; sed 's/^/        /' "$TMP/mail.log"
 fi
 
 # ---------------------------------------------------------------------------

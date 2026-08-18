@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<title>Bible Horizon — Le guide du responsable</title>
+<style>
+  @page { size: A4; margin: 17mm 16mm 16mm; }
+  @page :first { margin: 0; }
+  :root{
+    --bg:#f7f3ea; --surface:#fffdf8; --surface-2:#f0e9da; --ink:#24303f; --ink-soft:#5b6675;
+    --line:#e2d9c6; --accent:#b98a2e; --accent-ink:#7a5a15; --grow:#3f6c49; --grow-soft:#e4efe4;
+    --danger:#a34a24;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{font-family:var(--sans);color:var(--ink);font-size:10.2pt;line-height:1.55;margin:0;
+       -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  h1,h2,h3{font-family:var(--serif);color:var(--ink);margin:0}
+  p{margin:0 0 .55em}
+  .page{page-break-after:always}
+  .page:last-child{page-break-after:auto}
+
+  /* ---- couverture ---- */
+  .cover{width:210mm;height:296.8mm;background:var(--bg);padding:30mm 26mm 26mm;
+         display:flex;flex-direction:column}
+  .cover .mark{font-family:var(--serif);font-size:15pt;letter-spacing:.01em}
+  .cover .mark b{color:var(--ink)} .cover .mark span{color:var(--accent-ink)}
+  .cover .bloc{margin-top:auto;margin-bottom:auto}
+  .cover h1{font-size:33pt;line-height:1.1;margin:0 0 9mm}
+  .cover .sub{font-size:12.5pt;color:var(--ink-soft);max-width:120mm;line-height:1.55;margin:0}
+  .cover .rule{width:34mm;height:2.5pt;background:var(--accent);margin:0 0 9mm}
+  .cover .foot{font-size:9.5pt;color:var(--ink-soft);border-top:1px solid var(--line);padding-top:4mm}
+  .cover .foot b{color:var(--ink)}
+
+  /* ---- titres ---- */
+  h2{font-size:17pt;margin:0 0 1mm}
+  h2 .num{color:var(--accent);font-size:12pt;display:block;letter-spacing:.12em;
+          font-family:var(--sans);font-weight:700;text-transform:uppercase;margin-bottom:1.5mm}
+  .lede{color:var(--ink-soft);font-size:10.6pt;margin:0 0 5mm;border-bottom:1px solid var(--line);padding-bottom:3.5mm}
+  h3{font-size:12.4pt;margin:5mm 0 1.5mm}
+  h3.first{margin-top:0}
+
+  /* ---- blocs ---- */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:4mm;padding:4mm 5mm;margin:0 0 4mm}
+  .note{background:var(--grow-soft);border-left:3pt solid var(--grow);border-radius:0 2mm 2mm 0;
+        padding:3mm 4.5mm;margin:0 0 4mm;font-size:9.7pt}
+  .warn{background:#f6efe0;border-left:3pt solid var(--accent);border-radius:0 2mm 2mm 0;
+        padding:3mm 4.5mm;margin:0 0 4mm;font-size:9.7pt}
+  .note b,.warn b{font-weight:600}
+
+  /* ---- étapes ---- */
+  .etape{display:flex;gap:5mm;margin:0 0 6mm;break-inside:avoid}
+  .etape .n{flex:0 0 9mm;height:9mm;border-radius:50%;background:var(--grow);color:#fff;
+            font-weight:700;font-size:11pt;display:flex;align-items:center;justify-content:center;
+            font-family:var(--sans)}
+  .etape .txt{flex:1}
+  .etape .txt h3{margin:0 0 1mm;font-size:12.4pt}
+  .shot{border:1px solid var(--line);border-radius:3mm;overflow:hidden;background:var(--bg);
+        margin:2.5mm 0 0;display:block}
+  .shot img{display:block;width:auto;max-width:100%;margin:0 auto}
+  .shot.mini{max-width:70mm}
+  .shot.demi{max-width:82mm}
+  .h20 img{max-height:20mm} .h34 img{max-height:34mm} .h42 img{max-height:42mm} .h48 img{max-height:48mm}
+  .h56 img{max-height:56mm} .h54 img{max-height:54mm} .h58 img{max-height:58mm}
+  .h72 img{max-height:72mm} .h78 img{max-height:78mm}
+  .h14 img{max-height:14mm} .h24 img{max-height:24mm} .h44 img{max-height:44mm} .h26 img{max-height:26mm} .h34 img{max-height:34mm} .h42 img{max-height:42mm}
+  .h58 img{max-height:58mm} .h72 img{max-height:72mm} .h92 img{max-height:92mm}
+  .h108 img{max-height:108mm} .h100 img{max-height:100mm} .h112 img{max-height:112mm} .h118 img{max-height:118mm} .h122 img{max-height:122mm}
+  .h40 img{max-height:40mm} .h55 img{max-height:55mm} .h62 img{max-height:62mm}
+  .h70 img{max-height:70mm} .h80 img{max-height:80mm} .h95 img{max-height:95mm}
+  .h110 img{max-height:110mm} .h115 img{max-height:115mm}
+  .h122 img{max-height:122mm} .h128 img{max-height:128mm}
+  .h50 img{max-height:50mm} .h52 img{max-height:52mm} .h74 img{max-height:74mm} .h84 img{max-height:84mm}
+  .cap{font-size:8.4pt;color:var(--ink-soft);margin:1.5mm 0 3.5mm;font-style:italic}
+  .duo{display:flex;gap:4mm;align-items:flex-start}
+  .duo>div{flex:1}
+
+  /* ---- tableaux ---- */
+  table{width:100%;border-collapse:collapse;font-size:9.5pt;margin:0 0 4mm}
+  th{text-align:left;font-size:8.2pt;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);
+     font-weight:700;padding:0 3mm 1.8mm 0;border-bottom:1px solid var(--line)}
+  td{padding:1.9mm 3mm 1.9mm 0;border-bottom:1px solid var(--line);vertical-align:top}
+  td b{font-weight:600}
+  td:last-child,th:last-child{padding-right:0}
+  .num-col{white-space:nowrap;color:var(--accent-ink);font-weight:600}
+
+  table.serre{font-size:9pt} table.serre td{padding:1.6mm 3mm 1.6mm 0}
+  ul{margin:0 0 .6em;padding-left:5mm} li{margin:0 0 1.2mm}
+  .kbd{background:var(--surface-2);border:1px solid var(--line);border-radius:1.5mm;
+       padding:.3mm 1.5mm;font-size:9.2pt;white-space:nowrap}
+  .fin{margin-top:3mm;border-top:1px solid var(--line);padding-top:2.5mm;
+       font-size:8.6pt;color:var(--ink-soft)}
+</style></head><body>
+
+<!-- ============ COUVERTURE ============ -->
+<section class="page">
+  <div class="cover">
+    <div class="mark"><b>Bible</b> <span>Horizon</span></div>
+    <div class="bloc">
+      <div class="rule"></div>
+      <h1>Le guide<br>du responsable</h1>
+      <p class="sub">Ton église vient d'ouvrir. Voici ce que tu peux en faire —
+      faire entrer ton assemblée, la nourrir chaque semaine, et confier la suite
+      à d'autres quand le moment viendra.</p>
+    </div>
+    <div class="foot">
+      <b>Bible Horizon</b> — biblehorizon.fr<br>
+      Gratuit, sans publicité, sans revente de données.
+    </div>
+  </div>
+</section>
+
+<!-- ============ 1. BIENVENUE ============ -->
+<section class="page">
+  <h2><span class="num">Bienvenue</span>Ce qui vient de se passer</h2>
+  <p class="lede">Ton église existe, et tu en portes la responsabilité.</p>
+
+  <p>Une église sur Bible Horizon, ce n'est pas un salon de discussion de plus. C'est un
+  <b>point de rassemblement discret</b> : le verset que toute l'assemblée porte cette semaine,
+  les nouvelles, les rendez-vous, les coups de main à donner. Chacun y vient à son rythme,
+  et <b>personne ne voit ce que les autres apprennent</b> — la mémorisation reste un jardin privé.</p>
+
+  <div class="shot demi h20"><img src="captures/r1-identite.png"></div>
+  <p class="cap">Le nom de ton église, en tête de l'onglet <b>Mon église</b>. Tu peux le mettre en
+  forme (classique, moderne ou solennelle ; discrète, posée ou majestueuse).</p>
+
+  <h3>Tes trois premiers gestes</h3>
+  <table>
+    <tr><th style="width:10mm"></th><th>Le geste</th><th style="width:46mm">Pourquoi d'abord</th></tr>
+    <tr><td class="num-col">1</td><td><b>Poser le verset de la semaine.</b> C'est la première chose
+      que verra quiconque rejoint.</td><td>Une église vide dit « rien ne se passe ici ».</td></tr>
+    <tr><td class="num-col">2</td><td><b>Écrire une annonce et poser les rendez-vous</b> — le culte,
+      la prière, l'étude.</td><td>Ça rend l'écran utile dès la première visite.</td></tr>
+    <tr><td class="num-col">3</td><td><b>Inviter deux ou trois personnes</b>, pas toute l'assemblée.</td>
+      <td>On essuie les plâtres à petit comité.</td></tr>
+  </table>
+
+  <div class="note"><p style="margin:0"><b>Rien n'est urgent.</b> Une église qui reçoit un verset
+  par semaine et une annonce par mois est déjà vivante. Mieux vaut un rythme tenu qu'un grand
+  déploiement abandonné en octobre.</p></div>
+
+  <h3>Ce que tu peux faire, et que les autres ne peuvent pas</h3>
+  <table>
+    <tr><th>Geste</th><th style="width:30mm">Responsable</th><th style="width:33mm">Co-responsable</th></tr>
+    <tr><td>Poser le verset, les annonces, les rendez-vous, les services</td><td>oui</td><td>oui</td></tr>
+    <tr><td>Proposer des packs de versets et des chemins de lecture</td><td>oui</td><td>oui</td></tr>
+    <tr><td>Écrire les séries de questions</td><td>oui</td><td>oui</td></tr>
+    <tr><td>Nommer et retirer des co-responsables</td><td>oui</td><td>non</td></tr>
+    <tr><td>Mettre en forme le nom de l'église</td><td>oui</td><td>non</td></tr>
+    <tr><td>Confier la responsabilité, supprimer l'église</td><td>oui</td><td>non</td></tr>
+  </table>
+</section>
+
+<!-- ============ 2. FAIRE ENTRER ============ -->
+<section class="page">
+  <h2><span class="num">Premier temps</span>Faire entrer ton assemblée</h2>
+  <p class="lede">Deux chemins : un code à dire, ou un lien qui fait tout.</p>
+
+  <div class="duo">
+    <div>
+      <h3 class="first">Le code du groupe</h3>
+      <p>Cinq caractères après <b>GRP-</b>. On le donne de vive voix, on le projette,
+      on l'écrit sur la feuille de chants. Celui qui a déjà un compte le colle dans
+      <span class="kbd">Moi → Rejoindre une église</span>.</p>
+      <h3>Le lien d'invitation</h3>
+      <p><b>Envoyer une invitation</b> prépare un message tout fait avec un lien.
+      Celui qui le reçoit n'a rien à recopier : <b>le compte se crée et le groupe se rejoint
+      d'une traite</b>. C'est le chemin à privilégier par SMS ou WhatsApp.</p>
+    </div>
+    <div><div class="shot h56"><img src="captures/r3-code.png"></div></div>
+  </div>
+
+  <div class="warn"><p style="margin:0"><b>Le code n'est pas un secret, mais il n'est pas public
+  non plus.</b> Qui l'a, entre — et voit les annonces, les rendez-vous et les services de
+  l'assemblée. Réserve-le aux gens de ton église plutôt que de le poser sur un site ou un
+  réseau social.</p></div>
+
+  <h3>La liste des membres</h3>
+  <div class="duo">
+    <div><div class="shot h48"><img src="captures/r9-membres.png"></div></div>
+    <div>
+      <p>Chacun apparaît avec son pseudo et son rôle. Aucune adresse e-mail, aucun numéro :
+      Bible Horizon ne te donne pas l'annuaire de ton assemblée, et ne le donne à personne d'autre.</p>
+      <p>Depuis cette liste tu peux <b>nommer un co-responsable</b> et <b>confier la
+      responsabilité</b>. Les deux gestes sont détaillés à la dernière page.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. NOURRIR ============ -->
+<section class="page">
+  <h2><span class="num">Chaque semaine</span>Nourrir l'assemblée</h2>
+  <p class="lede">Un verset, des packs, un chemin de lecture — et le pont vers le jardin de chacun.</p>
+
+  <div class="duo">
+    <div>
+      <h3 class="first">Le verset de la semaine</h3>
+      <p>Une référence, un texte. Il s'affiche en tête de l'écran pour tout le monde, et
+      chacun peut <b>l'apprendre par cœur d'un seul geste</b> : le bouton le fait entrer
+      dans son jardin, où la révision espacée s'occupe du reste.</p>
+      <p>Personne ne voit qui l'a appris ni où il en est. C'est délibéré : la mémorisation
+      ne doit jamais devenir un classement.</p>
+      <p>Change-le quand tu veux — le dimanche soir est un bon rendez-vous.</p>
+    </div>
+    <div><div class="shot h78"><img src="captures/r2-tete.png"></div></div>
+  </div>
+
+  <h3>Ensemble par cœur — les packs de versets</h3>
+  <div class="duo">
+    <div><div class="shot h54"><img src="captures/r7-packs.png"></div></div>
+    <div>
+      <p>Un pack rassemble plusieurs versets sous un titre : ceux d'un camp, d'une série de
+      prédications, d'une retraite. Le membre l'<b>adopte</b> quand il le veut ; les versets
+      rejoignent alors son parcours et deviennent son objectif en cours.</p>
+      <p>Tu proposes, tu ne réquisitionnes pas : l'adoption est un geste <b>local</b> —
+      rien ne remonte, tu ne sauras jamais qui a adopté quoi.</p>
+    </div>
+  </div>
+
+  <h3>Ensemble dans la Parole — les chemins de lecture</h3>
+  <div class="duo">
+    <div>
+      <p>Un chemin, c'est une traversée proposée à toute l'assemblée : un évangile avant Noël,
+      les psaumes pendant le carême, la Genèse à la rentrée. Le membre qui le suit le retrouve
+      dans le module <b>Marcher</b>, à son rythme.</p>
+      <p>Là encore, personne n'est pointé. Un chemin proposé et suivi par trois personnes vaut
+      mieux qu'un plan imposé et abandonné par trente.</p>
+    </div>
+    <div><div class="shot h54"><img src="captures/r8-lecture.png"></div></div>
+  </div>
+</section>
+
+<!-- ============ 4. LA PAGE ============ -->
+<section class="page">
+  <h2><span class="num">La vie pratique</span>La page de ton église</h2>
+  <p class="lede">Annonces, rendez-vous, services — ce qui remplace le tableau d'affichage.</p>
+
+  <div class="duo">
+    <div>
+      <h3 class="first">Les annonces</h3>
+      <p>Une nouvelle, un titre, un texte. Tu peux en <b>épingler</b> une : elle monte en tête
+      et y reste — pratique pour l'événement du mois.</p>
+      <p>Écris-les comme tu parles. Une annonce datée, courte et concrète vaut mieux qu'un
+      communiqué.</p>
+    </div>
+    <div><div class="shot h58"><img src="captures/r4-annonces.png"></div></div>
+  </div>
+
+  <div class="duo">
+    <div><div class="shot h58"><img src="captures/r5-rdv.png"></div></div>
+    <div>
+      <h3 class="first">La semaine de l'assemblée</h3>
+      <p>Les rendez-vous <b>réguliers</b> : un jour, une heure, un lieu. Le culte du dimanche,
+      la prière du mardi, l'étude du mercredi.</p>
+      <p>C'est ce que cherche en premier quelqu'un qui découvre ton église — et c'est ce qu'on
+      oublie le plus souvent de mettre à jour quand un horaire change.</p>
+    </div>
+  </div>
+
+  <div class="duo">
+    <div>
+      <h3 class="first">Les services — « je lève la main »</h3>
+      <p>Un service, c'est un coup de main daté avec un nombre de places : accueil, garderie,
+      sono, ménage. Personne n'est désigné — chacun <b>lève la main</b> s'il le veut, et peut
+      se retirer.</p>
+      <p>Le compteur montre où en est le remplissage, et les prénoms de ceux qui se sont
+      proposés s'affichent : c'est souvent ça qui décide le suivant.</p>
+      <p><b>Un rappel doux part la veille au soir</b>, par notification, à ceux qui ont levé la
+      main et activé les notifications de l'application. Un seul, jamais deux.</p>
+    </div>
+    <div><div class="shot h72"><img src="captures/r6-services.png"></div></div>
+  </div>
+</section>
+
+<!-- ============ 5. LES QUESTIONS ============ -->
+<section class="page">
+  <h2><span class="num">Pour jouer ensemble</span>Les questions de ton église</h2>
+  <p class="lede">Quatre épreuves bibliques, et des séries que tu écris toi-même.</p>
+
+  <div class="duo">
+    <div>
+      <p>Bible Horizon propose quatre épreuves — <b>Qui, où, quand ?</b>, <b>Qui a dit ?</b>,
+      <b>Écrit… ou pas ?</b> et <b>De qui parle-t-on ?</b> — avec une banque de questions
+      commune à tout le monde.</p>
+      <p>Ton église peut y ajouter <b>ses propres séries</b> : les questions d'une prédication,
+      d'une étude, d'un camp. Une série s'ajoute au choix du joueur, elle ne remplace jamais
+      la banque commune.</p>
+      <p>On y joue seul, à plusieurs sur un même téléphone, à distance par code — et
+      <b>en direct dans l'assemblée</b>, l'animateur révélant les indices sur grand écran.</p>
+    </div>
+    <div><div class="shot h42"><img src="captures/r10-series.png"></div>
+      <p class="cap">La porte, dans le coin de l'équipe.</p></div>
+  </div>
+
+  <div class="note"><p style="margin:0"><b>Un guide entier y est consacré</b> — écrire une bonne
+  question, les longueurs de chaque champ, publier et archiver :<br>
+  <b>biblehorizon.fr/guide/mode-emploi-banque-de-questions.pdf</b><br>
+  Le lien est aussi en bas de l'écran des séries, dans l'application.</p></div>
+
+  <h3>Ce que ton église publie, elle en répond</h3>
+  <p>Les questions d'une série publiée sont visibles de toute personne à qui un membre partage
+  un code de partie — pas seulement de l'assemblée. Elles portent sur le texte biblique ;
+  Bible Horizon peut retirer celles qui s'en écartent. Un lien <b>« Signaler un contenu »</b>
+  est offert à chaque joueur, sous le choix des questions.</p>
+</section>
+
+<!-- ============ 6. LA SUITE ============ -->
+<section class="page">
+  <h2><span class="num">Dans la durée</span>Ne pas porter seul</h2>
+  <p class="lede">Partager la charge, la transmettre, et savoir s'arrêter.</p>
+
+  <h3 class="first">Nommer un co-responsable</h3>
+  <p>Depuis la liste des membres. Un co-responsable <b>nourrit</b> l'assemblée exactement comme
+  toi : le verset, les annonces, les rendez-vous, les services, les packs, les chemins, les
+  séries de questions. Il ne peut ni nommer d'autres co-responsables, ni transmettre, ni
+  supprimer l'église — ces trois-là restent à toi seul.</p>
+  <p>C'est le premier geste à faire dès que l'écran vit vraiment : une église qui dépend d'une
+  seule personne s'éteint le jour où cette personne est fatiguée.</p>
+
+  <h3>Confier la responsabilité</h3>
+  <p>Un clic depuis la liste des membres, et c'est fait : le successeur devient responsable,
+  tu redeviens simple membre. Rien n'est perdu — l'église, sa page et ses séries lui passent
+  entières entre les mains.</p>
+  <p>C'est aussi le passage obligé si tu veux <b>quitter</b> l'église : tant qu'il reste
+  quelqu'un, un responsable ne peut pas partir sans avoir transmis.</p>
+
+  <h3>Deux églises au plus</h3>
+  <p>Un même compte porte au maximum <b>deux</b> églises. Au-delà, il faut en transmettre une.
+  C'est délibéré : au-delà de deux assemblées, on ne porte plus, on administre.</p>
+
+  <h3>Fermer une église</h3>
+  <div class="duo">
+    <div>
+      <p>Tout en bas de <span class="kbd">Mon église</span>, pour le responsable seul. Il faut
+      recopier le nom de l'église pour confirmer — puis tout part : la page, les annonces, les
+      rendez-vous, les services, les séries, les packs et les chemins.</p>
+      <p><b>Ce que chacun a semé dans son jardin lui reste.</b> Les versets appris, les lectures
+      faites, les progrès de mémorisation vivent sur l'appareil de chacun et ne dépendent pas
+      de l'église.</p>
+    </div>
+    <div><div class="shot h20"><img src="captures/r11-supprimer.png"></div>
+      <p class="cap">Discret, et sans retour possible.</p></div>
+  </div>
+
+</section>
+
+<!-- ============ 7. UN DERNIER MOT ============ -->
+<section class="page">
+  <h2><span class="num">Pour finir</span>L'esprit de la chose</h2>
+  <p class="lede">Ce qui compte, et ce qui ne compte pas.</p>
+
+  <p>Bible Horizon ne cherche pas à occuper les gens. Pas de série à ne pas briser, pas de
+  classement, pas de notification qui culpabilise. Un verset est <b>offert</b> chaque jour ;
+  celui qui le laisse passer ne perd rien.</p>
+
+  <p>Ton église hérite de cet esprit. Tu proposes — un verset, un pack, un chemin, un service —
+  et chacun répond comme il peut. <b>Tu ne verras jamais qui a appris quoi</b>, ni qui a lu
+  jusqu'où : ce n'est pas une lacune de l'application, c'est sa promesse. Ce que tu peux voir,
+  ce sont les mains levées pour un service, et c'est bien assez.</p>
+
+  <p>La seule chose qui compte vraiment se passe hors de l'écran : quelqu'un de ton assemblée
+  qui, un mardi soir, sait par cœur un verset qu'il ne connaissait pas en septembre. Le reste
+  n'est que de l'outillage.</p>
+
+  <div class="note"><p style="margin:0"><b>Une difficulté, une idée, un contenu qui te gêne ?</b>
+  Écris à <b>contact@biblehorizon.fr</b>. C'est un petit projet : quelqu'un lit vraiment,
+  et répond.</p></div>
+
+  <h3>Aide-mémoire</h3>
+  <table class="serre">
+    <tr><th style="width:62mm">Si tu veux…</th><th>Va…</th></tr>
+    <tr><td>Poser le verset de la semaine</td><td>Mon église → Changer le verset de la semaine</td></tr>
+    <tr><td>Inviter quelqu'un sans lui dicter un code</td><td>Mon église → Envoyer une invitation</td></tr>
+    <tr><td>Annoncer une nouvelle qui doit rester en tête</td><td>Nouvelle annonce, puis Épingler</td></tr>
+    <tr><td>Demander un coup de main sans désigner personne</td><td>Proposer un service</td></tr>
+    <tr><td>Partager la charge</td><td>Membres → Nommer co-responsable</td></tr>
+    <tr><td>Passer la main</td><td>Membres → Confier la responsabilité</td></tr>
+    <tr><td>Écrire des questions pour une prédication</td><td>Les séries de questions de mon église</td></tr>
+    <tr><td>Signaler un problème, poser une question</td><td>contact@biblehorizon.fr</td></tr>
+  </table>
+
+  <p class="fin"><b>Bible Horizon</b> — biblehorizon.fr · contact@biblehorizon.fr<br>
+  Gratuit, sans publicité, sans revente de données. Les captures de ce guide viennent de
+  l'application telle qu'elle est aujourd'hui ; si un écran a changé, c'est l'application qui a raison.</p>
+</section>
+
+</body></html>

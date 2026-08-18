@@ -73,3 +73,29 @@ node outils/guide-banque-questions/imprimer.cjs
 Neuf pages A4. Si une section déborde, elle se coupe en deux : mesurer la
 hauteur de chaque `.page` en média `print` sur 178 mm de large (la limite
 utile est 264 mm) et resserrer une image via ses classes `hNN`.
+
+## Le guide du responsable (`guide-du-responsable/`)
+
+Le second PDF : tout ce qu'un responsable peut faire — faire entrer son
+assemblée, la nourrir, partager la charge, fermer l'église. C'est lui qui
+part par e-mail quand l'administration accepte une demande d'église
+(voir `mail_texte_eglise_ouverte`, api/mail.php), et il est lié depuis le
+coin de l'équipe dans Mon église. Servi à
+`guide/guide-du-responsable.pdf`.
+
+Même méthode que le guide des banques, avec une étape de plus : les
+captures ont besoin d'une église MEUBLÉE (un verset, des annonces, des
+rendez-vous, des services avec une main levée, un pack, un chemin).
+
+```
+# 1. serveur de test, base neuve (voir ci-dessus)
+# 2. le décor, puis le mobilier
+bash outils/guide-banque-questions/preparer.sh
+bash outils/guide-du-responsable/meubler.sh
+# 3. captures, puis PDF
+node outils/guide-du-responsable/capturer.cjs
+node outils/guide-du-responsable/imprimer.cjs
+```
+
+Les deux guides partagent la même feuille de style (recopiée dans chaque
+`guide.html`) : si tu retouches l'un, regarde l'autre.

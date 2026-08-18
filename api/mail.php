@@ -1,6 +1,7 @@
 <?php
 /* ============================================================================
-   Envoi du code de connexion par e-mail.
+   Les e-mails de Bible Horizon : le code de connexion, et la lettre qui
+   accueille un responsable dont l'église vient d'être ouverte.
 
    Trois modes, choisis automatiquement selon l'environnement :
    1. BREVO_API_KEY définie  → API HTTP de Brevo (simple et fiable).
@@ -50,6 +51,55 @@ function mail_send_code(string $email, string $code): bool {
         . "Ton code de connexion : $code\n\n"
         . "Il est valable 45 minutes. Si tu n'as rien demandé, ignore simplement ce message.\n\n"
         . "Bible Horizon";
+    return $mode === 'brevo'
+        ? mail_send_brevo($email, $subject, $text)
+        : mail_send_smtp($email, $subject, $text);
+}
+
+/* ---- La lettre d'accueil d'un responsable -------------------------------------
+   Envoyée UNE fois, quand l'administration accepte la demande : jusqu'ici,
+   rien ne prévenait le demandeur — il devait rouvrir l'appli et remarquer que
+   son église existait. Elle porte l'essentiel EN CLAIR (le nom, le code à
+   partager, les premiers gestes) : elle doit servir même si personne ne clique
+   sur le lien du guide, et le guide n'est pas joint — un PDF de 800 ko en
+   pièce jointe se fait filtrer, un lien non. */
+
+const MAIL_SITE = 'https://biblehorizon.fr';
+
+/** Le corps de la lettre — fonction pure, pour être relisible par un test. */
+function mail_texte_eglise_ouverte(string $nom, string $code): string {
+    return "Bonjour,\n\n"
+        . "Ton église « $nom » est ouverte sur Bible Horizon, et tu en es le responsable.\n\n"
+        . "Le code qui ouvre la porte : $code\n"
+        . "Partage-le aux membres de ton assemblée — ou envoie-leur le lien d'invitation "
+        . "depuis l'onglet « Mon église » : le compte se crée et le groupe se rejoint d'une traite, "
+        . "sans code à recopier.\n\n"
+        . "Tes trois premiers gestes :\n"
+        . "1. Poser le verset de la semaine. Il s'affiche à toute l'assemblée, et chacun peut "
+        . "l'apprendre par cœur d'un seul geste.\n"
+        . "2. Écrire la première annonce, et poser les rendez-vous de la semaine — le culte, "
+        . "la prière, l'étude.\n"
+        . "3. Inviter deux ou trois personnes avant d'ouvrir à toute l'assemblée : on essuie "
+        . "les plâtres à petit comité.\n\n"
+        . "Le guide du responsable, en PDF :\n"
+        . MAIL_SITE . "/guide/guide-du-responsable.pdf\n\n"
+        . "Tout se passe dans l'onglet « Mon église » : " . MAIL_SITE . "\n\n"
+        . "Une question, une difficulté ? Écris à contact@biblehorizon.fr — quelqu'un lit.\n\n"
+        . "Bible Horizon";
+}
+
+/**
+ * Envoie la lettre d'accueil. Retourne true en mode dev (rien n'est envoyé)
+ * comme pour le code de connexion : l'acceptation d'une église ne dépend
+ * jamais de l'état du courrier.
+ */
+function mail_send_eglise_ouverte(string $email, string $nom, string $code): bool {
+    $mode = mail_mode();
+    if ($mode === 'dev') {
+        return true;
+    }
+    $subject = "« $nom » est ouverte — Bible Horizon";
+    $text = mail_texte_eglise_ouverte($nom, $code);
     return $mode === 'brevo'
         ? mail_send_brevo($email, $subject, $text)
         : mail_send_smtp($email, $subject, $text);
