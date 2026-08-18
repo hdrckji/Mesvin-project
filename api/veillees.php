@@ -9,6 +9,11 @@
    Déroulé : lobby → question → reveal → … → done, piloté par l'animateur.
    Les clients suivent en interrogeant /state toutes les ~2 s (polling —
    simple, robuste, largement suffisant pour un groupe d'église).
+   Une seule transition ne l'attend pas : la RÉVÉLATION tombe côté serveur dès
+   que l'heure en est venue (temps écoulé ou tous les présents ont répondu),
+   sur le premier sondage venu — cf. veillee_reveler_si_besoin. Sans cela, un
+   téléphone d'animateur qui se verrouille figeait le grand écran pour toute
+   l'assemblée.
 
    Principes hérités des duels :
    - le SERVEUR tire les questions et fixe l'ordre des options ;
@@ -359,6 +364,57 @@ function veillee_touch(PDO $pdo, int $id, array $set = []): void {
     $pdo->prepare('UPDATE veillees SET ' . implode(', ', $cols) . ' WHERE id = ?')->execute($vals);
 }
 
+/**
+ * Le SERVEUR tranche la révélation — plus aucun appareil n'est indispensable.
+ *
+ * Historiquement, seul l'appareil de l'ANIMATEUR décidait (vlAutoReveal, côté
+ * client). En DEUX ÉCRANS, cet appareil est un téléphone posé dans une salle
+ * sombre : il se verrouille, le système suspend ses minuteries, plus personne
+ * ne sonde — et le grand écran se fige sur la question devant toute
+ * l'assemblée, sans que l'animateur comprenne pourquoi puisqu'il regarde le
+ * mur. Désormais N'IMPORTE QUEL sondage d'état suffit à faire tomber la
+ * révélation : un participant, le grand écran, l'animateur — un seul client
+ * qui sonde, et la veillée continue d'avancer.
+ *
+ * Deux motifs, les mêmes que côté client :
+ * - le temps est écoulé, GRÂCE COMPRISE : `handle_veillees_answer` accepte une
+ *   réponse jusqu'à seconds + VEILLEE_GRACE_SECONDS, on ne révèle donc
+ *   qu'APRÈS ce délai — sinon on volerait une réponse encore en vol ;
+ * - tous les PRÉSENTS ont répondu. Zéro présent (tous les écrans en veille) ne
+ *   déclenche rien : seul le chrono tranche alors, sinon la veillée défilerait
+ *   toute seule pendant que la salle regarde ailleurs.
+ *
+ * $etat : l'état DÉJÀ calculé pour ce sondage — on y relit nPresent et
+ * nPresentRepondu plutôt que de refaire leurs requêtes. Le cas courant (hors
+ * question, ou question dont l'heure n'est pas venue) ne coûte donc aucune
+ * requête et n'écrit RIEN : /state est appelée toutes les 2 s par participant.
+ *
+ * Retourne la veillée rechargée si l'on a basculé, sinon null.
+ */
+function veillee_reveler_si_besoin(PDO $pdo, array $v, array $etat): ?array {
+    if ((string) $v['statut'] !== 'question') {
+        return null;
+    }
+    $started = veillee_ts($v['question_started_at']);
+    $tempsEcoule = veillee_remaining($v) === 0
+        && ($started === null || time() - $started > (int) $v['seconds'] + VEILLEE_GRACE_SECONDS);
+    $nPresent = (int) ($etat['nPresent'] ?? 0);
+    $tousOntRepondu = $nPresent > 0 && (int) ($etat['nPresentRepondu'] ?? 0) >= $nPresent;
+    if (!$tempsEcoule && !$tousOntRepondu) {
+        return null;
+    }
+
+    // Conditionné sur (statut, current_q) LUS — le motif maison, cf.
+    // epreuve_veillee_avancer. Deux sondages simultanés ne doivent produire
+    // qu'UNE transition, et surtout aucun ne doit révéler la question suivante
+    // si l'animateur vient d'enchaîner entre notre lecture et notre écriture.
+    $pdo->prepare('UPDATE veillees SET statut = ?, updated_at = ? WHERE id = ? AND statut = ? AND current_q = ?')
+        ->execute(['reveal', now_sql(), (int) $v['id'], 'question', (int) $v['current_q']]);
+    // Rechargée quoi qu'il arrive : quand un autre sondage a gagné la course,
+    // la vérité est en base, pas dans la ligne lue avant l'UPDATE.
+    return veillee_load($pdo, (string) $v['code']);
+}
+
 /* ---- POST /api/veillees — créer une salle (animateur, compte requis) -------- */
 
 function handle_veillees_create(PDO $pdo): never {
@@ -454,7 +510,15 @@ function handle_veillees_state(PDO $pdo, string $code): never {
             veillee_marquer_present($pdo, (int) $v['id'], (int) $me['id']);
         }
     }
-    json_out(['veillee' => veillee_state_payload($pdo, $v, $me)]);
+    $etat = veillee_state_payload($pdo, $v, $me);
+    // Sonder, c'est aussi faire avancer la veillée : si l'heure de la
+    // révélation est venue, CE sondage-ci la déclenche, d'où qu'il vienne.
+    // L'animateur peut avoir l'écran verrouillé, la question tombe quand même.
+    $apres = veillee_reveler_si_besoin($pdo, $v, $etat);
+    if ($apres !== null) {
+        $etat = veillee_state_payload($pdo, $apres, $me);
+    }
+    json_out(['veillee' => $etat]);
 }
 
 /* ---- POST /api/veillees/{code}/join — rejoindre (prénom, sans compte) ------- */

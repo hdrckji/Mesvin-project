@@ -26,11 +26,14 @@ bad()  { FAIL=$((FAIL + 1)); printf '   FAIL %s\n' "$1"; sed 's/^/        /' "$T
 # check "description" attendu obtenu
 check() { if [ "$2" = "$3" ]; then ok "$1"; else bad "$1 (attendu: $2, obtenu: $3)"; fi; }
 
-# api METHODE CHEMIN TOKEN CORPS → code HTTP sur stdout, corps dans $TMP/body.json
+# api METHODE CHEMIN TOKEN CORPS [EN-TÊTE] → code HTTP sur stdout, corps dans
+# $TMP/body.json. Le 5e argument ajoute un en-tête brut ("Nom: valeur") : c'est
+# par là que les tests forgent un X-Forwarded-For pour éprouver client_ip().
 api() {
-  local method=$1 path=$2 token=${3:-} body=${4:-}
+  local method=$1 path=$2 token=${3:-} body=${4:-} entete=${5:-}
   local args=(-s -o "$TMP/body.json" -w '%{http_code}' -X "$method" "$BASE$path" -H 'Content-Type: application/json')
   [ -n "$token" ] && args+=(-H "Authorization: Bearer $token")
+  [ -n "$entete" ] && args+=(-H "$entete")
   [ -n "$body" ] && args+=(--data "$body")
   curl "${args[@]}"
 }
@@ -172,15 +175,22 @@ cd "$ROOT"
 # En MySQL, MYSQL_URL est TRANSMISE : c'est elle que db() lit pour choisir son
 # pilote. En SQLite on la retire, sinon une variable d'environnement traînante
 # détournerait la suite vers une vraie base.
+# PROXY_HOPS=0 : curl parle DIRECTEMENT à php -S, aucun relais entre les deux.
+# C'est la vérité de cette passe, et c'est ce qui doit rendre X-Forwarded-For
+# sans effet ici. Les autres réglages s'éprouvent plus bas sur un serveur annexe.
 if [ "$DIALECTE" = mysql ]; then
-  env -u BREVO_API_KEY -u SMTP_HOST MYSQL_URL="$BH_TEST_MYSQL_URL" ADMIN_EMAILS=alice@example.org \
+  env -u BREVO_API_KEY -u SMTP_HOST MYSQL_URL="$BH_TEST_MYSQL_URL" ADMIN_EMAILS=alice@example.org PROXY_HOPS=0 \
     php -S 127.0.0.1:$PORT api/tests/router.php > "$TMP/server.log" 2>&1 &
 else
-  env -u MYSQL_URL -u BREVO_API_KEY -u SMTP_HOST ADMIN_EMAILS=alice@example.org \
+  env -u MYSQL_URL -u BREVO_API_KEY -u SMTP_HOST ADMIN_EMAILS=alice@example.org PROXY_HOPS=0 \
     php -S 127.0.0.1:$PORT api/tests/router.php > "$TMP/server.log" 2>&1 &
 fi
 SERVER_PID=$!
-trap 'kill "$SERVER_PID" 2>/dev/null; rm -rf "$TMP"' EXIT
+# Les serveurs annexes (section Réseau) s'ajoutent au ménage de sortie : un
+# serveur oublié sur un port répondrait à la place du suivant, et le diagnostic
+# deviendrait mensonger.
+SERVEUR_ANNEXE_PID=
+trap 'kill "$SERVER_PID" $SERVEUR_ANNEXE_PID 2>/dev/null; rm -rf "$TMP"' EXIT
 
 UP=non
 for _ in $(seq 1 50); do
@@ -416,10 +426,15 @@ check "réponse hors bornes → 400"       400 "$(api POST "/api/veillees/$VCODE
 check "Marc répond 0 → 200"             200 "$(api POST "/api/veillees/$VCODE/answer" '' "{\"playerKey\":\"$PKEY1\",\"q\":0,\"answer\":0}")"
 check "Marc re-répond → 409"            409 "$(api POST "/api/veillees/$VCODE/answer" '' "{\"playerKey\":\"$PKEY1\",\"q\":0,\"answer\":1}")"
 check "clé inconnue → 401"              401 "$(api POST "/api/veillees/$VCODE/answer" '' '{"playerKey":"00000000000000000000000000000000","q":0,"answer":0}')"
+# Léa resonde : elle est là et n'a PAS répondu. Le serveur ne doit donc pas
+# révéler — sans son sondage, Marc serait le seul présent, il a répondu, et la
+# révélation tomberait ici (c'est exactement ce qu'on éprouve plus bas).
+api GET "/api/veillees/$VCODE/state?player=$PKEY2" > /dev/null
 api GET "/api/veillees/$VCODE/state?player=$PKEY1" > /dev/null
 check "1 réponse comptée"               1    "$(jval .veillee.nAnswered)"
 check "me.answered = true"              true "$(jval .veillee.me.answered)"
 check "Marc, présent, a répondu"        1    "$(jval .veillee.nPresentRepondu)"
+check "un présent n'a pas répondu → pas de révélation" question "$(jval .veillee.statut)"
 # Marc a répondu PUIS rangé son téléphone. nAnswered le compte toujours,
 # nPresentRepondu non — sans cette distinction, comparer nAnswered à nPresent
 # franchirait le seuil et couperait la parole à ceux qui réfléchissent encore.
@@ -434,6 +449,9 @@ $pdo->prepare(
 api GET "/api/veillees/$VCODE/state" > /dev/null
 check "sa réponse reste dans nAnswered" 1    "$(jval .veillee.nAnswered)"
 check "mais plus dans les présents"     0    "$(jval .veillee.nPresentRepondu)"
+# Plus personne de présent : la règle « tous ont répondu » ne doit pas se
+# franchir sur un compte vide, sinon la veillée défilerait toute seule.
+check "zéro présent → pas de révélation" question "$(jval .veillee.statut)"
 
 say "Veillée — révélation puis fin"
 check "u1 révèle → 200"                 200 "$(api POST "/api/veillees/$VCODE/advance" "$TOKEN1" '{"action":"reveal"}')"
@@ -452,6 +470,103 @@ api GET "/api/veillees/$VCODE/state?player=$PKEY2" > /dev/null
 check "bilan collectif présent"         true "$(jval '.veillee | has("bilan")')"
 check "Léa a un rang"                   true "$(jval '.veillee.me.rang >= 1')"
 check "rejoindre une veillée close → 410" 410 "$(api POST "/api/veillees/$VCODE/join" '' '{"prenom":"Paul"}')"
+
+# ---------------------------------------------------------------------------
+# LE SCÉNARIO VÉCU EN VRAI. En deux écrans, l'appareil de l'animateur est un
+# téléphone posé dans une salle sombre : il se verrouille, le système suspend
+# ses minuteries, plus rien ne sonde depuis chez lui — et le grand écran
+# restait figé sur la question devant toute l'assemblée. La révélation se
+# décide donc côté SERVEUR, au premier sondage venu, d'où qu'il vienne.
+say "Veillée — la révélation se décide côté serveur (l'animateur peut avoir l'écran verrouillé)"
+
+# Vieillir le chrono en base plutôt qu'attendre 90 s : la suite doit rester
+# rapide (même procédé que pour la présence, plus haut).
+vieillir_question() {
+  php -r '
+$pdo = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$pdo->prepare("UPDATE veillees SET question_started_at = ? WHERE code = ?")
+    ->execute([gmdate("Y-m-d H:i:s", time() - (int) $argv[2]), $argv[1]]);
+' "$1" "$2" 2>>"$TMP/chrono.log"
+}
+vieillir_presence() {
+  php -r '
+$pdo = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$pdo->prepare(
+  "UPDATE veillee_presence SET last_seen = ?
+   WHERE veillee_id IN (SELECT id FROM veillees WHERE code = ?)"
+)->execute([gmdate("Y-m-d H:i:s", time() - 60), $argv[1]]);
+' "$1" 2>>"$TMP/chrono.log"
+}
+
+# 90 s par question : le chrono ne tombera QUE lorsqu'on le vieillira soi-même,
+# jamais par la lenteur d'une passe.
+check "créer (5 questions, 90 s) → 201"  201 "$(api POST /api/veillees "$TOKEN1" '{"nb":5,"seconds":90}')"
+SCODE="$(jval .veillee.code)"
+api POST "/api/veillees/$SCODE/join" '' '{"prenom":"Pierre"}' > /dev/null
+SKEY1="$(jval .playerKey)"
+api POST "/api/veillees/$SCODE/join" '' '{"prenom":"Anne"}' > /dev/null
+SKEY2="$(jval .playerKey)"
+api GET "/api/veillees/$SCODE/state" > /dev/null
+check "en salle d'attente, un sondage ne lance rien" lobby "$(jval .veillee.statut)"
+check "u1 lance → 200"                   200 "$(api POST "/api/veillees/$SCODE/advance" "$TOKEN1" '{"action":"start"}')"
+
+# --- Tous les présents ont répondu : on n'attend pas la fin du décompte ------
+check "Pierre répond → 200"              200 "$(api POST "/api/veillees/$SCODE/answer" '' "{\"playerKey\":\"$SKEY1\",\"q\":0,\"answer\":0}")"
+api GET "/api/veillees/$SCODE/state?player=$SKEY2" > /dev/null
+check "Anne est là et réfléchit encore"  question "$(jval .veillee.statut)"
+check "le décompte court toujours"       true "$(jval '.veillee.remaining > 0')"
+check "Anne répond → 200"                200 "$(api POST "/api/veillees/$SCODE/answer" '' "{\"playerKey\":\"$SKEY2\",\"q\":0,\"answer\":1}")"
+# LE sondage du GRAND ÉCRAN : sans clé, sans compte, incapable de piloter quoi
+# que ce soit — et pourtant la révélation tombe. Personne n'a rien touché.
+api GET "/api/veillees/$SCODE/state" > /dev/null
+check "tous les présents ont répondu → reveal"    reveal "$(jval .veillee.statut)"
+check "la bonne réponse est servie"      true "$(jval '.veillee.question | has("bonne")')"
+check "la répartition aussi"             true "$(jval '.veillee | has("distribution")')"
+check "la question n'a pas sauté"        0    "$(jval .veillee.qIndex)"
+# L'animateur (ou un client resté sur une vieille version) qui appuie après
+# coup : 409 — exactement ce que vlAvancer absorbe en silence.
+check "advance « reveal » après coup → 409" 409 "$(api POST "/api/veillees/$SCODE/advance" "$TOKEN1" '{"action":"reveal"}')"
+
+# --- Le chrono, et la grâce qui protège une réponse encore en vol ------------
+check "u1 enchaîne → 200"                200 "$(api POST "/api/veillees/$SCODE/advance" "$TOKEN1" '{"action":"next"}')"
+check "question 2 en cours"              question "$(jval .veillee.statut)"
+vieillir_question "$SCODE" 91   # 90 s écoulées + 1 : la grâce (2 s) court encore
+api GET "/api/veillees/$SCODE/state" > /dev/null
+check "décompte à zéro"                  0        "$(jval .veillee.remaining)"
+check "grâce en cours → pas encore de révélation" question "$(jval .veillee.statut)"
+check "réponse envoyée pendant la grâce → 200" 200 "$(api POST "/api/veillees/$SCODE/answer" '' "{\"playerKey\":\"$SKEY1\",\"q\":1,\"answer\":0}")"
+vieillir_question "$SCODE" 93   # grâce dépassée : il n'y a plus rien à voler
+api GET "/api/veillees/$SCODE/state" > /dev/null
+check "chrono écoulé → reveal sur un simple sondage" reveal "$(jval .veillee.statut)"
+check "et la question est bien close"    409 "$(api POST "/api/veillees/$SCODE/answer" '' "{\"playerKey\":\"$SKEY2\",\"q\":1,\"answer\":0}")"
+
+# --- Zéro présent : seul le chrono tranche, jamais « tous ont répondu » ------
+check "u1 enchaîne → 200"                200 "$(api POST "/api/veillees/$SCODE/advance" "$TOKEN1" '{"action":"next"}')"
+vieillir_presence "$SCODE"
+api GET "/api/veillees/$SCODE/state" > /dev/null
+check "plus personne de présent"         0        "$(jval .veillee.nPresent)"
+check "zéro présent → aucune révélation" question "$(jval .veillee.statut)"
+vieillir_question "$SCODE" 93
+api GET "/api/veillees/$SCODE/state" > /dev/null
+check "le chrono, lui, tranche"          reveal   "$(jval .veillee.statut)"
+
+# --- Sondages qui se croisent : une seule bascule, aucune question emportée --
+check "u1 enchaîne → 200"                200 "$(api POST "/api/veillees/$SCODE/advance" "$TOKEN1" '{"action":"next"}')"
+vieillir_question "$SCODE" 93
+PIDS=""
+for _ in 1 2 3 4 5; do curl -s -o /dev/null "$BASE/api/veillees/$SCODE/state" & PIDS="$PIDS $!"; done
+# `wait` sans argument attendrait AUSSI le serveur de test, lancé en arrière-plan
+# par ce même shell — on n'attend donc QUE les cinq sondages.
+for pid in $PIDS; do wait "$pid"; done
+api GET "/api/veillees/$SCODE/state" > /dev/null
+check "cinq sondages, une seule bascule" reveal "$(jval .veillee.statut)"
+check "la question suivante n'est pas emportée" 3 "$(jval .veillee.qIndex)"
+
+check "u1 clôt → done"                   done "$(api POST "/api/veillees/$SCODE/advance" "$TOKEN1" '{"action":"end"}' > /dev/null; jval .veillee.statut)"
+api GET "/api/veillees/$SCODE/state" > /dev/null
+check "sur une veillée close, sonder ne bascule rien" done "$(jval .veillee.statut)"
 
 # ---------------------------------------------------------------------------
 # « De qui parle-t-on ? » — veillée PV- : la correspondance des réponses
@@ -1582,6 +1697,131 @@ check "au moins une action tracée"      true   "$(jval '.log | length > 0')"
 check "les actions portent leur auteur" true   "$(jval '[.log[] | has("admin") and has("action") and has("cible")] | all')"
 
 # ---------------------------------------------------------------------------
+# RÉSEAU — quelle adresse le serveur retient-il ? Tout l'anti-abus en dépend :
+# throttle_or_429() compte par client_ip(), et client_ip() lit la PROXY_HOPS-ième
+# valeur de X-Forwarded-For EN PARTANT DE LA DROITE (chaque relais ajoute à
+# droite ; le début de la chaîne, lui, se forge en une ligne de commande).
+# Le serveur principal tourne à PROXY_HOPS=0 ; les autres réglages s'éprouvent
+# sur un serveur annexe, levé sur la MÊME base le temps de quelques appels.
+say "Réseau — X-Forwarded-For : ce que client_ip() retient (diagnostic admin)"
+
+# serveur_annexe PORT [VARIABLE=valeur…] : même environnement que le serveur
+# principal, plus les variables passées. Pose SERVEUR_ANNEXE_PID.
+serveur_annexe() {
+  local port=$1; shift
+  # Quelqu'un écoute déjà ? Ce serait un serveur de test oublié : il répondrait
+  # à notre place, avec SA base et SON réglage. On le signale plutôt que de
+  # tester dans le vide.
+  if curl -s -o /dev/null "http://127.0.0.1:$port/api/health"; then
+    bad "port $port déjà occupé par un autre serveur de test"
+    return 1
+  fi
+  if [ "$DIALECTE" = mysql ]; then
+    env -u BREVO_API_KEY -u SMTP_HOST MYSQL_URL="$BH_TEST_MYSQL_URL" ADMIN_EMAILS=alice@example.org \
+      "$@" php -S 127.0.0.1:"$port" api/tests/router.php >> "$TMP/annexe.log" 2>&1 &
+  else
+    env -u MYSQL_URL -u BREVO_API_KEY -u SMTP_HOST ADMIN_EMAILS=alice@example.org \
+      "$@" php -S 127.0.0.1:"$port" api/tests/router.php >> "$TMP/annexe.log" 2>&1 &
+  fi
+  SERVEUR_ANNEXE_PID=$!
+  for _ in $(seq 1 50); do
+    curl -s -o /dev/null "http://127.0.0.1:$port/api/health" && return
+    sleep 0.1
+  done
+  bad "serveur annexe injoignable sur le port $port"
+}
+
+# arreter_annexe : coupe le serveur annexe en cours et ATTEND sa fin — sans quoi
+# le port resterait pris et le serveur suivant répondrait par la voix de l'ancien.
+arreter_annexe() {
+  [ -n "$SERVEUR_ANNEXE_PID" ] || return 0
+  kill "$SERVEUR_ANNEXE_PID" 2>/dev/null
+  wait "$SERVEUR_ANNEXE_PID" 2>/dev/null
+  SERVEUR_ANNEXE_PID=
+}
+
+# retenue PORT [VALEUR X-FORWARDED-FOR] → l'IP retenue par client_ip(), lue dans
+# le bloc « reseau » du health admin ; le corps complet reste dans body.json.
+retenue() {
+  local port=$1 entete=${2:-}
+  local args=(-s -o "$TMP/body.json" "http://127.0.0.1:$port/api/health" -H "Authorization: Bearer $TOKEN1B")
+  [ -n "$entete" ] && args+=(-H "X-Forwarded-For: $entete")
+  curl "${args[@]}"
+  jval .reseau.ipRetenue
+}
+
+check "le diagnostic reseau est RÉSERVÉ aux admins" null \
+  "$(api GET /api/health > /dev/null; jval .reseau)"
+check "health admin : proxyHops = 0 sur cette passe" 0 \
+  "$(api GET /api/health "$TOKEN1B" > /dev/null; jval .reseau.proxyHops)"
+check "health admin : remoteAddr exposé"    127.0.0.1 "$(jval .reseau.remoteAddr)"
+check "sans en-tête : xForwardedFor null"   null      "$(jval .reseau.xForwardedFor)"
+check "sans en-tête : REMOTE_ADDR retenue"  127.0.0.1 "$(retenue $PORT)"
+check "PROXY_HOPS=0 : « 1.2.3.4 » forgé IGNORÉ" 127.0.0.1 "$(retenue $PORT '1.2.3.4')"
+check "l'en-tête reçu est montré tel quel"  "1.2.3.4" "$(jval .reseau.xForwardedFor)"
+check "PROXY_HOPS=0 : chaîne entière ignorée" 127.0.0.1 "$(retenue $PORT '1.2.3.4, 5.6.7.8')"
+
+# --- Un relais devant (le cas de la production, et le défaut du code) --------
+PORT_RELAIS=8181
+serveur_annexe $PORT_RELAIS
+check "PROXY_HOPS non définie → 1 par défaut" 1 \
+  "$(retenue $PORT_RELAIS '1.2.3.4' > /dev/null; jval .reseau.proxyHops)"
+check "1 relais : « 1.2.3.4, 5.6.7.8 » → 5.6.7.8" 5.6.7.8 \
+  "$(retenue $PORT_RELAIS '1.2.3.4, 5.6.7.8')"
+check "on lit À DROITE, quelle que soit la longueur" 9.9.9.9 \
+  "$(retenue $PORT_RELAIS '1.2.3.4, 5.6.7.8, 9.9.9.9')"
+check "1 relais : IPv6 acceptée"            2001:db8::1 \
+  "$(retenue $PORT_RELAIS '1.2.3.4, 2001:db8::1')"
+check "valeur non-IP → repli sur REMOTE_ADDR" 127.0.0.1 \
+  "$(retenue $PORT_RELAIS '1.2.3.4, pas-une-ip')"
+check "en-tête malformé (virgule en trop) → repli" 127.0.0.1 \
+  "$(retenue $PORT_RELAIS '1.2.3.4,')"
+
+# --- Le garde-fou : un relais INTERNE de plus que PROXY_HOPS ----------------
+# Si la valeur désignée est PRIVÉE, c'est un relais de plus que prévu : elle ne
+# désigne personne et ferait partager UN SEUL compteur à toute l'appli (10
+# épreuves créées par heure pour tout le monde, des veillées coupées). On
+# poursuit alors vers la gauche jusqu'à la première adresse PUBLIQUE, de sorte
+# qu'un PROXY_HOPS trop petit se rattrape de lui-même.
+check "relais interne en trop (10.x) → l'adresse publique" 5.6.7.8 \
+  "$(retenue $PORT_RELAIS '5.6.7.8, 10.0.0.5')"
+check "deux relais internes en trop → toujours la publique" 5.6.7.8 \
+  "$(retenue $PORT_RELAIS '1.2.3.4, 5.6.7.8, 10.0.0.5, 172.16.0.9')"
+check "relais interne IPv6 (fd00::) → l'adresse publique" 5.6.7.8 \
+  "$(retenue $PORT_RELAIS '1.2.3.4, 5.6.7.8, fd00::1')"
+# La marche ne rouvre PAS la faille : elle s'arrête à la première adresse
+# publique en partant de la droite, celle qu'écrit notre relais le plus
+# extérieur — jamais celle que le visiteur a placée à gauche.
+check "la marche s'arrête à NOTRE valeur, pas à celle forgée" 5.6.7.8 \
+  "$(retenue $PORT_RELAIS '9.9.9.9, 5.6.7.8')"
+check "chaîne entièrement privée → repli sur REMOTE_ADDR" 127.0.0.1 \
+  "$(retenue $PORT_RELAIS '10.0.0.1, 192.168.1.2')"
+# Une entrée illisible arrête la marche NET : on ne devine pas ce qu'il y a
+# derrière, et surtout on ne descend pas jusqu'à la partie forgeable.
+check "valeur illisible pendant la marche → repli, jamais la forgée" 127.0.0.1 \
+  "$(retenue $PORT_RELAIS '9.9.9.9, 10.0.0.5, unknown')"
+arreter_annexe
+
+# --- Une valeur illisible ne doit pas ouvrir la porte : on reste au défaut ---
+serveur_annexe $PORT_RELAIS PROXY_HOPS=deux
+check "PROXY_HOPS illisible : on retombe sur le défaut (1)" 5.6.7.8 \
+  "$(retenue $PORT_RELAIS '1.2.3.4, 5.6.7.8')"
+arreter_annexe
+
+# --- Deux relais : le réglage se corrige SANS toucher au code ---------------
+PORT_RELAIS2=8182
+serveur_annexe $PORT_RELAIS2 PROXY_HOPS=2
+check "PROXY_HOPS=2 lue depuis l'environnement" 2 \
+  "$(retenue $PORT_RELAIS2 '1.2.3.4, 5.6.7.8, 9.9.9.9' > /dev/null; jval .reseau.proxyHops)"
+check "2 relais : 2e valeur en partant de la droite" 5.6.7.8 \
+  "$(retenue $PORT_RELAIS2 '1.2.3.4, 5.6.7.8, 9.9.9.9')"
+# Le risque documenté dans client_ip() : un PROXY_HOPS trop grand ne rend jamais
+# une adresse forgée — il retombe sur REMOTE_ADDR, la même pour tout le monde.
+check "moins de valeurs que de relais → repli, jamais la valeur forgée" 127.0.0.1 \
+  "$(retenue $PORT_RELAIS2 '1.2.3.4')"
+arreter_annexe
+
+# ---------------------------------------------------------------------------
 say "Plafond par IP sur les demandes de code (30/heure)"
 LAST=000
 for i in $(seq 1 40); do
@@ -1590,6 +1830,21 @@ for i in $(seq 1 40); do
 done
 check "la rafale finit par un 429"      429 "$LAST"
 check "message doux sur le réseau"      "Trop de demandes depuis ce réseau — réessaie dans une heure." "$(jval .error)"
+
+# LE TEST QUI COMPTE. Le plafond vient de mordre pour cette adresse. Avant le
+# correctif, client_ip() prenait la PREMIÈRE valeur de X-Forwarded-For : un
+# en-tête forgé, différent à chaque appel, repartait d'un compteur neuf et
+# rouvrait l'envoi d'e-mails à volonté (relais de courrier indésirable, domaine
+# en danger). Ici aucun relais n'est devant le serveur : l'en-tête, d'où qu'il
+# vienne, ne doit plus déplacer le compteur d'un pouce.
+PLAFOND_TIENT=oui
+for i in 1 2 3; do
+  [ "$(api POST /api/auth/request-code '' "{\"email\":\"forge$i@example.org\"}" "X-Forwarded-For: 9.9.9.$i")" = 429 ] \
+    || PLAFOND_TIENT=non
+done
+[ "$(api POST /api/auth/request-code '' '{"email":"forge-chaine@example.org"}' 'X-Forwarded-For: 1.2.3.4, 5.6.7.8')" = 429 ] \
+  || PLAFOND_TIENT=non
+check "X-Forwarded-For forgé : le plafond ne se contourne plus" oui "$PLAFOND_TIENT"
 
 # ---------------------------------------------------------------------------
 say "Divers"

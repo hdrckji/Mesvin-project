@@ -151,7 +151,38 @@ Ouvrir `https://<mon-domaine>/api/health` :
 
 - `db` : `"mysql"` en production (`"sqlite"` = `MYSQL_URL` absente) ;
 - `mail` : `"brevo"` ou `"smtp"` en production (`"dev"` = aucun envoi configuré) ;
+- `reseau` : le diagnostic du relais — voir juste en dessous ;
 - une erreur 500 « Base de données injoignable » = revoir la variable `MYSQL_URL`.
+
+#### Le nombre de relais (`PROXY_HOPS`)
+
+Les plafonds anti-abus (30 demandes de code par heure et par adresse, entre
+autres) comptent **par adresse IP** : encore faut-il retenir la bonne.
+`X-Forwarded-For` s'écrit « client, relais1, relais2 » — chaque relais ajoute
+**à droite** l'adresse dont il a reçu la connexion. Le début de la chaîne vient
+donc du visiteur et se forge en une ligne de commande ; seules les dernières
+valeurs, écrites par nos relais, sont dignes de foi. L'API lit la
+`PROXY_HOPS`-ième **en partant de la droite**.
+
+| Variable | Exemple | Rôle |
+|---|---|---|
+| `PROXY_HOPS` | `1` (défaut, cas de Railway) | nombre de relais de confiance devant l'application ; `0` = aucun relais, `X-Forwarded-For` alors totalement ignoré |
+
+Un garde-fou complète le réglage : si la valeur ainsi désignée est une adresse
+**privée ou réservée** (`10.x`, `192.168.x`, `fd00::`…), c'est un relais interne
+de plus que prévu — l'API poursuit alors vers la gauche jusqu'à la première
+adresse **publique**. Un `PROXY_HOPS` trop **petit** se rattrape donc tout seul.
+Une entrée illisible (`unknown`, en-tête tronqué) arrête net la lecture et
+l'adresse retombe sur `REMOTE_ADDR` : on ne devine jamais.
+
+Le détail admin de `/api/health` montre, dans son bloc `reseau`, l'en-tête reçu
+(`xForwardedFor`), `remoteAddr`, le `proxyHops` en vigueur et l'`ipRetenue` —
+c'est **là** qu'on vérifie le réglage : ouvrir `/api/health` en admin depuis
+deux réseaux différents (le wifi, puis le téléphone en 4G) ; `ipRetenue` doit
+changer, et valoir l'adresse publique de la connexion. Si elle ne change pas,
+`PROXY_HOPS` est **trop grand** : tout le monde partage alors un seul compteur
+et de vraies personnes se retrouvent bloquées. Corriger la variable suffit —
+aucun redéploiement du code.
 
 Puis, dans l'appli : écran Moi → entrer son e-mail → recevoir le code →
 se connecter, et vérifier que le code ami (GRN-XXXX) s'affiche.

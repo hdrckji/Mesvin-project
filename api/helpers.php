@@ -136,19 +136,85 @@ function optional_user(PDO $pdo): ?array {
 }
 
 /**
+ * Nombre de relais (proxies) de CONFIANCE placés devant l'application.
+ * Réglable par la variable d'environnement PROXY_HOPS — corriger le nombre en
+ * production ne demande donc aucun redéploiement du code. Défaut : 1 (Railway
+ * place un relais devant le conteneur). 0 = aucun relais (auto-hébergement) :
+ * X-Forwarded-For, entièrement fourni par le client, est alors IGNORÉ.
+ * Toute valeur qui n'est pas un entier positif ou nul retombe sur 1.
+ */
+function proxy_hops(): int {
+    $brut = trim((string) getenv('PROXY_HOPS'));
+    return ctype_digit($brut) ? (int) $brut : 1;
+}
+
+/**
  * Adresse IP du client. Derrière le proxy de Railway, REMOTE_ADDR est celle
- * du proxy : on lit d'abord X-Forwarded-For (première adresse de la chaîne).
+ * du proxy : la véritable adresse se lit dans X-Forwarded-For.
+ *
+ * ATTENTION au sens de lecture. L'en-tête s'écrit « client, relais1, relais2 » :
+ * chaque relais AJOUTE À DROITE l'adresse dont il a reçu la connexion. Le début
+ * de la chaîne vient donc du client et se forge en une ligne de commande ; seules
+ * les dernières valeurs, écrites par NOS relais, sont dignes de foi. On lit la
+ * proxy_hops()-ième valeur EN PARTANT DE LA DROITE : celle qu'a inscrite le
+ * relais le plus extérieur, c'est-à-dire l'adresse réelle du visiteur.
+ *
  * Sert uniquement aux plafonds anti-abus — jamais à l'authentification.
  */
 function client_ip(): string {
+    $remote = substr((string) ($_SERVER['REMOTE_ADDR'] ?? 'inconnue'), 0, 45);
+
+    // Aucun relais devant nous : l'en-tête n'est qu'une affirmation du client.
+    $hops = proxy_hops();
+    if ($hops < 1) {
+        return $remote;
+    }
+
     $xff = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
-    if ($xff !== '') {
-        $first = trim(explode(',', $xff)[0]);
-        if ($first !== '') {
-            return substr($first, 0, 45);
+    if (trim($xff) === '') {
+        return $remote;
+    }
+
+    // RISQUE À CONNAÎTRE : si PROXY_HOPS est plus GRAND que le nombre réel de
+    // relais, l'indice remonte dans la partie écrite par le client (au mieux un
+    // repli, au pire une valeur forgée) ; s'il est plus grand encore, ou si le
+    // client n'envoie rien, on retombe sur REMOTE_ADDR — l'adresse du relais,
+    // la MÊME pour tout le monde : un seul compteur pour tous les visiteurs, et
+    // de vraies personnes bloquées par le plafond d'autrui. Le bloc « reseau »
+    // du GET /api/health admin montre l'en-tête reçu, REMOTE_ADDR, PROXY_HOPS
+    // et l'IP retenue : c'est là qu'on vérifie le nombre, sans toucher au code.
+    $chaine = array_map('trim', explode(',', $xff));
+    $index = count($chaine) - $hops;
+    if ($index < 0) {
+        // Moins de valeurs que de relais annoncés : en-tête inexploitable.
+        return $remote;
+    }
+
+    // Un relais de plus que prévu ? Les relais INTERNES (bordure Railway,
+    // répartiteur, réseau Docker) portent des adresses privées ou réservées :
+    // elles ne désignent personne, et retenir l'une d'elles ferait partager UN
+    // SEUL compteur à tous les visiteurs — 10 épreuves créées par heure pour la
+    // France entière, des veillées coupées. On continue donc vers la GAUCHE
+    // tant qu'on tombe sur une adresse privée, et on ne s'arrête que sur une
+    // adresse publique : la seule qui identifie vraiment un visiteur.
+    // Cette marche ne rouvre pas la faille : à droite du point de départ se
+    // trouvent NOS relais, et celui qui est le plus à l'extérieur y inscrit
+    // l'adresse publique du visiteur — on s'y arrête donc avant d'atteindre la
+    // partie forgeable. Elle ne fait que rattraper un PROXY_HOPS trop petit.
+    for (; $index >= 0; $index--) {
+        // Une entrée qui n'est pas une IP (« unknown », en-tête tronqué,
+        // obfuscation d'un relais…) ne doit JAMAIS servir de clé de plafond —
+        // et on ne devine pas ce qu'il y a derrière : on s'arrête net.
+        if (filter_var($chaine[$index], FILTER_VALIDATE_IP) === false) {
+            return $remote;
+        }
+        if (filter_var($chaine[$index], FILTER_VALIDATE_IP,
+                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false) {
+            return substr($chaine[$index], 0, 45);
         }
     }
-    return substr((string) ($_SERVER['REMOTE_ADDR'] ?? 'inconnue'), 0, 45);
+    // Que des adresses privées : personne d'identifiable dans cette chaîne.
+    return $remote;
 }
 
 /**

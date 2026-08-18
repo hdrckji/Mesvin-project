@@ -1714,7 +1714,9 @@ function vlPierreAnimateur(avant, etat) {
    pénalise les autres. Pas pour un participant : c'est sa batterie, et son
    téléphone qui s'endort ne gêne que lui (il est alors compté absent, ce qui
    est exact). L'API n'existe pas partout : c'est un confort, pas une garantie
-   — le vrai filet est le rattrapage au retour de visibilité, juste dessous. */
+   — la veillée n'en dépend plus, puisque la révélation tombe côté serveur au
+   premier sondage venu ; restent le rattrapage au retour de visibilité, juste
+   dessous, et un décompte qui ne dérive pas sous les yeux de la salle. */
 let vlVeilleEcran = null, vlVeilleGen = 0;
 async function vlGarderEveille() {
   if (!('wakeLock' in navigator) || vlVeilleEcran) return;
@@ -1843,7 +1845,14 @@ function vlTick() {
    Appelée UNIQUEMENT depuis l'appareil de l'animateur (vlPoll et vlTick la
    gardent derrière `vl.mode === 'host'`) : le grand écran n'a ni compte ni
    clé, `advance` lui serait refusé, et surtout la salle ne pilote pas la
-   veillée. */
+   veillée.
+   Ce n'est plus LE mécanisme, c'est un FILET : le serveur bascule désormais
+   lui-même en révélation dès qu'un client — n'importe lequel — sonde l'état
+   au bon moment (cf. veillee_reveler_si_besoin). On le garde parce qu'il
+   révèle à la seconde près sur l'appareil qui mène, qu'il continue de servir
+   face à un serveur pas encore déployé, et qu'un client resté sur une vieille
+   version doit continuer de fonctionner. Quand le serveur a tranché le
+   premier, `advance` répond 409 et vlAvancer l'absorbe en silence. */
 function vlAutoReveal() {
   const e = vl.etat;
   if (!e || e.statut !== 'question' || vl.busy) return;

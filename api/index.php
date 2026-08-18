@@ -89,6 +89,17 @@ if ($path === '/api/health' && $method === 'GET') {
         // Configuration : chaque variable attendue, définie ou non — la
         // valeur elle-même ne quitte JAMAIS le serveur.
         'config' => config_checklist(),
+        // Réseau : ce que le relais nous envoie VRAIMENT. Sert à confirmer que
+        // PROXY_HOPS vaut le bon nombre — si « ipRetenue » est la même pour
+        // tout le monde, ou reste une adresse forgeable par le visiteur, c'est
+        // le nombre qu'il faut corriger (voir client_ip() dans helpers.php).
+        // Réservé aux admins : la réponse anonyme n'en dit pas un mot.
+        'reseau' => [
+            'xForwardedFor' => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? null,
+            'remoteAddr'    => $_SERVER['REMOTE_ADDR'] ?? null,
+            'proxyHops'     => proxy_hops(),
+            'ipRetenue'     => client_ip(),
+        ],
         'push' => [
             'abonnements' => (int) $pdo->query('SELECT COUNT(*) FROM push_abonnements')->fetchColumn(),
             'cronKey'     => $pushCfg === null ? null : $pushCfg['cron_key'],

@@ -24,8 +24,22 @@
   d'environnement attendues, chacune sous la forme
   `{ "variable", "libelle", "definie": true|false }` — **jamais les valeurs**
   (fonction `config_checklist()` dans `api/helpers.php`).
+  Il contient aussi `reseau` (admins seulement, jamais dans la réponse
+  anonyme) : `{ "xForwardedFor", "remoteAddr", "proxyHops", "ipRetenue" }` —
+  l'en-tête `X-Forwarded-For` **tel que reçu**, `REMOTE_ADDR`, le nombre de
+  relais de confiance en vigueur et l'adresse finalement retenue par
+  `client_ip()`. De quoi constater ce que le relais envoie vraiment, et régler
+  `PROXY_HOPS` sans toucher au code.
 - `POST /api/auth/request-code` est plafonné **par e-mail** (3/heure) ET
   **par adresse IP** (30/heure, table `throttle`) → 429 au-delà.
+  L'adresse vient de `client_ip()`, qui lit la `PROXY_HOPS`-ième valeur de
+  `X-Forwarded-For` **en partant de la droite** (chaque relais ajoute à
+  droite ; le début de la chaîne est fourni par le client, donc forgeable).
+  Défaut `PROXY_HOPS` = 1 ; `0` = aucun relais devant, en-tête ignoré ; toute
+  valeur qui n'est pas une IP valide retombe sur `REMOTE_ADDR`. Si la valeur
+  désignée est une adresse **privée** (un relais interne de plus que prévu), la
+  lecture se poursuit vers la gauche jusqu'à la première adresse **publique** —
+  un `PROXY_HOPS` trop petit se rattrape ainsi de lui-même.
 - Chaque action d'administration est tracée (table `admin_log`) et
   consultable via `GET /api/admin/log` (admins, 100 dernières entrées).
 - Les en-têtes de sécurité (CSP, nosniff, frame-ancestors, HSTS…) sont posés
@@ -182,6 +196,14 @@ par le serveur, bonne réponse jamais envoyée pendant la phase de réponse,
 points calculés côté serveur (100 par bonne réponse + jusqu'à 50 de rapidité).
 Les veillées sont balayées après 24 h.
 
+Une transition n'attend pas l'animateur : le passage `question → reveal` est
+décidé par le **serveur**, au premier `/state` venu (participant, grand écran
+ou animateur), dès que le temps est écoulé — grâce réseau comprise — ou que
+tous les présents ont répondu. Sans cela, un téléphone d'animateur qui se
+verrouille laissait le grand écran figé sur la question devant l'assemblée.
+L'animateur garde la main : il peut toujours révéler ou enchaîner quand il
+veut, et son `advance` arrivé après coup répond simplement 409.
+
 ### POST /api/veillees (authentifié — l'animateur)
 Corps (tout facultatif) : `{ "nb": 5–20 (10), "seconds": 10–90 (25),
 "categorie": "..."?, "niveau": 1–3?, "groupe": "GRP-XXXXX"? }`
@@ -204,7 +226,10 @@ Public, pollable. → `{ "veillee": { "code", "statut", "qIndex", "qTotal",
 - veillée liée à une église : + `"eglise": "<nom du groupe>"` (pour le
   grand écran) — rien d'autre du groupe ne transparaît ;
 - en phase `question` : + `question` (SANS `bonne` ni `reference`),
-  `remaining` (secondes restantes), `nAnswered`, `nPresentRepondu` ;
+  `remaining` (secondes restantes), `nAnswered`, `nPresentRepondu`. Sonder
+  peut faire basculer la veillée en `reveal` (temps écoulé, ou tous les
+  présents ont répondu) : l'état renvoyé est alors DÉJÀ celui de la
+  révélation ;
 - `nAnswered` compte TOUTES les réponses, `nPresentRepondu` seulement celles
   des présents. C'est ce dernier qu'il faut comparer à `nPresent` : mêler les
   deux populations couperait la parole à quelqu'un qui réfléchit encore ;
