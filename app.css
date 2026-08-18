@@ -772,3 +772,11 @@ summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; 
   to   { opacity: 1; transform: translateX(-50%); }
 }
 .toast-copie.out { opacity: 0; transition: opacity .4s ease; }
+
+/* Un avertissement qui n'empêche rien : la question EST enregistrée, on
+   signale seulement que la parole ne se trouve pas à la référence citée. */
+.soft-warn {
+  background: var(--surface-2); border-left: 3px solid var(--accent);
+  border-radius: 4px 10px 10px 4px; padding: 9px 12px;
+  color: var(--ink-soft); font-size: .9rem; line-height: 1.5;
+}

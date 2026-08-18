@@ -176,14 +176,21 @@
     /* ---- banques d'église par épreuve (api/groupes-banques.php) ----
        quiadit | ecritoupas | portrait. TOUT est réservé au responsable,
        lecture comprise : les items portent la bonne réponse. */
-    async groupeBanque(code, module) { return (await call('GET', '/api/groupes/' + encodeURIComponent(code) + '/banques/' + encodeURIComponent(module))).banque; },
-    async groupeBanqueMode(code, module, mode) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/banques/' + encodeURIComponent(module) + '/mode', { mode })).banque; },
-    async groupeBanqueSelection(code, module, ids) { return (await call('PUT', '/api/groupes/' + encodeURIComponent(code) + '/banques/' + encodeURIComponent(module) + '/selection', { ids })).banque; },
-    async groupeBanqueItemSave(code, module, corps) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/banques/' + encodeURIComponent(module) + '/items', corps)).item; },
-    async groupeBanqueItemDelete(code, module, id) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/banques/' + encodeURIComponent(module) + '/items/' + encodeURIComponent(id)); },
     // La banque FUSIONNÉE de l'église — même format que /api/banque/{module} :
     // c'est elle que les pages d'épreuves chargent pour animer « dans mon église ».
-    async groupeBanqueFusion(code, module) { return call('GET', '/api/groupes/' + encodeURIComponent(code) + '/banque/' + encodeURIComponent(module)); },
+
+    /* ---- séries de questions d'une église (épreuves) ----
+       Lecture des séries publiées : tout membre. Écriture et brouillons :
+       responsable et co-responsables (le serveur revérifie). */
+    async groupeSeries(code, module) { return call('GET', '/api/groupes/' + encodeURIComponent(code) + '/series/' + encodeURIComponent(module)); },
+    async groupeSerieCreer(code, module, nom) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/series/' + encodeURIComponent(module), { nom })).serie; },
+    async groupeSerieMaj(code, module, id, corps) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/series/' + encodeURIComponent(module) + '/' + encodeURIComponent(id), corps)).serie; },
+    async groupeSerieSupprimer(code, module, id) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/series/' + encodeURIComponent(module) + '/' + encodeURIComponent(id)); },
+    // Renvoie { item, avertissement } : l'avertissement est informatif, l'item est enregistré.
+    async groupeSerieItemSave(code, module, id, corps) { return call('POST', '/api/groupes/' + encodeURIComponent(code) + '/series/' + encodeURIComponent(module) + '/' + encodeURIComponent(id) + '/items', corps); },
+    async groupeSerieItemDelete(code, module, id, itemId) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/series/' + encodeURIComponent(module) + '/' + encodeURIComponent(id) + '/items/' + encodeURIComponent(itemId)); },
+    // Les items d'une série — ce que chargent les pages d'épreuve pour jouer.
+    async groupeSerieItems(code, module, id) { return call('GET', '/api/groupes/' + encodeURIComponent(code) + '/series/' + encodeURIComponent(module) + '/' + encodeURIComponent(id) + '/items'); },
 
     /* ---- questions du Défi (banque fusionnée, publique) ---- */
     async questions() { return call('GET', '/api/questions'); },

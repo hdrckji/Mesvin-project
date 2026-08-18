@@ -303,15 +303,20 @@ async function chargerBanque() {
   // elle : elle change au gré du responsable ; inaccessible ou trop maigre
   // (moins de 3 items), la banque commune reprend la main et l'accueil dit
   // d'où l'on tire.
-  if (EGLISE && window.GraineAPI && GraineAPI.isLoggedIn()) {
+  // Une SÉRIE choisie par le joueur prend le relais de la banque commune —
+  // et seulement si elle est choisie. Par défaut, on joue le fonds commun :
+  // les questions d'une église s'ajoutent au choix, elles ne le remplacent pas.
+  if (serieChoisie && EGLISE && window.GraineAPI && GraineAPI.isLoggedIn()) {
     try {
-      const d = await GraineAPI.groupeBanqueFusion(EGLISE, 'portrait');
-      if (d && Array.isArray(d.items) && d.items.length >= 3) {
+      const d = await GraineAPI.groupeSerieItems(EGLISE, 'portrait', serieChoisie);
+      if (d && Array.isArray(d.items) && d.items.length > 0) {
         egliseActive = true;
+        serieMarquerJouee(serieChoisie);   // ✓ dans la liste, la prochaine fois
         BANQUE = adapter(d);
         return BANQUE;
       }
-    } catch (e) { /* 403, hors-ligne : la banque commune ci-dessous */ }
+    } catch (e) { /* série retirée, hors-ligne : la banque commune reprend */ }
+    serieChoisie = null;   // la série a disparu : on ne bloque pas le joueur
   }
   const locale = lireBanqueLocale();
   if (locale && Array.isArray(locale.items) && locale.items.length > 0) {
@@ -401,9 +406,7 @@ function vueAccueil() {
     <button class="quit" data-retour-defi="1">‹ Défi</button>
     <h1 style="margin-top:10px">De qui parle-t-on <span class="seed">?</span></h1>
     <p class="muted" style="margin:4px 0 16px">Les indices tombent un à un — plus tu devines tôt, plus tu marques. Personnages, lieux et objets de la Bible.</p>
-    ${egliseActive
-      ? `<p class="muted" style="margin:-8px 0 16px;color:var(--grow)">Les parties lancées d'ici tirent dans la banque de ton église.</p>`
-      : EGLISE ? `<p class="muted" style="margin:-8px 0 16px">Banque de ton église indisponible pour l'instant — les parties tirent dans la banque commune.</p>` : ''}
+    ${choixBanqueHTML()}
 
     <button class="card hub-card" data-solo="1">
       <span class="hub-ic">${icon('seul', 26)}</span>
@@ -549,6 +552,24 @@ async function api(chemin, corps) {
   return data;
 }
 /* Le paquet au format serveur (les accepte normalisés y repartent tels quels). */
+/* Le choix de la banque, sur l'accueil. On ne le montre QUE si l'église a
+   publié des séries : sans cela, ouvrir l'épreuve reste un seul geste. La
+   banque complète est toujours là, en tête — une série s'ajoute au choix,
+   elle ne remplace rien. */
+function choixBanqueHTML() {
+  if (!SERIES || !SERIES.length) return '';
+  const pastille = (id, nom, jouee) =>
+    `<button class="pill ${serieChoisie === id ? 'on' : ''}" data-serie="${id === null ? '' : id}">`
+    + `${esc(nom)}${jouee ? ' ✓' : ''}</button>`;
+  return `<div style="margin:-4px 0 16px">
+    <div class="muted" style="font-size:.82rem;margin-bottom:6px">Avec quelles questions ?</div>
+    <div class="pill-row">
+      ${pastille(null, 'Banque complète', false)}
+      ${SERIES.map(x => pastille(x.id, x.nom, serieDejaJouee(x.id))).join('')}
+    </div>
+  </div>`;
+}
+
 function deckServeur(n) {
   return tirage(n).map(p => ({ reponse: p.reponse, accepte: p.accepte, indices: p.indices, ref: p.ref, genre: p.genre }));
 }
@@ -908,6 +929,13 @@ function render() {
     try { online.etat = await api('veillee/' + online.code + '/etat?cle=' + online.cle); render(); } catch (e) {}
     pollDemarre();
   });
+  el.querySelectorAll('[data-serie]').forEach(b => b.addEventListener('click', () => {
+    const v = b.dataset.serie;
+    serieChoisie = v === '' ? null : Number(v);
+    BANQUE = null;
+    egliseActive = false;
+    render();
+  }));
   if (q1('[data-solo]')) q1('[data-solo]').addEventListener('click', avecBanque(() => demarrer(null, null, null)));
   if (q1('[data-multi]')) q1('[data-multi]').addEventListener('click', versEcran('config'));
   // sous-menus et retours : la carte (ou le lien) porte l'écran où elle mène
@@ -1066,10 +1094,39 @@ async function verifierRepriseAnim() {
    connecté seulement — le serveur revérifie). Seul le fetch de la banque
    change ; tirage, défis et veillées restent exactement les mêmes. */
 const EGLISE = (() => {
-  const e = (new URLSearchParams(location.search).get('eglise') || '').toUpperCase();
-  return /^GRP-[A-Z0-9]{5}$/.test(e) ? e : null;
+  // L'URL d'abord (le lien « Animer dans mon église » l'y met), puis le code
+  // retenu par l'application : un membre qui arrive par l'accueil doit voir
+  // les séries de sa communauté sans avoir de lien spécial à suivre.
+  const url = (new URLSearchParams(location.search).get('eglise') || '').toUpperCase();
+  if (/^GRP-[A-Z0-9]{5}$/.test(url)) return url;
+  let garde = '';
+  try { garde = (localStorage.getItem('graine.eglise.code') || '').toUpperCase(); } catch (e) {}
+  return /^GRP-[A-Z0-9]{5}$/.test(garde) ? garde : null;
 })();
 let egliseActive = false; // la banque servie est bien celle de l'église
+let SERIES = null;        // séries publiées de mon église (null = pas encore demandé)
+let serieChoisie = null;  // la série avec laquelle on joue, ou null = banque complète
+const SERIES_JOUEES = 'graine.series.jouees';
+function serieJouees() {
+  try { return JSON.parse(localStorage.getItem(SERIES_JOUEES) || '{}') || {}; } catch (e) { return {}; }
+}
+function serieMarquerJouee(id) {
+  try {
+    const v = serieJouees();
+    v['portrait:' + id] = 1;
+    localStorage.setItem(SERIES_JOUEES, JSON.stringify(v));
+  } catch (e) { /* stockage plein ou refusé : on s'en passe */ }
+}
+function serieDejaJouee(id) { return !!serieJouees()['portrait:' + id]; }
+async function chargerSeries() {
+  if (SERIES !== null || !EGLISE || !window.GraineAPI || !GraineAPI.isLoggedIn()) return;
+  SERIES = [];
+  try {
+    const d = await GraineAPI.groupeSeries(EGLISE, 'portrait');
+    SERIES = ((d && d.series) || []).filter(x => x.etat === 'publiee');
+  } catch (e) { /* pas membre, hors-ligne : on jouera la banque commune */ }
+  render();
+}
 if (EGLISE) {
   // Chargée tout de suite : l'accueil dit d'où viennent les questions.
   chargerBanque().then(() => { if (ecran === 'accueil') render(); }).catch(() => {});
@@ -1083,6 +1140,7 @@ if (direct && /^PV-[A-Z2-9]{5}$/.test(direct.toUpperCase())) {
   pollDemarre();
 }
 render();
+chargerSeries();   // les séries publiées de mon église, s'il y en a
 if (!online) verifierRepriseAnim(); // pas de projection en cours : propose la reprise si besoin
 </script>
 </body>
