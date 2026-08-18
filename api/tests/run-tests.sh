@@ -1934,6 +1934,30 @@ check "message de salle complète"  "La veillée est au complet." "$(jval .error
 check "code de salle inconnu → 404" 404 \
   "$(api POST "/api/epreuve/veillee/EV-ZZZZZ/rejoindre" '' '{"prenom":"Personne"}')"
 
+# La frise a ses propres routes et son propre compteur (« frise-creer »,
+# « frise-rejoindre ») : ce qui vaut pour les épreuves doit valoir pour elle.
+# Quatre cartes au minimum : trois à placer, plus la carte d'amorce.
+FRISE='{"deck":[
+  {"t":"La création","r":"Genèse 1","o":0},
+  {"t":"Le déluge","r":"Genèse 7","o":1},
+  {"t":"La sortie d Égypte","r":"Exode 14","o":2},
+  {"t":"La naissance de Jésus","r":"Luc 2","o":3}
+],"mode":"Avant ou après ?"}'
+api POST /api/frise/veillee '' "$FRISE" > /dev/null
+FVCODE="$(jval .code)"
+check "salle de frise créée (code FV-)" oui \
+  "$(printf '%s' "$FVCODE" | grep -qE '^FV-[A-Z2-9]{5}$' && echo oui || echo non)"
+check "frise : rangs en double refusés" 400 \
+  "$(api POST /api/frise/veillee '' '{"deck":[{"t":"A","o":0},{"t":"B","o":0},{"t":"C","o":2}]}')"
+FRISE_OK=oui
+[ -n "$FVCODE" ] && [ "$FVCODE" != null ] || FRISE_OK="pas de salle"
+for i in $(seq 1 40); do
+  [ "$(api POST "/api/frise/veillee/$FVCODE/rejoindre" '' "{\"prenom\":\"Frise$i\"}")" = 429 ] && FRISE_OK=non
+done
+check "frise : quarante participants entrent sans être refoulés" oui "$FRISE_OK"
+check "frise : code inconnu → 404" 404 \
+  "$(api POST "/api/frise/veillee/FV-ZZZZZ/rejoindre" '' '{"prenom":"Personne"}')"
+
 # ---------------------------------------------------------------------------
 say "Divers"
 check "route inconnue → 404"            404 "$(api GET /api/nimporte-quoi)"
