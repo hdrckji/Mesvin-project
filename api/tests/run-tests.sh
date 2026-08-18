@@ -1887,6 +1887,54 @@ check "c'est bien l'adresse du visiteur qui sert de compteur" 203.0.113.7 \
 arreter_annexe
 
 # ---------------------------------------------------------------------------
+# Les épreuves (« Qui a dit ça ? », « Écrit ou pas ? », le portrait, la frise)
+# n'avaient AUCUNE couverture : leurs routes de veillée n'étaient jamais
+# appelées par la suite. On couvre ici ce qui casse une soirée d'église — la
+# création d'une salle, l'arrivée des participants, et surtout le plafond
+# anti-abus, calibré sur une assemblée entière derrière un seul wifi.
+say "Épreuves en veillée : ouvrir une salle, y faire entrer une assemblée"
+
+PAQUET='{"deck":[
+  {"q":"Qui a dit : « Que la lumière soit » ?","options":["Dieu","Moïse","Paul"],"bonne":0,"ref":"Genèse 1.3"},
+  {"q":"Qui a dit : « Me voici, envoie-moi » ?","options":["Ésaïe","Jonas","Élie"],"bonne":0,"ref":"Ésaïe 6.8"},
+  {"q":"Qui a dit : « Tout est accompli » ?","options":["Jésus","Pierre","Jean"],"bonne":0,"ref":"Jean 19.30"}
+],"mode":"Qui a dit ça ?"}'
+
+api POST /api/epreuve/veillee '' "$PAQUET" > /dev/null
+EVCODE="$(jval .code)"
+check "salle d'épreuve créée (code EV-)" oui \
+  "$(printf '%s' "$EVCODE" | grep -qE '^EV-[A-Z2-9]{5}$' && echo oui || echo non)"
+check "la clé d'animateur est remise" 32 "$(api POST /api/epreuve/veillee '' "$PAQUET" > /dev/null; jval .cle | tr -d '\n' | wc -c)"
+check "paquet trop court → 400" 400 "$(api POST /api/epreuve/veillee '' '{"deck":[]}')"
+
+# Une assemblée entière entre : toutes ces requêtes viennent de la MÊME adresse
+# (un seul wifi d'église). Le plafond ne doit refouler personne.
+ASSEMBLEE_OK=oui
+for i in $(seq 1 40); do
+  [ "$(api POST "/api/epreuve/veillee/$EVCODE/rejoindre" '' "{\"prenom\":\"Membre$i\"}")" = 201 ] \
+    || [ "$(jval .jeton)" != null ] || ASSEMBLEE_OK=non
+done
+check "quarante participants entrent sans être refoulés" oui "$ASSEMBLEE_OK"
+
+# LE TEST QUI COMPTE : une soirée, ce n'est pas une épreuve mais plusieurs. On
+# ouvre une DEUXIÈME salle et la même assemblée y entre — 80 arrivées depuis la
+# même adresse. Sous l'ancien plafond (60), les vingt derniers se faisaient
+# refouler en pleine veillée avec un message parlant de réseau.
+api POST /api/epreuve/veillee '' "$PAQUET" > /dev/null
+EVCODE2="$(jval .code)"
+SOIREE_OK=oui
+for i in $(seq 1 40); do
+  [ "$(api POST "/api/epreuve/veillee/$EVCODE2/rejoindre" '' "{\"prenom\":\"Membre$i\"}")" = 429 ] \
+    && SOIREE_OK=non
+done
+check "deuxième épreuve de la soirée : personne n'est refoulé" oui "$SOIREE_OK"
+check "le quarante-et-unième : salle complète, pas « trop de demandes »" 409 \
+  "$(api POST "/api/epreuve/veillee/$EVCODE/rejoindre" '' '{"prenom":"DeTrop"}')"
+check "message de salle complète"  "La veillée est au complet." "$(jval .error)"
+check "code de salle inconnu → 404" 404 \
+  "$(api POST "/api/epreuve/veillee/EV-ZZZZZ/rejoindre" '' '{"prenom":"Personne"}')"
+
+# ---------------------------------------------------------------------------
 say "Divers"
 check "route inconnue → 404"            404 "$(api GET /api/nimporte-quoi)"
 check "GET /api/db.php → réécrit, 404"  404 "$(api GET /api/db.php)"

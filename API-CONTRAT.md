@@ -32,6 +32,13 @@
   `PROXY_HOPS` sans toucher au code.
 - `POST /api/auth/request-code` est plafonné **par e-mail** (3/heure) ET
   **par adresse IP** (30/heure, table `throttle`) → 429 au-delà.
+  Les autres plafonds horaires par adresse sont calibrés sur une **veillée
+  d'église**, où toute l'assemblée sort par un seul wifi, donc par une seule
+  adresse : ouvrir une salle d'épreuve ou de frise **40/heure**, y entrer
+  **300/heure** (quarante participants par salle, plusieurs salles dans la
+  soirée), remettre un score **60/heure**, demander un groupe **30/heure**.
+  Les veillées du Défi n'ont, elles, aucun plafond. Le seul endroit où l'abus
+  coûte vraiment — l'envoi d'e-mails — reste tenu à 30/heure.
   L'adresse vient de `client_ip()`, qui lit la `PROXY_HOPS`-ième valeur de
   `X-Forwarded-For` **en partant de la droite** (chaque relais ajoute à
   droite ; le début de la chaîne est fourni par le client, donc forgeable).

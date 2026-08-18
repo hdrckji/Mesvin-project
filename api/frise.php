@@ -112,7 +112,10 @@ function frise_menage(PDO $pdo): void {
 /* ---- Duel par code ----------------------------------------------------------- */
 
 function frise_duel_create(PDO $pdo): never {
-    throttle_or_429($pdo, 'frise-creer', 10);
+    // 40 et non 10 : un animateur qui prépare sa soirée ouvre, essaie, referme
+    // et recommence — et toute l'église partage son adresse. Dix salles par
+    // heure, c'était épuisé avant même que la veillée commence.
+    throttle_or_429($pdo, 'frise-creer', 40);
     frise_menage($pdo);
     $body = read_json_body();
     $deck = frise_deck_propre($body['deck'] ?? null);
@@ -197,7 +200,10 @@ function frise_veillee_row(PDO $pdo, string $code): array {
 }
 
 function frise_veillee_create(PDO $pdo): never {
-    throttle_or_429($pdo, 'frise-creer', 10);
+    // 40 et non 10 : un animateur qui prépare sa soirée ouvre, essaie, referme
+    // et recommence — et toute l'église partage son adresse. Dix salles par
+    // heure, c'était épuisé avant même que la veillée commence.
+    throttle_or_429($pdo, 'frise-creer', 40);
     frise_menage($pdo);
     $body = read_json_body();
     $deck = frise_deck_propre($body['deck'] ?? null);
@@ -214,7 +220,16 @@ function frise_veillee_create(PDO $pdo): never {
 }
 
 function frise_veillee_rejoindre(PDO $pdo, string $code): never {
-    throttle_or_429($pdo, 'frise-rejoindre', 60);
+    // Plafonds calibrés sur une VEILLÉE D'ÉGLISE, pas sur un visiteur isolé :
+    // toute l'assemblée sort par le même wifi, donc par la même adresse. Vingt
+    // participants qui rejoignent quatre épreuves dans la soirée, cela fait
+    // quatre-vingts passages ici — l'ancien plafond de 60 refoulait les
+    // derniers arrivés en pleine veillée, avec un message parlant de réseau
+    // qui n'expliquait rien. Rejoindre exige déjà un code de salle à cinq
+    // caractères : l'abus à l'aveugle est barré par le code, pas par ce
+    // compteur. Ce qui reste sévèrement tenu, c'est l'envoi d'e-mails
+    // (scope « code », 30/heure) — le seul endroit où l'abus coûte cher.
+    throttle_or_429($pdo, 'frise-rejoindre', 300);
     $v = frise_veillee_row($pdo, $code);
     if ($v['phase'] === 'fin') {
         json_error('Cette veillée est terminée.', 409);
