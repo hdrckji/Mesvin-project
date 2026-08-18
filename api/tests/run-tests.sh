@@ -646,6 +646,22 @@ done
 check "u1 supprime ses 2 églises"       2   "$SUPPRIMES"
 check "u1 : liste vide"                 0   "$(api GET /api/groupes "$TOKEN1" > /dev/null; jval '.groupes | length')"
 
+say "Groupes — supprimer une église HABITÉE (le responsable, sans passer par « quitter »)"
+# Quitter refuse au responsable tant qu'il reste du monde ; supprimer, non :
+# c'est le seul chemin pour fermer une assemblée qui a encore des membres.
+GHAB="$(groupe_via_demande "$TOKEN1" "Assemblée à fermer")"
+check "u3 rejoint → 200"                200 "$(api POST /api/groupes/rejoindre "$TOKEN3" "{\"code\":\"$GHAB\"}")"
+check "u1 pose le verset → 200"         200 "$(api POST "/api/groupes/$GHAB/verset" "$TOKEN1" '{"reference":"Psaume 1.1","texte":"Heureux l homme qui ne marche pas selon le conseil des méchants."}')"
+check "u1 pose une annonce → 201"       201 "$(api POST "/api/groupes/$GHAB/annonces" "$TOKEN1" '{"titre":"Culte de dimanche","texte":"Rendez-vous à 10h."}')"
+check "u1 responsable ne peut pas quitter → 400" 400 "$(api DELETE "/api/groupes/$GHAB/membres/moi" "$TOKEN1")"
+check "u3 (membre) ne peut pas supprimer → 403"  403 "$(api DELETE "/api/groupes/$GHAB" "$TOKEN3")"
+check "u1 supprime l église habitée → 200"       200 "$(api DELETE "/api/groupes/$GHAB" "$TOKEN1")"
+check "u1 : liste vide"                 0   "$(api GET /api/groupes "$TOKEN1" > /dev/null; jval '.groupes | length')"
+check "u3 aussi : le groupe a disparu pour lui" 0 "$(api GET /api/groupes "$TOKEN3" > /dev/null; jval '.groupes | length')"
+check "le code ne rejoint plus rien → 404" 404 "$(api POST /api/groupes/rejoindre "$TOKEN3" "{\"code\":\"$GHAB\"}")"
+check "sa page est partie avec lui → 404"  404 "$(api GET "/api/groupes/$GHAB/page" "$TOKEN1")"
+check "re-supprimer → 404"              404 "$(api DELETE "/api/groupes/$GHAB" "$TOKEN1")"
+
 say "Groupes — deuxième groupe : u2 responsable, u3 membre (passation testée après la suppression de u2)"
 G2CODE="$(groupe_via_demande "$TOKEN2" "Groupe de Benoît")"
 check "u2 obtient son groupe (via demande)" GRP "${G2CODE%-*}"

@@ -2344,7 +2344,34 @@ function viewEglise() {
       <button class="linkbtn" data-grpleave="${esc(g.code)}" data-nom="${esc(g.nom)}">Quitter ce groupe</button>
     </div>`;
 
-  return topbar() + choix + tete + alerte + corpsPage + coinResp + membres;
+  return topbar() + choix + tete + alerte + corpsPage + coinResp + membres + egliseFin(g, resp);
+}
+
+/* La fin d'une église — le responsable seul, et jamais d'un seul geste.
+   Le serveur efface tout (adhésions, banques, séries, page, services) : on
+   demande donc de RECOPIER le nom, comme on signe avant de fermer une porte. */
+function egliseFin(g, resp) {
+  if (!resp) return '';
+  if (!egliseSuppr || egliseSuppr.code !== g.code) {
+    return `<p class="muted center" style="font-size:.82rem;margin:14px 2px 0">
+      <button class="linkbtn" data-egldelopen="${esc(g.code)}">Supprimer cette église</button></p>`;
+  }
+  return `<div class="card fade" style="margin-top:14px">
+    <p style="margin:0 0 8px"><b>Supprimer « ${esc(g.nom)} » ?</b></p>
+    <p class="muted" style="margin:0 0 10px">Tout disparaît avec elle, pour tous les membres et sans retour :
+    la page de l'église (annonces, rendez-vous, services et inscriptions), les séries de questions,
+    les packs de versets et les chemins de lecture proposés. Ce que chacun a semé dans son jardin lui reste.</p>
+    <form data-egldelform="1">
+      <label class="lbl" for="egldelInput" style="margin-top:0">Recopie le nom de l'église pour confirmer</label>
+      <input class="field" type="text" id="egldelInput" maxlength="80" autocomplete="off"
+             placeholder="${esc(g.nom)}" value="${esc(egliseSuppr.texte)}">
+      ${egliseSuppr.error ? `<p class="field-error">${esc(egliseSuppr.error)}</p>` : ''}
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn btn-grow" type="submit" ${egliseSuppr.busy ? 'disabled' : ''}>Supprimer définitivement</button>
+        <button class="btn btn-ghost" type="button" data-egldelcancel="1">Annuler</button>
+      </div>
+    </form>
+  </div>`;
 }
 
 /* Le formulaire du verset (responsable) — même état versetEdit que partout. */
@@ -2863,6 +2890,7 @@ async function doInvitationRejoindre() {
 
 /* ---- L'identité du nom et le pont verset → jardin ---- */
 let egliseIdEdit = false; // les pastilles de mise en forme du nom, dépliées ?
+let egliseSuppr = null;   // { code, texte, error, busy } — la confirmation de suppression
 const ROLE_NOMS = { responsable: 'responsable', coresponsable: 'co-responsable', membre: 'membre' };
 // Qui peut nourrir l'assemblée (miroir de groupe_peut_animer, côté serveur) :
 // le client ne fait que montrer ou cacher — chaque écriture est revérifiée.
@@ -3585,6 +3613,36 @@ async function doGroupeQuitter(code, nom) {
   }
   render();
 }
+
+/* Effacer l'église. Le nom recopié n'est qu'un garde-fou de geste : la seule
+   autorité est côté serveur (responsable, et lui seul). */
+async function doGroupeSupprimer() {
+  if (!egliseSuppr || egliseSuppr.busy) return;
+  const g = Array.isArray(groupesCache) ? groupesCache.find(x => x.code === egliseSuppr.code) : null;
+  if (!g) { egliseSuppr = null; render(); return; }
+  const pareil = a => (a || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('fr');
+  if (pareil(egliseSuppr.texte) !== pareil(g.nom)) {
+    egliseSuppr.error = 'Le nom ne correspond pas — recopie-le exactement pour confirmer.';
+    render(); return;
+  }
+  egliseSuppr.busy = true; egliseSuppr.error = null; render();
+  try {
+    await GraineAPI.groupeSupprimer(g.code);
+    egliseSuppr = null;
+    grpError = null;
+    grpNotice = `« ${g.nom} » a été supprimée.`;
+    egliseSel = null; retenirEglise();
+    egliseRecharger();
+    go('moi'); return;
+  } catch (e) {
+    egliseSuppr.busy = false;
+    egliseSuppr.error = e && e.offline
+      ? 'Pas de connexion — réessaie quand tu seras en ligne.'
+      : friendlyError(e);
+  }
+  render();
+}
+
 async function doGroupeVerset() {
   if (!versetEdit || versetEdit.busy) return;
   const reference = (versetEdit.reference || '').trim();
@@ -3697,6 +3755,11 @@ function wire() {
   if (q('[data-grpdemcancel]')) q('[data-grpdemcancel]').addEventListener('click', doDemandeAnnuler);
   el.querySelectorAll('[data-copygrp]').forEach(b => b.addEventListener('click', () => copyGroupCode(b.dataset.copygrp)));
   el.querySelectorAll('[data-grpleave]').forEach(b => b.addEventListener('click', () => doGroupeQuitter(b.dataset.grpleave, b.dataset.nom)));
+  el.querySelectorAll('[data-egldelopen]').forEach(b => b.addEventListener('click', () => {
+    egliseSuppr = { code: b.dataset.egldelopen, texte: '', error: null, busy: false }; render();
+  }));
+  if (q('[data-egldelcancel]')) q('[data-egldelcancel]').addEventListener('click', () => { egliseSuppr = null; render(); });
+  if (q('[data-egldelform]')) q('[data-egldelform]').addEventListener('submit', e => { e.preventDefault(); doGroupeSupprimer(); });
   el.querySelectorAll('[data-versetedit]').forEach(b => b.addEventListener('click', () => {
     const g = Array.isArray(groupesCache) ? groupesCache.find(x => x.code === b.dataset.versetedit) : null;
     versetEdit = { code: b.dataset.versetedit,
@@ -3834,6 +3897,7 @@ function wire() {
   bindInput('grpAdrInput', v => { grpAdrField = v; });
   bindInput('grpMailInput', v => { grpMailField = v; });
   bindInput('versetRefInput', v => { if (versetEdit) versetEdit.reference = v; });
+  bindInput('egldelInput', v => { if (egliseSuppr) egliseSuppr.texte = v; });
   bindInput('versetTexteInput', v => { if (versetEdit) versetEdit.texte = v; });
   // Formulaires de la page d'église (un seul ouvert à la fois).
   bindInput('pageTitre', v => { if (pageEdit) pageEdit.titre = v; });

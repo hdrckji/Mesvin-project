@@ -121,6 +121,8 @@
       return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/verset', { reference, texte })).groupe;
     },
     async groupeQuitter(code) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code) + '/membres/moi'); },
+    // Effacer le groupe et tout ce qui y pend — le responsable seul, sans retour.
+    async groupeSupprimer(code) { return call('DELETE', '/api/groupes/' + encodeURIComponent(code)); },
     // Confier la responsabilité à un membre, désigné par son pseudo (la seule
     // identité que le groupe expose). L'appelant devient simple membre.
     async groupePassation(code, pseudo) { return (await call('POST', '/api/groupes/' + encodeURIComponent(code) + '/passation', { pseudo })).groupe; },
