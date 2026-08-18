@@ -571,7 +571,62 @@ function handle_cron_notify(PDO $pdo): never {
     // Les services d'église de demain : UN rappel, la veille au soir, à ceux
     // qui ont levé la main ET activé les notifications de l'appli.
     $services = push_rappels_services($pdo, $cfg);
-    json_out(['ok' => true, 'envoyes' => $envoyes, 'supprimes' => $supprimes, 'defis' => $defis, 'services' => $services]);
+    // Les séries qu'une église vient de publier : UNE annonce par église et
+    // par passage, jamais une par série.
+    $series = push_series_publiees($pdo, $cfg);
+    json_out(['ok' => true, 'envoyes' => $envoyes, 'supprimes' => $supprimes,
+              'defis' => $defis, 'services' => $services, 'series' => $series]);
+}
+
+/* ---- Les nouvelles séries d'une église -------------------------------------
+   Le contenu qu'une église produit ne sert à rien si personne n'apprend
+   qu'il existe : sans cette annonce, la découverte tient au hasard d'une
+   ouverture d'appli. Mais elle est GROUPÉE — un responsable qui publie trois
+   séries le samedi soir ne réveille son assemblée qu'une fois. Le drapeau
+   notif_envoyee est posé AVANT l'envoi (même précédent que les défis et les
+   services : rater une annonce vaut mieux que la répéter), et l'on ne
+   dérange personne la nuit. */
+function push_series_publiees(PDO $pdo, array $cfg): int {
+    $envoyes = 0;
+    $st = $pdo->query(
+        "SELECT s.groupe_id, g.nom AS eglise, COUNT(*) AS n, MIN(s.nom) AS unNom
+         FROM groupe_series s JOIN groupes g ON g.id = s.groupe_id
+         WHERE s.etat = 'publiee' AND s.notif_envoyee = 0
+         GROUP BY s.groupe_id, g.nom"
+    );
+    foreach ($st->fetchAll() as $r) {
+        $groupeId = (int) $r['groupe_id'];
+        $n = (int) $r['n'];
+        $pdo->prepare("UPDATE groupe_series SET notif_envoyee = 1 WHERE groupe_id = ? AND etat = 'publiee'")
+            ->execute([$groupeId]);
+
+        $membres = $pdo->prepare('SELECT user_id FROM groupe_membres WHERE groupe_id = ?');
+        $membres->execute([$groupeId]);
+        foreach ($membres->fetchAll() as $m) {
+            $abos = $pdo->prepare('SELECT * FROM push_abonnements WHERE user_id = ?');
+            $abos->execute([(int) $m['user_id']]);
+            foreach ($abos->fetchAll() as $abo) {
+                // Heure locale de l'abonné : on n'annonce pas une série à 3 h.
+                $h = (int) gmdate('G', time() - ((int) $abo['tz_offset']) * 60);
+                if ($h < 9 || $h > 21) {
+                    continue;
+                }
+                $payload = (string) json_encode([
+                    'title' => '📖 ' . $r['eglise'],
+                    'body'  => $n > 1
+                        ? $n . ' nouvelles séries de questions à essayer'
+                        : 'Nouvelle série : « ' . $r['unNom'] . ' »',
+                    'url'   => '/',
+                    'tag'   => 'series-eglise',
+                ], JSON_UNESCAPED_UNICODE);
+                $res = push_send($abo, $payload, $cfg);
+                if ($res['ok']) {
+                    $envoyes++;
+                }
+            }
+        }
+    }
+    return $envoyes;
 }
 
 /* ---- Le rappel de MON service, la veille ------------------------------------

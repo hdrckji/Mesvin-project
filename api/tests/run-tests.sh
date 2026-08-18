@@ -73,6 +73,7 @@ if ($v !== DB_MIGRATION_DERNIERE) { echo "journal-incomplet"; exit; }
 $pdo->exec("DROP TABLE schema_migrations");
 $pdo->exec("DROP TABLE groupe_banques");
 $pdo->exec("DROP TABLE groupe_banque_items");
+$pdo->exec("DROP TABLE groupe_series");
 $pdo->exec("ALTER TABLE groupes DROP COLUMN nom_style");
 $pdo->exec("ALTER TABLE groupes DROP COLUMN nom_taille");
 $pdo->exec("ALTER TABLE groupe_service_inscriptions DROP COLUMN rappel_envoye");
@@ -851,6 +852,34 @@ check "portrait sans ses 5 indices → 400" 400 \
 check "la série de quiadit est introuvable côté portrait → 404" 404 \
   "$(api GET "/api/groupes/$QGCODE/series/portrait/$SID/items" "$TOKEN1")"
 
+# Ce que l'administration peut voir et retirer d'une église. Ce n'est pas de
+# la modération a priori — personne ne relit avant publication — mais le
+# minimum pour agir sur signalement, comme les mentions légales l'annoncent.
+say "Administration — voir et retirer le contenu d'une église"
+check "liste des églises sans token → 401" 401 "$(api GET /api/admin/groupes)"
+check "liste par u3 (non-admin) → 403"     403 "$(api GET /api/admin/groupes "$TOKEN3")"
+check "liste par l admin → 200"            200 "$(api GET /api/admin/groupes "$TOKEN1")"
+check "l église du quiz y figure"          true "$(jval "[.groupes[] | select(.code == \"$QGCODE\")] | length > 0")"
+check "contenu par u3 → 403"               403 "$(api GET "/api/admin/groupes/$QGCODE" "$TOKEN3")"
+check "contenu par l admin → 200"          200 "$(api GET "/api/admin/groupes/$QGCODE" "$TOKEN1")"
+check "les séries sont listées"            true "$(jval '(.series | length) > 0')"
+check "les items portent leur texte"       true "$(jval '(.items | length) > 0 and ((.items[0].texte | length) > 0)')"
+ADMIID="$(jval '.items[0].id')"
+check "type de contenu inconnu → 404"      404 "$(api DELETE "/api/admin/groupes/$QGCODE/contenu/chanson/$ADMIID" "$TOKEN1")"
+check "item inconnu → 404"                 404 "$(api DELETE "/api/admin/groupes/$QGCODE/contenu/item/egl-000000" "$TOKEN1")"
+check "retrait par u3 → 403"               403 "$(api DELETE "/api/admin/groupes/$QGCODE/contenu/item/$ADMIID" "$TOKEN3")"
+check "retrait par l admin → 200"          200 "$(api DELETE "/api/admin/groupes/$QGCODE/contenu/item/$ADMIID" "$TOKEN1")"
+check "le retrait est tracé au journal"    true \
+  "$(api GET /api/admin/log "$TOKEN1" > /dev/null; jval '[.log[] | select(.action == "retrait-item")] | length > 0')"
+# Retirer une série emporte ses questions : rien ne reste orphelin en base.
+api GET "/api/admin/groupes/$QGCODE" "$TOKEN1" > /dev/null
+ADMSID="$(jval '.series[0].id')"
+ADMAVANT="$(jval '.items | length')"
+check "retrait d une série → 200"          200 "$(api DELETE "/api/admin/groupes/$QGCODE/contenu/serie/$ADMSID" "$TOKEN1")"
+check "ses questions sont parties avec"    true \
+  "$(api GET "/api/admin/groupes/$QGCODE" "$TOKEN1" > /dev/null; jval "(.items | length) < $ADMAVANT")"
+check "église inconnue → 404"              404 "$(api GET "/api/admin/groupes/GRP-ZZZZZ" "$TOKEN1")"
+
 say "Quiz d'église — suppression du groupe : tout est purgé"
 QSQL() { php -r '$p = new PDO("sqlite:" . $argv[1]); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
 check "u1 supprime le groupe → 200"     200 "$(api DELETE "/api/groupes/$QGCODE" "$TOKEN1")"
@@ -1302,6 +1331,25 @@ check "l'échec est compté (echecs = 1)"  1 "$(sqlval 'SELECT echecs FROM push_
 check "last_sent_day posé AVANT l'envoi (idempotence)" 1 "$(sqlval 'SELECT COUNT(*) FROM push_abonnements WHERE last_sent_day IS NOT NULL')"
 api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
 check "2e cron du même jour : rien ne repart (echecs reste 1)" 1 "$(sqlval 'SELECT echecs FROM push_abonnements')"
+
+# L'annonce d'une nouvelle série. Groupée : un responsable qui publie trois
+# séries d'affilée ne réveille son assemblée qu'une fois. Le drapeau est posé
+# AVANT l'envoi — rater une annonce vaut mieux que la répéter.
+say "Notifications — les séries publiées s'annoncent une fois, groupées"
+# Le groupe qui portait des séries a été supprimé plus haut : on en pose deux
+# à la main sur une église encore vivante, pour éprouver le groupement.
+sqlexec "INSERT INTO groupe_series (groupe_id, module, nom, etat, created_at, updated_at, notif_envoyee)
+         SELECT id, 'quiadit', 'Série d essai A', 'publiee', '2026-01-01 00:00:00', '2026-01-01 00:00:00', 0 FROM groupes LIMIT 1"
+sqlexec "INSERT INTO groupe_series (groupe_id, module, nom, etat, created_at, updated_at, notif_envoyee)
+         SELECT id, 'quiadit', 'Série d essai B', 'publiee', '2026-01-01 00:00:00', '2026-01-01 00:00:00', 0 FROM groupes LIMIT 1"
+check "deux séries attendent leur annonce" 2 \
+  "$(sqlval "SELECT COUNT(*) FROM groupe_series WHERE etat = 'publiee' AND notif_envoyee = 0")"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "le cron rend un compte de séries"  true "$(jval 'has("series")')"
+check "les deux sont marquées d un coup"  0 \
+  "$(sqlval "SELECT COUNT(*) FROM groupe_series WHERE etat = 'publiee' AND notif_envoyee = 0")"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "2e passage : rien ne repart"       0 "$(jval .series)"
 
 say "Notifications — l'abonnement mort est retiré au 5e échec"
 sqlexec "UPDATE push_abonnements SET echecs = 4, last_sent_day = NULL"

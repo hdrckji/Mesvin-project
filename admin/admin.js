@@ -91,6 +91,10 @@ let bForm = null;           // formulaire d'épreuve ouvert : { module, neuf, id
 let uListe = null;          // comptes — null pendant le chargement
 let uErreur = null;
 let egData = null;          // onglet Églises : { demandes, groupes } — null pendant le chargement
+let egContenuCode = null;   // église dont on inspecte le contenu publié
+let egContenu = null;       // son contenu, ou null pendant le chargement
+let egRetraitErreur = null; // l'échec d'un retrait, gardé sous les yeux
+const ETATS_SERIE = { brouillon: 'brouillon', publiee: 'publiée', archivee: 'archivée' };
 let egErreur = null;
 let egBusy = false;         // une décision (accepter/refuser) à la fois
 
@@ -1268,6 +1272,7 @@ function htmlEglises() {
       <td>${esc(g.responsable)}</td>
       <td style="text-align:right">${g.nbMembres}</td>
       <td>${esc(dateCourte(g.createdAt))}</td>
+      <td><button class="linkbtn" data-egcontenu="${esc(g.code)}">Contenu</button></td>
     </tr>`).join('');
   return `
     <div class="section-title">Demandes en attente${demandes.length ? ` (${demandes.length})` : ''}</div>
@@ -1278,17 +1283,72 @@ function htmlEglises() {
     <div class="card" style="padding:8px 10px">
       <div class="adm-table-wrap">
         <table class="adm-table">
-          <thead><tr><th>Code</th><th>Nom</th><th>Responsable</th><th style="text-align:right">Membres</th><th>Créé le</th></tr></thead>
-          <tbody>${lignes || `<tr><td colspan="5" class="muted">Aucun groupe pour l'instant.</td></tr>`}</tbody>
+          <thead><tr><th>Code</th><th>Nom</th><th>Responsable</th><th style="text-align:right">Membres</th><th>Créé le</th><th></th></tr></thead>
+          <tbody>${lignes || `<tr><td colspan="6" class="muted">Aucun groupe pour l'instant.</td></tr>`}</tbody>
         </table>
       </div>
+    </div>
+    ${vueEgliseContenu()}`;
+}
+
+/* Ce qu'une église a publié — pour agir sur signalement, jamais pour relire
+   avant publication. Chaque retrait est définitif et journalisé côté serveur. */
+function vueEgliseContenu() {
+  if (!egContenuCode) return '';
+  if (egContenu === null) {
+    return `<div class="card" style="margin-top:18px"><p class="muted" style="margin:0">Chargement du contenu…</p></div>`;
+  }
+  const bloc = (titre, type, liste, libelle, meta) => `
+    <div class="section-title" style="margin-top:16px">${titre} (${liste.length})</div>
+    <div class="card" style="padding:8px 10px">
+      ${liste.length ? liste.map(x => `<div class="egl-annonce">
+          <div class="ea-titre"><b>${esc(libelle(x))}</b></div>
+          <div class="ea-meta muted">${esc(meta(x))} ·
+            <button class="linkbtn danger" data-egretirer="${type}|${esc(String(x.id))}">Retirer</button></div>
+        </div>`).join('') : `<p class="muted" style="margin:6px 2px">Rien.</p>`}
     </div>`;
+  return `
+    <div class="section-title" style="margin-top:24px">Contenu de ${esc(egContenu.groupe.nom)}
+      <button class="linkbtn" data-egfermer="1" style="margin-left:8px">Fermer</button></div>
+    ${egRetraitErreur ? `<p class="field-error" style="margin:0 4px 10px">${esc(egRetraitErreur)}</p>` : ''}
+    ${bloc('Annonces', 'annonce', egContenu.annonces, x => x.titre, x => x.texte.slice(0, 90))}
+    ${bloc('Séries', 'serie', egContenu.series, x => x.nom, x => x.module + ' · ' + ETATS_SERIE[x.etat] + ' — retirer emporte ses questions')}
+    ${bloc('Questions de séries', 'item', egContenu.items, x => x.texte || '(sans texte)', x => x.module + ' · ' + (x.reference || 'sans référence'))}
+    ${bloc('Questions du Défi', 'question', egContenu.questions, x => x.question, x => x.categorie + ' · ' + x.reference)}
+    ${bloc('Propositions', 'proposition', egContenu.propositions, x => x.titre, x => x.genre)}`;
 }
 
 function brancherEglises() {
+  document.querySelectorAll('[data-egcontenu]').forEach(b => {
+    b.onclick = () => ouvrirContenuEglise(b.dataset.egcontenu);
+  });
+  const fermer = document.querySelector('[data-egfermer]');
+  if (fermer) fermer.onclick = () => { egContenuCode = null; egContenu = null; egRetraitErreur = null; render(); };
+  document.querySelectorAll('[data-egretirer]').forEach(b => {
+    b.onclick = () => { const [t, id] = b.dataset.egretirer.split('|'); retirerContenu(t, id); };
+  });
   document.querySelectorAll('[data-eg]').forEach(b => {
     b.onclick = () => trancherDemande(b.dataset.eg, Number(b.dataset.id), b.dataset.nom, b.dataset.pseudo);
   });
+}
+
+async function ouvrirContenuEglise(code) {
+  egContenuCode = code; egContenu = null; egRetraitErreur = null;
+  render();
+  try { egContenu = await GraineAPI.adminGroupeContenu(code); }
+  catch (e) { egContenu = null; egContenuCode = null; egErreur = messageDoux(e); }
+  render();
+}
+
+async function retirerContenu(type, id) {
+  if (!egContenuCode) return;
+  if (!confirm('Retirer définitivement ce contenu ? Le geste est journalisé.')) return;
+  egRetraitErreur = null;
+  try {
+    await GraineAPI.adminGroupeRetirer(egContenuCode, type, id);
+    egContenu = await GraineAPI.adminGroupeContenu(egContenuCode);
+  } catch (e) { egRetraitErreur = messageDoux(e); }
+  render();
 }
 
 /* ---------- Démarrage ---------- */

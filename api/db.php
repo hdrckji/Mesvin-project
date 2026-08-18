@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 6;
+const DB_MIGRATION_DERNIERE = 7;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1128,11 +1128,20 @@ function db_migrate(PDO $pdo): void {
                        AND s.module = groupe_banque_items.module)
                  WHERE serie_id IS NULL';
 
+    /* ---- Étape 7 — la série publiée s'annonce une fois ---------------------------
+       Le drapeau dit si les membres ont déjà été prévenus. Il permet de
+       GROUPER : un responsable qui publie trois séries le samedi soir ne
+       déclenche qu'une notification, et non trois — au-delà, on coupe ses
+       notifications pour de bon. */
+    $etape7 = db_driver($pdo) === 'mysql'
+        ? ['ALTER TABLE groupe_series ADD COLUMN notif_envoyee TINYINT NOT NULL DEFAULT 0']
+        : ['ALTER TABLE groupe_series ADD COLUMN notif_envoyee INTEGER NOT NULL DEFAULT 0'];
+
     /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
     foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4, 5 => $etape5,
-              6 => $etape6] as $version => $liste) {
+              6 => $etape6, 7 => $etape7] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }

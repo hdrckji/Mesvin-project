@@ -35,6 +35,7 @@ require __DIR__ . '/frise.php';
 require __DIR__ . '/epreuve.php';
 require __DIR__ . '/portrait.php';
 require __DIR__ . '/admin.php';
+require __DIR__ . '/admin-eglises.php';
 require __DIR__ . '/banques.php';
 require __DIR__ . '/visites.php';
 require __DIR__ . '/push.php';
@@ -281,6 +282,14 @@ if ($path === '/api/admin/journal' && $method === 'GET') handle_admin_journal($p
 if ($path === '/api/admin/visites' && $method === 'GET') handle_admin_visites($pdo);
 if ($path === '/api/admin/brevo'   && $method === 'GET') handle_admin_brevo($pdo);
 if ($path === '/api/admin/eglises' && $method === 'GET') handle_admin_eglises($pdo);
+// Voir et retirer ce qu'une église a publié — sur signalement, jamais a priori.
+if ($path === '/api/admin/groupes' && $method === 'GET') handle_admin_groupes($pdo);
+if (preg_match('#^/api/admin/groupes/([^/]+)$#', $path, $m) && $method === 'GET') {
+    handle_admin_groupe_contenu($pdo, $m[1]);
+}
+if (preg_match('#^/api/admin/groupes/([^/]+)/contenu/([a-z]{1,20})/([A-Za-z0-9-]{1,60})$#', $path, $m) && $method === 'DELETE') {
+    handle_admin_groupe_retirer($pdo, $m[1], $m[2], $m[3]);
+}
 if (preg_match('#^/api/admin/eglises/demandes/([0-9]+)/(accepter|refuser)$#', $path, $m) && $method === 'POST') {
     if ($m[2] === 'accepter') handle_admin_eglise_accepter($pdo, (int) $m[1]);
     handle_admin_eglise_refuser($pdo, (int) $m[1]);

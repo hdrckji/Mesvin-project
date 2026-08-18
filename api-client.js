@@ -226,6 +226,10 @@
     // existants ; accepter fait naître le groupe (le demandeur devient
     // responsable), refuser laisse le porteur redemander plus tard.
     async adminEglises() { return call('GET', '/api/admin/eglises'); },
+    // Voir et retirer ce qu'une église a publié — sur signalement, jamais a priori.
+    async adminGroupes() { return (await call('GET', '/api/admin/groupes')).groupes; },
+    async adminGroupeContenu(code) { return call('GET', '/api/admin/groupes/' + encodeURIComponent(code)); },
+    async adminGroupeRetirer(code, type, id) { return call('DELETE', '/api/admin/groupes/' + encodeURIComponent(code) + '/contenu/' + encodeURIComponent(type) + '/' + encodeURIComponent(id)); },
     async adminEgliseAccepter(id) { return call('POST', '/api/admin/eglises/demandes/' + id + '/accepter'); },
     async adminEgliseRefuser(id) { return call('POST', '/api/admin/eglises/demandes/' + id + '/refuser'); },
 

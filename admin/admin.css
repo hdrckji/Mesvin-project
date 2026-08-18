@@ -127,3 +127,15 @@
 .adm-epreuve svg { flex: none; }
 .adm-epreuve.on { border-color: var(--grow); background: var(--grow-soft); color: var(--grow); }
 .adm-epreuve-note { font-size: .85rem; margin: 0 2px 16px; }
+
+/* Le contenu publié par une église, listé pour pouvoir en retirer une pièce
+   sur signalement. Même forme que les listes de l'application, en plus sobre :
+   cet écran ne se visite qu'en cas de besoin. */
+.egl-annonce { padding: 9px 2px; border-bottom: 1px solid var(--line); }
+.egl-annonce:last-child { border-bottom: 0; }
+.egl-annonce .ea-titre { line-height: 1.4; }
+.egl-annonce .ea-meta { font-size: .85rem; margin-top: 2px; line-height: 1.5; }
+.linkbtn { background: none; border: 0; font: inherit; font-size: .85rem;
+  color: var(--accent-ink); cursor: pointer; padding: 2px 0; text-decoration: underline;
+  text-underline-offset: 3px; }
+.linkbtn.danger { color: var(--danger); }

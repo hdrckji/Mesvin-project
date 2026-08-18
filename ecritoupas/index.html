@@ -294,12 +294,21 @@ function choixBanqueHTML() {
   const pastille = (id, nom, jouee) =>
     `<button class="pill ${serieChoisie === id ? 'on' : ''}" data-serie="${id === null ? '' : id}">`
     + `${esc(nom)}${jouee ? ' ✓' : ''}</button>`;
+  // Un contenu d'église se signale là où on le voit. Un simple courrier
+  // pré-rempli suffit : pas de machinerie, mais un chemin qui existe.
+  const choisie = SERIES.find(x => x.id === serieChoisie);
+  const signaler = choisie
+    ? `<p style="margin:8px 0 0"><a class="muted" style="font-size:.78rem"
+         href="mailto:contact@biblehorizon.fr?subject=${encodeURIComponent('Signalement — série ' + choisie.id + ' (' + TITRE + ')')}&body=${encodeURIComponent('Série : ' + choisie.nom + '\nÉglise : ' + EGLISE + '\n\nCe qui pose problème :\n')}"
+         >Signaler un contenu de cette série</a></p>`
+    : '';
   return `<div style="margin:-4px 0 16px">
     <div class="muted" style="font-size:.82rem;margin-bottom:6px">Avec quelles questions ?</div>
     <div class="pill-row">
       ${pastille(null, 'Banque complète', false)}
       ${SERIES.map(x => pastille(x.id, x.nom, serieDejaJouee(x.id))).join('')}
     </div>
+    ${signaler}
   </div>`;
 }
 
