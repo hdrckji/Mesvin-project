@@ -34,6 +34,9 @@ COPY memoriser-versets/ ./memoriser-versets/
 COPY eglises/ ./eglises/
 # Dossier de presse (PDF) : adresse stable, citée dans les envois aux médias.
 COPY presse/ ./presse/
+# Mode d'emploi des banques de questions (PDF) : téléchargé depuis l'écran des
+# séries, dans Mon église. Source et outils dans outils/guide-banque-questions/.
+COPY guide/ ./guide/
 # Pages légales — obligatoires et référencées depuis le pied de l'application.
 COPY confidentialite/ ./confidentialite/
 COPY mentions-legales/ ./mentions-legales/

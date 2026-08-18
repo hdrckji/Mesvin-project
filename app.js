@@ -3149,7 +3149,13 @@ function viewEgliseBanques() {
     corps = reglages + propres + animer;
   }
 
-  return topbar() + tete + alerte + corps;
+  // Le mode d'emploi, là où l'on bloque : sur l'écran des séries, et pas
+  // pendant qu'un formulaire est ouvert (on n'interrompt pas une rédaction).
+  const aide = bqEdit ? '' : `<p class="muted center" style="font-size:.82rem;margin:14px 2px 0">
+    <a href="guide/mode-emploi-banque-de-questions.pdf" target="_blank" rel="noopener"
+       style="color:var(--accent-ink)">Le mode d'emploi en PDF</a> — écrire ses questions, pas à pas.</p>`;
+
+  return topbar() + tete + alerte + corps + aide;
 }
 
 /* ---- Les séries d'une épreuve : la liste, puis une série ouverte ----

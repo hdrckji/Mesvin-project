@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<title>Bible Horizon — Créer la banque de questions de son église</title>
+<style>
+  @page { size: A4; margin: 17mm 16mm 16mm; }
+  @page :first { margin: 0; }
+  :root{
+    --bg:#f7f3ea; --surface:#fffdf8; --surface-2:#f0e9da; --ink:#24303f; --ink-soft:#5b6675;
+    --line:#e2d9c6; --accent:#b98a2e; --accent-ink:#7a5a15; --grow:#3f6c49; --grow-soft:#e4efe4;
+    --danger:#a34a24;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{font-family:var(--sans);color:var(--ink);font-size:10.2pt;line-height:1.55;margin:0;
+       -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  h1,h2,h3{font-family:var(--serif);color:var(--ink);margin:0}
+  p{margin:0 0 .55em}
+  .page{page-break-after:always}
+  .page:last-child{page-break-after:auto}
+
+  /* ---- couverture ---- */
+  .cover{width:210mm;height:296.8mm;background:var(--bg);padding:30mm 26mm 26mm;
+         display:flex;flex-direction:column}
+  .cover .mark{font-family:var(--serif);font-size:15pt;letter-spacing:.01em}
+  .cover .mark b{color:var(--ink)} .cover .mark span{color:var(--accent-ink)}
+  .cover .bloc{margin-top:auto;margin-bottom:auto}
+  .cover h1{font-size:33pt;line-height:1.1;margin:0 0 9mm}
+  .cover .sub{font-size:12.5pt;color:var(--ink-soft);max-width:120mm;line-height:1.55;margin:0}
+  .cover .rule{width:34mm;height:2.5pt;background:var(--accent);margin:0 0 9mm}
+  .cover .foot{font-size:9.5pt;color:var(--ink-soft);border-top:1px solid var(--line);padding-top:4mm}
+  .cover .foot b{color:var(--ink)}
+
+  /* ---- titres ---- */
+  h2{font-size:17pt;margin:0 0 1mm}
+  h2 .num{color:var(--accent);font-size:12pt;display:block;letter-spacing:.12em;
+          font-family:var(--sans);font-weight:700;text-transform:uppercase;margin-bottom:1.5mm}
+  .lede{color:var(--ink-soft);font-size:10.6pt;margin:0 0 5mm;border-bottom:1px solid var(--line);padding-bottom:3.5mm}
+  h3{font-size:12.4pt;margin:5mm 0 1.5mm}
+  h3.first{margin-top:0}
+
+  /* ---- blocs ---- */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:4mm;padding:4mm 5mm;margin:0 0 4mm}
+  .note{background:var(--grow-soft);border-left:3pt solid var(--grow);border-radius:0 2mm 2mm 0;
+        padding:3mm 4.5mm;margin:0 0 4mm;font-size:9.7pt}
+  .warn{background:#f6efe0;border-left:3pt solid var(--accent);border-radius:0 2mm 2mm 0;
+        padding:3mm 4.5mm;margin:0 0 4mm;font-size:9.7pt}
+  .note b,.warn b{font-weight:600}
+
+  /* ---- étapes ---- */
+  .etape{display:flex;gap:5mm;margin:0 0 6mm;break-inside:avoid}
+  .etape .n{flex:0 0 9mm;height:9mm;border-radius:50%;background:var(--grow);color:#fff;
+            font-weight:700;font-size:11pt;display:flex;align-items:center;justify-content:center;
+            font-family:var(--sans)}
+  .etape .txt{flex:1}
+  .etape .txt h3{margin:0 0 1mm;font-size:12.4pt}
+  .shot{border:1px solid var(--line);border-radius:3mm;overflow:hidden;background:var(--bg);
+        margin:2.5mm 0 0;display:block}
+  .shot img{display:block;width:auto;max-width:100%;margin:0 auto}
+  .shot.mini{max-width:70mm}
+  .shot.demi{max-width:82mm}
+  .h14 img{max-height:14mm} .h24 img{max-height:24mm} .h44 img{max-height:44mm} .h26 img{max-height:26mm} .h34 img{max-height:34mm}
+  .h58 img{max-height:58mm} .h72 img{max-height:72mm} .h92 img{max-height:92mm}
+  .h108 img{max-height:108mm} .h100 img{max-height:100mm} .h112 img{max-height:112mm} .h118 img{max-height:118mm} .h122 img{max-height:122mm}
+  .h40 img{max-height:40mm} .h55 img{max-height:55mm} .h62 img{max-height:62mm}
+  .h70 img{max-height:70mm} .h80 img{max-height:80mm} .h95 img{max-height:95mm}
+  .h110 img{max-height:110mm} .h115 img{max-height:115mm}
+  .h122 img{max-height:122mm} .h128 img{max-height:128mm}
+  .h50 img{max-height:50mm} .h52 img{max-height:52mm} .h74 img{max-height:74mm} .h84 img{max-height:84mm}
+  .cap{font-size:8.4pt;color:var(--ink-soft);margin:1.5mm 0 3.5mm;font-style:italic}
+  .duo{display:flex;gap:4mm;align-items:flex-start}
+  .duo>div{flex:1}
+
+  /* ---- tableaux ---- */
+  table{width:100%;border-collapse:collapse;font-size:9.5pt;margin:0 0 4mm}
+  th{text-align:left;font-size:8.2pt;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);
+     font-weight:700;padding:0 3mm 1.8mm 0;border-bottom:1px solid var(--line)}
+  td{padding:1.9mm 3mm 1.9mm 0;border-bottom:1px solid var(--line);vertical-align:top}
+  td b{font-weight:600}
+  td:last-child,th:last-child{padding-right:0}
+  .num-col{white-space:nowrap;color:var(--accent-ink);font-weight:600}
+
+  table.serre{font-size:9pt} table.serre td{padding:1.6mm 3mm 1.6mm 0}
+  ul{margin:0 0 .6em;padding-left:5mm} li{margin:0 0 1.2mm}
+  .kbd{background:var(--surface-2);border:1px solid var(--line);border-radius:1.5mm;
+       padding:.3mm 1.5mm;font-size:9.2pt;white-space:nowrap}
+  .fin{margin-top:3mm;border-top:1px solid var(--line);padding-top:2.5mm;
+       font-size:8.6pt;color:var(--ink-soft)}
+</style></head><body>
+
+<!-- ============ COUVERTURE ============ -->
+<section class="page">
+  <div class="cover">
+    <div class="mark"><b>Bible</b> <span>Horizon</span></div>
+    <div class="bloc">
+      <div class="rule"></div>
+      <h1>Créer la banque<br>de questions<br>de son église</h1>
+      <p class="sub">Un mode d'emploi pour les responsables et co-responsables : écrire ses propres
+      questions, les rassembler en séries, et les offrir à toute l'assemblée.</p>
+    </div>
+    <div class="foot">
+      <b>Bible Horizon</b> — biblehorizon.fr<br>
+      Gratuit, sans publicité, sans revente de données.
+    </div>
+  </div>
+</section>
+
+<!-- ============ 1. EN DEUX MINUTES ============ -->
+<section class="page">
+  <h2><span class="num">Pour commencer</span>En deux minutes</h2>
+  <p class="lede">Ce qu'est une série, et pourquoi elle ne casse rien.</p>
+
+  <p>Bible Horizon arrive avec une <b>banque commune</b> de questions, la même pour tout le monde.
+  Ton église peut y ajouter les siennes — celles qui collent à une prédication, à une étude,
+  à un camp. On appelle ça une <b>série</b>.</p>
+
+  <div class="note">
+    <p style="margin:0"><b>Le principe à retenir :</b> une série <b>s'ajoute</b> à la banque commune,
+    elle ne la remplace jamais. Au lancement d'une épreuve, chacun choisit avec quoi il joue —
+    « Banque complète », ou l'une de tes séries. Rien de ce que tu écris ne retire quoi que ce soit
+    aux autres.</p>
+  </div>
+
+  <h3>Les quatre épreuves</h3>
+  <table>
+    <tr><th style="width:38mm">Épreuve</th><th>Ce que tu écris</th></tr>
+    <tr><td><b>De qui parle-t-on ?</b></td><td>Un portrait : la réponse, son genre (personnage,
+      lieu ou chose), et <b>cinq indices</b> du plus difficile au plus facile.</td></tr>
+    <tr><td><b>Qui a dit ?</b></td><td>Une parole, <b>quatre voix</b> possibles, la bonne,
+      et sa référence.</td></tr>
+    <tr><td><b>Écrit… ou pas ?</b></td><td>Une phrase, et un verdict : elle est dans la Bible,
+      ou elle n'y est pas.</td></tr>
+    <tr><td><b>Qui, où, quand ?</b></td><td>Une question à quatre réponses, avec sa catégorie
+      et son niveau. <i>Cette épreuve-là se règle un peu différemment — voir la dernière page.</i></td></tr>
+  </table>
+
+  <h3>Qui a le droit d'écrire</h3>
+  <p>Le <b>responsable</b> de l'église et les <b>co-responsables</b> qu'il a nommés. Personne d'autre :
+  un simple membre ne voit ni les brouillons, ni les boutons. Le serveur revérifie à chaque
+  enregistrement — même si quelqu'un bricolait l'écran, il n'écrirait rien.</p>
+
+  <h3>Combien de temps ça prend</h3>
+  <p>Une série de trois portraits se rédige en une quinzaine de minutes. Rien n'oblige à tout faire
+  d'un coup : une série reste en <b>brouillon</b>, invisible de l'assemblée, aussi longtemps que tu veux.</p>
+
+  <div class="warn">
+    <p style="margin:0"><b>Une chose à savoir dès maintenant.</b> Ce que ton église publie, elle en répond.
+    Les questions d'une série publiée sont visibles de toute personne à qui un membre partage un code
+    de partie — pas seulement de l'assemblée. Elles portent sur le texte biblique ; Bible Horizon peut
+    retirer celles qui s'en écartent.</p>
+  </div>
+</section>
+
+<!-- ============ 2. LE PAS À PAS (1-3) ============ -->
+<section class="page">
+  <h2><span class="num">Le pas à pas</span>Créer sa première série</h2>
+  <p class="lede">Sept gestes, du premier écran à la série jouable.</p>
+
+  <div class="etape">
+    <div class="n">1</div>
+    <div class="txt">
+      <h3>Ouvrir la porte</h3>
+      <p>Onglet <span class="kbd">Mon église</span>, puis la carte
+      <b>« Les séries de questions de mon église »</b>. Elle n'apparaît que si tu es responsable
+      ou co-responsable.</p>
+      <div class="shot demi h34"><img src="captures/s1-porte.png"></div>
+    </div>
+  </div>
+
+  <div class="etape">
+    <div class="n">2</div>
+    <div class="txt">
+      <h3>Choisir l'épreuve</h3>
+      <p>Les quatre pastilles en haut. Chaque épreuve a ses propres séries : celles de
+      « De qui parle-t-on ? » ne se mélangent jamais à celles de « Qui a dit ? ».</p>
+      <div class="shot demi h112"><img src="captures/s2-epreuves.png"></div>
+      <p class="cap">Ici « De qui parle-t-on ? », encore sans aucune série.</p>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="etape">
+    <div class="n">3</div>
+    <div class="txt">
+      <h3>Nommer la série, et la créer</h3>
+      <p>Le nom est ce que tes membres verront au lancement de la partie. Sois concret :
+      <b>« Prédication du 10 août — Jonas »</b> parle mieux que « Série n° 2 ». Jusqu'à 80 caractères.</p>
+      <p>Au clic sur <b>Créer la série</b>, elle s'ouvre aussitôt — et reste en brouillon.</p>
+      <div class="shot h14"><img src="captures/s4-creee.png"></div>
+      <div class="shot demi h44" style="margin-top:3mm"><img src="captures/s5-brouillon.png"></div>
+    </div>
+  </div>
+
+  <div class="etape">
+    <div class="n">4</div>
+    <div class="txt">
+      <h3>Écrire la première question</h3>
+      <p>Bouton <b>Nouvelle question</b> en bas de la série. Le formulaire change selon l'épreuve —
+      celui-ci est celui d'un portrait.</p>
+      <div class="duo">
+        <div><div class="shot h122"><img src="captures/s6-form-vide.png"></div>
+          <p class="cap">Le formulaire vide.</p></div>
+        <div><div class="shot h122"><img src="captures/s7-form-rempli.png"></div>
+          <p class="cap">Le même, rempli.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="etape">
+    <div class="n">5</div>
+    <div class="txt">
+      <h3>En écrire au moins trois</h3>
+      <p>Une série se publie à partir de <b>3 questions</b>, et en accepte <b>50</b> au plus.
+      Tant que tu n'en as pas trois, le bouton <b>Publier</b> reste éteint.</p>
+      <p>Chaque ligne se relit d'un coup d'œil : la réponse en gras, puis le genre et la référence.
+      <b>Modifier</b> et <b>Supprimer</b> sont là à côté.</p>
+      <div class="shot demi h72"><img src="captures/s8-questions.png"></div>
+    </div>
+  </div>
+
+  <div class="etape">
+    <div class="n">6</div>
+    <div class="txt">
+      <h3>Publier</h3>
+      <p>Reviens à <span class="kbd">‹ Toutes les séries</span> et clique <b>Publier</b>.
+      C'est le moment où l'assemblée la voit.</p>
+      <div class="shot h14"><img src="captures/s10-publiee.png"></div>
+      <div class="duo" style="margin-top:3mm">
+        <div><div class="shot h24"><img src="captures/s9-avant-publication.png"></div>
+          <p class="cap">Avant : brouillon, et le bouton <b>Publier</b>.</p></div>
+        <div><div class="shot h24"><img src="captures/s11-apres-publication.png"></div>
+          <p class="cap">Après : publiée, et le bouton devient <b>Archiver</b>.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="etape">
+    <div class="n">7</div>
+    <div class="txt">
+      <h3>Vérifier du côté des membres</h3>
+      <p>Ouvre l'épreuve toi-même : ta série apparaît en pastille, à côté de
+      <b>Banque complète</b>. C'est exactement ce que voient tes membres.</p>
+      <div class="shot demi h58"><img src="captures/s16-cote-membre.png"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. ÉCRIRE UNE BONNE QUESTION ============ -->
+<section class="page">
+  <h2><span class="num">Le soin du détail</span>Écrire une bonne question</h2>
+  <p class="lede">Ce que chaque épreuve attend, et les longueurs à respecter.</p>
+
+  <h3 class="first">De qui parle-t-on ?</h3>
+  <table>
+    <tr><th style="width:44mm">Champ</th><th>Ce qu'il faut savoir</th><th class="num-col">Limite</th></tr>
+    <tr><td><b>La réponse</b></td><td>Ce qu'il faut deviner : « Jonas », « Ninive », « l'arche ».</td><td class="num-col">60 car.</td></tr>
+    <tr><td><b>Orthographes acceptées</b></td><td>Séparées par des virgules. Écris-y les variantes
+      que tu accepterais à l'oral : <i>Moïse, Moise</i>. Au moins une.</td><td class="num-col">60 car. ch.</td></tr>
+    <tr><td><b>Genre</b></td><td>Personnage, lieu ou chose. Il change la phrase de révélation
+      (« Ce <i>lieu</i> est bien… »). Ne l'oublie pas : il reste sur « personnage » par défaut.</td><td class="num-col">—</td></tr>
+    <tr><td><b>Cinq indices</b></td><td>Exactement cinq, tous remplis. <b>Du plus difficile au plus
+      facile</b> — l'indice 1 doit laisser hésiter, le 5 doit presque donner la réponse.</td><td class="num-col">240 car. ch.</td></tr>
+    <tr><td><b>Référence</b></td><td>Obligatoire. « Jonas 1–4 » convient.</td><td class="num-col">60 car.</td></tr>
+  </table>
+  <div class="note"><p style="margin:0">Le jeu récompense l'audace : répondre au premier indice
+  vaut 5 points, au dernier 1 seul. Une série où le premier indice est déjà trop clair n'a plus
+  d'enjeu — c'est le principal défaut des portraits écrits trop vite.</p></div>
+
+  <h3>Qui a dit ?</h3>
+  <div class="duo">
+    <div>
+      <table>
+        <tr><th style="width:30mm">Champ</th><th class="num-col">Limite</th></tr>
+        <tr><td><b>La parole</b></td><td class="num-col">300 car.</td></tr>
+        <tr><td><b>Quatre voix</b></td><td class="num-col">90 car. ch.</td></tr>
+        <tr><td><b>La bonne voix</b></td><td class="num-col">1 sur 4</td></tr>
+        <tr><td><b>Référence</b> <i>(obligatoire)</i></td><td class="num-col">60 car.</td></tr>
+        <tr><td><b>Contexte</b> <i>(facultatif)</i></td><td class="num-col">300 car.</td></tr>
+      </table>
+      <p>Les quatre voix doivent toutes être plausibles : trois noms au hasard rendent la question
+      inutile. Le <b>contexte</b> s'affiche après la réponse — c'est là qu'on enseigne.</p>
+    </div>
+    <div><div class="shot h100"><img src="captures/s12-quiadit-form.png"></div></div>
+  </div>
+</section>
+
+<section class="page">
+  <h3 class="first">Écrit… ou pas ?</h3>
+  <div class="duo">
+    <div>
+      <table>
+        <tr><th style="width:32mm">Champ</th><th class="num-col">Limite</th></tr>
+        <tr><td><b>La phrase</b></td><td class="num-col">300 car.</td></tr>
+        <tr><td><b>Verdict</b></td><td class="num-col">écrit / pas écrit</td></tr>
+        <tr><td><b>Référence</b></td><td class="num-col">60 car.</td></tr>
+        <tr><td><b>Précision</b> <i>(facultatif)</i></td><td class="num-col">300 car.</td></tr>
+      </table>
+      <p>Si tu réponds <b>« C'est écrit »</b>, la référence devient obligatoire : une phrase écrite
+      se prouve. Si elle ne l'est pas, tu peux laisser la référence vide.</p>
+      <p>La <b>précision</b> est le cœur de cette épreuve : c'est là qu'on explique d'où vient
+      la confusion — « proverbe français, pas verset ; la Bible dit au contraire… ».</p>
+    </div>
+    <div><div class="shot h108"><img src="captures/s14-ecritoupas-form.png"></div></div>
+  </div>
+
+  <h3>Le garde-fou du texte</h3>
+  <p>Quand tu cites une parole avec sa référence, Bible Horizon va la chercher dans la
+  <b>Segond 1910</b>. S'il ne l'y trouve pas, il te le dit — <b>sans refuser</b> ton enregistrement :</p>
+  <div class="shot demi h34"><img src="captures/s13-avertissement.png"></div>
+  <p class="cap">La question est bel et bien enregistrée. L'avertissement invite seulement à revérifier.</p>
+  <p>C'est un avertissement, pas un jugement : il ne se déclenche pas sur une référence qu'il ne
+  sait pas lire, et il se tait si tu paraphrases sans prétendre citer. Quand il parle, il a
+  généralement raison — c'est presque toujours une référence à corriger.</p>
+</section>
+
+<!-- ============ 4. VIE D'UNE SÉRIE ============ -->
+<section class="page">
+  <h2><span class="num">Dans la durée</span>La vie d'une série</h2>
+  <p class="lede">Brouillon, publiée, archivée — et les plafonds à connaître.</p>
+
+  <h3 class="first">Trois états</h3>
+  <table>
+    <tr><th style="width:32mm">État</th><th>Ce que ça veut dire</th></tr>
+    <tr><td><b>Brouillon</b></td><td>Invisible de tes membres. Tu écris en plusieurs fois, sur
+      plusieurs jours, sans que personne ne voie le chantier.</td></tr>
+    <tr><td><b>Publiée</b></td><td>Jouable. Elle apparaît en pastille au lancement de l'épreuve,
+      et compte dans le plafond des séries visibles.</td></tr>
+    <tr><td><b>Archivée</b></td><td>Rangée, jamais perdue. Archiver <b>libère une place</b> sans
+      rien détruire — le travail d'un bénévole ne se jette pas.</td></tr>
+  </table>
+  <div class="note"><p style="margin:0">Quand tu as atteint les 8 séries publiées, <b>archive</b>
+  plutôt que de supprimer. Une série de l'an dernier peut resservir : republier ne coûte qu'un clic.</p></div>
+
+  <h3>Les plafonds</h3>
+  <table>
+    <tr><th>Ce qui est compté</th><th class="num-col">Maximum</th></tr>
+    <tr><td>Séries <b>publiées</b> à la fois, par épreuve</td><td class="num-col">8</td></tr>
+    <tr><td>Séries au total, tous états confondus, par épreuve</td><td class="num-col">40</td></tr>
+    <tr><td>Questions dans une série</td><td class="num-col">3 minimum · 50 maximum</td></tr>
+    <tr><td>Questions d'une église, toutes épreuves confondues</td><td class="num-col">600</td></tr>
+    <tr><td>Nom d'une série</td><td class="num-col">80 caractères</td></tr>
+  </table>
+
+  <h3>Deux choses irréversibles</h3>
+  <ul>
+    <li><b>Supprimer une série</b> emporte ses questions. Il n'y a pas de corbeille : si tu hésites,
+    archive.</li>
+    <li><b>Supprimer l'église</b> (bas de <span class="kbd">Mon église</span>, responsable seul)
+    emporte toutes les séries de toutes les épreuves, en plus de la page, des annonces et des
+    services. Ce que chacun a semé dans son jardin, en revanche, lui reste.</li>
+  </ul>
+
+  <h3>Si quelque chose cloche dans une série</h3>
+  <p>Sous les pastilles de choix, au lancement d'une épreuve, chaque joueur dispose d'un lien
+  <b>« Signaler un contenu de cette série »</b>. Le courrier arrive à contact@biblehorizon.fr avec
+  le nom de la série et celui de l'église — de quoi corriger vite.</p>
+</section>
+
+<!-- ============ 5. QUI OÙ QUAND ============ -->
+<section class="page">
+  <h2><span class="num">Le cas à part</span>« Qui, où, quand ? »</h2>
+  <p class="lede">Le grand quiz ne fonctionne pas par séries — voici sa logique.</p>
+
+  <div class="duo">
+    <div>
+      <p>Cette épreuve-là est plus ancienne : au lieu de séries nommées, deux leviers.</p>
+      <p><b>1. La banque commune.</b> Soit tes parties d'église tirent dans
+      <b>toute</b> la banque commune (le réglage par défaut), soit tu passes en
+      <b>« Ma sélection »</b> et tu coches, une à une, les questions que tu retiens. Ta sélection
+      est gardée même si tu repasses en « toute la banque » : rien ne se perd.</p>
+      <p><b>2. Les questions de ton église.</b> Écrites avec le même bouton
+      <b>Nouvel item</b>, elles s'ajoutent toujours — quel que soit le réglage ci-dessus.
+      Jusqu'à 300.</p>
+      <p>Une question du grand quiz demande, en plus de son énoncé et de ses quatre réponses,
+      une <b>catégorie</b> (la liste t'est proposée) et un <b>niveau</b> :
+      Découverte, Habitué ou Connaisseur.</p>
+      <p>Pour animer avec ces réglages, ouvre le module <b>Défi</b> et choisis
+      <b>« Dans mon église »</b> en préparant le quiz.</p>
+    </div>
+    <div><div class="shot h72"><img src="captures/s15-defi-reglages.png"></div></div>
+  </div>
+
+  <h3>Aide-mémoire</h3>
+  <table class="serre">
+    <tr><th style="width:60mm">Si tu veux…</th><th>Va…</th></tr>
+    <tr><td>Écrire des questions pour une prédication</td><td>Mon église → Les séries → l'épreuve → Créer la série</td></tr>
+    <tr><td>Cacher une série le temps de l'écrire</td><td>Laisse-la en brouillon</td></tr>
+    <tr><td>Faire de la place sans rien perdre</td><td>Archiver une série publiée</td></tr>
+    <tr><td>Confier l'écriture à quelqu'un</td><td>Mon église → Membres → Nommer co-responsable</td></tr>
+
+    <tr><td>Vérifier ce que voient tes membres</td><td>Ouvre l'épreuve : la pastille de ta série</td></tr>
+    <tr><td>Signaler un contenu</td><td>contact@biblehorizon.fr</td></tr>
+  </table>
+
+  <p class="fin"><b>Bible Horizon</b> — biblehorizon.fr · contact@biblehorizon.fr<br>
+  Gratuit, sans publicité, sans revente de données. Les captures de ce guide viennent de
+  l'application telle qu'elle est aujourd'hui ; si un écran a changé, c'est l'application qui a raison.</p>
+</section>
+
+</body></html>

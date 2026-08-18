@@ -40,3 +40,36 @@ On **offre** un verset, on ne réclame rien : pas de « installe vite », pas
 d'urgence. Une publication sur cinq mentionne l'appli, les autres donnent.
 Et on répond aux commentaires en personne — c'est la seule croissance qui
 compte pour ce projet.
+
+## Le mode d'emploi des banques de questions (`guide-banque-questions/`)
+
+Le PDF que les responsables téléchargent depuis l'écran des séries. Il est
+versionné là où il est SERVI — `guide/mode-emploi-banque-de-questions.pdf` —
+et sa source vit ici : `guide.html`, ses captures, et de quoi tout refaire.
+
+Toutes les captures sont prises dans l'application réelle, cadrées sur les
+éléments du DOM (jamais découpées au pixel) : quand un écran change, on
+regénère plutôt que de retoucher une image.
+
+### Refaire les captures
+```
+# 1. le serveur de test, base neuve
+rm -f api/data/dev.sqlite
+env -u MYSQL_URL -u BREVO_API_KEY -u SMTP_HOST \
+    ADMIN_EMAILS=alice@example.org GRAINE_DEV=1 \
+    php -S 127.0.0.1:8123 api/tests/router.php &
+
+# 2. le décor : Alice responsable, Bob membre, une église
+bash outils/guide-banque-questions/preparer.sh
+
+# 3. les captures (Chromium + Playwright)
+node outils/guide-banque-questions/capturer.cjs
+```
+
+### Refaire le PDF
+```
+node outils/guide-banque-questions/imprimer.cjs
+```
+Neuf pages A4. Si une section déborde, elle se coupe en deux : mesurer la
+hauteur de chaque `.page` en média `print` sur 178 mm de large (la limite
+utile est 264 mm) et resserrer une image via ses classes `hNN`.
