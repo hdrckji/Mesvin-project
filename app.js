@@ -1283,7 +1283,10 @@ function viewAbout() {
     <p class="muted center" style="font-size:.85rem;margin-top:14px">
       <a href="confidentialite/" style="color:var(--accent-ink)">Confidentialité</a>
       &nbsp;·&nbsp;
-      <a href="mentions-legales/" style="color:var(--accent-ink)">Mentions légales</a></p>
+      <a href="mentions-legales/" style="color:var(--accent-ink)">Mentions légales</a>
+      &nbsp;·&nbsp;
+      <a href="presse/dossier-de-presse-bible-horizon.pdf" target="_blank" rel="noopener"
+         style="color:var(--accent-ink)">Dossier de presse</a></p>
     <p class="muted center" style="font-size:.8rem;margin-top:10px">Version 0.3 · projet en construction</p>`;
 }
 

@@ -344,11 +344,21 @@ function push_send(array $abo, string $payload, array $cfg): array {
 /* ============================================================================
    Choix du verset — l'âme de la fonctionnalité.
 
-   Compte connecté avec un jardin (blob sync « memo ») : un verset de SON
-   jardin, celui dont la révision (due) est la plus proche — l'offrir, c'est
-   déjà l'arroser. Sinon (anonyme, ou jardin vide) : la bibliothèque
-   data/verses.json, en rotation déterministe par jour de l'année.
+   Compte connecté avec un jardin (blob sync « memo ») : un verset À ARROSER
+   AUJOURD'HUI, c'est-à-dire échu — l'offrir, c'est déjà l'arroser. Quand
+   plusieurs le sont, on tourne parmi les plus urgents plutôt que de servir
+   éternellement le même : le plus en retard le reste tant qu'il n'est pas
+   révisé, et sans rotation la notification répétait le même verset des
+   semaines durant.
+
+   Jardin à jour (rien d'échu), jardin vide ou visiteur anonyme : la
+   bibliothèque data/verses.json — de préférence un verset qu'on n'a pas
+   encore semé, pour faire découvrir plutôt que ressasser.
    ========================================================================== */
+
+/* Parmi combien de versets échus on tourne. Assez large pour ne pas ressasser,
+   assez court pour rester sur ce qui presse vraiment. */
+const PUSH_JARDIN_TOURNANTE = 7;
 
 /** La bibliothèque de versets (data/verses.json), chargée une fois par requête. */
 function push_library(): array {
@@ -366,10 +376,14 @@ function push_library(): array {
  * le fuseau de l'abonné (pour une rotation calée sur SON jour).
  */
 function push_choose_verse(PDO $pdo, array $abo, int $localTs): string {
+    // Même échelle que « due » côté app.js : un numéro de jour, dans le fuseau
+    // de l'abonné. Il sert aussi de rotation — un jour, un cran.
+    $jour = intdiv($localTs, 86400);
     $ref = null;
     $texte = null;
+    $semes = [];   // les identifiants déjà présents dans le jardin
 
-    // 1) Le jardin du compte lié, s'il y en a un.
+    // 1) Le jardin du compte lié : ce qui est échu aujourd'hui.
     if (!empty($abo['user_id'])) {
         $st = $pdo->prepare("SELECT payload FROM sync_blobs WHERE user_id = ? AND module = 'memo'");
         $st->execute([(int) $abo['user_id']]);
@@ -377,31 +391,46 @@ function push_choose_verse(PDO $pdo, array $abo, int $localTs): string {
         if ($row !== false) {
             $memo = json_decode((string) $row['payload'], true);
             $cards = is_array($memo['cards'] ?? null) ? $memo['cards'] : [];
-            $meilleur = null;
-            foreach ($cards as $c) {
+            $echus = [];
+            foreach ($cards as $id => $c) {
+                if (is_string($id)) {
+                    $semes[$id] = true;
+                }
                 // Format des cards du store de app.js : { id, ref, text, due, … }.
                 if (!is_array($c) || !is_string($c['ref'] ?? null) || !is_string($c['text'] ?? null)
                     || trim($c['text']) === '' || !is_numeric($c['due'] ?? null)) {
                     continue;
                 }
-                if ($meilleur === null || (float) $c['due'] < (float) $meilleur['due']) {
-                    $meilleur = $c;
+                if ((float) $c['due'] <= (float) $jour) {
+                    $echus[] = $c;
                 }
             }
-            if ($meilleur !== null) {
-                $ref = $meilleur['ref'];
-                $texte = $meilleur['text'];
+            if ($echus !== []) {
+                // Du plus en retard au moins pressé ; la référence départage,
+                // pour que deux jardins identiques donnent le même ordre.
+                usort($echus, function (array $a, array $b): int {
+                    $d = (float) $a['due'] <=> (float) $b['due'];
+                    return $d !== 0 ? $d : strcmp((string) $a['ref'], (string) $b['ref']);
+                });
+                $tournante = array_slice($echus, 0, PUSH_JARDIN_TOURNANTE);
+                $choisi = $tournante[$jour % count($tournante)];
+                $ref = $choisi['ref'];
+                $texte = $choisi['text'];
             }
         }
     }
 
-    // 2) Repli : la bibliothèque, en rotation déterministe par jour de l'année.
+    // 2) Repli : la bibliothèque, en rotation par jour. On écarte d'abord les
+    //    versets déjà semés — inutile d'« offrir » ce qui pousse déjà.
     if ($texte === null) {
         $verses = push_library();
         if ($verses === []) {
             return '';
         }
-        $v = $verses[((int) gmdate('z', $localTs)) % count($verses)];
+        $neufs = array_values(array_filter($verses, static fn (array $v): bool
+            => !isset($semes[(string) ($v['id'] ?? '')])));
+        $choix = $neufs !== [] ? $neufs : $verses;
+        $v = $choix[$jour % count($choix)];
         $ref = (string) ($v['ref'] ?? '');
         $texte = (string) ($v['text'] ?? '');
     }

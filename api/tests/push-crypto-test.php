@@ -154,9 +154,10 @@ verif_vrai('délimiteur de bourrage 0x02 en fin d\'enregistrement', is_string($c
 verif('le texte clair ressort intact', $message, is_string($clair) ? substr($clair, 0, -1) : '');
 
 /* ---------------------------------------------------------------------------
-   4) Choix du verset (l'âme de la fonctionnalité) : jardin d'abord (due le
-      plus proche), sinon rotation déterministe de la bibliothèque ; corps
-      toujours « texte » — Référence, ≤ 240 caractères.
+   4) Choix du verset (l'âme de la fonctionnalité) : les versets ÉCHUS du
+      jardin d'abord, en tournant parmi les plus urgents ; sinon la
+      bibliothèque, de préférence un verset pas encore semé. Corps toujours
+      « texte » — Référence, ≤ 240 caractères.
    -------------------------------------------------------------------------- */
 printf("\n== Choix du verset : jardin, rotation, troncature\n");
 
@@ -165,25 +166,57 @@ printf("\n== Choix du verset : jardin, rotation, troncature\n");
 $pdo = new PDO('sqlite::memory:');
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $pdo->exec('CREATE TABLE sync_blobs (user_id INTEGER, module TEXT, payload TEXT, updated_at TEXT)');
+// Un jour de référence, sur la même échelle que « due » côté app.js.
+$JOUR = 20650;
+$ts = $JOUR * 86400;
+
 $memo = json_encode(['cards' => [
-    'jean-3-16' => ['id' => 'jean-3-16', 'ref' => 'Jean 3.16', 'text' => 'Car Dieu a tant aimé le monde…', 'due' => 20650],
-    'ps-23-1'   => ['id' => 'ps-23-1', 'ref' => 'Psaumes 23.1', 'text' => 'L\'Éternel est mon berger: je ne manquerai de rien.', 'due' => 20620],
+    'jean-3-16' => ['id' => 'jean-3-16', 'ref' => 'Jean 3.16', 'text' => 'Car Dieu a tant aimé le monde…', 'due' => $JOUR - 3],
+    'ps-23-1'   => ['id' => 'ps-23-1', 'ref' => 'Psaumes 23.1', 'text' => 'L\'Éternel est mon berger: je ne manquerai de rien.', 'due' => $JOUR - 9],
+    'plus-tard' => ['id' => 'plus-tard', 'ref' => 'Romains 8.28', 'text' => 'Toutes choses concourent au bien…', 'due' => $JOUR + 40],
     'cassee'    => ['id' => 'cassee', 'due' => 1], // carte sans ref/text : ignorée
 ]], JSON_UNESCAPED_UNICODE);
 $pdo->prepare('INSERT INTO sync_blobs VALUES (7, ?, ?, ?)')->execute(['memo', $memo, '2026-08-10 00:00:00']);
 
-$ts = time();
-$corps = push_choose_verse($pdo, ['user_id' => 7, 'tz_offset' => 0], $ts);
-verif_vrai('compte avec jardin : le verset au due le plus proche',
-    $corps === '« L\'Éternel est mon berger: je ne manquerai de rien. » — Psaumes 23.1', "obtenu : $corps");
+// Sur plusieurs jours, les DEUX versets échus sortent — et jamais celui qui
+// n'est pas encore dû. C'est tout l'objet du correctif : sans rotation, le
+// plus en retard revenait chaque matin jusqu'à ce qu'on le révise.
+$sortis = [];
+for ($d = 0; $d < 6; $d++) {
+    $sortis[] = push_choose_verse($pdo, ['user_id' => 7, 'tz_offset' => 0], ($JOUR + $d) * 86400);
+}
+$distincts = array_values(array_unique($sortis));
+verif_vrai('jardin : les versets échus tournent d\'un jour à l\'autre',
+    count($distincts) === 2, 'obtenus : ' . count($distincts) . ' distinct(s)');
+verif_vrai('jardin : seuls les versets échus sont offerts',
+    !str_contains(implode(' ', $sortis), 'Romains 8.28'));
+verif_vrai('jardin : deux appels le même jour donnent le même verset',
+    $sortis[0] === push_choose_verse($pdo, ['user_id' => 7, 'tz_offset' => 0], $ts));
+
+// Jardin à jour (rien d'échu) : la bibliothèque prend le relais, et elle
+// écarte ce qui pousse déjà — offrir un verset déjà semé n'apprend rien.
+$aJour = json_encode(['cards' => [
+    'phil-4-13' => ['id' => 'phil-4-13', 'ref' => 'Philippiens 4.13', 'text' => 'Je puis tout par celui qui me fortifie.', 'due' => $JOUR + 12],
+]], JSON_UNESCAPED_UNICODE);
+$pdo->prepare('INSERT INTO sync_blobs VALUES (9, ?, ?, ?)')->execute(['memo', $aJour, '2026-08-10 00:00:00']);
+$offert = [];
+for ($d = 0; $d < 5; $d++) {
+    $offert[] = push_choose_verse($pdo, ['user_id' => 9, 'tz_offset' => 0], ($JOUR + $d) * 86400);
+}
+verif_vrai('jardin à jour : repli sur la bibliothèque, un verset par jour',
+    count(array_unique($offert)) === 5);
+verif_vrai('jardin à jour : le verset déjà semé n\'est pas réoffert',
+    !str_contains(implode(' ', $offert), 'Philippiens 4.13'));
 
 $anonyme = push_choose_verse($pdo, ['user_id' => null, 'tz_offset' => 0], $ts);
 $verses = push_library();
-$attenduV = $verses[((int) gmdate('z', $ts)) % count($verses)];
-verif_vrai('anonyme : rotation déterministe par jour de l\'année',
+$attenduV = $verses[$JOUR % count($verses)];
+verif_vrai('anonyme : rotation déterministe, un cran par jour',
     str_contains($anonyme, (string) $attenduV['ref']), "obtenu : $anonyme");
 verif_vrai('anonyme : même verset au 2e tirage du même jour',
     $anonyme === push_choose_verse($pdo, ['user_id' => null, 'tz_offset' => 0], $ts));
+verif_vrai('anonyme : le lendemain, un autre verset',
+    $anonyme !== push_choose_verse($pdo, ['user_id' => null, 'tz_offset' => 0], ($JOUR + 1) * 86400));
 
 // Jardin vide (blob présent mais aucune carte exploitable) → repli bibliothèque.
 $pdo->prepare('INSERT INTO sync_blobs VALUES (8, ?, ?, ?)')
