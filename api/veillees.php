@@ -190,10 +190,6 @@ function veillee_players(PDO $pdo, int $veilleeId): array {
  * qu'on attende deux secondes de plus — pas que /state réponde 500 et que
  * l'écran du participant se fige sans un mot, au milieu d'une veillée, pendant
  * que le grand écran continue d'avancer sans lui.
- * INSERT puis UPDATE explicites : les syntaxes d'écrasement (ON DUPLICATE KEY,
- * ON CONFLICT) ne s'écrivent pas pareil en MySQL et en SQLite. Deux sondages
- * simultanés du même téléphone peuvent se croiser : le doublon retombe alors
- * simplement sur l'UPDATE.
  */
 function veillee_marquer_present(PDO $pdo, int $veilleeId, int $playerId): void {
     try {
@@ -204,6 +200,12 @@ function veillee_marquer_present(PDO $pdo, int $veilleeId, int $playerId): void 
     }
 }
 
+/**
+ * L'écriture elle-même. UPDATE puis INSERT explicites : les syntaxes
+ * d'écrasement (ON DUPLICATE KEY, ON CONFLICT) ne s'écrivent pas pareil en
+ * MySQL et en SQLite. Deux sondages simultanés du même téléphone peuvent se
+ * croiser : le doublon retombe alors simplement sur l'UPDATE.
+ */
 function veillee_ecrire_presence(PDO $pdo, int $veilleeId, int $playerId): void {
     // UPDATE d'abord : la ligne existe déjà à tous les sondages sauf le
     // premier, et c'est appelé toutes les 2 s par participant. Sonder l'état
