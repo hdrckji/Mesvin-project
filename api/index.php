@@ -75,6 +75,10 @@ if ($path === '/api/health' && $method === 'GET') {
     $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
     json_out([
         'ok'   => true,
+        // Ce qui tourne VRAIMENT : l'empreinte du commit déployé. Une
+        // publication qui échoue laisse l'ancienne version en place sans rien
+        // dire — c'est ici qu'on s'en aperçoit, en une seconde.
+        'version' => version_en_ligne(),
         'db'   => db_driver($pdo),
         'mail' => mail_mode(),
         // Adresse d'expédition effective : elle doit être un expéditeur

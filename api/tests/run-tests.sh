@@ -1752,6 +1752,19 @@ retenue() {
 
 check "le diagnostic reseau est RÉSERVÉ aux admins" null \
   "$(api GET /api/health > /dev/null; jval .reseau)"
+# Publier n'est pas déployer. Railway pose RAILWAY_GIT_COMMIT_SHA dans le
+# conteneur : le health admin la rend, et l'écran Système l'affiche — c'est ce
+# qui permet de voir, en une seconde, quelle version tourne vraiment.
+check "version : nulle quand l'hébergeur ne la donne pas" null \
+  "$(api GET /api/health "$TOKEN1B" > /dev/null; jval .version.commit)"
+PORT_VERSION=8183
+serveur_annexe $PORT_VERSION RAILWAY_GIT_COMMIT_SHA=abcdef1234567890 RAILWAY_GIT_COMMIT_MESSAGE="Un titre
+et une suite qu'on ne montre pas"
+curl -s -o "$TMP/body.json" "http://127.0.0.1:$PORT_VERSION/api/health" -H "Authorization: Bearer $TOKEN1B"
+check "version : l'empreinte courte est rendue" abcdef1 "$(jval .version.commit)"
+check "version : seule la première ligne du message" "Un titre" "$(jval .version.message)"
+arreter_annexe
+
 check "health admin : proxyHops = 0 sur cette passe" 0 \
   "$(api GET /api/health "$TOKEN1B" > /dev/null; jval .reseau.proxyHops)"
 check "health admin : remoteAddr exposé"    127.0.0.1 "$(jval .reseau.remoteAddr)"

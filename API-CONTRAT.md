@@ -24,6 +24,11 @@
   d'environnement attendues, chacune sous la forme
   `{ "variable", "libelle", "definie": true|false }` — **jamais les valeurs**
   (fonction `config_checklist()` dans `api/helpers.php`).
+  Il contient aussi `version` (admins seulement) :
+  `{ "commit", "message" }` — l'empreinte courte du commit **réellement
+  déployé** et la première ligne de son titre, lues dans
+  `RAILWAY_GIT_COMMIT_SHA` / `RAILWAY_GIT_COMMIT_MESSAGE` ; `null` hors
+  Railway. Publier n'est pas déployer : c'est ce champ qui le dit.
   Il contient aussi `reseau` (admins seulement, jamais dans la réponse
   anonyme) : `{ "xForwardedFor", "remoteAddr", "proxyHops", "ipRetenue" }` —
   l'en-tête `X-Forwarded-For` **tel que reçu**, `REMOTE_ADDR`, le nombre de

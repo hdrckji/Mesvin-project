@@ -14,7 +14,7 @@
    chaque publication coûtait 5,7 Mo à chaque appareil : vingt publications
    dans une soirée, et un téléphone passait la soirée à télécharger pendant
    que l'appli rampait derrière. */
-const CACHE = 'graine-v71';
+const CACHE = 'graine-v72';
 const CACHE_BIBLE = 'graine-bible-v1';
 // La coquille : le minimum pour que l'appli s'ouvre et vive hors-ligne.
 const SHELL = [

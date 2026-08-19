@@ -136,6 +136,25 @@ function optional_user(PDO $pdo): ?array {
 }
 
 /**
+ * La version EN LIGNE, en clair.
+ *
+ * Publier ne suffit pas : il faut que le déploiement aboutisse, et rien dans
+ * l'appli ne le disait. On a passé une nuit à chercher dans l'écran
+ * d'administration une section qui n'avait jamais quitté GitHub. Railway pose
+ * RAILWAY_GIT_COMMIT_SHA dans l'environnement du conteneur : c'est la vérité
+ * de ce qui tourne, à l'empreinte près. Absente (local, autre hébergeur), on
+ * le dit plutôt que d'inventer.
+ */
+function version_en_ligne(): array {
+    $sha = trim((string) getenv('RAILWAY_GIT_COMMIT_SHA'));
+    $msg = trim((string) getenv('RAILWAY_GIT_COMMIT_MESSAGE'));
+    return [
+        'commit'  => $sha === '' ? null : substr($sha, 0, 7),
+        'message' => $msg === '' ? null : mb_substr(preg_split('/\r?\n/', $msg)[0], 0, 120),
+    ];
+}
+
+/**
  * Nombre de relais (proxies) de CONFIANCE placés devant l'application.
  * Réglable par la variable d'environnement PROXY_HOPS — corriger le nombre en
  * production ne demande donc aucun redéploiement du code. Défaut : 1 (Railway
@@ -445,6 +464,10 @@ function config_checklist(): array {
         ['variable' => 'MAIL_FROM',        'libelle' => "Adresse d'expédition",     'definie' => $definie('MAIL_FROM')],
         ['variable' => 'GOOGLE_CLIENT_ID', 'libelle' => 'Connexion Google',         'definie' => $definie('GOOGLE_CLIENT_ID')],
         ['variable' => 'ADMIN_EMAILS',     'libelle' => 'Administrateurs',          'definie' => $definie('ADMIN_EMAILS')],
+        // Facultative : sans elle, client_ip() compte 1 relais devant l'appli,
+        // ce qui est le cas de Railway. On l'affiche quand même pour qu'on
+        // sache qu'elle existe et qu'on puisse la corriger sans lire le code.
+        ['variable' => 'PROXY_HOPS',       'libelle' => 'Relais de confiance',      'definie' => $definie('PROXY_HOPS')],
     ];
     // La voie SMTP est une ALTERNATIVE à Brevo : on ne l'affiche que si elle
     // est entamée (SMTP_HOST posée), pour ne pas semer des « manquante ✗ »

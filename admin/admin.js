@@ -721,6 +721,17 @@ function htmlReseau() {
     </div>`;
 }
 
+/* La version en ligne, tout en haut de l'état du serveur. Publier n'est pas
+   déployer : un déploiement peut échouer sans que rien ne le dise, et l'on
+   cherche alors dans l'appli une nouveauté qui n'a jamais quitté le dépôt.
+   L'empreinte du commit tranche en une seconde. */
+function htmlVersion() {
+  const v = sys.version;
+  if (!v || !v.commit) return '';
+  const quoi = v.message ? v.commit + ' · ' + v.message : v.commit;
+  return ligneSys('Version en ligne', quoi);
+}
+
 function htmlSysteme() {
   if (sysErreur) return `<div class="card"><p class="field-error" style="margin:0">${esc(sysErreur)}</p></div>`;
   if (!sys) return `<div class="card center" style="padding:30px"><p class="muted" style="margin:0">Chargement…</p></div>`;
@@ -728,6 +739,7 @@ function htmlSysteme() {
   return `
     <div class="section-title">État du serveur</div>
     <div class="card">
+      ${htmlVersion()}
       ${ligneSys('Base de données', sys.db || '?')}
       ${ligneSys("Envoi d'e-mails", sys.mail === 'dev' ? 'non configuré (mode dev)' : sys.mail, sys.mail !== 'dev')}
       ${ligneSys("Adresse d'expédition", sys.mailFrom || '—')}
