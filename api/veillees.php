@@ -180,12 +180,31 @@ function veillee_players(PDO $pdo, int $veilleeId): array {
 
 /**
  * Note qu'un participant vient d'être vu (arrivée ou sondage de l'état).
+ *
+ * ÉCHOUE EN SILENCE, et c'est voulu. Cette écriture a lieu à CHAQUE sondage,
+ * toutes les deux secondes et par participant : c'est, de loin, l'écriture la
+ * plus fréquente de l'appli, donc la plus exposée à une base momentanément
+ * occupée (verrou SQLite en auto-hébergement, attente de verrou MySQL sous
+ * charge). Or la présence n'est qu'un CONFORT : elle sert à ne plus attendre
+ * ceux qui sont partis. Si elle échoue, la seule conséquence acceptable est
+ * qu'on attende deux secondes de plus — pas que /state réponde 500 et que
+ * l'écran du participant se fige sans un mot, au milieu d'une veillée, pendant
+ * que le grand écran continue d'avancer sans lui.
  * INSERT puis UPDATE explicites : les syntaxes d'écrasement (ON DUPLICATE KEY,
  * ON CONFLICT) ne s'écrivent pas pareil en MySQL et en SQLite. Deux sondages
  * simultanés du même téléphone peuvent se croiser : le doublon retombe alors
  * simplement sur l'UPDATE.
  */
 function veillee_marquer_present(PDO $pdo, int $veilleeId, int $playerId): void {
+    try {
+        veillee_ecrire_presence($pdo, $veilleeId, $playerId);
+    } catch (PDOException $e) {
+        // Base occupée : on note et on passe. Le participant reçoit son état.
+        error_log('Présence non enregistrée (sans gravité) — ' . $e->getMessage());
+    }
+}
+
+function veillee_ecrire_presence(PDO $pdo, int $veilleeId, int $playerId): void {
     // UPDATE d'abord : la ligne existe déjà à tous les sondages sauf le
     // premier, et c'est appelé toutes les 2 s par participant. Sonder l'état
     // avant d'écrire doublerait les allers-retours pour rien.

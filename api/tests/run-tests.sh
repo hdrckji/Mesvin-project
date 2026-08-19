@@ -569,6 +569,199 @@ api GET "/api/veillees/$SCODE/state" > /dev/null
 check "sur une veillée close, sonder ne bascule rien" done "$(jval .veillee.statut)"
 
 # ---------------------------------------------------------------------------
+# La présence s'écrit à CHAQUE sondage — toutes les deux secondes et par
+# participant, l'écriture la plus fréquente de l'appli. Si elle échoue (base
+# momentanément occupée : verrou SQLite en auto-hébergement, attente de verrou
+# MySQL sous charge), le participant doit quand même recevoir son état. Sans
+# cela, son écran se fige sans un mot pendant que le grand écran avance sans
+# lui — on l'a vu arriver pour de bon, en salle d'essai.
+say "Veillée — une écriture de présence qui échoue ne fige plus personne"
+
+api POST /api/veillees "$TOKEN1" '{"nb":5,"seconds":90}' > /dev/null
+BCODE="$(jval .veillee.code)"
+api POST "/api/veillees/$BCODE/join" '' '{"prenom":"Bloqué"}' > /dev/null
+BKEY="$(jval .playerKey)"
+api POST "/api/veillees/$BCODE/advance" "$TOKEN1" '{"action":"start"}' > /dev/null
+
+# On rend la table de présence RÉFRACTAIRE à l'écriture, dans les deux
+# dialectes : c'est la façon la plus fidèle de simuler une base occupée.
+php -r '
+$pdo = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql") {
+    $pdo->exec("CREATE TRIGGER bh_presence_maj BEFORE UPDATE ON veillee_presence FOR EACH ROW
+                SIGNAL SQLSTATE \"45000\" SET MESSAGE_TEXT = \"base occupee\"");
+    $pdo->exec("CREATE TRIGGER bh_presence_ins BEFORE INSERT ON veillee_presence FOR EACH ROW
+                SIGNAL SQLSTATE \"45000\" SET MESSAGE_TEXT = \"base occupee\"");
+} else {
+    $pdo->exec("CREATE TRIGGER bh_presence_maj BEFORE UPDATE ON veillee_presence
+                BEGIN SELECT RAISE(ABORT, \"base occupee\"); END");
+    $pdo->exec("CREATE TRIGGER bh_presence_ins BEFORE INSERT ON veillee_presence
+                BEGIN SELECT RAISE(ABORT, \"base occupee\"); END");
+}
+' "$ROOT" 2>>"$TMP/presence.log"
+
+check "présence en échec : le participant reçoit quand même son état" 200 \
+  "$(api GET "/api/veillees/$BCODE/state?player=$BKEY")"
+check "et c'est bien l'état de la question en cours" question "$(jval .veillee.statut)"
+check "il peut même répondre"                        200 \
+  "$(api POST "/api/veillees/$BCODE/answer" '' "{\"playerKey\":\"$BKEY\",\"q\":0,\"answer\":0}")"
+
+php -r '
+$pdo = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
+$pdo->exec("DROP TRIGGER bh_presence_maj");
+$pdo->exec("DROP TRIGGER bh_presence_ins");
+' "$ROOT" 2>>"$TMP/presence.log"
+check "présence rétablie : on est de nouveau compté présent" 1 \
+  "$(api GET "/api/veillees/$BCODE/state?player=$BKEY" > /dev/null; jval .veillee.nPresent)"
+
+# ---------------------------------------------------------------------------
+# Les OPTIONS de création n'étaient jamais éprouvées au moment où elles servent
+# vraiment : on vérifiait les filtres de la banque, jamais une veillée lancée
+# « Nouveau Testament, niveau 2 ». C'est pourtant ce qu'un animateur choisit.
+say "Veillée — catégorie et niveau au moment de la création"
+
+check "catégorie seule → 201" 201 \
+  "$(api POST /api/veillees "$TOKEN1" '{"nb":5,"seconds":30,"categorie":"Nouveau Testament"}')"
+CCODE="$(jval .veillee.code)"
+check "5 questions annoncées"           5 "$(jval .veillee.qTotal)"
+check "niveau seul → 201" 201 \
+  "$(api POST /api/veillees "$TOKEN1" '{"nb":5,"seconds":30,"niveau":2}')"
+check "catégorie ET niveau → 201" 201 \
+  "$(api POST /api/veillees "$TOKEN1" '{"nb":5,"seconds":30,"categorie":"Ancien Testament","niveau":3}')"
+MCODE="$(jval .veillee.code)"
+check "catégorie inconnue → 400" 400 \
+  "$(api POST /api/veillees "$TOKEN1" '{"nb":5,"categorie":"Recettes de cuisine"}')"
+check "niveau hors bornes → 400" 400 \
+  "$(api POST /api/veillees "$TOKEN1" '{"nb":5,"niveau":9}')"
+# Le filtre doit vraiment MORDRE. La banque compte 600 questions réparties en
+# six catégories : si le tirage puisait dans le tas entier, vingt questions
+# tirées « Nouveau Testament » en contiendraient forcément d'autres. On tire
+# donc le maximum et on vérifie que les vingt portent la bonne étiquette.
+api POST /api/veillees "$TOKEN1" '{"nb":20,"categorie":"Nouveau Testament"}' > /dev/null
+FCODE="$(jval .veillee.code)"
+api POST "/api/veillees/$FCODE/join" '' '{"prenom":"Contrôle"}' > /dev/null
+api POST "/api/veillees/$FCODE/advance" "$TOKEN1" '{"action":"start"}' > /dev/null
+HORS_CATEGORIE="$(php -r '
+$pdo = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$st = $pdo->prepare("SELECT questions_json FROM veillees WHERE code = ?");
+$st->execute([$argv[2]]);
+$qs = json_decode((string) $st->fetchColumn(), true) ?: [];
+$hors = 0;
+foreach ($qs as $q) { if (($q["categorie"] ?? "") !== "Nouveau Testament") { $hors++; } }
+echo count($qs) . "/" . $hors;
+' "$ROOT" "$FCODE" 2>>"$TMP/migration.log")"
+check "vingt questions tirées, aucune hors catégorie" "20/0" "$HORS_CATEGORIE"
+
+# Et les questions tirées appartiennent BIEN à ce qui a été demandé : sans ce
+# contrôle, un filtre ignoré passerait inaperçu — la veillée « Nouveau
+# Testament » servirait de l'Ancien sans que rien ne proteste.
+api POST "/api/veillees/$CCODE/join" '' '{"prenom":"Témoin"}' > /dev/null
+TKEY="$(jval .playerKey)"
+api POST "/api/veillees/$CCODE/advance" "$TOKEN1" '{"action":"start"}' > /dev/null
+api GET "/api/veillees/$CCODE/state?player=$TKEY" > /dev/null
+check "la question tirée porte la catégorie demandée" "Nouveau Testament" \
+  "$(jval .veillee.question.categorie)"
+# Lancer exige au moins une personne dans la salle (409 sinon) : on en fait
+# entrer une, comme le ferait n'importe quelle veillée réelle.
+check "lancer une salle vide → 409" 409 \
+  "$(api POST "/api/veillees/$MCODE/advance" "$TOKEN1" '{"action":"start"}')"
+api POST "/api/veillees/$MCODE/join" '' '{"prenom":"Témoin2"}' > /dev/null
+api POST "/api/veillees/$MCODE/advance" "$TOKEN1" '{"action":"start"}' > /dev/null
+api GET "/api/veillees/$MCODE/state" > /dev/null
+check "catégorie respectée quand le niveau s'y ajoute" "Ancien Testament" \
+  "$(jval .veillee.question.categorie)"
+check "niveau respecté aussi" 3 "$(jval .veillee.question.niveau)"
+
+# ---------------------------------------------------------------------------
+# Le téléphone qu'on range puis qu'on ressort. Sa clé de participant est gardée
+# côté navigateur : en revenant, on doit retrouver SA place, SON score et SON
+# rang — pas repartir de zéro ni créer un doublon dans le classement.
+say "Veillée — le participant qui s'absente puis revient"
+
+api POST /api/veillees "$TOKEN1" '{"nb":5,"seconds":90}' > /dev/null
+RCODE="$(jval .veillee.code)"
+api POST "/api/veillees/$RCODE/join" '' '{"prenom":"Revenant"}' > /dev/null
+RKEY="$(jval .playerKey)"
+api POST "/api/veillees/$RCODE/join" '' '{"prenom":"Fidèle"}' > /dev/null
+FKEY="$(jval .playerKey)"
+api POST "/api/veillees/$RCODE/advance" "$TOKEN1" '{"action":"start"}' > /dev/null
+api GET "/api/veillees/$RCODE/state?player=$RKEY" > /dev/null
+QI="$(jval .veillee.qIndex)"
+api POST "/api/veillees/$RCODE/answer" '' "{\"playerKey\":\"$RKEY\",\"q\":$QI,\"answer\":0}" > /dev/null
+
+# Il range son téléphone : on vieillit SA ligne de présence — la sienne seule,
+# pour que « Fidèle » reste bien là et que le contraste soit net.
+RANGE="$(php -r '
+$pdo = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$st = $pdo->prepare(
+  "UPDATE veillee_presence SET last_seen = ?
+   WHERE player_id IN (SELECT id FROM veillee_players WHERE player_key = ?)"
+);
+$st->execute([gmdate("Y-m-d H:i:s", time() - 120), $argv[2]]);
+echo $st->rowCount();
+' "$ROOT" "$RKEY" 2>>"$TMP/presence.log")"
+check "une seule ligne de présence vieillie" 1 "$RANGE"
+api GET "/api/veillees/$RCODE/state?player=$FKEY" > /dev/null
+check "absent : il ne compte plus parmi les présents" 1 "$(jval .veillee.nPresent)"
+check "mais il reste au classement"                   2 "$(jval .veillee.nPlayers)"
+
+# Il ressort son téléphone : sa clé le remet en selle, sans doublon.
+api GET "/api/veillees/$RCODE/state?player=$RKEY" > /dev/null
+check "de retour : présent à nouveau"                 2 "$(jval .veillee.nPresent)"
+check "aucun doublon créé"                            2 "$(jval .veillee.nPlayers)"
+check "il retrouve SA réponse"                     true "$(jval .veillee.me.answered)"
+check "et il ne peut pas répondre deux fois"        409 \
+  "$(api POST "/api/veillees/$RCODE/answer" '' "{\"playerKey\":\"$RKEY\",\"q\":$QI,\"answer\":1}")"
+check "une clé inventée n'ouvre aucune place"      null \
+  "$(api GET "/api/veillees/$RCODE/state?player=00000000000000000000000000000000" > /dev/null; jval .veillee.me)"
+
+# ---------------------------------------------------------------------------
+# Une vraie salle. Vingt téléphones qui rejoignent, sondent, répondent — c'est
+# l'échelle d'une veillée d'église, et rien ne l'avait jamais éprouvée : ni le
+# décompte des présents, ni le seuil de révélation, ni le classement.
+say "Veillée — une assemblée de vingt participants, de bout en bout"
+
+api POST /api/veillees "$TOKEN1" '{"nb":5,"seconds":90}' > /dev/null
+GCODE="$(jval .veillee.code)"
+CLES=""
+SALLE_OK=oui
+for i in $(seq 1 20); do
+  [ "$(api POST "/api/veillees/$GCODE/join" '' "{\"prenom\":\"Membre$i\"}")" = 201 ] || SALLE_OK=non
+  CLES="$CLES $(jval .playerKey)"
+done
+check "vingt participants entrent tous"      oui "$SALLE_OK"
+api GET "/api/veillees/$GCODE/state" > /dev/null
+check "vingt inscrits"                        20 "$(jval .veillee.nPlayers)"
+check "vingt présents dès l'arrivée"          20 "$(jval .veillee.nPresent)"
+
+api POST "/api/veillees/$GCODE/advance" "$TOKEN1" '{"action":"start"}' > /dev/null
+QI="$(jval .veillee.qIndex)"
+# Dix-neuf répondent ; le vingtième réfléchit encore. Rien ne doit basculer.
+N=0
+for k in $CLES; do
+  N=$((N + 1)); [ $N -ge 20 ] && break
+  api POST "/api/veillees/$GCODE/answer" '' "{\"playerKey\":\"$k\",\"q\":$QI,\"answer\":$((N % 4))}" > /dev/null
+done
+api GET "/api/veillees/$GCODE/state" > /dev/null
+check "dix-neuf sur vingt : on attend encore" question "$(jval .veillee.statut)"
+check "dix-neuf réponses comptées"                 19 "$(jval .veillee.nPresentRepondu)"
+
+# Le vingtième répond : la salle entière a parlé, la réponse tombe.
+DERNIER="$(echo $CLES | awk '{print $20}')"
+api POST "/api/veillees/$GCODE/answer" '' "{\"playerKey\":\"$DERNIER\",\"q\":$QI,\"answer\":0}" > /dev/null
+api GET "/api/veillees/$GCODE/state" > /dev/null
+check "le vingtième répond : révélation"        reveal "$(jval .veillee.statut)"
+check "la distribution couvre les vingt"            20 \
+  "$(jq '[.veillee.distribution[]] | add' "$TMP/body.json")"
+check "le classement porte les vingt"               20 "$(jval '.veillee.players | length')"
+check "u1 clôt la salle"                          done \
+  "$(api POST "/api/veillees/$GCODE/advance" "$TOKEN1" '{"action":"end"}' > /dev/null; jval .veillee.statut)"
+check "le bilan compte les vingt réponses"          20 "$(jval .veillee.bilan.reponses)"
+
+# ---------------------------------------------------------------------------
 # « De qui parle-t-on ? » — veillée PV- : la correspondance des réponses
 # tolère UNE faute de frappe (Levenshtein ≤ 1) sur une cible d'au moins
 # 5 caractères, jamais une confusion : cible courte (Saül) en exacte
@@ -1695,6 +1888,26 @@ check "journal sans token → 401"        401    "$(api GET /api/admin/log)"
 check "journal admin → 200"             200    "$(api GET /api/admin/log "$TOKEN1B")"
 check "au moins une action tracée"      true   "$(jval '.log | length > 0')"
 check "les actions portent leur auteur" true   "$(jval '[.log[] | has("admin") and has("action") and has("cible")] | all')"
+
+# ---------------------------------------------------------------------------
+# Une veillée se joue sur TROIS écrans à la fois : le téléphone de l'animateur,
+# le vidéoprojecteur, les téléphones des participants. L'API ne peut rien dire
+# de ce que voit la salle — et c'est là que les défauts font mal. Ce scénario
+# ouvre donc un vrai navigateur. Playwright n'est pas une dépendance de ce
+# dépôt : quand il manque, on le DIT et on passe outre.
+say "Veillées dans un vrai navigateur (Défi à un et deux écrans, les quatre épreuves)"
+# Playwright se cherche à côté du dépôt, ou à l'endroit que BH_PLAYWRIGHT
+# désigne (un import ESM ne suit pas NODE_PATH — d'où la variable).
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/veillees.mjs" "$BASE" > "$TMP/nav.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/nav.log") — projections comprises, animateur écran verrouillé"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL veillées au navigateur\n'; sed 's/^/        /' "$TMP/nav.log"
+  fi
+else
+  printf '   --   Playwright absent : veillées au navigateur non jouées\n'
+fi
 
 # ---------------------------------------------------------------------------
 # RÉSEAU — quelle adresse le serveur retient-il ? Tout l'anti-abus en dépend :

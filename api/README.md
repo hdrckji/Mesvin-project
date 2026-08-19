@@ -243,3 +243,26 @@ La base MySQL indiquée est **vidée à chaque passe** : ne jamais y pointer une
 base contenant quoi que ce soit d'utile. Une seconde base suffixée `_mig` (ici
 `bh_test_mig`) sert au contrôle de migration et doit être accessible au même
 compte.
+
+### Les veillées dans un vrai navigateur
+
+Une veillée se joue sur **trois écrans à la fois** : le téléphone de
+l'animateur, le vidéoprojecteur, les téléphones des participants. L'API ne peut
+rien dire de ce que voit la salle — et c'est là que les défauts font mal. Un
+scénario Playwright (`api/tests/navigateur/veillees.mjs`) ouvre donc Chromium et
+joue une veillée pour chaque module : le Défi dans ses **deux configurations
+d'écran** (dont la révélation pendant que l'animateur a l'écran **verrouillé**),
+puis les quatre épreuves avec leur projection — en vérifiant au passage
+qu'aucune commande d'animateur n'apparaît sur l'écran projeté.
+
+Playwright n'est **pas** une dépendance du dépôt : l'appli n'en a aucune, et un
+scénario de test ne va pas lui en imposer une. La suite le cherche à côté, puis
+à l'endroit que désigne `BH_PLAYWRIGHT` (un import ESM ne suit pas `NODE_PATH`).
+S'il est absent, la suite **le dit** et passe outre.
+
+```bash
+BH_PLAYWRIGHT=/chemin/vers/node_modules bash api/tests/run-tests.sh
+```
+
+Le scénario ouvre sa propre session d'animateur (mode dev) et donne à chaque
+participant son propre contexte de navigateur — c'est-à-dire son téléphone.

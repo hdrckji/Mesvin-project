@@ -235,7 +235,9 @@ Public, pollable. → `{ "veillee": { "code", "statut", "qIndex", "qTotal",
 … } }`
 - `nPlayers` = tous ceux qui ont rejoint ; `nPresent` = ceux vus il y a moins
   de 30 s (sonder `/state` vaut signe de présence, et rejoindre marque déjà
-  présent). Un participant parti garde son score et son rang au classement —
+  présent). Cette écriture est **best-effort** : si la base est momentanément
+  occupée, elle est abandonnée en silence et `/state` répond quand même — la
+  présence n'est qu'un confort, alors qu'un 500 fige l'écran du participant. Un participant parti garde son score et son rang au classement —
   il n'est simplement plus attendu pour révéler la réponse. La présence n'est
   donnée qu'en total : dire publiquement QUI a fermé son téléphone
   exposerait chacun sans rien apporter ;
