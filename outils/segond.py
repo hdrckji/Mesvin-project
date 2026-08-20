@@ -20,13 +20,24 @@ ALIAS = {'psaume': 'psaumes', 'cantique': 'cantiquedescantiques',
          'apocalypsedejean': 'apocalypse', 'lamentationsdejeremie': 'lamentations'}
 
 REF = re.compile(r'^\s*(.+?)\s+(\d+)[.:](\d+)(?:-(\d+))?\s*$')
+# Abdias, Philémon, Jude, 2 et 3 Jean n'ont qu'un chapitre : on les cite « Jude 3 »
+# et non « Jude 1.3 ». Sans cette forme, ces références passaient pour absentes.
+REF_UN_CHAPITRE = re.compile(r'^\s*(.+?)\s+(\d+)(?:-(\d+))?\s*$')
 
 def verset(ref):
     """Texte exact de la référence, ou None si elle n'existe pas."""
     m = REF.match(ref)
     if not m:
+        m2 = REF_UN_CHAPITRE.match(ref or '')
+        k2 = ALIAS.get(_clef(m2.group(1)), _clef(m2.group(1))) if m2 else None
+        if k2 in LIVRES and len(LIVRES[k2]) == 1:
+            livre, ch, v1, v2 = m2.group(1), 1, int(m2.group(2)), m2.group(3)
+            return _extrait(livre, ch, v1, v2)
         return None
     livre, ch, v1, v2 = m.group(1), int(m.group(2)), int(m.group(3)), m.group(4)
+    return _extrait(livre, ch, v1, v2)
+
+def _extrait(livre, ch, v1, v2):
     k = _clef(livre)
     k = ALIAS.get(k, k)
     if k not in LIVRES:
@@ -39,6 +50,24 @@ def verset(ref):
     if not (1 <= v1 <= len(versets)) or fin > len(versets):
         return None
     return ' '.join(versets[v1 - 1:fin])
+
+def livre_existe(ref):
+    """Vrai si la référence désigne au moins un livre connu, même sans verset
+       précis : « Daniel 6 », « Exode 7 à 12 », « Livre d'Esther », « 1, 2 et
+       3 Jean ». Une question sur un récit entier n'a pas de citation à
+       confronter, mais son livre doit exister."""
+    # On découpe aussi sur l'apostrophe : « Livre d'Esther » doit livrer
+    # « Esther », sans quoi le livre passe pour inconnu.
+    mots = [m for m in re.split(r"[\s,'’]+", (ref or '').strip()) if m]
+    fenetres = []
+    for i in range(len(mots)):
+        for j in range(i + 1, min(i + 4, len(mots)) + 1):
+            fenetres.append(' '.join(mots[i:j]))
+    for f in fenetres:
+        k = _clef(f)
+        if k and ALIAS.get(k, k) in LIVRES:
+            return True
+    return False
 
 def normalise(t):
     """Comparaison tolérante : casse, accents, apostrophes, ponctuation."""
