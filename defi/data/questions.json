@@ -924,7 +924,7 @@
    "id": "per-66",
    "categorie": "Personnages",
    "niveau": 1,
-   "question": "Quel nom Adam donna-t-il à sa femme, « parce qu'elle a été la mère de tous les vivants » ?",
+   "question": "Quel nom Adam donna-t-il à sa femme, « car elle a été la mère de tous les vivants » ?",
    "options": [
     "Ève",
     "Sara",
@@ -3430,7 +3430,7 @@
    "id": "nt-45",
    "categorie": "Nouveau Testament",
    "niveau": 3,
-   "question": "Comment s'appelait la disciple de Joppé, « pleine de bonnes œuvres », que Pierre rendit à la vie ?",
+   "question": "Comment s'appelait la disciple de Joppé, qui « faisait beaucoup de bonnes œuvres et d'aumônes », que Pierre rendit à la vie ?",
    "options": [
     "Tabitha (Dorcas)",
     "Lydie",
@@ -4396,7 +4396,7 @@
    "id": "dit-14",
    "categorie": "Qui a dit ?",
    "niveau": 2,
-   "question": "« Si je péris, je péris ! »",
+   "question": "« Et si je dois périr, je périrai ! »",
    "options": [
     "Débora",
     "Esther",
@@ -4690,7 +4690,7 @@
    "id": "dit-35",
    "categorie": "Qui a dit ?",
    "niveau": 2,
-   "question": "« Va-t'en de ton pays, de ta patrie, et de la maison de ton père, dans le pays que je te montrerai. »",
+   "question": "« Va-t-en de ton pays, de ta patrie, et de la maison de ton père, dans le pays que je te montrerai. »",
    "options": [
     "L'Éternel (à Abram)",
     "Un ange (à Jacob)",
@@ -4718,7 +4718,7 @@
    "id": "dit-37",
    "categorie": "Qui a dit ?",
    "niveau": 2,
-   "question": "« Voici, la moitié de mes biens, Seigneur, je la donne aux pauvres. »",
+   "question": "« Voici, Seigneur, je donne aux pauvres la moitié de mes biens. »",
    "options": [
     "Zachée",
     "Le jeune homme riche",
@@ -4788,7 +4788,7 @@
    "id": "dit-42",
    "categorie": "Qui a dit ?",
    "niveau": 3,
-   "question": "« Loin de moi de pécher contre l'Éternel, de cesser de prier pour vous ! »",
+   "question": "« Loin de moi aussi de pécher contre l'Éternel, de cesser de prier pour vous ! »",
    "options": [
     "Samuel",
     "Moïse",
@@ -4872,7 +4872,7 @@
    "id": "dit-48",
    "categorie": "Qui a dit ?",
    "niveau": 3,
-   "question": "« Retire-toi de moi, Seigneur, car je suis un homme pécheur. »",
+   "question": "« Seigneur, retire-toi de moi, parce que je suis un homme pécheur. »",
    "options": [
     "Pierre",
     "Matthieu",
@@ -4984,7 +4984,7 @@
    "id": "dit-56",
    "categorie": "Qui a dit ?",
    "niveau": 1,
-   "question": "« Femme, voici ton fils. » (sur la croix)",
+   "question": "« Femme, voilà ton fils. » (sur la croix)",
    "options": [
     "Jean",
     "Jésus",
@@ -5194,7 +5194,7 @@
    "id": "dit-71",
    "categorie": "Qui a dit ?",
    "niveau": 2,
-   "question": "« Si j'étais rasé, ma force m'abandonnerait, et je deviendrais faible. » (à Delila)",
+   "question": "« Si j'étais rasé, ma force m'abandonnerait, je deviendrais faible. » (à Delila)",
    "options": [
     "Samson",
     "Un juge d'Israël",
@@ -5222,7 +5222,7 @@
    "id": "dit-73",
    "categorie": "Qui a dit ?",
    "niveau": 2,
-   "question": "« Partagez en deux l'enfant qui vit, et donnez-en la moitié à l'une et la moitié à l'autre. »",
+   "question": "« Coupez en deux l'enfant qui vit, et donnez-en la moitié à l'une et la moitié à l'autre. »",
    "options": [
     "Un des juges d'Israël",
     "David",
@@ -5236,7 +5236,7 @@
    "id": "dit-74",
    "categorie": "Qui a dit ?",
    "niveau": 2,
-   "question": "« Prenez-moi, et jetez-moi dans la mer... car je sais que c'est moi qui vous attire cette grande tempête. »",
+   "question": "« Prenez-moi, et jetez-moi dans la mer… car je sais que c'est moi qui attire sur vous cette grande tempête. »",
    "options": [
     "Le capitaine du navire",
     "Un marin",
@@ -5320,7 +5320,7 @@
    "id": "dit-80",
    "categorie": "Qui a dit ?",
    "niveau": 2,
-   "question": "« Une chose que je sais, c'est que j'étais aveugle et que maintenant je vois. »",
+   "question": "« Je sais une chose, c'est que j'étais aveugle et que maintenant je vois. »",
    "options": [
     "Un pharisien",
     "L'aveugle-né guéri",
@@ -5390,7 +5390,7 @@
    "id": "dit-85",
    "categorie": "Qui a dit ?",
    "niveau": 3,
-   "question": "« Je ne suis pas un homme qui a la parole facile... j'ai la bouche et la langue embarrassées. »",
+   "question": "« Je ne suis pas un homme qui ait la parole facile… j'ai la bouche et la langue embarrassées. »",
    "options": [
     "Aaron",
     "Josué",
@@ -5404,7 +5404,7 @@
    "id": "dit-86",
    "categorie": "Qui a dit ?",
    "niveau": 3,
-   "question": "« Tue-moi, je te prie... afin que je ne voie pas mon malheur. » (se plaignant à l'Éternel)",
+   "question": "« Tue-moi, je te prie… et que je ne voie pas mon malheur. » (se plaignant à l'Éternel)",
    "options": [
     "Aaron",
     "Josué",
@@ -5474,7 +5474,7 @@
    "id": "dit-91",
    "categorie": "Qui a dit ?",
    "niveau": 3,
-   "question": "« J'ai été très zélé pour l'Éternel... et je suis resté, moi seul, et ils cherchent à m'ôter la vie. » (au mont Horeb)",
+   "question": "« J'ai déployé mon zèle pour l'Éternel… je suis resté, moi seul, et ils cherchent à m'ôter la vie. » (au mont Horeb)",
    "options": [
     "Élie",
     "Élisée",
@@ -5502,7 +5502,7 @@
    "id": "dit-93",
    "categorie": "Qui a dit ?",
    "niveau": 3,
-   "question": "« Je fais un grand ouvrage, et je ne puis descendre. » (répondant à Sanballat)",
+   "question": "« J'ai un grand ouvrage à exécuter, et je ne puis descendre. » (répondant à Sanballat)",
    "options": [
     "Esdras",
     "Zorobabel",
@@ -5516,7 +5516,7 @@
    "id": "dit-94",
    "categorie": "Qui a dit ?",
    "niveau": 3,
-   "question": "« Maintiens-tu encore ton intégrité ? Maudis Dieu, et meurs ! »",
+   "question": "« Tu demeures ferme dans ton intégrité ! Maudis Dieu, et meurs ! »",
    "options": [
     "Éliphaz",
     "L'un des amis de Job",
@@ -5530,7 +5530,7 @@
    "id": "dit-95",
    "categorie": "Qui a dit ?",
    "niveau": 3,
-   "question": "« Comment ai-je trouvé grâce à tes yeux, pour que tu prennes garde à moi, moi qui suis une étrangère ? » (à Boaz)",
+   "question": "« Comment ai-je trouvé grâce à tes yeux, pour que tu t'intéresses à moi, à moi qui suis une étrangère ? » (à Boaz)",
    "options": [
     "Ruth",
     "Naomi",
@@ -7182,7 +7182,7 @@
    "id": "vers-13",
    "categorie": "Complète le verset",
    "niveau": 2,
-   "question": "« Ne te l'ai-je pas donné cet ordre : Fortifie-toi et prends ___ ! »",
+   "question": "« Ne t'ai-je pas donné cet ordre : Fortifie-toi et prends ___ ? »",
    "options": [
     "courage",
     "patience",
@@ -7694,7 +7694,7 @@
     "sauveur"
    ],
    "bonne": 0,
-   "reference": "Psaume 18.3"
+   "reference": "Psaume 18.2"
   },
   {
    "id": "vers-50",
@@ -7994,7 +7994,7 @@
    "id": "vers-71",
    "categorie": "Complète le verset",
    "niveau": 2,
-   "question": "« Ne crains rien, car je suis avec toi ; ne prends pas d'inquiétude, car je suis ton ___. »",
+   "question": "« Ne crains rien, car je suis avec toi ; ne promène pas des regards inquiets, car je suis ton ___. »",
    "options": [
     "Dieu",
     "berger",
@@ -8114,20 +8114,20 @@
     "saint"
    ],
    "bonne": 0,
-   "reference": "Psaume 34.9"
+   "reference": "Psaume 34.8"
   },
   {
    "id": "vers-80",
    "categorie": "Complète le verset",
    "niveau": 2,
-   "question": "« Comme le fer aiguise le fer, ainsi un homme excite la face de son ___. »",
+   "question": "« Comme le fer aiguise le fer, ainsi un homme excite la ___ d'un homme. »",
    "options": [
-    "frère",
-    "ami",
-    "prochain",
-    "voisin"
+    "colère",
+    "crainte",
+    "joie",
+    "sagesse"
    ],
-   "bonne": 1,
+   "bonne": 0,
    "reference": "Proverbes 27.17"
   },
   {
@@ -8362,7 +8362,7 @@
    "options": [
     "personne",
     "naissance",
-    "création",
+    "créature",
     "vie"
    ],
    "bonne": 2,

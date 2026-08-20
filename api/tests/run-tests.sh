@@ -120,6 +120,27 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# LE CONTENU BIBLIQUE. Un lecteur nous a signalé une question de « Complète le
+# verset » écrite d'après Martin et Darby, alors que l'appli suit la Segond
+# 1910 : la citation ET la réponse venaient d'ailleurs. Deux lectures y veillent
+# désormais, écrites AUTREMENT l'une de l'autre — la première compare des
+# chaînes, la seconde des suites de mots, et vérifie en plus qu'aucune autre
+# proposition ne conviendrait. Elles portent sur les 600 questions du Défi, les
+# trois banques d'épreuves et les 100 versets de la bibliothèque.
+say "Contenu biblique : chaque citation se lit-elle dans le texte de l'appli ?"
+if command -v python3 > /dev/null 2>&1; then
+  for LECTURE in verifier-banques verifier-citations; do
+    if python3 "$ROOT/outils/$LECTURE.py" > "$TMP/$LECTURE.log" 2>&1; then
+      ok "$LECTURE — $(grep -E '^(✓|Seconde lecture)' "$TMP/$LECTURE.log" | tail -1 | sed 's/^✓ //')"
+    else
+      FAIL=$((FAIL + 1)); printf '   FAIL %s\n' "$LECTURE"; sed 's/^/        /' "$TMP/$LECTURE.log"
+    fi
+  done
+else
+  printf '   --   python3 absent : contenu biblique non confronté\n'
+fi
+
+# ---------------------------------------------------------------------------
 say "Lettres envoyées : le corps de la lettre d'accueil d'un responsable"
 if php "$ROOT/api/tests/mail-test.php" > "$TMP/mail.log" 2>&1; then
   ok "la lettre porte le nom, le code, le guide et le contact"
