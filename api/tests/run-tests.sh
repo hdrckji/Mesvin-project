@@ -181,6 +181,13 @@ $pdo->exec("ALTER TABLE epreuve_duels DROP COLUMN p1_user");
 $pdo->exec("ALTER TABLE epreuve_duels DROP COLUMN p2_user");
 $pdo->exec("ALTER TABLE frise_duels DROP COLUMN p1_user");
 $pdo->exec("ALTER TABLE frise_duels DROP COLUMN p2_user");
+// Étape 9 : les colonnes du mode auto des veillées.
+foreach (["epreuve_participants", "frise_participants", "portrait_participants"] as $t) {
+    $pdo->exec("ALTER TABLE $t DROP COLUMN last_seen");
+}
+foreach (["epreuve_veillees", "frise_veillees", "portrait_veillees"] as $t) {
+    foreach (["auto", "seconds", "phase_debut"] as $c) { $pdo->exec("ALTER TABLE $t DROP COLUMN $c"); }
+}
 db_migrate($pdo);
 $tables = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql"
   ? $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()")->fetchAll(PDO::FETCH_COLUMN)
@@ -190,6 +197,15 @@ $cols = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql"
   ? $pdo->query("SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = \"groupes\"")->fetchAll(PDO::FETCH_COLUMN)
   : $pdo->query("SELECT name FROM pragma_table_info(\"groupes\")")->fetchAll(PDO::FETCH_COLUMN);
 if (!in_array("nom_style", $cols)) { echo "alter-manque"; exit; }
+// Les colonnes de l étape 8 doivent être revenues elles aussi : sans elles,
+// une veillée d épreuve ne saurait plus qui est présent ni depuis quand la
+// phase dure, et le mode « s enchaîne toute seule » tomberait en panne.
+$colsV = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql"
+  ? $pdo->query("SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = \"epreuve_veillees\"")->fetchAll(PDO::FETCH_COLUMN)
+  : $pdo->query("SELECT name FROM pragma_table_info(\"epreuve_veillees\")")->fetchAll(PDO::FETCH_COLUMN);
+foreach (["auto", "seconds", "phase_debut"] as $c) {
+    if (!in_array($c, $colsV)) { echo "etape8-manque-" . $c; exit; }
+}
 // Base à jour : re-migrer doit être un non-événement.
 db_migrate($pdo);
 $n = (int) $pdo->query("SELECT COUNT(*) FROM schema_migrations")->fetchColumn();
@@ -2267,6 +2283,90 @@ check "message de salle complète"  "La veillée est au complet." "$(jval .error
 check "code de salle inconnu → 404" 404 \
   "$(api POST "/api/epreuve/veillee/EV-ZZZZZ/rejoindre" '' '{"prenom":"Personne"}')"
 
+# Le cœur du chantier : une veillée d'épreuve qui avance SANS l'animateur.
+# Son téléphone se verrouille dans une salle sombre, et le grand écran restait
+# figé devant toute l'assemblée — le Défi avait été réparé, pas les épreuves.
+say "Épreuve — la carte se révèle sans l'animateur"
+
+api POST /api/epreuve/veillee '' "$PAQUET" > /dev/null
+ACODE="$(jval .code)"; ACLE="$(jval .cle)"
+check "sans réglage, le mode automatique est ÉTEINT" false "$(jval .auto)"
+api POST "/api/epreuve/veillee/$ACODE/rejoindre" '' '{"prenom":"Anne"}' > /dev/null
+AJ1="$(jval .jeton)"
+api POST "/api/epreuve/veillee/$ACODE/rejoindre" '' '{"prenom":"Bruno"}' > /dev/null
+AJ2="$(jval .jeton)"
+api POST "/api/epreuve/veillee/$ACODE/avancer" '' "{\"cle\":\"$ACLE\"}" > /dev/null
+check "la première carte est lancée" question "$(jval .phase)"
+
+# Les deux sondent : les voilà présents. Puis une seule répond.
+api GET "/api/epreuve/veillee/$ACODE/etat?jeton=$AJ1" > /dev/null
+api GET "/api/epreuve/veillee/$ACODE/etat?jeton=$AJ2" > /dev/null
+api POST "/api/epreuve/veillee/$ACODE/reponse" '' "{\"jeton\":\"$AJ1\",\"carte\":1,\"choix\":0}" > /dev/null
+check "une seule a répondu : on attend encore" question \
+  "$(api GET "/api/epreuve/veillee/$ACODE/etat" > /dev/null; jval .phase)"
+
+# Bruno répond : la carte se révèle sur le sondage du GRAND ÉCRAN, qui n'a ni
+# jeton ni clé. C'est exactement le cas de l'animateur au téléphone verrouillé.
+api POST "/api/epreuve/veillee/$ACODE/reponse" '' "{\"jeton\":\"$AJ2\",\"carte\":1,\"choix\":1}" > /dev/null
+api GET "/api/epreuve/veillee/$ACODE/etat" > /dev/null
+check "tous ont répondu : révélé, sans un geste de l'animateur" revele "$(jval .phase)"
+check "et la référence s'affiche" oui "$([ "$(jval .enCours.ref)" != null ] && echo oui || echo non)"
+check "hors mode automatique, on N'ENCHAÎNE PAS tout seul" 1 \
+  "$(api GET "/api/epreuve/veillee/$ACODE/etat" > /dev/null; jval .carte)"
+
+# Un participant qui s'en va ne doit plus bloquer la salle.
+api POST /api/epreuve/veillee '' "$PAQUET" > /dev/null
+PCODE="$(jval .code)"; PCLE="$(jval .cle)"
+api POST "/api/epreuve/veillee/$PCODE/rejoindre" '' '{"prenom":"Resté"}' > /dev/null
+PJ1="$(jval .jeton)"
+api POST "/api/epreuve/veillee/$PCODE/rejoindre" '' '{"prenom":"Parti"}' > /dev/null
+PJ2="$(jval .jeton)"
+api POST "/api/epreuve/veillee/$PCODE/avancer" '' "{\"cle\":\"$PCLE\"}" > /dev/null
+api GET "/api/epreuve/veillee/$PCODE/etat?jeton=$PJ1" > /dev/null
+api GET "/api/epreuve/veillee/$PCODE/etat?jeton=$PJ2" > /dev/null
+api POST "/api/epreuve/veillee/$PCODE/reponse" '' "{\"jeton\":\"$PJ1\",\"carte\":1,\"choix\":0}" > /dev/null
+check "l'absent n'a pas répondu : on attend" question \
+  "$(api GET "/api/epreuve/veillee/$PCODE/etat" > /dev/null; jval .phase)"
+php -r '
+$pdo = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$st = $pdo->prepare("UPDATE epreuve_participants SET last_seen = ? WHERE jeton = ?");
+$st->execute([gmdate("Y-m-d H:i:s", time() - 120), $argv[2]]);
+' "$ROOT" "$PJ2" 2>>"$TMP/presence.log"
+check "il est parti : la salle ne l'attend plus" revele \
+  "$(api GET "/api/epreuve/veillee/$PCODE/etat" > /dev/null; jval .phase)"
+
+# ---------------------------------------------------------------------------
+say "Épreuve — le mode « la veillée s'enchaîne toute seule »"
+
+api POST /api/epreuve/veillee '' "$(printf '%s' "$PAQUET" | sed 's/}$/,"auto":true,"seconds":10}/')" > /dev/null
+MCODE="$(jval .code)"; MCLE="$(jval .cle)"
+check "le mode est allumé"                true "$(jval .auto)"
+check "et le chrono avec"                   10 "$(jval .seconds)"
+api POST "/api/epreuve/veillee/$MCODE/rejoindre" '' '{"prenom":"Seule"}' > /dev/null
+MJ="$(jval .jeton)"
+api POST "/api/epreuve/veillee/$MCODE/avancer" '' "{\"cle\":\"$MCLE\"}" > /dev/null
+api GET "/api/epreuve/veillee/$MCODE/etat?jeton=$MJ" > /dev/null
+check "le décompte est ANNONCÉ au grand écran" oui \
+  "$([ "$(jval .restant)" != null ] && echo oui || echo non)"
+check "personne n'a répondu : la carte tient" question "$(jval .phase)"
+sleep 13
+check "le temps écoulé révèle, sans personne" revele \
+  "$(api GET "/api/epreuve/veillee/$MCODE/etat" > /dev/null; jval .phase)"
+sleep 9
+check "puis la veillée enchaîne toute seule" 2 \
+  "$(api GET "/api/epreuve/veillee/$MCODE/etat" > /dev/null; jval .carte)"
+check "et repart sur une question"    question "$(jval .phase)"
+
+# L'animateur reprend la main sans refermer la salle.
+check "il coupe le mode → 200" 200 \
+  "$(api POST "/api/epreuve/veillee/$MCODE/auto" '' "{\"cle\":\"$MCLE\",\"actif\":false}")"
+check "le mode est éteint"     false "$(jval .auto)"
+check "le chrono aussi"            0 "$(jval .seconds)"
+check "un inconnu ne règle rien" 403 \
+  "$(api POST "/api/epreuve/veillee/$MCODE/auto" '' '{"cle":"00000000000000000000000000000000","actif":true}')"
+
+# ---------------------------------------------------------------------------
 # La frise a ses propres routes et son propre compteur (« frise-creer »,
 # « frise-rejoindre ») : ce qui vaut pour les épreuves doit valoir pour elle.
 # Quatre cartes au minimum : trois à placer, plus la carte d'amorce.
@@ -2290,6 +2390,35 @@ done
 check "frise : quarante participants entrent sans être refoulés" oui "$FRISE_OK"
 check "frise : code inconnu → 404" 404 \
   "$(api POST "/api/frise/veillee/FV-ZZZZZ/rejoindre" '' '{"prenom":"Personne"}')"
+
+# ---------------------------------------------------------------------------
+# Deux chemins que Google Play réclame, et dont on ne verrait pas l'absence :
+# ils ne sont liés depuis presque nulle part, mais sans eux un dossier de
+# publication échoue — ou pire, l'application Android s'ouvre avec une barre
+# d'adresse en haut, comme un navigateur déguisé.
+say "Play Store : les deux chemins que Google exige"
+check "assetlinks.json est servi"          200 "$(api GET /.well-known/assetlinks.json)"
+check "et c'est du JSON valide"            oui \
+  "$(jq -e 'type == "array"' "$TMP/body.json" > /dev/null 2>&1 && echo oui || echo non)"
+check "il déclare bien le paquet Android"  "fr.biblehorizon.app" \
+  "$(jval '.[0].target.package_name')"
+# L'empreinte de signature ne peut être connue qu'une fois le compte Play créé.
+# Tant qu'elle manque, on le DIT — plutôt que de laisser croire que tout est prêt.
+EMPREINTES="$(jq '.[0].target.sha256_cert_fingerprints | length' "$TMP/body.json")"
+if [ "$EMPREINTES" = 0 ]; then
+  printf '   --   empreinte de signature absente : à coller une fois le compte Play Console créé\n'
+else
+  ok "empreinte de signature présente ($EMPREINTES)"
+fi
+check "la page de suppression de compte est servie" 200 "$(api GET /supprimer-mon-compte/)"
+
+# Le Dockerfile copie chaque chemin racine EXPLICITEMENT : un dossier oublié
+# ici n'existe tout simplement pas en production.
+DOCKER_OK=oui
+for D in .well-known supprimer-mon-compte; do
+  grep -q "COPY $D/" "$ROOT/Dockerfile" || DOCKER_OK="$D manque au Dockerfile"
+done
+check "les deux dossiers sont copiés dans l'image" oui "$DOCKER_OK"
 
 # ---------------------------------------------------------------------------
 say "Divers"

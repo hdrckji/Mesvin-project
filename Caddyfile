@@ -73,6 +73,7 @@
 	redir /eglises /eglises/ permanent
 	redir /confidentialite /confidentialite/ permanent
 	redir /mentions-legales /mentions-legales/ permanent
+	redir /supprimer-mon-compte /supprimer-mon-compte/ permanent
 	@pquiz path /quiz-biblique/
 	rewrite @pquiz /quiz-biblique/index.html
 	@pplan path /plan-lecture-bible/
@@ -85,6 +86,18 @@
 	rewrite @pconf /confidentialite/index.html
 	@pml path /mentions-legales/
 	rewrite @pml /mentions-legales/index.html
+	@psupp path /supprimer-mon-compte/
+	rewrite @psupp /supprimer-mon-compte/index.html
+
+	# assetlinks.json doit être servi TEL QUEL et en application/json : c'est
+	# Android qui le lit, pas un navigateur. Il ne doit jamais être mis en
+	# cache longtemps — le jour où l'empreinte de signature change, la
+	# vérification doit repartir tout de suite.
+	@assetlinks path /.well-known/assetlinks.json
+	header @assetlinks {
+		Content-Type "application/json"
+		Cache-Control "no-cache"
+	}
 
 	# Le service worker ne doit jamais être mis en cache,
 	# sinon les mises à jour de l'appli ne parviennent pas aux utilisateurs.
@@ -94,7 +107,7 @@
 	# Les pages HTML non plus : sans en-tête, les navigateurs les gardent en
 	# cache « heuristique » et une ancienne page d'accueil peut coller
 	# longtemps après un déploiement. no-cache = revalider à chaque visite.
-	@html path / /index.html /lire /lire/ /lire/index.html /defi /defi/ /defi/index.html /admin /admin/ /admin/index.html /frise /frise/ /frise/index.html /quiadit /quiadit/ /quiadit/index.html /ecritoupas /ecritoupas/ /ecritoupas/index.html /portrait /portrait/ /portrait/index.html /quiz-biblique/ /quiz-biblique/index.html /plan-lecture-bible/ /plan-lecture-bible/index.html /memoriser-versets/ /memoriser-versets/index.html /eglises/ /eglises/index.html /frise-essai.html
+	@html path / /index.html /lire /lire/ /lire/index.html /defi /defi/ /defi/index.html /admin /admin/ /admin/index.html /frise /frise/ /frise/index.html /quiadit /quiadit/ /quiadit/index.html /ecritoupas /ecritoupas/ /ecritoupas/index.html /portrait /portrait/ /portrait/index.html /quiz-biblique/ /quiz-biblique/index.html /plan-lecture-bible/ /plan-lecture-bible/index.html /memoriser-versets/ /memoriser-versets/index.html /eglises/ /eglises/index.html /supprimer-mon-compte/ /supprimer-mon-compte/index.html /frise-essai.html
 	header @html Cache-Control "no-cache"
 
 	# Type MIME correct pour le manifeste PWA.

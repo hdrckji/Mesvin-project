@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 8;
+const DB_MIGRATION_DERNIERE = 9;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1157,11 +1157,38 @@ function db_migrate(PDO $pdo): void {
            'ALTER TABLE frise_duels ADD COLUMN p2_user INTEGER NULL',
            'CREATE INDEX IF NOT EXISTS idx_frised_invite ON frise_duels (p2_user)'];
 
+    /* ---- Étape 9 — les veillées d'épreuve peuvent s'enchaîner seules ------------
+       Jusqu'ici, « Qui a dit ça ? », « Écrit… ou pas ? », « De qui parle-t-on ? »
+       et la frise n'avançaient QUE sur un geste de l'animateur. Son téléphone se
+       verrouille dans une salle sombre, et le grand écran se fige devant toute
+       l'assemblée — le Défi a été réparé, pas elles.
+       - last_seen : sonder l'état vaut signe de présence, comme pour le Défi.
+         Sans lui, un participant parti bloquerait « tous ont répondu » à jamais.
+       - auto : le mode « la veillée s'enchaîne toute seule », choisi à
+         l'ouverture. À 0, RIEN ne change : l'animateur mène comme avant.
+       - seconds : le chrono par carte (0 = aucun), seul capable de débloquer
+         une question que personne ne finit.
+       - phase_debut : depuis quand la phase courante dure. Sert au chrono comme
+         au décompte avant la carte suivante — un seul horodatage pour les deux. */
+    $tsNull = db_driver($pdo) === 'mysql' ? 'DATETIME NULL' : 'TEXT NULL';
+    $entier = db_driver($pdo) === 'mysql' ? 'TINYINT NOT NULL DEFAULT 0' : 'INTEGER NOT NULL DEFAULT 0';
+    $secondes = db_driver($pdo) === 'mysql' ? 'INT NOT NULL DEFAULT 0' : 'INTEGER NOT NULL DEFAULT 0';
+    $etape9 = [];
+    foreach (['epreuve_participants', 'frise_participants', 'portrait_participants'] as $t) {
+        $etape9[] = "ALTER TABLE $t ADD COLUMN last_seen $tsNull";
+    }
+    foreach (['epreuve_veillees', 'frise_veillees', 'portrait_veillees'] as $t) {
+        $etape9[] = "ALTER TABLE $t ADD COLUMN auto $entier";
+        $etape9[] = "ALTER TABLE $t ADD COLUMN seconds $secondes";
+        $etape9[] = "ALTER TABLE $t ADD COLUMN phase_debut $tsNull";
+    }
+
     /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
     foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4, 5 => $etape5,
-              6 => $etape6, 7 => $etape7, 8 => $etape8] as $version => $liste) {
+              6 => $etape6, 7 => $etape7, 8 => $etape8,
+              9 => $etape9] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }

@@ -32,6 +32,7 @@ require __DIR__ . '/groupes-page.php';
 require __DIR__ . '/duels.php';
 require __DIR__ . '/veillees.php';
 require __DIR__ . '/frise.php';
+require __DIR__ . '/epreuves-auto.php';
 require __DIR__ . '/epreuve.php';
 require __DIR__ . '/portrait.php';
 require __DIR__ . '/admin.php';
@@ -393,6 +394,9 @@ if (preg_match('#^/api/epreuve/duel/(ED-[A-Z2-9]{5})/adopter$#', $path, $m)) {
 if ($path === '/api/epreuve/veillee' && $method === 'POST') epreuve_veillee_create($pdo);
 if (preg_match('#^/api/epreuve/veillee/(EV-[A-Z2-9]{5})/rejoindre$#', $path, $m)) {
     if ($method === 'POST') epreuve_veillee_rejoindre($pdo, $m[1]);
+}
+if (preg_match('#^/api/epreuve/veillee/(EV-[A-Z2-9]{5})/auto$#', $path, $m)) {
+    if ($method === 'POST') epreuve_veillee_auto($pdo, $m[1]);
 }
 if (preg_match('#^/api/epreuve/veillee/(EV-[A-Z2-9]{5})/avancer$#', $path, $m)) {
     if ($method === 'POST') epreuve_veillee_avancer($pdo, $m[1]);
