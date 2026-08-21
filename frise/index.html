@@ -365,7 +365,12 @@ async function chargerAmis(force) {
   if ((amisLigne || amisErreur) && !force) return;
   try {
     const [amis, rep] = await Promise.all([GraineAPI.friends(), GraineAPI.epreuveDefis()]);
-    amisLigne = { amis: amis, defis: rep.defis || [], duels: rep.duels || [] };
+    // Tolère l'ancienne forme (un simple tableau de défis) : pendant une mise
+    // à jour, le service worker peut servir un api-client.js d'une version et
+    // cette page d'une autre — mieux vaut des listes justes que rien du tout.
+    const defis = Array.isArray(rep) ? rep : (rep && rep.defis) || [];
+    const duels = Array.isArray(rep) ? [] : (rep && rep.duels) || [];
+    amisLigne = { amis: amis, defis: defis, duels: duels };
     amisErreur = null;
   } catch (e) {
     amisLigne = null;
