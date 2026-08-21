@@ -421,9 +421,15 @@ function duelLanceHTML() {
     : d.invite
       ? `Ton défi attend <b>${esc(d.invite)}</b> — il le trouvera dans « Défier un ami ».`
       : `Personne n'a encore répondu. Le code à partager : <b>${esc(d.code)}</b>`;
+  // Jamais relevé et la clé est là : on peut vraiment l'ANNULER (le code
+  // meurt côté serveur, et il quitte la liste de l'ami invité). Sinon —
+  // défi relevé, ou lancé avant que la clé ne soit gardée — on cache.
+  const bouton = !d.p2 && d.cle
+    ? `<button class="btn btn-ghost btn-block" data-duel-annule="1">Annuler ce défi</button>`
+    : `<button class="btn btn-ghost btn-block" data-duel-oubli="1">Ne plus l'afficher</button>`;
   return `<div class="card fade" style="margin:-4px 0 16px">
     <p style="margin:0 0 8px">${corps}</p>
-    <button class="btn btn-ghost btn-block" data-duel-oubli="1">Ne plus l'afficher</button>
+    ${bouton}
   </div>`;
 }
 let minuterie = null; // l'interrogation régulière du serveur (écrans en ligne)
@@ -1230,6 +1236,13 @@ function render() {
 
   const oubli = el.querySelector('[data-duel-oubli]');
   if (oubli) oubli.addEventListener('click', () => { duelOubli(); repriseDuel = null; render(); });
+  const annule = el.querySelector('[data-duel-annule]');
+  if (annule) annule.addEventListener('click', async () => {
+    annule.disabled = true;
+    try { await api('duel/' + repriseDuel.code + '/annuler', { cle: repriseDuel.cle }); }
+    catch (e) { /* déjà balayé ou relevé entre-temps : la carte s'efface, le serveur a le dernier mot */ }
+    duelOubli(); repriseDuel = null; render();
+  });
 
   const duelgo = el.querySelector('[data-duelgo]');
   if (duelgo) duelgo.addEventListener('click', async () => {
@@ -1243,7 +1256,7 @@ function render() {
       // prénom saisi et le code à partager, comme toujours.
       if (amiChoisi) corps.opponentCode = amiChoisi.code; else corps.pseudo = pseudo;
       const r = await api('duel', corps);
-      duelEcrire({ code: r.code, ts: Date.now() });
+      duelEcrire({ code: r.code, cle: r.cle, ts: Date.now() });
       amiChoisi = null;
       demarrerServi(deck, titrePaquet(config.mode, config.portee), { code: r.code, cle: r.cle });
     } catch (e) { duelgo.disabled = false; erreurLigne(e.message); }
@@ -1381,7 +1394,7 @@ async function verifierRepriseDuel() {
   if (Date.now() - (d.ts || 0) > 7 * 86400000) { duelOubli(); return; }
   try {
     const etat = await api('duel/' + d.code);
-    repriseDuel = { code: d.code, p1: etat.p1, p2: etat.p2, total: etat.total, invite: etat.invite || null };
+    repriseDuel = { code: d.code, cle: d.cle || null, p1: etat.p1, p2: etat.p2, total: etat.total, invite: etat.invite || null };
     render();
   } catch (e) { if (e && e.status === 404) duelOubli(); }  // duel expiré
 }

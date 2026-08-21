@@ -889,6 +889,18 @@ check "u2 pose le sien (pseudo) → 200"  200 "$(api POST "/api/epreuve/duel/$ED
 check "les deux scores sont là"         3 "$(jval .p2.score)"
 check "la liste de u2 est vide"         0 "$(api GET /api/epreuve/defis "$TOKEN2" > /dev/null; jval '.defis | length')"
 
+say "Défis d'épreuve — annuler un défi jamais relevé"
+check "u1 lance un défi visé sur u2 → 200" 200 "$(api POST /api/epreuve/duel "$TOKEN1" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"$FCODE2\"}")"
+ANCODE="$(jval .code)"
+ANCLE="$(jval .cle)"
+check "il attend bien u2"               1 "$(api GET /api/epreuve/defis "$TOKEN2" > /dev/null; jval '.defis | length')"
+check "annuler sans la clé → 403"       403 "$(api POST "/api/epreuve/duel/$ANCODE/annuler" '' '{"cle":"mauvaise"}')"
+check "annuler avec la clé → 200"       200 "$(api POST "/api/epreuve/duel/$ANCODE/annuler" '' "{\"cle\":\"$ANCLE\"}")"
+check "le code n'existe plus → 404"     404 "$(api GET "/api/epreuve/duel/$ANCODE")"
+check "et il a quitté la liste de u2"   0 "$(api GET /api/epreuve/defis "$TOKEN2" > /dev/null; jval '.defis | length')"
+check "un défi RELEVÉ ne s'annule pas → 409" 409 "$(api POST "/api/epreuve/duel/$EDCODE/annuler" '' "{\"cle\":\"$EDCLE\"}")"
+check "annuler un code inconnu → 404"   404 "$(api POST /api/epreuve/duel/ED-ZZZZZ/annuler '' '{"cle":"x"}')"
+
 say "Défis d'épreuve entre amis — la Frise aussi (FD-), et le défi par code reste anonyme"
 FDECK='[{"t":"Création","r":null,"o":1},{"t":"Déluge","r":null,"o":2},{"t":"Abraham","r":null,"o":3},{"t":"Moïse","r":null,"o":4}]'
 check "u2 défie u1 sur la Frise → 200"  200 "$(api POST /api/frise/duel "$TOKEN2" "{\"mode\":\"Livres · toute la Bible\",\"deck\":$FDECK,\"opponentCode\":\"$FCODE1\"}")"

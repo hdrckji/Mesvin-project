@@ -110,6 +110,10 @@ et `GET …/duel/{code}` rend `invite`.
   createdAt}]}` — les défis d'épreuve lancés PAR UN AMI qui m'attendent,
   toutes épreuves confondues (préfixes ED-/PD-/FD- ; chaque page filtre sur
   son préfixe et son mode). Un défi joué (ou balayé à 7 jours) disparaît.
+- `POST …/duel/{code}/annuler` `{cle}` (frise, epreuve, portrait) — le
+  créateur retire un défi que PERSONNE n'a relevé : le code meurt tout de
+  suite (404 ensuite) et le défi quitte la liste de l'ami invité. 403 sans
+  la clé, 409 si l'adversaire a déjà répondu (un résultat ne s'efface pas).
 
 ## « De qui parle-t-on ? » (/portrait/) — le portrait à indices
 

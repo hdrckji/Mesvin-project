@@ -164,6 +164,30 @@ function epreuve_mes_defis(PDO $pdo): never {
     json_out(['defis' => $defis]);
 }
 
+/* ---- POST …/duel/{code}/annuler — retirer un défi jamais relevé -------------
+   « Ne plus l'afficher » cachait la carte, mais le code vivait ses sept jours
+   et un défi visé sur un ami restait dans SA liste. Annuler efface pour de
+   bon : créateur seul (la clé), et seulement tant que personne n'a répondu —
+   un défi relevé est un résultat, il ne s'efface pas. Sert les deux tables
+   (epreuve_duels : ED-/PD-, frise_duels : FD-). */
+function epreuve_duel_annuler(PDO $pdo, string $table, string $code): never {
+    $st = $pdo->prepare("SELECT * FROM $table WHERE code = ?");
+    $st->execute([$code]);
+    $duel = $st->fetch();
+    if ($duel === false) {
+        json_error('Défi introuvable — vérifie le code.', 404);
+    }
+    $cle = read_json_body()['cle'] ?? null;
+    if (!is_string($cle) || !hash_equals((string) $duel['cle'], $cle)) {
+        json_error('Seul celui qui a lancé le défi peut l\'annuler.', 403);
+    }
+    if ($duel['p2_pseudo'] !== null) {
+        json_error('Ce défi a déjà été relevé — son résultat reste.', 409);
+    }
+    $pdo->prepare("DELETE FROM $table WHERE code = ?")->execute([$code]);
+    json_out(['ok' => true]);
+}
+
 /* ---- Duel par code ----------------------------------------------------------- */
 
 function epreuve_duel_create(PDO $pdo): never {

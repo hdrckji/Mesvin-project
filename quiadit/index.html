@@ -299,9 +299,15 @@ function duelLanceHTML() {
     : d.invite
       ? `Ton défi attend <b>${esc(d.invite)}</b> — il le trouvera dans « Défier un ami ».`
       : `Personne n'a encore répondu. Le code à partager : <b>${esc(d.code)}</b>`;
+  // Jamais relevé et la clé est là : on peut vraiment l'ANNULER (le code
+  // meurt côté serveur, et il quitte la liste de l'ami invité). Sinon —
+  // défi relevé, ou lancé avant que la clé ne soit gardée — on cache.
+  const bouton = !d.p2 && d.cle
+    ? `<button class="btn btn-ghost btn-block" data-duel-annule="1">Annuler ce défi</button>`
+    : `<button class="btn btn-ghost btn-block" data-duel-oubli="1">Ne plus l'afficher</button>`;
   return `<div class="card fade" style="margin:-4px 0 16px">
     <p style="margin:0 0 8px">${corps}</p>
-    <button class="btn btn-ghost btn-block" data-duel-oubli="1">Ne plus l'afficher</button>
+    ${bouton}
   </div>`;
 }
 
@@ -980,6 +986,12 @@ function render() {
   if (q1('[data-duel-oubli]')) q1('[data-duel-oubli]').addEventListener('click', () => {
     duelOubli(); repriseDuel = null; render();
   });
+  if (q1('[data-duel-annule]')) q1('[data-duel-annule]').addEventListener('click', async (ev) => {
+    ev.currentTarget.disabled = true;
+    try { await api('duel/' + repriseDuel.code + '/annuler', { cle: repriseDuel.cle }); }
+    catch (e) { /* déjà balayé ou relevé entre-temps : la carte s'efface, le serveur a le dernier mot */ }
+    duelOubli(); repriseDuel = null; render();
+  });
   el.querySelectorAll('[data-serie]').forEach(b => b.addEventListener('click', () => {
     const v = b.dataset.serie;
     serieChoisie = v === '' ? null : Number(v);
@@ -1021,7 +1033,7 @@ function render() {
       await chargerBanque();
       const deck = tirage(CARTES_PAR_SEANCE);
       const r = await api('duel', { pseudo: pseudo, mode: TITRE, deck: deck });
-      duelEcrire({ code: r.code, ts: Date.now() });
+      duelEcrire({ code: r.code, cle: r.cle, ts: Date.now() });
       demarrer(null, { code: r.code, cle: r.cle }, deck);
     } catch (e) { duelgo.disabled = false; erreurLigne(e.message); }
   });
@@ -1033,7 +1045,7 @@ function render() {
     try {
       const deck = tirage(CARTES_PAR_SEANCE);
       const r = await api('duel', { mode: TITRE, deck: deck, opponentCode: b.dataset.defiami });
-      duelEcrire({ code: r.code, ts: Date.now() });
+      duelEcrire({ code: r.code, cle: r.cle, ts: Date.now() });
       demarrer(null, { code: r.code, cle: r.cle }, deck);
     } catch (e) {
       el.querySelectorAll('[data-defiami]').forEach(x => { x.disabled = false; });
@@ -1155,7 +1167,7 @@ async function verifierRepriseDuel() {
   if (Date.now() - (d.ts || 0) > 7 * 86400000) { duelOubli(); return; }
   try {
     const etat = await api('duel/' + d.code);
-    repriseDuel = { code: d.code, p1: etat.p1, p2: etat.p2, total: etat.total, invite: etat.invite || null };
+    repriseDuel = { code: d.code, cle: d.cle || null, p1: etat.p1, p2: etat.p2, total: etat.total, invite: etat.invite || null };
     render();
   } catch (e) { if (e && e.status === 404) duelOubli(); }  // duel expiré
 }
