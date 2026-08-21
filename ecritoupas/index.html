@@ -291,6 +291,15 @@ async function chargerBanque() {
    elle ne remplace rien. */
 /* Le défi qu'on a lancé, et sa réponse. Il n'existe pas d'écran de retour
    pour celui qui l'a lancé : la carte porte donc le résultat elle-même. */
+/* La carte du dernier défi lancé, VUE DEPUIS « Défier un ami » : c'est sa
+   place naturelle (l'accueil du jeu reste consacré aux manières de jouer).
+   Connecté, « Tes duels » raconte déjà ce duel-là — la carte s'efface pour
+   ne pas faire doublon ; elle reste le seul repère des défis par code. */
+function duelMenuLanceHTML() {
+  if (!repriseDuel) return '';
+  if (connecte() && amisLigne && (amisLigne.duels || []).some(d => d.code === repriseDuel.code)) return '';
+  return duelLanceHTML();
+}
 function duelLanceHTML() {
   if (!repriseDuel) return '';
   const d = repriseDuel;
@@ -513,7 +522,6 @@ function vueAccueil() {
     <h1 style="margin-top:10px">Écrit… ou pas <span class="seed">?</span></h1>
     <p class="muted" style="margin:4px 0 16px">Cette phrase se trouve-t-elle vraiment dans la Bible ? Certaines « citations » célèbres n'y ont jamais mis les pieds…</p>
     ${choixBanqueHTML()}
-    ${duelLanceHTML()}
 
     <button class="card hub-card" data-solo="1">
       <span class="hub-ic">${icon('seul', 26)}</span>
@@ -668,6 +676,7 @@ function vueDuelMenu() {
     <button class="quit" data-quit="1">‹ Écrit… ou pas ?</button>
     <h1 style="font-size:1.25rem;margin-top:10px">Défier un ami</h1>
     <p class="muted" style="margin:4px 0 16px">Les mêmes questions pour vous deux, chacun quand il veut.</p>
+    ${duelMenuLanceHTML()}
     ${amisHTML()}
     <p class="feedback faux" id="err-ligne" style="margin:0 0 12px"></p>
     <button class="card hub-card" data-vers="dcfg">
