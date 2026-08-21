@@ -109,9 +109,11 @@
 
     /* ---- duels ---- */
     async createDuel(opponentCode) { return (await call('POST', '/api/duels', { opponentCode })).duel; },
-    // Les défis d'ÉPREUVE (quiadit, ecritoupas, portrait, frise) lancés par un
-    // ami et qui m'attendent — toutes épreuves confondues, chaque page filtre.
-    async epreuveDefis() { return (await call('GET', '/api/epreuve/defis')).defis; },
+    // Les défis d'ÉPREUVE (quiadit, ecritoupas, portrait, frise) : `defis` =
+    // lancés par un ami et qui m'attendent, `duels` = les miens (lancés ou
+    // relevés, en attente ou finis). Toutes épreuves confondues — chaque page
+    // filtre sur son préfixe de code et son mode.
+    async epreuveDefis() { return call('GET', '/api/epreuve/defis'); },
     async duels() { return (await call('GET', '/api/duels')).duels; },
     async duel(id) { return (await call('GET', '/api/duels/' + id)).duel; },
     async duelResult(id, answers) { return (await call('POST', '/api/duels/' + id + '/result', { answers })).duel; },

@@ -387,12 +387,18 @@ function defisRecus() {
   if (!amisLigne) return [];
   return (amisLigne.defis || []).filter(d => d.code.indexOf('PD-') === 0 && d.mode === TITRE);
 }
+/* MES duels pour cette épreuve — lancés ou relevés, en attente ou finis :
+   la même mémoire que le « Qui, où, quand ? », sur tous mes appareils. */
+function duelsDuJeu() {
+  if (!amisLigne) return [];
+  return (amisLigne.duels || []).filter(d => d.code.indexOf('PD-') === 0 && d.mode === TITRE);
+}
 async function chargerAmis(force) {
   if (!connecte()) return;
   if ((amisLigne || amisErreur) && !force) return;
   try {
-    const [amis, defis] = await Promise.all([GraineAPI.friends(), GraineAPI.epreuveDefis()]);
-    amisLigne = { amis: amis, defis: defis };
+    const [amis, rep] = await Promise.all([GraineAPI.friends(), GraineAPI.epreuveDefis()]);
+    amisLigne = { amis: amis, defis: rep.defis || [], duels: rep.duels || [] };
     amisErreur = null;
   } catch (e) {
     amisLigne = null;
@@ -439,7 +445,23 @@ function amisHTML() {
         </button>`).join('')}
     </div>`;
   }
-  return recus + amis;
+  const miens = duelsDuJeu();
+  let duels = '';
+  if (miens.length) {
+    const ligne = d => {
+      const droite = d.status === 'attente' ? 'En attente'
+        : `${d.monScore === null ? '–' : d.monScore} / ${d.sonScore === null ? '–' : d.sonScore}`;
+      const gauche = d.avec ? esc(d.avec) : 'Par code · ' + esc(d.code);
+      return `<button class="frow" data-duelvoir="${esc(d.code)}" data-avec="${esc(d.avec || '')}" style="width:100%;border:0;background:none;font:inherit;color:inherit;cursor:pointer;text-align:left">
+          <span>⚔️ ${gauche}</span><b>${droite}</b>
+        </button>`;
+    };
+    duels = `<div class="card" style="margin:0 0 12px;padding:12px 16px">
+      <p class="mode-title" style="margin-top:0">Tes duels</p>
+      ${miens.map(ligne).join('')}
+    </div>`;
+  }
+  return recus + amis + duels;
 }
 let minuterie = null;
 
@@ -591,7 +613,7 @@ function envoyerScoreDuel() {
     ? { score: s.score, cle: s.enLigne.cle }
     : { score: s.score, pseudo: s.enLigne.pseudo };
   api('duel/' + s.enLigne.code + '/score', corps)
-    .then(r => { online = { code: s.enLigne.code, resultat: r, erreur: null }; ecran = 'dres'; render(); })
+    .then(r => { online = { code: s.enLigne.code, resultat: r, erreur: null, avec: s.enLigne.avec || null }; ecran = 'dres'; render(); })
     .catch(e => { online = { code: s.enLigne.code, resultat: null, erreur: e.message }; ecran = 'dres'; render(); });
 }
 
@@ -829,12 +851,19 @@ function vueDuelResultat() {
     }
     corps = ligne(r.p1) + ligne(r.p2) + verdict;
   } else corps = '<p class="muted">Un instant…</p>';
+  // Un duel visé sur un AMI n'a pas besoin de code : l'en-tête le nomme,
+  // tout simplement. Le code (et son bouton Copier) ne s'affichent que pour
+  // un défi par code — là, c'est la seule façon d'inviter.
+  const invite = o.avec || (r && r.invite);
+  const entete = invite
+    ? `<p style="font-weight:650;font-size:1.1rem;margin:0 0 8px">⚔️ Ton duel avec ${esc(invite)}</p>`
+    : `<p class="muted" style="margin:0 0 4px">Le code du défi — à partager tel quel :</p>
+      <div class="code-big">${esc(o.code)}</div>
+      <button class="btn btn-ghost" data-copie="${esc(o.code)}">Copier le code</button>`;
   return `<div class="fade">
     <button class="quit" data-quit="1">‹ Accueil</button>
     <div class="card fin">
-      <p class="muted" style="margin:0 0 4px">Le code du défi — à partager tel quel :</p>
-      <div class="code-big">${esc(o.code)}</div>
-      <button class="btn btn-ghost" data-copie="${esc(o.code)}">Copier le code</button>
+      ${entete}
       ${corps}
     </div>
   </div>`;
@@ -1080,7 +1109,10 @@ function render() {
   if (q1('[data-solo]')) q1('[data-solo]').addEventListener('click', avecBanque(() => demarrer(null, null, null)));
   if (q1('[data-multi]')) q1('[data-multi]').addEventListener('click', versEcran('config'));
   // sous-menus et retours : la carte (ou le lien) porte l'écran où elle mène
-  el.querySelectorAll('[data-vers]').forEach(b => b.addEventListener('click', versEcran(b.dataset.vers)));
+  el.querySelectorAll('[data-vers]').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.vers === 'dmenu') { amisLigne = null; amisErreur = null; } // duels toujours frais
+    versEcran(b.dataset.vers)();
+  }));
   if (q1('[data-quit]')) q1('[data-quit]').addEventListener('click', quitter);
 
   if (q1('[data-indice]')) q1('[data-indice]').addEventListener('click', indiceSuivant);
@@ -1147,13 +1179,25 @@ function render() {
       const code = b.dataset.defirecu;
       const r = await api('duel/' + code);
       if (r.p2) throw new Error('Ce défi a déjà trouvé son adversaire.');
+      const dInfo = amisLigne && (amisLigne.defis || []).find(x => x.code === code);
       // Relevé : il quitte la liste (et le badge) sans attendre le serveur.
       if (amisLigne) amisLigne.defis = (amisLigne.defis || []).filter(x => x.code !== code);
-      demarrer(null, { code: code, pseudo: monPseudo() }, deckLocal(r.deck));
+      demarrer(null, { code: code, pseudo: monPseudo(), avec: dInfo ? dInfo.de : null }, deckLocal(r.deck));
     } catch (e) {
       el.querySelectorAll('[data-defirecu]').forEach(x => { x.disabled = false; });
       erreurLigne(e.message);
     }
+  }));
+  // Revoir un de MES duels — en attente ou fini : l'écran de résultat,
+  // rafraîchi en direct si l'autre joue pendant qu'on regarde.
+  el.querySelectorAll('[data-duelvoir]').forEach(b => b.addEventListener('click', async () => {
+    b.disabled = true;
+    try {
+      const code = b.dataset.duelvoir;
+      const r = await api('duel/' + code);
+      online = { code: code, resultat: r, erreur: null, avec: b.dataset.avec || null };
+      ecran = 'dres'; render();
+    } catch (e) { b.disabled = false; erreurLigne(e.message); }
   }));
 
   const joingo = q1('[data-joingo]');

@@ -106,10 +106,14 @@ Comme pour la Frise, `POST /api/epreuve/duel` (et `POST /api/portrait/duel`)
 accepte `opponentCode` d'un joueur connecté — mêmes règles, mêmes réponses —
 et `GET …/duel/{code}` rend `invite`.
 
-- `GET /api/epreuve/defis` (connecté) → `{defis: [{code, mode, total, de,
-  createdAt}]}` — les défis d'épreuve lancés PAR UN AMI qui m'attendent,
-  toutes épreuves confondues (préfixes ED-/PD-/FD- ; chaque page filtre sur
-  son préfixe et son mode). Un défi joué (ou balayé à 7 jours) disparaît.
+- `GET /api/epreuve/defis` (connecté) → `{defis, duels}` — toutes épreuves
+  confondues (préfixes ED-/PD-/FD- ; chaque page filtre sur son préfixe et
+  son mode). `defis` = `[{code, mode, total, de, createdAt}]`, les défis
+  lancés PAR UN AMI qui m'attendent (un défi joué, annulé ou balayé à
+  7 jours disparaît). `duels` = `[{code, mode, total, role: createur|invite,
+  avec, monScore, sonScore, status: attente|fini, createdAt}]`, MES duels —
+  lancés (même par code : le créateur connecté est retenu) ou relevés —
+  pour l'écran « Tes duels » des épreuves ; même durée de vie de 7 jours.
 - `POST …/duel/{code}/annuler` `{cle}` (frise, epreuve, portrait) — le
   créateur retire un défi que PERSONNE n'a relevé : le code meurt tout de
   suite (404 ensuite) et le défi quitte la liste de l'ami invité. 403 sans

@@ -161,7 +161,42 @@ function epreuve_mes_defis(PDO $pdo): never {
         }
     }
     usort($defis, fn (array $a, array $b): int => strcmp($b['createdAt'], $a['createdAt']));
-    json_out(['defis' => $defis]);
+
+    /* Et MES duels — lancés (p1_user = moi) ou relevés (p2_user = moi, joué) :
+       l'écran « Défier un ami » des épreuves peut ainsi montrer les duels en
+       attente et terminés, comme le « Qui, où, quand ? ». Sept jours de vie,
+       comme le code lui-même. */
+    $duels = [];
+    foreach (['epreuve_duels', 'frise_duels'] as $table) {
+        $st = $pdo->prepare(
+            "SELECT * FROM $table
+             WHERE p1_user = ? OR (p2_user = ? AND p2_pseudo IS NOT NULL)"
+        );
+        $st->execute([$user['id'], $user['id']]);
+        foreach ($st->fetchAll() as $row) {
+            $estCreateur = $row['p1_user'] !== null && (int) $row['p1_user'] === (int) $user['id'];
+            $avec = $estCreateur
+                ? ($row['p2_pseudo'] ?? epreuve_duel_invite($pdo, $row))
+                : $row['p1_pseudo'];
+            $duels[] = [
+                'code'      => $row['code'],
+                'mode'      => $row['mode'],
+                'total'     => (int) $row['total'],
+                'role'      => $estCreateur ? 'createur' : 'invite',
+                'avec'      => $avec,
+                'monScore'  => $estCreateur
+                    ? ($row['p1_score'] === null ? null : (int) $row['p1_score'])
+                    : ($row['p2_score'] === null ? null : (int) $row['p2_score']),
+                'sonScore'  => $estCreateur
+                    ? ($row['p2_score'] === null ? null : (int) $row['p2_score'])
+                    : ($row['p1_score'] === null ? null : (int) $row['p1_score']),
+                'status'    => $row['p2_pseudo'] === null ? 'attente' : 'fini',
+                'createdAt' => sql_to_iso($row['created_at']),
+            ];
+        }
+    }
+    usort($duels, fn (array $a, array $b): int => strcmp($b['createdAt'], $a['createdAt']));
+    json_out(['defis' => $defis, 'duels' => $duels]);
 }
 
 /* ---- POST …/duel/{code}/annuler — retirer un défi jamais relevé -------------
@@ -210,8 +245,15 @@ function epreuve_duel_create(PDO $pdo): never {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $st->execute([$code, $cle, $mode, json_encode($deck, JSON_UNESCAPED_UNICODE),
-        count($deck), $pseudo, $ami['p1'] ?? null, $ami['p2'] ?? null, now_sql()]);
+        count($deck), $pseudo, $ami['p1'] ?? epreuve_createur_connecte($pdo), $ami['p2'] ?? null, now_sql()]);
     json_out(['code' => $code, 'cle' => $cle]);
+}
+
+/** L'id du créateur s'il est connecté, sinon null — même pour un défi par
+ *  code : ses duels le suivent alors d'un appareil à l'autre. */
+function epreuve_createur_connecte(PDO $pdo): ?int {
+    $u = optional_user($pdo);
+    return $u === null ? null : (int) $u['id'];
 }
 
 function epreuve_duel_row(PDO $pdo, string $code): array {

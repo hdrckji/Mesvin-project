@@ -910,6 +910,21 @@ api POST /api/epreuve/duel '' "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"p
 ANONCODE="$(jval .code)"
 check "duel par code : invite null"     null "$(api GET "/api/epreuve/duel/$ANONCODE" > /dev/null; jval .invite)"
 
+say "Défis d'épreuve — « Tes duels » : lancés et relevés, en attente et finis"
+api GET /api/epreuve/defis "$TOKEN1" > /dev/null
+check "u1 voit son duel ED- (créateur)"  "$EDCODE" "$(jq -r '[.duels[] | select(.code == "'"$EDCODE"'")][0].code' "$TMP/body.json")"
+check "→ role createur"                 createur "$(jq -r '[.duels[] | select(.code == "'"$EDCODE"'")][0].role' "$TMP/body.json")"
+check "→ avec Benoît"                   Benoît "$(jq -r '[.duels[] | select(.code == "'"$EDCODE"'")][0].avec' "$TMP/body.json")"
+check "→ scores 2 / 3"                  "2/3" "$(jq -r '[.duels[] | select(.code == "'"$EDCODE"'")][0] | "\(.monScore)/\(.sonScore)"' "$TMP/body.json")"
+check "→ status fini"                   fini "$(jq -r '[.duels[] | select(.code == "'"$EDCODE"'")][0].status' "$TMP/body.json")"
+check "et son duel FD- reçu (invité, en attente pour lui : absent des duels, présent des defis)" "$FDCODE" "$(jval '.defis[0].code')"
+api GET /api/epreuve/defis "$TOKEN2" > /dev/null
+check "u2 voit le même ED- en face"     "invite/Alice/3/2" "$(jq -r '[.duels[] | select(.code == "'"$EDCODE"'")][0] | "\(.role)/\(.avec)/\(.monScore)/\(.sonScore)"' "$TMP/body.json")"
+check "u2 voit son duel FD- lancé, en attente" "createur/attente" "$(jq -r '[.duels[] | select(.code == "'"$FDCODE"'")][0] | "\(.role)/\(.status)"' "$TMP/body.json")"
+check "un duel par code créé CONNECTÉ suit son créateur" 200 "$(api POST /api/epreuve/duel "$TOKEN3" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"pseudo\":\"Chloé\"}")"
+CCODE="$(jval .code)"
+check "→ u3 le retrouve dans SES duels" "createur/attente" "$(api GET /api/epreuve/defis "$TOKEN3" > /dev/null; jq -r '[.duels[] | select(.code == "'"$CCODE"'")][0] | "\(.role)/\(.status)"' "$TMP/body.json")"
+
 say "Groupes d'église — la création directe est fermée (le message oriente)"
 check "POST /api/groupes sans compte → 401" 401 "$(api POST /api/groupes '' '{"nom":"Béthel"}')"
 check "création directe connectée → 403" 403 "$(api POST /api/groupes "$TOKEN1" '{"nom":"Béthel"}')"

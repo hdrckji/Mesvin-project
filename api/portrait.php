@@ -168,7 +168,7 @@ function portrait_duel_create(PDO $pdo): never {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $st->execute([$code, $cle, 'De qui parle-t-on ?', json_encode($deck, JSON_UNESCAPED_UNICODE),
-        count($deck) * PORTRAIT_INDICES, $pseudo, $ami['p1'] ?? null, $ami['p2'] ?? null, now_sql()]);
+        count($deck) * PORTRAIT_INDICES, $pseudo, $ami['p1'] ?? epreuve_createur_connecte($pdo), $ami['p2'] ?? null, now_sql()]);
     json_out(['code' => $code, 'cle' => $cle]);
 }
 

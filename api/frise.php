@@ -133,7 +133,7 @@ function frise_duel_create(PDO $pdo): never {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $st->execute([$code, $cle, $mode, json_encode($deck, JSON_UNESCAPED_UNICODE),
-        count($deck) - 1, $pseudo, $ami['p1'] ?? null, $ami['p2'] ?? null, now_sql()]);
+        count($deck) - 1, $pseudo, $ami['p1'] ?? epreuve_createur_connecte($pdo), $ami['p2'] ?? null, now_sql()]);
     json_out(['code' => $code, 'cle' => $cle]);
 }
 
