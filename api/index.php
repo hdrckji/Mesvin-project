@@ -38,6 +38,7 @@ require __DIR__ . '/portrait.php';
 require __DIR__ . '/admin.php';
 require __DIR__ . '/admin-eglises.php';
 require __DIR__ . '/banques.php';
+require __DIR__ . '/signalements.php';
 require __DIR__ . '/visites.php';
 require __DIR__ . '/push.php';
 
@@ -291,6 +292,12 @@ if ($path === '/api/push/subscribe'   && $method === 'POST') handle_push_subscri
 if ($path === '/api/push/unsubscribe' && $method === 'POST') handle_push_unsubscribe($pdo);
 if ($path === '/api/cron/notify'      && $method === 'GET')  handle_cron_notify($pdo);
 
+/* ---- Signaler ce qui cloche (signalements.php) ----------------------------------
+   Sans compte, volontairement : celui qui repère une coquille en pleine veillée
+   n'ouvrira pas une session pour la dire. Le plafond horaire tient lieu de
+   garde-fou, et aucune IP n'est conservée. */
+if ($path === '/api/signalement' && $method === 'POST') handle_signalement_post($pdo);
+
 /* ---- Administration (ADMIN_EMAILS seulement) ----------------------------------- */
 if ($path === '/api/admin/users'   && $method === 'GET') handle_admin_users($pdo);
 if ($path === '/api/admin/log'     && $method === 'GET') handle_admin_log_get($pdo);
@@ -298,6 +305,10 @@ if ($path === '/api/admin/journal' && $method === 'GET') handle_admin_journal($p
 if ($path === '/api/admin/visites' && $method === 'GET') handle_admin_visites($pdo);
 if ($path === '/api/admin/brevo'   && $method === 'GET') handle_admin_brevo($pdo);
 if ($path === '/api/admin/eglises' && $method === 'GET') handle_admin_eglises($pdo);
+if ($path === '/api/admin/signalements' && $method === 'GET') handle_admin_signalements($pdo);
+if (preg_match('#^/api/admin/signalements/([0-9]+)$#', $path, $m) && $method === 'POST') {
+    handle_admin_signalement_classer($pdo, (int) $m[1]);
+}
 // Voir et retirer ce qu'une église a publié — sur signalement, jamais a priori.
 if ($path === '/api/admin/groupes' && $method === 'GET') handle_admin_groupes($pdo);
 if (preg_match('#^/api/admin/groupes/([^/]+)$#', $path, $m) && $method === 'GET') {

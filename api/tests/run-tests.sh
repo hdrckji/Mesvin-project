@@ -188,6 +188,8 @@ foreach (["epreuve_participants", "frise_participants", "portrait_participants"]
 foreach (["epreuve_veillees", "frise_veillees", "portrait_veillees"] as $t) {
     foreach (["auto", "seconds", "phase_debut"] as $c) { $pdo->exec("ALTER TABLE $t DROP COLUMN $c"); }
 }
+// Étape 10 : la table des signalements.
+$pdo->exec("DROP TABLE signalements");
 db_migrate($pdo);
 $tables = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql"
   ? $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()")->fetchAll(PDO::FETCH_COLUMN)
@@ -197,15 +199,21 @@ $cols = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql"
   ? $pdo->query("SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = \"groupes\"")->fetchAll(PDO::FETCH_COLUMN)
   : $pdo->query("SELECT name FROM pragma_table_info(\"groupes\")")->fetchAll(PDO::FETCH_COLUMN);
 if (!in_array("nom_style", $cols)) { echo "alter-manque"; exit; }
-// Les colonnes de l étape 8 doivent être revenues elles aussi : sans elles,
+// Les colonnes de l étape 9 doivent être revenues elles aussi : sans elles,
 // une veillée d épreuve ne saurait plus qui est présent ni depuis quand la
 // phase dure, et le mode « s enchaîne toute seule » tomberait en panne.
 $colsV = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql"
   ? $pdo->query("SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = \"epreuve_veillees\"")->fetchAll(PDO::FETCH_COLUMN)
   : $pdo->query("SELECT name FROM pragma_table_info(\"epreuve_veillees\")")->fetchAll(PDO::FETCH_COLUMN);
 foreach (["auto", "seconds", "phase_debut"] as $c) {
-    if (!in_array($c, $colsV)) { echo "etape8-manque-" . $c; exit; }
+    if (!in_array($c, $colsV)) { echo "etape9-manque-" . $c; exit; }
 }
+// Et la table des signalements (étape 10) : sans elle, le geste du lecteur
+// tomberait en 500 sur toute base migrée depuis un vieux déploiement.
+$tables2 = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql"
+  ? $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()")->fetchAll(PDO::FETCH_COLUMN)
+  : $pdo->query("SELECT name FROM sqlite_master WHERE type = \"table\"")->fetchAll(PDO::FETCH_COLUMN);
+if (!in_array("signalements", $tables2)) { echo "etape10-manque"; exit; }
 // Base à jour : re-migrer doit être un non-événement.
 db_migrate($pdo);
 $n = (int) $pdo->query("SELECT COUNT(*) FROM schema_migrations")->fetchColumn();
@@ -2033,6 +2041,24 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Signaler, dans un vrai navigateur. L'API sait dire qu'une route accepte un
+# signalement ; elle ne peut rien dire du GESTE, et c'est le geste qui décide
+# de tout. Un lien qu'on ne voit pas, un envoi qui ne remercie pas, et plus
+# personne ne signale rien — on croit alors que les 600 questions sont
+# parfaites parce que la boîte est vide.
+say "Signaler dans un vrai navigateur (le lecteur sans compte, puis l'administration)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if BH_JETON_ADMIN="$TOKEN1B" node "$ROOT/api/tests/navigateur/signalement.mjs" "$BASE" > "$TMP/sig.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/sig.log") — du tap du lecteur au classement en administration"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL signaler au navigateur\n'; sed 's/^/        /' "$TMP/sig.log"
+  fi
+else
+  printf '   --   Playwright absent : signalement au navigateur non joué\n'
+fi
+
+# ---------------------------------------------------------------------------
 # RÉSEAU — quelle adresse le serveur retient-il ? Tout l'anti-abus en dépend :
 # throttle_or_429() compte par client_ip(), et client_ip() lit la PROXY_HOPS-ième
 # valeur de X-Forwarded-For EN PARTANT DE LA DROITE (chaque relais ajoute à
@@ -2419,6 +2445,79 @@ for D in .well-known supprimer-mon-compte; do
   grep -q "COPY $D/" "$ROOT/Dockerfile" || DOCKER_OK="$D manque au Dockerfile"
 done
 check "les deux dossiers sont copiés dans l'image" oui "$DOCKER_OK"
+
+# ---------------------------------------------------------------------------
+# Signaler ce qui cloche. Deux exigences se croisent ici, et les tests les
+# gardent toutes les deux : celle de Google Play (un contenu publié doit
+# pouvoir être signalé) et la nôtre (600 questions relues deux fois restent
+# écrites par des humains — c'est le lecteur, sa Bible ouverte, qui verra la
+# 601e coquille). D'où le point le plus important de ce bloc : signaler NE
+# DEMANDE PAS DE COMPTE. Si ce test tombe un jour, on n'aura plus de retours.
+say "Signaler — le geste du lecteur, et la pile de l'administration"
+
+# Le scénario navigateur, joué plus haut, a pu déposer ses propres traces :
+# ce bloc mesure donc un ÉCART, et se donne des cibles qui n'existent nulle
+# part ailleurs pour ne pas se confondre avec une vraie question tirée au sort.
+SIG_AVANT="$(api GET /api/admin/signalements "$TOKEN1B" > /dev/null; jval .nouveaux)"
+
+check "genre inconnu → 400"              400 \
+  "$(api POST /api/signalement '' '{"genre":"potin","cible":"x","contexte":"y","motif":"z"}')"
+check "cible vide → 400"                 400 \
+  "$(api POST /api/signalement '' '{"genre":"question","cible":"  ","contexte":"y","motif":"z"}')"
+
+# LE TEST QUI COMPTE : aucun token, et pourtant 200.
+check "sans compte, le signalement passe → 200" 200 \
+  "$(api POST /api/signalement '' '{"genre":"question","cible":"question:zz-suite","contexte":"Où Jésus envoie-t-il l aveugle se laver ? — Jean 9.7","motif":"La réponse donnée ne correspond pas au verset."}')"
+check "il est en base, tout neuf"        nouveau \
+  "$(sqlval "SELECT statut FROM signalements WHERE cible = 'question:zz-suite'")"
+check "et sans auteur : personne n était connecté" 1 \
+  "$(sqlval "SELECT COUNT(*) FROM signalements WHERE cible = 'question:zz-suite' AND auteur_id IS NULL")"
+# Le contexte est figé à l'envoi : une question corrigée demain ne doit pas
+# effacer la trace de ce qui a été signalé aujourd'hui.
+check "le contexte est conservé mot pour mot" oui \
+  "$(sqlval "SELECT CASE WHEN contexte LIKE '%Jean 9.7%' THEN 'oui' ELSE 'non' END FROM signalements WHERE cible = 'question:zz-suite'")"
+
+check "avec un compte, l auteur est retenu" 200 \
+  "$(api POST /api/signalement "$TOKEN3" '{"genre":"annonce","cible":"annonce:zz-suite","contexte":"Annonce de l église","motif":"Texte déplacé."}')"
+check "l auteur est bien rattaché"       1 \
+  "$(sqlval "SELECT COUNT(*) FROM signalements WHERE cible = 'annonce:zz-suite' AND auteur_id IS NOT NULL")"
+
+# La pile ne s'ouvre qu'à l'administration.
+check "pile sans token → 401"            401 "$(api GET /api/admin/signalements)"
+check "pile pour un membre ordinaire → 403" 403 "$(api GET /api/admin/signalements "$TOKEN3")"
+
+api GET /api/admin/signalements "$TOKEN1B" > /dev/null
+check "la pile s ouvre à l admin"        $((SIG_AVANT + 2)) "$(jval .nouveaux)"
+check "les nouveaux passent devant"      nouveau "$(jval '.signalements[0].statut')"
+# L'adresse e-mail n'a rien à faire dans un écran qu'on ouvre pour lire une
+# remarque sur un verset : l'auteur n'apparaît que par son pseudo.
+check "aucune adresse e-mail ne sort"    0 \
+  "$(jq '[.signalements[] | tostring | select(contains("@"))] | length' "$TMP/body.json")"
+check "l auteur connu apparaît par son pseudo" "Chloé" \
+  "$(jq -r '[.signalements[] | select(.cible == "annonce:zz-suite")][0].auteur' "$TMP/body.json")"
+check "l auteur anonyme reste null"      null \
+  "$(jq -r '[.signalements[] | select(.cible == "question:zz-suite")][0].auteur' "$TMP/body.json")"
+
+SIGID="$(jq -r '[.signalements[] | select(.cible == "question:zz-suite")][0].id' "$TMP/body.json")"
+check "classer → 200"                    200 "$(api POST "/api/admin/signalements/$SIGID" "$TOKEN1B" '{"statut":"traite"}')"
+check "la pile se vide d autant"         $((SIG_AVANT + 1)) "$(api GET /api/admin/signalements "$TOKEN1B" > /dev/null; jval .nouveaux)"
+# On ne supprime jamais : une trace classée dit qu'on a regardé, et se rouvre
+# si la correction s'avère fausse.
+check "la trace demeure, classée"        traite "$(sqlval "SELECT statut FROM signalements WHERE id = $SIGID")"
+check "rouvrir la remet dans la pile"    200 "$(api POST "/api/admin/signalements/$SIGID" "$TOKEN1B" '{"statut":"nouveau"}')"
+check "et elle y est"                    $((SIG_AVANT + 2)) "$(api GET /api/admin/signalements "$TOKEN1B" > /dev/null; jval .nouveaux)"
+check "classer un signalement inconnu → 404" 404 \
+  "$(api POST "/api/admin/signalements/999999" "$TOKEN1B" '{"statut":"traite"}')"
+
+# Aucune IP conservée : le plafond horaire (table throttle) suffit comme
+# garde-fou, et lui ne garde qu'un compteur haché à l'heure.
+check "la table ne garde aucune adresse IP" 0 \
+  "$(php -r '$p = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
+             $n = 0;
+             foreach ($p->query("SELECT * FROM signalements LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [] as $col => $v) {
+               if (stripos($col, "ip") !== false) $n++;
+             }
+             echo $n;')"
 
 # ---------------------------------------------------------------------------
 say "Divers"

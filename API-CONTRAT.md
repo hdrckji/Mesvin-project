@@ -702,6 +702,49 @@ puis les ajouts `adm-` actifs. Les pages d'épreuve l'essaient d'abord
 (copie locale en localStorage, rafraîchie en arrière-plan) et retombent sur
 leur fichier statique hors-ligne.
 
+## Signalements
+
+Signaler ce qui cloche : une question du Défi qui ne colle pas avec le texte,
+une annonce d'église déplacée.
+
+**Aucun compte n'est requis** — et c'est le point de dessin le plus important
+de cette section. L'exiger reviendrait à ne rien recevoir : celui qui repère
+une coquille en pleine veillée n'ouvrira pas une session pour la dire. Le
+garde-fou est un plafond horaire par réseau (20/h, scope `signalement`), et
+**aucune adresse IP n'est conservée** : la table `throttle` ne garde qu'un
+compteur haché à l'heure, et un signalement ne retient que ce que son auteur
+a volontairement écrit.
+
+Cette brique répond aussi à une exigence de Google Play : toute application
+où quelqu'un publie du texte lu par d'autres doit offrir un moyen de signaler
+un contenu, sans quoi la fiche est refusée.
+
+### POST /api/signalement
+Public (le token est joint s'il existe, jamais exigé). Corps :
+`{ "genre": "question"|"annonce"|"serie"|"rdv", "cible", "contexte"?, "motif"? }`
+- `cible` — l'identifiant dans ce genre, ex. `"question:lieu-80"`. 120 car. max.
+- `contexte` — ce que le lecteur avait sous les yeux, **figé à l'envoi** :
+  une question corrigée demain ne doit pas effacer la trace de ce qui a été
+  signalé aujourd'hui. Tronqué à 2000 car.
+- `motif` — facultatif, tronqué à 500 car.
+
+→ `{ "ok": true }`. Ni identifiant ni compteur en retour : le lecteur n'a rien
+à consulter ensuite. 400 si le genre est inconnu ou la cible vide, 429 au
+plafond.
+
+### GET /api/admin/signalements
+Admin. → `{ "signalements": [ { "id", "genre", "cible", "contexte", "motif",
+"statut": "nouveau"|"traite", "auteur": "pseudo"|null, "created_at", "traite_at" } ],
+"nouveaux": 2 }` — les `nouveaux` d'abord, puis du plus récent au plus ancien,
+200 au maximum. `auteur` est **le pseudo, jamais l'e-mail** : une adresse n'a
+rien à faire dans un écran qu'on ouvre pour lire une remarque sur un verset.
+
+### POST /api/admin/signalements/{id}
+Admin. Corps : `{ "statut": "traite"|"nouveau" }` (défaut `traite`).
+→ `{ "ok": true, "statut": "traite" }`. 404 si l'id n'existe pas.
+On ne **supprime** jamais : une trace classée dit qu'on a regardé, et se
+rouvre si la correction s'avère fausse. L'action est tracée au journal admin.
+
 ## Administration
 
 Un utilisateur est **admin** si son e-mail figure dans la variable

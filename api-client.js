@@ -240,6 +240,17 @@
     async adminEgliseAccepter(id) { return call('POST', '/api/admin/eglises/demandes/' + id + '/accepter'); },
     async adminEgliseRefuser(id) { return call('POST', '/api/admin/eglises/demandes/' + id + '/refuser'); },
 
+    /* ---- signaler ce qui cloche ----
+       Volontairement hors de toute exigence de compte : `call` joint le token
+       s'il existe, et le serveur s'en contente sans jamais l'exiger. */
+    async signaler(genre, cible, contexte, motif) {
+      return call('POST', '/api/signalement', { genre, cible, contexte, motif });
+    },
+    async adminSignalements() { return call('GET', '/api/admin/signalements'); },
+    async adminSignalementClasser(id, statut) {
+      return call('POST', '/api/admin/signalements/' + id, { statut: statut || 'traite' });
+    },
+
     /* ---- veillées en direct ---- */
     async createVeillee(opts) { return (await call('POST', '/api/veillees', opts || {})).veillee; },
     async veilleeState(code, playerKey) {

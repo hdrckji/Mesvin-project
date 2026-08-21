@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 9;
+const DB_MIGRATION_DERNIERE = 10;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1183,12 +1183,58 @@ function db_migrate(PDO $pdo): void {
         $etape9[] = "ALTER TABLE $t ADD COLUMN phase_debut $tsNull";
     }
 
+    /* ---- Étape 10 — un lecteur peut signaler ce qui cloche --------------------
+       Deux besoins se rejoignent ici. Le nôtre : 600 questions relues deux fois
+       restent 600 questions écrites par des humains, et c'est le lecteur devant
+       sa Bible qui verra le reste. Celui de Google Play : toute appli qui laisse
+       publier du texte (les annonces d'église) doit offrir un moyen de signaler
+       un contenu, sans quoi la fiche est refusée.
+       - genre  : ce qui est visé (question, annonce, série, rendez-vous).
+       - cible  : l'identifiant dans ce genre — « question:lieu-80 » par exemple.
+       - contexte : ce que le lecteur avait sous les yeux, figé au moment du
+         signalement. Une question corrigée depuis ne doit pas effacer la trace
+         de ce qui a été signalé.
+       - auteur_id : NULL si personne n'était connecté. Signaler ne demande pas
+         de compte — l'exiger reviendrait à ne rien recevoir. Aucune IP n'est
+         conservée : le garde-fou du débit suffit, et il ne laisse rien derrière.
+       - statut : « nouveau » puis « traite ». On ne supprime pas : une trace
+         classée dit qu'on a regardé. */
+    $texteCourt = db_driver($pdo) === 'mysql' ? 'VARCHAR(120)' : 'TEXT';
+    $etape10 = [db_driver($pdo) === 'mysql'
+        ? "CREATE TABLE IF NOT EXISTS signalements (
+              id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+              genre VARCHAR(20) NOT NULL,
+              cible $texteCourt NOT NULL,
+              contexte TEXT NOT NULL,
+              motif TEXT NOT NULL,
+              auteur_id INT UNSIGNED NULL,
+              statut VARCHAR(10) NOT NULL DEFAULT 'nouveau',
+              created_at DATETIME NOT NULL,
+              traite_at DATETIME NULL,
+              INDEX idx_signalements_statut (statut, created_at)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        : "CREATE TABLE IF NOT EXISTS signalements (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              genre TEXT NOT NULL,
+              cible TEXT NOT NULL,
+              contexte TEXT NOT NULL,
+              motif TEXT NOT NULL,
+              auteur_id INTEGER NULL,
+              statut TEXT NOT NULL DEFAULT 'nouveau',
+              created_at TEXT NOT NULL,
+              traite_at TEXT NULL
+          )"];
+    if (db_driver($pdo) !== 'mysql') {
+        $etape10[] = 'CREATE INDEX IF NOT EXISTS idx_signalements_statut
+                     ON signalements (statut, created_at)';
+    }
+
     /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
     foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4, 5 => $etape5,
               6 => $etape6, 7 => $etape7, 8 => $etape8,
-              9 => $etape9] as $version => $liste) {
+              9 => $etape9, 10 => $etape10] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }

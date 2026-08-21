@@ -70,7 +70,8 @@ let sys = null, sysErreur = null; // onglet Système : état du serveur
 let actJournal = null, actJournalErreur = null; // onglet Activité : journal serveur
 let actBrevo = null, actBrevoErreur = null;     // onglet Activité : côté Brevo
 let actVisites = null, actVisitesErreur = null; // onglet Activité : fréquentation
-let actOuverts = { visites: false, journal: false, brevo: false }; // sections dépliées (survit au re-rendu)
+let actSignal = null, actSignalErreur = null; // onglet Activité : ce que les lecteurs signalent
+let actOuverts = { signalements: false, visites: false, journal: false, brevo: false }; // sections dépliées (survit au re-rendu)
 let epreuve = 'quiz';       // sous-onglet de « Questions » : 'quiz' | 'quiadit' | 'ecritoupas' | 'portrait'
 let categories = [];        // catégories du fichier (ordre d'affichage, et du select)
 let qListe = null;          // [{ q, etat }] — null tant que rien n'est chargé
@@ -466,10 +467,14 @@ async function chargerActivite() {
   actJournal = null; actJournalErreur = null;
   actBrevo = null; actBrevoErreur = null;
   actVisites = null; actVisitesErreur = null;
+  actSignal = null; actSignalErreur = null;
   render();
   // Les sections en parallèle, chacune avec son propre filet : un souci
   // d'un côté (Brevo, par exemple) ne prive pas des autres.
   await Promise.all([
+    GraineAPI.adminSignalements()
+      .then(r => { actSignal = r; })
+      .catch(e => { actSignalErreur = messageDoux(e); }),
     GraineAPI.adminVisites()
       .then(r => { actVisites = r; })
       .catch(e => { actVisitesErreur = messageDoux(e); }),
@@ -615,10 +620,66 @@ function htmlChezBrevo() {
     </div>`;
 }
 
+/* ---------- Ce que les lecteurs signalent (api/signalements.php) ----------
+
+   Cette section passe DEVANT les autres dans l'onglet, et c'est voulu : la
+   fréquentation se regarde quand on a le temps, un signalement attend une
+   réponse. Un lecteur a pris la peine de dire « ça ne colle pas avec ma
+   Bible » — le pire serait qu'il ne se passe rien. */
+
+const SIGNAL_GENRES = {
+  question: 'Question', annonce: 'Annonce', serie: 'Série', rdv: 'Rendez-vous',
+};
+
+function signalResume() {
+  if (actSignalErreur) return 'chargement impossible';
+  if (!actSignal) return 'chargement…';
+  const n = actSignal.nouveaux || 0;
+  if (!n) return 'rien à traiter';
+  return n === 1 ? '1 à regarder' : n + ' à regarder';
+}
+
+function htmlSignalements() {
+  if (!actSignal) return '';
+  const liste = (actSignal.signalements || []);
+  if (!liste.length) {
+    return `<div class="card"><p class="muted" style="margin:0">Rien n'a été signalé.
+      C'est bon signe — et le lien reste à portée du lecteur en cas de besoin.</p></div>`;
+  }
+  const lignes = liste.map(s => `
+    <div class="sig-ligne ${s.statut === 'nouveau' ? 'sig-neuf' : 'sig-classe'}">
+      <div class="sig-tete">
+        <b>${esc(SIGNAL_GENRES[s.genre] || s.genre)}</b>
+        <code class="sys-var">${esc(s.cible)}</code>
+        <span class="muted">${esc(heureLocale(s.created_at))}</span>
+        <span class="muted">· ${s.auteur ? esc(s.auteur) : 'signalé sans compte'}</span>
+      </div>
+      ${s.contexte ? `<p class="sig-contexte">${esc(s.contexte)}</p>` : ''}
+      ${s.motif ? `<p class="sig-motif">« ${esc(s.motif)} »</p>` : `<p class="muted sig-motif">Aucun motif précisé.</p>`}
+      <button class="btn btn-soft" data-sigclasser="${s.id}" data-statut="${s.statut === 'nouveau' ? 'traite' : 'nouveau'}">
+        ${s.statut === 'nouveau' ? 'Classer' : 'Rouvrir'}
+      </button>
+    </div>`).join('');
+  return `<div class="card" style="padding:8px 10px">${lignes}</div>`;
+}
+
+/* Classer ne supprime rien : la trace demeure, et se rouvre si la correction
+   s'avère fausse. */
+async function doSignalClasser(id, statut) {
+  try {
+    await GraineAPI.adminSignalementClasser(id, statut);
+    actSignal = await GraineAPI.adminSignalements();
+  } catch (e) {
+    actSignalErreur = messageDoux(e);
+  }
+  render();
+}
+
 function htmlActivite() {
   const enCours = actJournal === null && !actJournalErreur;
   return `
     <button class="btn btn-soft btn-block" id="btn-act-actualiser" style="margin-bottom:14px" ${enCours ? 'disabled' : ''}>Actualiser</button>
+    ${htmlSectionActivite('signalements', 'Signalements', actSignal, actSignalErreur, htmlSignalements(), signalResume())}
     ${htmlSectionActivite('visites', 'Fréquentation', actVisites, actVisitesErreur, htmlVisites(), visitesResume())}
     ${htmlSectionActivite('journal', 'Journal du serveur', actJournal, actJournalErreur, htmlJournalServeur())}
     ${htmlSectionActivite('brevo', 'Chez Brevo', actBrevo, actBrevoErreur, htmlChezBrevo())}`;
@@ -627,6 +688,9 @@ function htmlActivite() {
 function brancherActivite() {
   const b = document.getElementById('btn-act-actualiser');
   if (b) b.onclick = chargerActivite;
+  document.querySelectorAll('[data-sigclasser]').forEach(b => {
+    b.addEventListener('click', () => doSignalClasser(+b.dataset.sigclasser, b.dataset.statut));
+  });
   // Mémorise l'état déplié/replié : « Actualiser » re-rend tout l'écran, et
   // une section ouverte doit le rester après le re-rendu.
   document.querySelectorAll('details.act-repli').forEach(d => {

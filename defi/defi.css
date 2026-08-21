@@ -523,3 +523,27 @@ body.quiz-proj .vl-eglise { font-size: clamp(1.5rem, 2.6vw, 2.3rem); }
   height: 24px; pointer-events: none;
   background: linear-gradient(to top, var(--surface), transparent);
 }
+
+/* ---- Signaler ce qui cloche ------------------------------------------------
+   Volontairement effacé : ce n'est pas une invitation à douter du texte, mais
+   une porte de service pour le lecteur qui a vu quelque chose. Il ne doit ni
+   attirer l'œil pendant la lecture de la référence, ni se dérober à qui le
+   cherche. Une fois envoyé, il cesse d'être un bouton et devient un merci. */
+.defi-signaler {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 2px 4px;
+  margin-left: 8px;
+  font: inherit;
+  font-size: 0.78em;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  opacity: 0.65;
+}
+.defi-signaler:hover,
+.defi-signaler:focus-visible { opacity: 1; }
+.defi-signaler[disabled] { cursor: default; text-decoration: none; opacity: 0.8; }
+.defi-signale { color: var(--ok, var(--ink-soft)); }
