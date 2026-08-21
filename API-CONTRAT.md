@@ -118,6 +118,11 @@ et `GET …/duel/{code}` rend `invite`.
   créateur retire un défi que PERSONNE n'a relevé : le code meurt tout de
   suite (404 ensuite) et le défi quitte la liste de l'ami invité. 403 sans
   la clé, 409 si l'adversaire a déjà répondu (un résultat ne s'efface pas).
+- `POST …/duel/{code}/adopter` `{cle}` (connecté ; frise, epreuve,
+  portrait) — la clé prouve le créateur : le duel se rattache à son compte
+  (p1_user) et rejoint « Tes duels » sur tous ses appareils. Idempotent ;
+  l'invité n'est jamais touché. Les pages le font automatiquement au
+  chargement pour le dernier défi lancé retenu sur l'appareil.
 
 ## « De qui parle-t-on ? » (/portrait/) — le portrait à indices
 

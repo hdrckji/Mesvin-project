@@ -353,6 +353,9 @@ if (preg_match('#^/api/frise/duel/(FD-[A-Z2-9]{5})/score$#', $path, $m)) {
 if (preg_match('#^/api/frise/duel/(FD-[A-Z2-9]{5})/annuler$#', $path, $m)) {
     if ($method === 'POST') epreuve_duel_annuler($pdo, 'frise_duels', $m[1]);
 }
+if (preg_match('#^/api/frise/duel/(FD-[A-Z2-9]{5})/adopter$#', $path, $m)) {
+    if ($method === 'POST') epreuve_duel_adopter($pdo, 'frise_duels', $m[1]);
+}
 if ($path === '/api/frise/veillee' && $method === 'POST') frise_veillee_create($pdo);
 if (preg_match('#^/api/frise/veillee/(FV-[A-Z2-9]{5})/rejoindre$#', $path, $m)) {
     if ($method === 'POST') frise_veillee_rejoindre($pdo, $m[1]);
@@ -384,6 +387,9 @@ if (preg_match('#^/api/epreuve/duel/(ED-[A-Z2-9]{5})/score$#', $path, $m)) {
 if (preg_match('#^/api/epreuve/duel/(ED-[A-Z2-9]{5})/annuler$#', $path, $m)) {
     if ($method === 'POST') epreuve_duel_annuler($pdo, 'epreuve_duels', $m[1]);
 }
+if (preg_match('#^/api/epreuve/duel/(ED-[A-Z2-9]{5})/adopter$#', $path, $m)) {
+    if ($method === 'POST') epreuve_duel_adopter($pdo, 'epreuve_duels', $m[1]);
+}
 if ($path === '/api/epreuve/veillee' && $method === 'POST') epreuve_veillee_create($pdo);
 if (preg_match('#^/api/epreuve/veillee/(EV-[A-Z2-9]{5})/rejoindre$#', $path, $m)) {
     if ($method === 'POST') epreuve_veillee_rejoindre($pdo, $m[1]);
@@ -412,6 +418,9 @@ if (preg_match('#^/api/portrait/duel/(PD-[A-Z2-9]{5})/score$#', $path, $m)) {
 }
 if (preg_match('#^/api/portrait/duel/(PD-[A-Z2-9]{5})/annuler$#', $path, $m)) {
     if ($method === 'POST') epreuve_duel_annuler($pdo, 'epreuve_duels', $m[1]);
+}
+if (preg_match('#^/api/portrait/duel/(PD-[A-Z2-9]{5})/adopter$#', $path, $m)) {
+    if ($method === 'POST') epreuve_duel_adopter($pdo, 'epreuve_duels', $m[1]);
 }
 if ($path === '/api/portrait/veillee' && $method === 'POST') portrait_veillee_create($pdo);
 if (preg_match('#^/api/portrait/veillee/(PV-[A-Z2-9]{5})/rejoindre$#', $path, $m)) {

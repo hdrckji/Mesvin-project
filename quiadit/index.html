@@ -408,7 +408,8 @@ async function chargerAmis(force) {
     // cette page d'une autre — mieux vaut des listes justes que rien du tout.
     const defis = Array.isArray(rep) ? rep : (rep && rep.defis) || [];
     const duels = Array.isArray(rep) ? [] : (rep && rep.duels) || [];
-    amisLigne = { amis: amis, defis: defis, duels: duels };
+    amisLigne = { amis: amis, defis: defis, duels: duels,
+      brut: Array.isArray(rep) ? 'api-client ANCIEN (cache mélangé)' : 'api-client à jour' };
     amisErreur = null;
   } catch (e) {
     amisLigne = null;
@@ -422,6 +423,23 @@ function majBadgeDefis() {
   const n = defisRecus().length;
   const span = document.getElementById('defi-attente');
   if (span) span.innerHTML = n ? ` <b style="color:var(--accent)">${n === 1 ? 'Un défi t\'attend' : n + ' défis t\'attendent'}</b>` : '';
+}
+/* ?diag dans l'adresse : une ligne d'état, rien de privé — pour diagnostiquer
+   à distance ce que cet appareil voit vraiment (version de page, session,
+   fraîcheur des scripts, contenu des listes). */
+function diagHTML() {
+  if (!/[?&]diag/.test(location.search)) return '';
+  const u = connecte() ? GraineAPI.user() : null;
+  const l = ['page quiadit·d76'];
+  l.push(u ? 'connecté : ' + (u.pseudo || '?') : 'NON connecté');
+  if (amisErreur) l.push('erreur : ' + amisErreur);
+  if (amisLigne) {
+    l.push(amisLigne.brut || '?');
+    l.push('amis ' + (amisLigne.amis || []).length);
+    l.push('défis reçus ' + (amisLigne.defis || []).map(d => d.code).join(' ') || '0');
+    l.push('duels ' + ((amisLigne.duels || []).map(d => d.code + (d.status === 'attente' ? '(attente)' : '(fini)')).join(' ') || 'aucun'));
+  } else if (u) l.push('listes pas encore chargées');
+  return `<div class="card" style="margin:0 0 12px"><p class="muted" style="margin:0;font-size:.75rem;overflow-wrap:anywhere">DIAG · ${esc(l.join(' · '))}</p></div>`;
 }
 /* La part « entre amis » du menu de défi : les défis reçus, puis la liste
    d'amis — ou, sans compte, une invitation douce à en créer un. */
@@ -674,6 +692,7 @@ function vueDuelMenu() {
     <button class="quit" data-quit="1">‹ Qui a dit ça ?</button>
     <h1 style="font-size:1.25rem;margin-top:10px">Défier un ami</h1>
     <p class="muted" style="margin:4px 0 16px">Les mêmes questions pour vous deux, chacun quand il veut.</p>
+    ${diagHTML()}
     ${duelMenuLanceHTML()}
     ${amisHTML()}
     <p class="feedback faux" id="err-ligne" style="margin:0 0 12px"></p>
@@ -1226,6 +1245,16 @@ async function verifierRepriseDuel() {
   try {
     const etat = await api('duel/' + d.code);
     repriseDuel = { code: d.code, cle: d.cle || null, p1: etat.p1, p2: etat.p2, total: etat.total, invite: etat.invite || null };
+    // Auto-rattachement : la clé prouve qui a créé ce duel. Connecté, on le
+    // relie au compte (une seule fois) — il rejoint alors « Tes duels » sur
+    // TOUS les appareils, même s'il est né avant ce rattachement.
+    if (connecte() && d.cle && !d.adopte) {
+      try {
+        await api('duel/' + d.code + '/adopter', { cle: d.cle });
+        duelEcrire({ ...d, adopte: true });
+        amisLigne = null; amisErreur = null;   // les listes se rechargeront à jour
+      } catch (e2) { /* hors-ligne, clé refusée… on retentera à la prochaine visite */ }
+    }
     render();
   } catch (e) { if (e && e.status === 404) duelOubli(); }  // duel expiré
 }

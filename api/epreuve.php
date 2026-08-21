@@ -223,6 +223,27 @@ function epreuve_duel_annuler(PDO $pdo, string $table, string $code): never {
     json_out(['ok' => true]);
 }
 
+/* ---- POST …/duel/{code}/adopter — relier un duel à son créateur -------------
+   La clé prouve qui a créé le duel : un créateur CONNECTÉ peut donc le
+   rattacher à son compte après coup — un défi né par code, ou avant ce
+   rattachement, rejoint ainsi « Tes duels » sur tous ses appareils.
+   Idempotent ; l'invité (p2_user) n'est jamais touché. */
+function epreuve_duel_adopter(PDO $pdo, string $table, string $code): never {
+    $user = require_user($pdo);
+    $st = $pdo->prepare("SELECT * FROM $table WHERE code = ?");
+    $st->execute([$code]);
+    $duel = $st->fetch();
+    if ($duel === false) {
+        json_error('Défi introuvable — vérifie le code.', 404);
+    }
+    $cle = read_json_body()['cle'] ?? null;
+    if (!is_string($cle) || !hash_equals((string) $duel['cle'], $cle)) {
+        json_error('Seul celui qui a lancé le défi peut le rattacher à son compte.', 403);
+    }
+    $pdo->prepare("UPDATE $table SET p1_user = ? WHERE code = ?")->execute([$user['id'], $code]);
+    json_out(['ok' => true]);
+}
+
 /* ---- Duel par code ----------------------------------------------------------- */
 
 function epreuve_duel_create(PDO $pdo): never {

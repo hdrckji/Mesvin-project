@@ -910,6 +910,16 @@ api POST /api/epreuve/duel '' "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"p
 ANONCODE="$(jval .code)"
 check "duel par code : invite null"     null "$(api GET "/api/epreuve/duel/$ANONCODE" > /dev/null; jval .invite)"
 
+say "Défis d'épreuve — adopter un duel (la clé prouve le créateur)"
+api POST /api/epreuve/duel '' "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"pseudo\":\"Alice\"}" > /dev/null
+ADCODE="$(jval .code)"
+ADCLE="$(jval .cle)"
+check "né par code : absent des duels de u1" 0 "$(api GET /api/epreuve/defis "$TOKEN1" > /dev/null; jq -r '[.duels[] | select(.code == "'"$ADCODE"'")] | length' "$TMP/body.json")"
+check "adopter sans session → 401"      401 "$(api POST "/api/epreuve/duel/$ADCODE/adopter" '' "{\"cle\":\"$ADCLE\"}")"
+check "adopter avec une mauvaise clé → 403" 403 "$(api POST "/api/epreuve/duel/$ADCODE/adopter" "$TOKEN1" '{"cle":"mauvaise"}')"
+check "adopter (u1, bonne clé) → 200"   200 "$(api POST "/api/epreuve/duel/$ADCODE/adopter" "$TOKEN1" "{\"cle\":\"$ADCLE\"}")"
+check "→ le duel rejoint « Tes duels » de u1" "createur/attente" "$(api GET /api/epreuve/defis "$TOKEN1" > /dev/null; jq -r '[.duels[] | select(.code == "'"$ADCODE"'")][0] | "\(.role)/\(.status)"' "$TMP/body.json")"
+
 say "Défis d'épreuve — « Tes duels » : lancés et relevés, en attente et finis"
 api GET /api/epreuve/defis "$TOKEN1" > /dev/null
 check "u1 voit son duel ED- (créateur)"  "$EDCODE" "$(jq -r '[.duels[] | select(.code == "'"$EDCODE"'")][0].code' "$TMP/body.json")"
