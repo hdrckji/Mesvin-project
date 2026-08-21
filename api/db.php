@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 7;
+const DB_MIGRATION_DERNIERE = 8;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1137,11 +1137,31 @@ function db_migrate(PDO $pdo): void {
         ? ['ALTER TABLE groupe_series ADD COLUMN notif_envoyee TINYINT NOT NULL DEFAULT 0']
         : ['ALTER TABLE groupe_series ADD COLUMN notif_envoyee INTEGER NOT NULL DEFAULT 0'];
 
+    /* ---- Étape 8 — le défi d'épreuve trouve son ami ------------------------------
+       Les défis par code (frise_duels, epreuve_duels) restent SANS compte,
+       mais un joueur connecté peut désormais défier un AMI directement :
+       p1_user (créateur) et p2_user (l'ami invité) relient le défi aux
+       comptes, et GET /api/epreuve/defis liste ce qui attend l'invité —
+       comme les duels du « Qui, où, quand ? », le code en héritage. */
+    $etape8 = db_driver($pdo) === 'mysql'
+        ? ['ALTER TABLE epreuve_duels ADD COLUMN p1_user INT UNSIGNED NULL',
+           'ALTER TABLE epreuve_duels ADD COLUMN p2_user INT UNSIGNED NULL',
+           'ALTER TABLE epreuve_duels ADD INDEX idx_epreuved_invite (p2_user)',
+           'ALTER TABLE frise_duels ADD COLUMN p1_user INT UNSIGNED NULL',
+           'ALTER TABLE frise_duels ADD COLUMN p2_user INT UNSIGNED NULL',
+           'ALTER TABLE frise_duels ADD INDEX idx_frised_invite (p2_user)']
+        : ['ALTER TABLE epreuve_duels ADD COLUMN p1_user INTEGER NULL',
+           'ALTER TABLE epreuve_duels ADD COLUMN p2_user INTEGER NULL',
+           'CREATE INDEX IF NOT EXISTS idx_epreuved_invite ON epreuve_duels (p2_user)',
+           'ALTER TABLE frise_duels ADD COLUMN p1_user INTEGER NULL',
+           'ALTER TABLE frise_duels ADD COLUMN p2_user INTEGER NULL',
+           'CREATE INDEX IF NOT EXISTS idx_frised_invite ON frise_duels (p2_user)'];
+
     /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
     foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4, 5 => $etape5,
-              6 => $etape6, 7 => $etape7] as $version => $liste) {
+              6 => $etape6, 7 => $etape7, 8 => $etape8] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }

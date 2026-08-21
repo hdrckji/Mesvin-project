@@ -173,6 +173,14 @@ $pdo->exec("DROP TABLE groupe_series");
 $pdo->exec("ALTER TABLE groupes DROP COLUMN nom_style");
 $pdo->exec("ALTER TABLE groupes DROP COLUMN nom_taille");
 $pdo->exec("ALTER TABLE groupe_service_inscriptions DROP COLUMN rappel_envoye");
+// Étape 8 : index puis colonnes (SQLite refuse de retirer une colonne indexée).
+$mysql = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql";
+$pdo->exec($mysql ? "ALTER TABLE epreuve_duels DROP INDEX idx_epreuved_invite" : "DROP INDEX idx_epreuved_invite");
+$pdo->exec($mysql ? "ALTER TABLE frise_duels DROP INDEX idx_frised_invite" : "DROP INDEX idx_frised_invite");
+$pdo->exec("ALTER TABLE epreuve_duels DROP COLUMN p1_user");
+$pdo->exec("ALTER TABLE epreuve_duels DROP COLUMN p2_user");
+$pdo->exec("ALTER TABLE frise_duels DROP COLUMN p1_user");
+$pdo->exec("ALTER TABLE frise_duels DROP COLUMN p2_user");
 db_migrate($pdo);
 $tables = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql"
   ? $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()")->fetchAll(PDO::FETCH_COLUMN)
@@ -848,6 +856,47 @@ groupe_via_demande() {
   api POST "/api/admin/eglises/demandes/$id/accepter" "$TOKEN1" > /dev/null
   jval .code
 }
+
+# ---------------------------------------------------------------------------
+# Défis d'épreuve ENTRE AMIS : un joueur connecté vise un ami (opponentCode),
+# l'ami retrouve le défi dans GET /api/epreuve/defis — sans échange de code.
+say "Défis d'épreuve entre amis — création visée (opponentCode)"
+EDECK='[{"q":"Première question ?","options":["Oui","Non"],"bonne":0,"ref":"Genèse 1"},{"q":"Deuxième question ?","options":["A","B","C"],"bonne":1},{"q":"Troisième question ?","options":["X","Y"],"bonne":0}]'
+check "sans session → 401"              401 "$(api POST /api/epreuve/duel '' "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"$FCODE2\"}")"
+check "pas amis (u3 → u2) → 403"        403 "$(api POST /api/epreuve/duel "$TOKEN3" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"$FCODE2\"}")"
+check "code ami inconnu → 404"          404 "$(api POST /api/epreuve/duel "$TOKEN1" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"GRN-1111\"}")"
+check "code ami mal formé → 400"        400 "$(api POST /api/epreuve/duel "$TOKEN1" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"bonjour\"}")"
+check "u1 défie u2, sans pseudo → 200"  200 "$(api POST /api/epreuve/duel "$TOKEN1" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"$FCODE2\"}")"
+EDCODE="$(jval .code)"
+EDCLE="$(jval .cle)"
+api GET "/api/epreuve/duel/$EDCODE" > /dev/null
+check "le duel porte le pseudo du compte" Alice "$(jval .p1.pseudo)"
+check "et nomme l'invité"               Benoît "$(jval .invite)"
+
+say "Défis d'épreuve entre amis — l'invité les retrouve (GET /api/epreuve/defis)"
+check "sans session → 401"              401 "$(api GET /api/epreuve/defis)"
+check "u2 les liste → 200"              200 "$(api GET /api/epreuve/defis "$TOKEN2")"
+check "un défi l'attend"                1 "$(jval '.defis | length')"
+check "→ le bon code"                   "$EDCODE" "$(jval '.defis[0].code')"
+check "→ lancé par Alice"               Alice "$(jval '.defis[0].de')"
+check "→ le bon mode"                   "Qui a dit ça ?" "$(jval '.defis[0].mode')"
+check "u1 (créateur), lui, n'a rien"    0 "$(api GET /api/epreuve/defis "$TOKEN1" > /dev/null; jval '.defis | length')"
+check "u3 non plus"                     0 "$(api GET /api/epreuve/defis "$TOKEN3" > /dev/null; jval '.defis | length')"
+
+say "Défis d'épreuve entre amis — les deux jouent, le défi quitte la liste"
+check "u1 pose son score (clé) → 200"   200 "$(api POST "/api/epreuve/duel/$EDCODE/score" '' "{\"score\":2,\"cle\":\"$EDCLE\"}")"
+check "u2 pose le sien (pseudo) → 200"  200 "$(api POST "/api/epreuve/duel/$EDCODE/score" '' '{"score":3,"pseudo":"Benoît"}')"
+check "les deux scores sont là"         3 "$(jval .p2.score)"
+check "la liste de u2 est vide"         0 "$(api GET /api/epreuve/defis "$TOKEN2" > /dev/null; jval '.defis | length')"
+
+say "Défis d'épreuve entre amis — la Frise aussi (FD-), et le défi par code reste anonyme"
+FDECK='[{"t":"Création","r":null,"o":1},{"t":"Déluge","r":null,"o":2},{"t":"Abraham","r":null,"o":3},{"t":"Moïse","r":null,"o":4}]'
+check "u2 défie u1 sur la Frise → 200"  200 "$(api POST /api/frise/duel "$TOKEN2" "{\"mode\":\"Livres · toute la Bible\",\"deck\":$FDECK,\"opponentCode\":\"$FCODE1\"}")"
+FDCODE="$(jval .code)"
+check "u1 le retrouve dans ses défis"   "$FDCODE" "$(api GET /api/epreuve/defis "$TOKEN1" > /dev/null; jval '.defis[0].code')"
+api POST /api/epreuve/duel '' "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"pseudo\":\"Zoé\"}" > /dev/null
+ANONCODE="$(jval .code)"
+check "duel par code : invite null"     null "$(api GET "/api/epreuve/duel/$ANONCODE" > /dev/null; jval .invite)"
 
 say "Groupes d'église — la création directe est fermée (le message oriente)"
 check "POST /api/groupes sans compte → 401" 401 "$(api POST /api/groupes '' '{"nom":"Béthel"}')"

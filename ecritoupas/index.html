@@ -298,7 +298,9 @@ function duelLanceHTML() {
   const corps = d.p2
     ? `<b>${esc(d.p2.pseudo)}</b> a répondu : <b>${d.p2.score} / ${d.total}</b>`
         + (moi !== null ? ` — toi, ${moi} / ${d.total}.` : '.')
-    : `Personne n'a encore répondu. Le code à partager : <b>${esc(d.code)}</b>`;
+    : d.invite
+      ? `Ton défi attend <b>${esc(d.invite)}</b> — il le trouvera dans « Défier un ami ».`
+      : `Personne n'a encore répondu. Le code à partager : <b>${esc(d.code)}</b>`;
   return `<div class="card fade" style="margin:-4px 0 16px">
     <p style="margin:0 0 8px">${corps}</p>
     <button class="btn btn-ghost btn-block" data-duel-oubli="1">Ne plus l'afficher</button>
@@ -357,7 +359,80 @@ const DUEL_KEY = 'graine.ecritoupas.duel.v1';
 function duelEcrire(o) { try { localStorage.setItem(DUEL_KEY, JSON.stringify(o)); } catch (e) {} }
 function duelLire() { try { return JSON.parse(localStorage.getItem(DUEL_KEY) || 'null'); } catch (e) { return null; } }
 function duelOubli() { try { localStorage.removeItem(DUEL_KEY); } catch (e) {} }
-let repriseDuel = null;   // { code, p1, p2, total } une fois relu du serveur
+let repriseDuel = null;   // { code, p1, p2, total, invite } une fois relu du serveur
+
+/* ---------- Défier un AMI (compte facultatif) ----------
+   Connecté, la liste d'amis remplace l'échange de code : un geste pour
+   défier, et le défi attend l'ami dans SON écran « Défier un ami » — comme
+   les duels du « Qui, où, quand ? ». Sans compte, rien ne change : le code
+   à partager reste la porte ouverte à tous. */
+let amisLigne = null;    // { amis, defis } une fois chargés du serveur
+let amisErreur = null;   // message doux si le chargement a échoué
+function connecte() { return !!(window.GraineAPI && GraineAPI.isLoggedIn()); }
+function monPseudo() {
+  const u = connecte() ? GraineAPI.user() : null;
+  return u && u.pseudo ? String(u.pseudo).slice(0, 20) : 'Moi';
+}
+/* Les défis reçus POUR CETTE ÉPREUVE : l'API les rend toutes épreuves
+   confondues, le préfixe du code et le mode font le tri. */
+function defisRecus() {
+  if (!amisLigne) return [];
+  return (amisLigne.defis || []).filter(d => d.code.indexOf('ED-') === 0 && d.mode === TITRE);
+}
+async function chargerAmis(force) {
+  if (!connecte()) return;
+  if ((amisLigne || amisErreur) && !force) return;
+  try {
+    const [amis, defis] = await Promise.all([GraineAPI.friends(), GraineAPI.epreuveDefis()]);
+    amisLigne = { amis: amis, defis: defis };
+    amisErreur = null;
+  } catch (e) {
+    amisLigne = null;
+    amisErreur = (e && e.offline) ? 'Pas de connexion pour l\'instant — le défi par code reste possible.'
+      : (e && e.message) || 'Un petit souci est survenu. Réessaie dans un instant.';
+  }
+  if (ecran === 'dmenu' || ecran === 'accueil') render();
+}
+/* Le badge de l'accueil : « un défi t'attend », discret et silencieux hors-ligne. */
+function majBadgeDefis() {
+  const n = defisRecus().length;
+  const span = document.getElementById('defi-attente');
+  if (span) span.innerHTML = n ? ` <b style="color:var(--accent)">${n === 1 ? 'Un défi t\'attend' : n + ' défis t\'attendent'}</b>` : '';
+}
+/* La part « entre amis » du menu de défi : les défis reçus, puis la liste
+   d'amis — ou, sans compte, une invitation douce à en créer un. */
+function amisHTML() {
+  if (!connecte()) {
+    return `<div class="card" style="margin:0 0 12px;padding:12px 16px">
+      <p class="muted" style="margin:0;font-size:.85rem">Avec un compte (gratuit — écran <b>Moi</b> de l'accueil), tes amis apparaissent ici : un geste pour défier, sans code à échanger.</p>
+    </div>`;
+  }
+  const recus = defisRecus().map(d => `
+    <button class="card hub-card" data-defirecu="${esc(d.code)}" style="border:1px solid var(--accent)">
+      <span class="hub-ic">${icon('epees', 26)}</span>
+      <span class="hub-txt"><span class="hub-title">${esc(d.de)} te défie !</span>
+        <span class="hub-sub">Les mêmes phrases pour vous deux — à toi de jouer.</span></span>
+      <span class="chev">›</span>
+    </button>`).join('');
+  let amis = '';
+  if (amisErreur) {
+    amis = `<div class="card" style="margin:0 0 12px"><p class="muted" style="margin:0">${esc(amisErreur)}</p></div>`;
+  } else if (!amisLigne) {
+    amis = `<div class="card" style="margin:0 0 12px"><p class="muted" style="margin:0">Tes amis arrivent…</p></div>`;
+  } else if (!amisLigne.amis.length) {
+    amis = `<div class="card" style="margin:0 0 12px"><p class="muted" style="margin:0">Pas encore d'amis par ici — ajoute-les dans l'écran <b>Moi</b> de l'accueil, avec leur code ami.</p></div>`;
+  } else {
+    amis = `<div class="card" style="margin:0 0 12px;padding:12px 16px">
+      <p class="mode-title" style="margin-top:0">Défier un ami directement</p>
+      <p class="muted" style="margin:0 0 6px;font-size:.82rem">Un geste suffit : le défi l'attendra dans son écran « Défier un ami ».</p>
+      ${amisLigne.amis.map(a => `
+        <button class="frow" data-defiami="${esc(a.friendCode)}" style="width:100%;border:0;background:none;font:inherit;color:inherit;cursor:pointer;text-align:left">
+          <span>${esc(a.pseudo)}</span><b style="color:var(--accent)">Défier ›</b>
+        </button>`).join('')}
+    </div>`;
+  }
+  return recus + amis;
+}
 function animEcrire(o) { try { localStorage.setItem(ANIM_KEY, JSON.stringify(o)); } catch (e) {} }
 function animLire() { try { return JSON.parse(localStorage.getItem(ANIM_KEY) || 'null'); } catch (e) { return null; } }
 function animOubli() { try { localStorage.removeItem(ANIM_KEY); } catch (e) {} }
@@ -422,7 +497,7 @@ function vueAccueil() {
     <button class="card hub-card" data-vers="dmenu">
       <span class="hub-ic">${icon('epees', 26)}</span>
       <span class="hub-txt"><span class="hub-title">Défier un ami</span>
-        <span class="hub-sub">À distance, par code à partager : les mêmes phrases pour vous deux, chacun quand il veut.</span></span>
+        <span class="hub-sub">À distance : les mêmes phrases pour vous deux, chacun quand il veut.<span id="defi-attente"></span></span></span>
       <span class="chev">›</span>
     </button>
     <button class="card hub-card" data-vers="vmenu">
@@ -533,9 +608,20 @@ function vueFin() {
 }
 
 /* ---------- À distance ---------- */
+/* Les en-têtes d'un envoi d'épreuve : la session du compte (si elle existe)
+   accompagne l'appel — c'est elle qui permet de défier un AMI (opponentCode)
+   au lieu d'échanger un code à la main. Sans compte, rien ne change. */
+function entetesApi() {
+  const e = { 'Content-Type': 'application/json' };
+  try {
+    const s = window.GraineAPI && GraineAPI.session();
+    if (s && s.token) e['Authorization'] = 'Bearer ' + s.token;
+  } catch (err) { /* pas de client API : le défi par code suffit */ }
+  return e;
+}
 async function api(chemin, corps) {
   const r = await fetch('../api/epreuve/' + chemin, corps === undefined ? {}
-    : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
+    : { method: 'POST', headers: entetesApi(), body: JSON.stringify(corps) });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) { const err = new Error(data.error || 'Le serveur a répondu ' + r.status + '.'); err.status = r.status; throw err; }
   return data;
@@ -548,7 +634,9 @@ function vueDuelMenu() {
   return `<div class="fade">
     <button class="quit" data-quit="1">‹ Écrit… ou pas ?</button>
     <h1 style="font-size:1.25rem;margin-top:10px">Défier un ami</h1>
-    <p class="muted" style="margin:4px 0 16px">Les mêmes questions pour vous deux, chacun quand il veut — tout passe par un code à partager.</p>
+    <p class="muted" style="margin:4px 0 16px">Les mêmes questions pour vous deux, chacun quand il veut.</p>
+    ${amisHTML()}
+    <p class="feedback faux" id="err-ligne" style="margin:0 0 12px"></p>
     <button class="card hub-card" data-vers="dcfg">
       <span class="hub-ic">${icon('epees', 26)}</span>
       <span class="hub-txt"><span class="hub-title">Créer un défi</span>
@@ -654,7 +742,9 @@ function vueDuelResultat() {
       verdict = r.p1.score === r.p2.score ? '<p style="font-weight:650;margin:12px 0 0">Égalité parfaite 🙂</p>'
         : `<p style="font-weight:650;margin:12px 0 0">${esc(r.p1.score > r.p2.score ? r.p1.pseudo : r.p2.pseudo)} connaît ses textes 🏅</p>`;
     } else if (!r.p2) {
-      verdict = '<p class="muted" style="margin:12px 0 0">En attente de ton adversaire — partage-lui le code ci-dessus.</p>';
+      verdict = r.invite
+        ? `<p class="muted" style="margin:12px 0 0">En attente de <b>${esc(r.invite)}</b> — le défi l'attend dans son écran « Défier un ami », pas besoin de code.</p>`
+        : '<p class="muted" style="margin:12px 0 0">En attente de ton adversaire — partage-lui le code ci-dessus.</p>';
     }
     corps = ligne(r.p1) + ligne(r.p2) + verdict;
   } else corps = '<p class="muted">Un instant…</p>';
@@ -938,6 +1028,37 @@ function render() {
     } catch (e) { duelgo.disabled = false; erreurLigne(e.message); }
   });
 
+  // Défier un AMI en un geste : le défi part relié à son compte — il le
+  // trouvera dans son écran « Défier un ami », sans code à recopier.
+  el.querySelectorAll('[data-defiami]').forEach(b => b.addEventListener('click', async () => {
+    el.querySelectorAll('[data-defiami]').forEach(x => { x.disabled = true; });
+    try {
+      await chargerBanque();
+      const deck = tirage(CARTES_PAR_SEANCE);
+      const r = await api('duel', { mode: TITRE, deck: deck, opponentCode: b.dataset.defiami });
+      duelEcrire({ code: r.code, ts: Date.now() });
+      demarrer(null, { code: r.code, cle: r.cle }, deck);
+    } catch (e) {
+      el.querySelectorAll('[data-defiami]').forEach(x => { x.disabled = false; });
+      erreurLigne(e.message);
+    }
+  }));
+  // …et relever celui qu'un ami m'a envoyé.
+  el.querySelectorAll('[data-defirecu]').forEach(b => b.addEventListener('click', async () => {
+    el.querySelectorAll('[data-defirecu]').forEach(x => { x.disabled = true; });
+    try {
+      const code = b.dataset.defirecu;
+      const r = await api('duel/' + code);
+      if (r.p2) throw new Error('Ce défi a déjà trouvé son adversaire.');
+      // Relevé : il quitte la liste (et le badge) sans attendre le serveur.
+      if (amisLigne) amisLigne.defis = (amisLigne.defis || []).filter(x => x.code !== code);
+      demarrer(null, { code: code, pseudo: monPseudo() }, r.deck);
+    } catch (e) {
+      el.querySelectorAll('[data-defirecu]').forEach(x => { x.disabled = false; });
+      erreurLigne(e.message);
+    }
+  }));
+
   const joingo = q1('[data-joingo]');
   if (joingo) joingo.addEventListener('click', async () => {
     const code = saisie.code.trim().toUpperCase();
@@ -1023,6 +1144,10 @@ function render() {
   });
 
   if (ecran === 'dres' && online && !online.erreur && !minuterie) pollDemarre();
+
+  // Connecté, l'accueil et le menu de défi savent qui sont tes amis et si
+  // un défi t'attend (silencieux hors-ligne — tout le reste vit sans réseau).
+  if (connecte() && (ecran === 'accueil' || ecran === 'dmenu')) { chargerAmis(); majBadgeDefis(); }
 }
 
 /* Au retour sur l'épreuve : où en est le défi qu'on a lancé ? Sept jours,
@@ -1033,7 +1158,7 @@ async function verifierRepriseDuel() {
   if (Date.now() - (d.ts || 0) > 7 * 86400000) { duelOubli(); return; }
   try {
     const etat = await api('duel/' + d.code);
-    repriseDuel = { code: d.code, p1: etat.p1, p2: etat.p2, total: etat.total };
+    repriseDuel = { code: d.code, p1: etat.p1, p2: etat.p2, total: etat.total, invite: etat.invite || null };
     render();
   } catch (e) { if (e && e.status === 404) duelOubli(); }  // duel expiré
 }

@@ -154,18 +154,21 @@ function portrait_duel_create(PDO $pdo): never {
     epreuve_menage($pdo);
     portrait_menage($pdo);
     $body = read_json_body();
+    // Un joueur connecté peut viser un AMI directement (opponentCode) — même
+    // mécanique que les épreuves à choix (epreuve_defi_ami, api/epreuve.php).
+    $ami = epreuve_defi_ami($pdo, $body);
     $deck = portrait_deck_propre($body['deck'] ?? null);
-    $pseudo = frise_prenom($body['pseudo'] ?? null);
+    $pseudo = frise_prenom($body['pseudo'] ?? ($ami['pseudo'] ?? null));
 
     $code = frise_code($pdo, 'epreuve_duels', 'PD-');
     $cle = bin2hex(random_bytes(16));
     // total = score maximum (5 points par portrait), pour borner les scores.
     $st = $pdo->prepare(
-        'INSERT INTO epreuve_duels (code, cle, mode, deck, total, p1_pseudo, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO epreuve_duels (code, cle, mode, deck, total, p1_pseudo, p1_user, p2_user, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $st->execute([$code, $cle, 'De qui parle-t-on ?', json_encode($deck, JSON_UNESCAPED_UNICODE),
-        count($deck) * PORTRAIT_INDICES, $pseudo, now_sql()]);
+        count($deck) * PORTRAIT_INDICES, $pseudo, $ami['p1'] ?? null, $ami['p2'] ?? null, now_sql()]);
     json_out(['code' => $code, 'cle' => $cle]);
 }
 

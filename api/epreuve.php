@@ -82,6 +82,88 @@ function epreuve_menage(PDO $pdo): void {
     }
 }
 
+/* ---- Défier un AMI (compte facultatif) ---------------------------------------
+   Le duel par code reste la porte ouverte à tous ; un joueur connecté peut en
+   plus viser un ami directement (opponentCode = son code GRN-XXXX). Le duel
+   garde alors les deux comptes (p1_user, p2_user) et l'invité le retrouve
+   dans GET /api/epreuve/defis — plus besoin de se passer le code à la main.
+   Mêmes règles que les duels du « Qui, où, quand ? » : être amis, jamais soi. */
+
+/**
+ * Résout l'`opponentCode` optionnel du corps : null s'il est absent, sinon
+ * ['p1' => id du créateur connecté, 'p2' => id de l'ami, 'pseudo' => pseudo
+ * du créateur]. 401 sans session, 404/403 si l'ami n'existe pas ou n'en est
+ * pas un — les mêmes réponses que les duels du « Qui, où, quand ? ».
+ */
+function epreuve_defi_ami(PDO $pdo, array $body): ?array {
+    if (!isset($body['opponentCode'])) {
+        return null;
+    }
+    $user = require_user($pdo);
+    $code = normalize_friend_code($body['opponentCode']);
+    if ($code === null) {
+        json_error('Code ami invalide (format attendu : GRN-XXXX).', 400);
+    }
+    if ($code === $user['friend_code']) {
+        json_error('Impossible de se défier soi-même !', 400);
+    }
+    $st = $pdo->prepare('SELECT * FROM users WHERE friend_code = ?');
+    $st->execute([$code]);
+    $opponent = $st->fetch();
+    if ($opponent === false) {
+        json_error('Code ami inconnu.', 404);
+    }
+    if (!are_friends($pdo, (int) $user['id'], (int) $opponent['id'])) {
+        json_error('Vous devez d\'abord être amis pour vous défier.', 403);
+    }
+    return ['p1' => (int) $user['id'], 'p2' => (int) $opponent['id'],
+        'pseudo' => mb_substr((string) $user['pseudo'], 0, 20)];
+}
+
+/**
+ * Le pseudo de l'ami invité d'un duel (ou null) — pour que l'écran du
+ * créateur dise QUI on attend, au lieu d'un simple code à partager.
+ */
+function epreuve_duel_invite(PDO $pdo, array $duel): ?string {
+    if (!isset($duel['p2_user']) || $duel['p2_user'] === null) {
+        return null;
+    }
+    $st = $pdo->prepare('SELECT pseudo FROM users WHERE id = ?');
+    $st->execute([(int) $duel['p2_user']]);
+    $pseudo = $st->fetchColumn();
+    return $pseudo === false ? null : mb_substr((string) $pseudo, 0, 20);
+}
+
+/* ---- GET /api/epreuve/defis — ce qui attend l'invité connecté ---------------
+   TOUTES les épreuves d'un coup (epreuve_duels : ED- et PD-, frise_duels :
+   FD-) : chaque page filtre sur son préfixe et son mode. Seuls les défis
+   encore ouverts (l'invité n'a pas joué) apparaissent — une fois joué, le
+   résultat se lit comme aujourd'hui via GET …/duel/{code}. */
+function epreuve_mes_defis(PDO $pdo): never {
+    $user = require_user($pdo);
+    epreuve_menage($pdo);
+    frise_menage($pdo);
+    $defis = [];
+    foreach (['epreuve_duels', 'frise_duels'] as $table) {
+        $st = $pdo->prepare(
+            "SELECT code, mode, total, p1_pseudo, created_at FROM $table
+             WHERE p2_user = ? AND p2_pseudo IS NULL"
+        );
+        $st->execute([$user['id']]);
+        foreach ($st->fetchAll() as $row) {
+            $defis[] = [
+                'code'      => $row['code'],
+                'mode'      => $row['mode'],
+                'total'     => (int) $row['total'],
+                'de'        => $row['p1_pseudo'],
+                'createdAt' => sql_to_iso($row['created_at']),
+            ];
+        }
+    }
+    usort($defis, fn (array $a, array $b): int => strcmp($b['createdAt'], $a['createdAt']));
+    json_out(['defis' => $defis]);
+}
+
 /* ---- Duel par code ----------------------------------------------------------- */
 
 function epreuve_duel_create(PDO $pdo): never {
@@ -91,18 +173,20 @@ function epreuve_duel_create(PDO $pdo): never {
     throttle_or_429($pdo, 'epreuve-creer', 40);
     epreuve_menage($pdo);
     $body = read_json_body();
+    $ami = epreuve_defi_ami($pdo, $body);   // null sans opponentCode
     $deck = epreuve_deck_propre($body['deck'] ?? null);
     $mode = is_string($body['mode'] ?? null) ? mb_substr(trim($body['mode']), 0, 40) : 'Épreuve';
-    $pseudo = frise_prenom($body['pseudo'] ?? null);
+    // Connecté, le pseudo du compte suffit — le champ reste prioritaire s'il est fourni.
+    $pseudo = frise_prenom($body['pseudo'] ?? ($ami['pseudo'] ?? null));
 
     $code = frise_code($pdo, 'epreuve_duels', 'ED-');
     $cle = bin2hex(random_bytes(16));
     $st = $pdo->prepare(
-        'INSERT INTO epreuve_duels (code, cle, mode, deck, total, p1_pseudo, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO epreuve_duels (code, cle, mode, deck, total, p1_pseudo, p1_user, p2_user, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $st->execute([$code, $cle, $mode, json_encode($deck, JSON_UNESCAPED_UNICODE),
-        count($deck), $pseudo, now_sql()]);
+        count($deck), $pseudo, $ami['p1'] ?? null, $ami['p2'] ?? null, now_sql()]);
     json_out(['code' => $code, 'cle' => $cle]);
 }
 
@@ -127,6 +211,9 @@ function epreuve_duel_get(PDO $pdo, string $code): never {
         'p2'    => $duel['p2_pseudo'] === null ? null
                  : ['pseudo' => $duel['p2_pseudo'],
                     'score'  => $duel['p2_score'] === null ? null : (int) $duel['p2_score']],
+        // L'ami invité (pseudo, ou null pour un défi par code) : l'écran du
+        // créateur peut dire « en attente de X » plutôt que montrer un code.
+        'invite' => epreuve_duel_invite($pdo, $duel),
     ]);
 }
 

@@ -118,18 +118,22 @@ function frise_duel_create(PDO $pdo): never {
     throttle_or_429($pdo, 'frise-creer', 40);
     frise_menage($pdo);
     $body = read_json_body();
+    // Un joueur connecté peut viser un AMI directement (opponentCode) — même
+    // mécanique que les épreuves à choix, voir epreuve_defi_ami() dans
+    // api/epreuve.php ; le duel par code reste ouvert à tous.
+    $ami = epreuve_defi_ami($pdo, $body);
     $deck = frise_deck_propre($body['deck'] ?? null);
     $mode = is_string($body['mode'] ?? null) ? mb_substr(trim($body['mode']), 0, 40) : 'La Frise';
-    $pseudo = frise_prenom($body['pseudo'] ?? null);
+    $pseudo = frise_prenom($body['pseudo'] ?? ($ami['pseudo'] ?? null));
 
     $code = frise_code($pdo, 'frise_duels', 'FD-');
     $cle = bin2hex(random_bytes(16));
     $st = $pdo->prepare(
-        'INSERT INTO frise_duels (code, cle, mode, deck, total, p1_pseudo, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO frise_duels (code, cle, mode, deck, total, p1_pseudo, p1_user, p2_user, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $st->execute([$code, $cle, $mode, json_encode($deck, JSON_UNESCAPED_UNICODE),
-        count($deck) - 1, $pseudo, now_sql()]);
+        count($deck) - 1, $pseudo, $ami['p1'] ?? null, $ami['p2'] ?? null, now_sql()]);
     json_out(['code' => $code, 'cle' => $cle]);
 }
 
@@ -154,6 +158,9 @@ function frise_duel_get(PDO $pdo, string $code): never {
         'p2'    => $duel['p2_pseudo'] === null ? null
                  : ['pseudo' => $duel['p2_pseudo'],
                     'score'  => $duel['p2_score'] === null ? null : (int) $duel['p2_score']],
+        // L'ami invité (pseudo, ou null pour un défi par code) : l'écran du
+        // créateur peut dire « en attente de X » plutôt que montrer un code.
+        'invite' => epreuve_duel_invite($pdo, $duel),
     ]);
 }
 

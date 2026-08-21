@@ -369,6 +369,8 @@ if (preg_match('#^/api/frise/veillee/(FV-[A-Z2-9]{5})/etat$#', $path, $m)) {
 }
 
 /* ---- Épreuves à choix : défis et veillées par code, sans compte ---- */
+/* Les défis d'épreuve qui attendent l'invité CONNECTÉ (toutes épreuves : ED-, PD-, FD-). */
+if ($path === '/api/epreuve/defis' && $method === 'GET') epreuve_mes_defis($pdo);
 if ($path === '/api/epreuve/duel' && $method === 'POST') epreuve_duel_create($pdo);
 if (preg_match('#^/api/epreuve/duel/(ED-[A-Z2-9]{5})$#', $path, $m)) {
     if ($method === 'GET') epreuve_duel_get($pdo, $m[1]);

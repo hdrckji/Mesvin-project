@@ -70,8 +70,12 @@ Codes `FD-XXXXX` (défis, balayés à 7 jours) et `FV-XXXXX` (veillées, 24 h).
 Plafond 10 créations/heure/IP (fichier `api/frise.php`).
 
 - `POST /api/frise/duel` `{pseudo, mode, deck}` → `{code, cle}` — la clé
-  authentifie le créateur (case p1).
-- `GET /api/frise/duel/{code}` → `{mode, deck, total, p1, p2}`.
+  authentifie le créateur (case p1). Un joueur CONNECTÉ (Bearer) peut ajouter
+  `opponentCode` (code ami GRN-XXXX, il faut être amis — 403 sinon) : le défi
+  est alors relié aux deux comptes et l'ami le retrouve dans
+  `GET /api/epreuve/defis` ; le `pseudo` devient facultatif (celui du compte).
+- `GET /api/frise/duel/{code}` → `{mode, deck, total, p1, p2, invite}` —
+  `invite` = pseudo de l'ami invité, ou null pour un défi par code.
 - `POST /api/frise/duel/{code}/score` `{score, cle}` (créateur) ou
   `{score, pseudo}` (case p2, premier arrivé) → l'état du duel ; chaque case
   ne s'écrit qu'une fois (409 sinon).
@@ -97,6 +101,15 @@ seulement à la révélation. Routes : `POST /api/epreuve/duel`,
 `POST …/{code}/rejoindre|avancer|reponse` (`{jeton, carte, choix}`),
 `GET …/{code}/etat`. Les banques vivent côté client
 (`quiadit/data/banque.json`, `ecritoupas/data/banque.json`).
+
+Comme pour la Frise, `POST /api/epreuve/duel` (et `POST /api/portrait/duel`)
+accepte `opponentCode` d'un joueur connecté — mêmes règles, mêmes réponses —
+et `GET …/duel/{code}` rend `invite`.
+
+- `GET /api/epreuve/defis` (connecté) → `{defis: [{code, mode, total, de,
+  createdAt}]}` — les défis d'épreuve lancés PAR UN AMI qui m'attendent,
+  toutes épreuves confondues (préfixes ED-/PD-/FD- ; chaque page filtre sur
+  son préfixe et son mode). Un défi joué (ou balayé à 7 jours) disparaît.
 
 ## « De qui parle-t-on ? » (/portrait/) — le portrait à indices
 
