@@ -212,6 +212,35 @@
   .wrap.proj .proj-chips .pchip { font-size: clamp(1.2rem, 2.2vw, 1.8rem); }
   .wrap.proj .proj-classement { max-width: 920px; }
   .wrap.proj .proj-classement .frow { font-size: clamp(1.4rem, 2.6vw, 2.3rem); }
+  /* L'écran des duels, à l'image du « Qui, où, quand ? » (defi.css) */
+  .section-title {
+    display: flex; align-items: center; gap: 6px;
+    font-size: .82rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-soft); margin: 22px 4px 10px;
+  }
+  .duel-titre-ligne { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .duel-actualiser {
+    font: inherit; font-size: .78rem; font-weight: 600; letter-spacing: normal; text-transform: none;
+    background: none; border: 0; color: var(--ink-soft); cursor: pointer; padding: 2px 4px;
+  }
+  .duel-actualiser:active { opacity: .6; }
+  .duel-row {
+    display: flex; align-items: baseline; gap: 10px; width: 100%;
+    font: inherit; text-align: left; cursor: pointer;
+    background: none; color: var(--ink); border: 0;
+    border-top: 1px solid var(--line); padding: 12px 2px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .duel-row:first-of-type { border-top: 0; }
+  .duel-row .duel-qui {
+    font-family: var(--serif); font-size: 1.08rem; font-weight: 650;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .duel-row .duel-etat { font-size: .84rem; font-weight: 600; color: var(--ink-soft); flex: 1; min-width: 0; }
+  .duel-row .duel-etat.moi { color: var(--grow); }
+  .duel-row .duel-etat.fini { color: var(--ink-soft); }
+  .duel-row .duel-scores { font-family: var(--serif); font-weight: 700; white-space: nowrap; }
+  .duel-row.ami .duel-etat { flex: 0 0 auto; margin-left: auto; }
 </style>
 </head>
 <body>
@@ -411,47 +440,50 @@ function amisHTML() {
       <p class="muted" style="margin:0;font-size:.85rem">Avec un compte (gratuit — écran <b>Moi</b> de l'accueil), tes amis apparaissent ici : un geste pour défier, sans code à échanger.</p>
     </div>`;
   }
-  const recus = defisRecus().map(d => `
-    <button class="card hub-card" data-defirecu="${esc(d.code)}" style="border:1px solid var(--accent)">
-      <span class="hub-ic">${icon('epees', 26)}</span>
-      <span class="hub-txt"><span class="hub-title">${esc(d.de)} te défie !</span>
-        <span class="hub-sub">${esc(d.mode)} — la même frise pour vous deux, à toi de jouer.</span></span>
-      <span class="chev">›</span>
-    </button>`).join('');
-  let amis = '';
+  // Le même écran que « Qui, où, quand ? » : Nouveau duel, puis les duels en
+  // cours (dont ceux qui m'attendent), puis les terminés — mêmes rangées.
+  const amis = amisLigne ? amisLigne.amis : null;
+  let nouveau = '';
   if (amisErreur) {
-    amis = `<div class="card" style="margin:0 0 12px"><p class="muted" style="margin:0">${esc(amisErreur)}</p></div>`;
+    nouveau = `<p class="muted" style="margin:0">${esc(amisErreur)}</p>`;
   } else if (!amisLigne) {
-    amis = `<div class="card" style="margin:0 0 12px"><p class="muted" style="margin:0">Tes amis arrivent…</p></div>`;
-  } else if (!amisLigne.amis.length) {
-    amis = `<div class="card" style="margin:0 0 12px"><p class="muted" style="margin:0">Pas encore d'amis par ici — ajoute-les dans l'écran <b>Moi</b> de l'accueil, avec leur code ami.</p></div>`;
+    nouveau = `<p class="muted" style="margin:0">Un instant…</p>`;
+  } else if (!amis.length) {
+    nouveau = `<p class="muted" style="margin:0">Pas encore d'amis par ici. Ajoute-les dans l'écran <b>Moi</b> de l'accueil, avec leur code ami — et le premier duel peut commencer.</p>`;
   } else {
-    amis = `<div class="card" style="margin:0 0 12px;padding:12px 16px">
-      <p class="mode-title" style="margin-top:0">Défier un ami directement</p>
-      <p class="muted" style="margin:0 0 6px;font-size:.82rem">Choisis l'ami, puis le paquet : le défi l'attendra dans son écran « Défier un ami ».</p>
-      ${amisLigne.amis.map(a => `
-        <button class="frow" data-defiami="${esc(a.friendCode)}" data-definom="${esc(a.pseudo)}" style="width:100%;border:0;background:none;font:inherit;color:inherit;cursor:pointer;text-align:left">
-          <span>${esc(a.pseudo)}</span><b style="color:var(--accent)">Défier ›</b>
-        </button>`).join('')}
-    </div>`;
+    nouveau = `<p class="muted" style="margin:0 0 6px;font-size:.85rem">Choisis l'ami à défier — tu choisiras le paquet juste après.</p>
+      ${amis.map(a => `
+        <button class="duel-row ami" data-defiami="${esc(a.friendCode)}" data-definom="${esc(a.pseudo)}">
+          <span class="duel-qui">${esc(a.pseudo)}</span>
+          <span class="duel-etat moi">Défier</span>
+        </button>`).join('')}`;
   }
   const miens = duelsDuJeu();
-  let duels = '';
-  if (miens.length) {
-    const ligne = d => {
-      const droite = d.status === 'attente' ? 'En attente'
-        : `${d.monScore === null ? '–' : d.monScore} / ${d.sonScore === null ? '–' : d.sonScore}`;
-      const gauche = d.avec ? esc(d.avec) : 'Par code · ' + esc(d.code);
-      return `<button class="frow" data-duelvoir="${esc(d.code)}" data-avec="${esc(d.avec || '')}" style="width:100%;border:0;background:none;font:inherit;color:inherit;cursor:pointer;text-align:left">
-          <span>⚔️ ${gauche}</span><b>${droite}</b>
-        </button>`;
-    };
-    duels = `<div class="card" style="margin:0 0 12px;padding:12px 16px">
-      <p class="mode-title" style="margin-top:0">Tes duels</p>
-      ${miens.map(ligne).join('')}
-    </div>`;
-  }
-  return recus + amis + duels;
+  const recus = defisRecus();
+  const enCours = recus.map(d => `
+      <button class="duel-row" data-defirecu="${esc(d.code)}">
+        <span class="duel-qui">${esc(d.de)}</span>
+        <span class="duel-etat moi">À toi de relever l'épreuve</span>
+      </button>`).concat(miens.filter(d => d.status === 'attente').map(d => `
+      <button class="duel-row" data-duelvoir="${esc(d.code)}" data-avec="${esc(d.avec || '')}">
+        <span class="duel-qui">${esc(d.avec || 'Par code · ' + d.code)}</span>
+        <span class="duel-etat eux">En attente de ${esc(d.avec || 'ton adversaire')}</span>
+        ${d.monScore != null ? `<span class="duel-scores">Toi : ${d.monScore}</span>` : ''}
+      </button>`)).join('');
+  const finis = miens.filter(d => d.status === 'fini').map(d => `
+      <button class="duel-row" data-duelvoir="${esc(d.code)}" data-avec="${esc(d.avec || '')}">
+        <span class="duel-qui">${esc(d.avec || 'Par code · ' + d.code)}</span>
+        <span class="duel-etat fini">Terminé</span>
+        <span class="duel-scores">${d.monScore == null ? '–' : d.monScore} / ${d.sonScore == null ? '–' : d.sonScore}</span>
+      </button>`).join('');
+  return `
+    <div class="section-title duel-titre-ligne">Nouveau duel
+      <button class="duel-actualiser" data-actualiser="1" title="Actualiser">↻ Actualiser</button>
+    </div>
+    <div class="card">${nouveau}</div>
+    ${enCours ? `<div class="section-title">Duels en cours</div><div class="card">${enCours}</div>` : ''}
+    ${finis ? `<div class="section-title">Duels terminés</div><div class="card">${finis}</div>` : ''}
+    <div class="section-title">Par code — même sans compte</div>`;
 }
 
 /* Le défi qu'on a lancé, et sa réponse. Il n'existe pas d'écran de retour
@@ -1346,6 +1378,8 @@ function render() {
       erreurLigne(e.message);
     }
   }));
+  const actualiser = el.querySelector('[data-actualiser]');
+  if (actualiser) actualiser.addEventListener('click', () => { amisLigne = null; amisErreur = null; render(); });
   // Revoir un de MES duels — en attente ou fini : l'écran de résultat,
   // rafraîchi en direct si l'autre joue pendant qu'on regarde.
   el.querySelectorAll('[data-duelvoir]').forEach(b => b.addEventListener('click', async () => {
