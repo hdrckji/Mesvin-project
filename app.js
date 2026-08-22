@@ -745,25 +745,30 @@ function carteResultats() {
   const ecartes = ecartesLus();
   const nouveaux = duelsResultats.filter(d => !ecartes.includes(d.code));
   if (!nouveaux.length) return '';
-  const d = nouveaux[0];
-  // Un seul résultat : droit sur SON écran (la page marque la carte comme
-  // vue en l'ouvrant) ; plusieurs : le module Défi, badges à l'appui.
-  const lien = nouveaux.length === 1 ? pageDuDefi(d.code, d.mode) + '?duel=' + d.code : 'defi/';
-  const titre = nouveaux.length === 1
-    ? `${esc(d.avec || 'Ton défi')} a relevé ton défi !`
-    : `${nouveaux.length} défis relevés — les scores t'attendent`;
-  const sous = nouveaux.length === 1
-    ? `${esc(d.mode)} · Toi ${d.monScore == null ? '–' : d.monScore} — ${esc(d.avec || 'l\'autre')} ${d.sonScore == null ? '–' : d.sonScore}`
-    : nouveaux.map(x => esc(x.avec || x.code)).slice(0, 3).join(', ') + (nouveaux.length > 3 ? '…' : '');
-  return `<div class="card attente fade">
-      <a class="attente-corps" href="${lien}">
-        <span class="hub-ic">${icon('epees', 24)}</span>
-        <span class="hub-txt"><span class="hub-title">${titre}</span>
-          <span class="hub-sub">${sous}</span></span>
+  // Chaque résultat a SA carte — scores en main, un clic ouvre la feuille de
+  // score de CE duel (et l'ouvrir la marque comme vue). Au-delà de trois, le
+  // reste se regroupe vers le module Défi, badges à l'appui.
+  const carte = d => `<div class="card attente fade">
+      <a class="attente-corps" href="${pageDuDefi(d.code, d.mode)}?duel=${d.code}">
+        <span class="hub-ic">${icon('defi', 24)}</span>
+        <span class="hub-txt"><span class="hub-title">${esc(d.avec || 'Ton défi')} a relevé ton défi !</span>
+          <span class="hub-sub">${esc(d.mode)} · Toi ${d.monScore == null ? '–' : d.monScore} — ${esc(d.avec || 'l\'autre')} ${d.sonScore == null ? '–' : d.sonScore} · voir le détail</span></span>
       </a>
-      <button class="attente-x" data-attente-x="${nouveaux.map(x => x.code).join(',')}"
-              aria-label="Écarter">×</button>
+      <button class="attente-x" data-attente-x="${esc(d.code)}" aria-label="Écarter">×</button>
     </div>`;
+  const cartes = nouveaux.slice(0, 3).map(carte);
+  const reste = nouveaux.slice(3);
+  if (reste.length) {
+    cartes.push(`<div class="card attente fade">
+      <a class="attente-corps" href="defi/">
+        <span class="hub-ic">${icon('defi', 24)}</span>
+        <span class="hub-txt"><span class="hub-title">${reste.length} autre${reste.length > 1 ? 's' : ''} défi${reste.length > 1 ? 's' : ''} relevé${reste.length > 1 ? 's' : ''}</span>
+          <span class="hub-sub">${reste.map(x => esc(x.avec || x.code)).slice(0, 3).join(', ')}${reste.length > 3 ? '…' : ''} — dans le module Défi.</span></span>
+      </a>
+      <button class="attente-x" data-attente-x="${reste.map(x => x.code).join(',')}" aria-label="Écarter">×</button>
+    </div>`);
+  }
+  return cartes.join('');
 }
 
 function carteAttente() {
