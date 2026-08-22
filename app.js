@@ -1395,10 +1395,14 @@ function maxN(a, b) { if (!isNum(a)) return isNum(b) ? b : undefined; if (!isNum
 function minN(a, b) { if (!isNum(a)) return isNum(b) ? b : undefined; if (!isNum(b)) return a; return Math.min(a, b); }
 const setIf = (obj, key, v) => { if (v !== undefined) obj[key] = v; };
 
-// memo (graine.v3) — union des cards ; par card commune : max(validations),
-// max(attempts), min(due) (le plus prudent : elle revient plus tôt),
-// max(lapses/ease/interval) ; streak/bestStreak/activeDays = max ;
-// union des collections complétées ; objectif local prioritaire.
+// memo (graine.v3) — union des cards ; par card commune : le côté qui a le
+// plus d'essais (attempts, incrémenté à chaque exercice) a forcément révisé
+// depuis l'autre — son état de planification (validations, due, ease,
+// interval, lapses) fait foi en bloc. À égalité d'essais seulement (vraie
+// divergence simultanée), fusion prudente champ par champ : max(validations),
+// min(due) (elle revient plus tôt), max(lapses/ease/interval).
+// streak/bestStreak/activeDays = max ; union des collections complétées ;
+// objectif local prioritaire.
 function mergeMemo(local, server) {
   if (!server || typeof server !== 'object') return deepCopy(local);
   if (!local || typeof local !== 'object') return deepCopy(server);
@@ -1408,12 +1412,25 @@ function mergeMemo(local, server) {
   for (const id of Object.keys(sCards)) {
     const sc = sCards[id], lc = out.cards[id];
     if (!lc || typeof lc !== 'object') { out.cards[id] = sc; continue; }
-    lc.validations = maxN(lc.validations, sc.validations) || 0;
-    lc.attempts = maxN(lc.attempts, sc.attempts) || 0;
-    setIf(lc, 'due', minN(lc.due, sc.due));
-    setIf(lc, 'lapses', maxN(lc.lapses, sc.lapses));
-    setIf(lc, 'ease', maxN(lc.ease, sc.ease));
-    setIf(lc, 'interval', maxN(lc.interval, sc.interval));
+    const la = isNum(lc.attempts) ? lc.attempts : 0, sa = isNum(sc.attempts) ? sc.attempts : 0;
+    if (la !== sa) {
+      // Un côté est strictement plus avancé : sa planification est LA vérité.
+      // (L'ancien min(due) systématique ramenait chaque révision à la date
+      // périmée du serveur — les versets du jardin revenaient chaque jour.)
+      const fresh = la > sa ? lc : sc;
+      for (const k of ['validations', 'due', 'lapses', 'ease', 'interval']) {
+        setIf(lc, k, isNum(fresh[k]) ? fresh[k] : undefined);
+      }
+      lc.validations = isNum(lc.validations) ? lc.validations : 0;
+      lc.attempts = Math.max(la, sa);
+    } else {
+      lc.validations = maxN(lc.validations, sc.validations) || 0;
+      lc.attempts = la;
+      setIf(lc, 'due', minN(lc.due, sc.due));
+      setIf(lc, 'lapses', maxN(lc.lapses, sc.lapses));
+      setIf(lc, 'ease', maxN(lc.ease, sc.ease));
+      setIf(lc, 'interval', maxN(lc.interval, sc.interval));
+    }
     setIf(lc, 'addedDay', minN(lc.addedDay, sc.addedDay));
   }
   const ls = out.streak && typeof out.streak === 'object' ? out.streak : {};
