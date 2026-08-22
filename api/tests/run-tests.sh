@@ -1899,6 +1899,21 @@ check "les deux sont marquées d un coup"  0 \
 api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
 check "2e passage : rien ne repart"       0 "$(jval .series)"
 
+# Le défi d'ÉPREUVE visé sur un ami : même patience que les duels du quiz —
+# une heure de silence, puis UNE notification, marquée avant l'envoi.
+say "Notifications — le défi d'épreuve visé sur un ami s'annonce une fois"
+api POST /api/epreuve/duel "$TOKEN1" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"$FCODE2\"}" > /dev/null
+NCODE="$(jval .code)"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "le cron rend un compte d'épreuves" true "$(jval 'has("epreuves")')"
+check "trop frais : rien n'est marqué"    0 "$(sqlval "SELECT COUNT(*) FROM push_epreuve_defis WHERE code = '$NCODE'")"
+sqlexec "UPDATE epreuve_duels SET created_at = '2026-01-01 00:00:00' WHERE code = '$NCODE'"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "après une heure : marqué (une seule chance, même si l'envoi rate)" 1 \
+  "$(sqlval "SELECT COUNT(*) FROM push_epreuve_defis WHERE code = '$NCODE'")"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "cron rejoué : pas de relance (epreuves = 0)" 0 "$(jval .epreuves)"
+
 say "Notifications — l'abonnement mort est retiré au 5e échec"
 sqlexec "UPDATE push_abonnements SET echecs = 4, last_sent_day = NULL"
 api GET "/api/cron/notify?key=$CRONKEY" > /dev/null

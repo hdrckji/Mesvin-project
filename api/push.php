@@ -597,6 +597,8 @@ function handle_cron_notify(PDO $pdo): never {
     }
     // Les défis entre amis restés sans réponse : la notification PATIENTE.
     $defis = push_defis_en_attente($pdo, $cfg);
+    // Même douceur pour les défis d'ÉPREUVE visés sur un ami.
+    $epreuves = push_epreuve_defis_en_attente($pdo, $cfg);
     // Les services d'église de demain : UN rappel, la veille au soir, à ceux
     // qui ont levé la main ET activé les notifications de l'appli.
     $services = push_rappels_services($pdo, $cfg);
@@ -604,7 +606,62 @@ function handle_cron_notify(PDO $pdo): never {
     // par passage, jamais une par série.
     $series = push_series_publiees($pdo, $cfg);
     json_out(['ok' => true, 'envoyes' => $envoyes, 'supprimes' => $supprimes,
-              'defis' => $defis, 'services' => $services, 'series' => $series]);
+              'defis' => $defis, 'epreuves' => $epreuves,
+              'services' => $services, 'series' => $series]);
+}
+
+/* ---- Les défis d'ÉPREUVE qui attendent -------------------------------------
+   Même décision produit que les duels du quiz : jamais à chaud (une heure de
+   patience — si l'amie vient d'elle-même, elle n'est jamais dérangée), UNE
+   seule notification (push_epreuve_defis, marquée avant l'envoi), jamais de
+   relance. Ne concerne que les défis visés sur un AMI (p2_user) : les défis
+   par code restent anonymes, le serveur ignore qui est le destinataire. */
+function push_epreuve_defis_en_attente(PDO $pdo, array $cfg): int {
+    $envoyes = 0;
+    foreach (['epreuve_duels', 'frise_duels'] as $table) {
+        $st = $pdo->prepare(
+            "SELECT d.code, d.mode, d.p2_user, d.p1_pseudo FROM $table d
+             WHERE d.p2_user IS NOT NULL AND d.p2_pseudo IS NULL AND d.created_at < ?
+               AND NOT EXISTS (SELECT 1 FROM push_epreuve_defis p WHERE p.code = d.code)"
+        );
+        $st->execute([now_sql_plus(-3600)]);
+        foreach ($st->fetchAll() as $defi) {
+            // Marqué AVANT tout envoi — même précédent que push_defis :
+            // rater une notification vaut mieux que harceler.
+            $pdo->prepare('INSERT INTO push_epreuve_defis (code, notified_at) VALUES (?, ?)')
+                ->execute([$defi['code'], now_sql()]);
+
+            $payload = (string) json_encode([
+                'title' => '🌱 Un défi t\'attend',
+                'body'  => $defi['p1_pseudo'] . ' te défie sur « ' . $defi['mode'] . ' » — quand tu veux, rien ne presse.',
+                'url'   => epreuve_page_du_defi((string) $defi['code'], (string) $defi['mode']),
+                'tag'   => 'defi-attente',
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+            $abos = $pdo->prepare('SELECT * FROM push_abonnements WHERE user_id = ?');
+            $abos->execute([$defi['p2_user']]);
+            foreach ($abos->fetchAll() as $abo) {
+                $res = push_send($abo, $payload, $cfg);
+                if ($res['ok']) {
+                    $envoyes++;
+                } elseif ($res['gone']) {
+                    $pdo->prepare('DELETE FROM push_abonnements WHERE id = ?')->execute([$abo['id']]);
+                }
+            }
+        }
+    }
+    return $envoyes;
+}
+
+/** La page du jeu d'un défi, d'après son code (le mode départage les ED-). */
+function epreuve_page_du_defi(string $code, string $mode): string {
+    if (str_starts_with($code, 'FD-')) {
+        return '/frise/';
+    }
+    if (str_starts_with($code, 'PD-')) {
+        return '/portrait/';
+    }
+    return $mode === 'Qui a dit ça ?' ? '/quiadit/' : '/ecritoupas/';
 }
 
 /* ---- Les nouvelles séries d'une église -------------------------------------

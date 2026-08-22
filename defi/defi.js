@@ -761,7 +761,7 @@ function renderAccueil() {
       <span class="hub-ic">${icon('sablier', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Avant ou après ?</span>
-        <span class="hub-sub">Replace les livres et les grands événements dans l'ordre — la frise se construit sous tes yeux.</span>
+        <span class="hub-sub">Replace les livres et les grands événements dans l'ordre — la frise se construit sous tes yeux.<span id="attente-avantapres"></span></span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -770,7 +770,7 @@ function renderAccueil() {
       <span class="hub-ic">${icon('parchemin', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Qui a dit ça ?</span>
-        <span class="hub-sub">Une parole, quatre voix possibles — sauras-tu reconnaître la sienne ?</span>
+        <span class="hub-sub">Une parole, quatre voix possibles — sauras-tu reconnaître la sienne ?<span id="attente-quiadit"></span></span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -779,7 +779,7 @@ function renderAccueil() {
       <span class="hub-ic">${icon('lecture', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Écrit… ou pas ?</span>
-        <span class="hub-sub">Cette phrase est-elle vraiment dans la Bible ? Méfie-toi des citations trop célèbres…</span>
+        <span class="hub-sub">Cette phrase est-elle vraiment dans la Bible ? Méfie-toi des citations trop célèbres…<span id="attente-ecritoupas"></span></span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -788,7 +788,7 @@ function renderAccueil() {
       <span class="hub-ic">${icon('moi', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">De qui parle-t-on ?</span>
-        <span class="hub-sub">Les indices tombent un à un — plus tu devines tôt, plus tu marques.</span>
+        <span class="hub-sub">Les indices tombent un à un — plus tu devines tôt, plus tu marques.<span id="attente-portrait"></span></span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -803,6 +803,7 @@ function renderAccueil() {
 
   // Badge discret si au moins un duel m'attend (silencieux hors-ligne).
   majBadgeDuels();
+  majBadgesEpreuves();
 }
 
 /* ---------- « Qui, où, quand ? » : les quatre manières de s'y frotter ---------- */
@@ -863,6 +864,28 @@ function renderQuiz() {
   document.getElementById('btn-veillee').onclick = ouvrirVeillee;
 
   majBadgeDuels();
+}
+
+/* Le même badge, sur la carte de CHAQUE épreuve de l'accueil : un défi
+   d'épreuve visé sur moi s'annonce dès le module, pas seulement au fond du
+   jeu concerné. Silencieux hors-ligne ou sans compte, comme le quiz. */
+function majBadgesEpreuves() {
+  if (!connecte() || !GraineAPI.epreuveDefis) return;
+  GraineAPI.epreuveDefis().then(r => {
+    const defis = Array.isArray(r) ? r : (r && r.defis) || [];
+    const parJeu = { avantapres: 0, quiadit: 0, ecritoupas: 0, portrait: 0 };
+    defis.forEach(d => {
+      const jeu = d.code.indexOf('FD-') === 0 ? 'avantapres'
+        : d.code.indexOf('PD-') === 0 ? 'portrait'
+        : d.mode === 'Qui a dit ça ?' ? 'quiadit' : 'ecritoupas';
+      parJeu[jeu]++;
+    });
+    Object.keys(parJeu).forEach(jeu => {
+      const span = document.getElementById('attente-' + jeu);
+      if (span) span.innerHTML = parJeu[jeu]
+        ? ` <b class="duel-badge">${parJeu[jeu] === 1 ? 'Un défi t\'attend' : parJeu[jeu] + ' défis t\'attendent'}</b>` : '';
+    });
+  }).catch(() => { /* hors-ligne : on n'affiche simplement rien */ });
 }
 
 function majBadgeDuels() {

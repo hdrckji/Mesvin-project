@@ -654,10 +654,10 @@ function viewHome() {
    trace. Mais elle s'écarte d'un geste, et ne revient plus pour ce défi-là :
    c'est un choix de l'utilisateur, jamais un oubli du produit.
 
-   Rien de tout cela n'est possible pour les duels par CODE des trois
-   épreuves et de la frise : ils se jouent sans compte, le serveur ignore
-   qui est le destinataire. Là-bas, c'est le lanceur qui retrouve son duel,
-   depuis son propre appareil (voir chaque page d'épreuve). */
+   Les défis d'ÉPREUVE visés sur un ami (quiadit, ecritoupas, portrait,
+   frise) comptent pareil : ils portent le compte de l'invité. Seuls les
+   défis par CODE restent invisibles ici — sans compte, le serveur ignore
+   qui est le destinataire. */
 const ATTENTE_ECARTES = 'graine.duels.ecartes';
 let duelsAttente = null;      // null = pas encore demandé
 let duelsTentee = false;
@@ -678,10 +678,16 @@ function ecarterDuel(id) {
 function ensureDuelsAttente() {
   if (duelsTentee || !window.GraineAPI || !GraineAPI.isLoggedIn()) return;
   duelsTentee = true;
-  GraineAPI.duels()
-    .then(ds => { duelsAttente = Array.isArray(ds) ? ds.filter(d => d.status === 'waiting_me') : []; })
-    .catch(() => { duelsAttente = []; })   // hors-ligne : l'accueil ne change pas
-    .then(() => renderIfIdle());
+  Promise.all([
+    GraineAPI.duels().catch(() => []),          // hors-ligne : l'accueil ne change pas
+    GraineAPI.epreuveDefis().then(r => (Array.isArray(r) ? r : (r && r.defis) || [])).catch(() => []),
+  ]).then(([ds, eds]) => {
+    const quiz = Array.isArray(ds) ? ds.filter(d => d.status === 'waiting_me') : [];
+    // Les défis d'épreuve prennent la forme des duels du quiz : leur code
+    // sert d'identifiant (pour « écarter »), leur lanceur de visage.
+    const epreuves = (eds || []).map(d => ({ id: d.code, opponent: { pseudo: d.de } }));
+    duelsAttente = quiz.concat(epreuves);
+  }).then(() => renderIfIdle());
 }
 
 function carteAttente() {
@@ -3852,7 +3858,9 @@ function wire() {
   el.querySelectorAll('[data-bqniveau]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.niveau = +b.dataset.bqniveau; render(); } }));
   const attX = q('[data-attente-x]');
   if (attX) attX.addEventListener('click', () => {
-    attX.dataset.attenteX.split(',').forEach(id => ecarterDuel(Number(id)));
+    // Un duel du quiz s'identifie par un nombre, un défi d'épreuve par son
+    // code (ED-/PD-/FD-) : chacun garde sa forme, sinon l'écart ne prend pas.
+    attX.dataset.attenteX.split(',').forEach(id => ecarterDuel(/^\d+$/.test(id) ? Number(id) : id));
     render();
   });
   el.querySelectorAll('[data-eglsel]').forEach(b => b.addEventListener('click', () => {
