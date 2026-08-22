@@ -2131,6 +2131,22 @@ else
   printf '   --   Playwright absent : veillées au navigateur non jouées\n'
 fi
 
+# Les duels entre amis, mêmes armes : les PARCOURS (liste d'amis → duel →
+# revue → cartes de l'accueil) et leurs CONTRE-épreuves (score forgé, clé
+# forgée, non-ami, anonyme) — parce qu'un écran peut mentir alors que
+# chaque endpoint dit vrai.
+say "Duels entre amis dans un vrai navigateur — épreuves et contre-épreuves"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/duels.mjs" "$BASE" > "$TMP/duels.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/duels.log") — revues, cartes de l'accueil, tricheries refusées"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL duels au navigateur\n'; sed 's/^/        /' "$TMP/duels.log"
+  fi
+else
+  printf '   --   Playwright absent : duels au navigateur non joués\n'
+fi
+
 # ---------------------------------------------------------------------------
 # Signaler, dans un vrai navigateur. L'API sait dire qu'une route accepte un
 # signalement ; elle ne peut rien dire du GESTE, et c'est le geste qui décide
