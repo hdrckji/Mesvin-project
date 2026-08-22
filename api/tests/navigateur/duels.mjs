@@ -83,7 +83,10 @@ async function pageDe(session) {
 async function jouerChoix(p) {
   await p.waitForSelector('.opts .opt', { timeout: 8000 });
   for (let i = 0; i < 10; i++) { await p.click('.opts .opt:first-child'); await p.click('[data-suiv]'); }
-  await p.waitForSelector('.card.fin', { timeout: 8000 });
+  // L'écran « On envoie ton score… » porte la même carte que le résultat :
+  // on attend le résultat LUI-MÊME (sa revue), pas la première carte venue.
+  await p.waitForFunction(() => document.body && document.body.textContent.includes('La revue'),
+    null, { timeout: 10000 });
 }
 
 try {
