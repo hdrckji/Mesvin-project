@@ -644,7 +644,7 @@ function viewHome() {
         <span class="hub-sub">${defiDuJourFait() ? 'Relevé aujourd\'hui ✓ — reviens demain' : 'Ton rendez-vous quotidien, le même pour tous'}</span></span>
       <span class="chev">›</span></a>`;
 
-  return topbar(true) + hero + carteAttente() + hub;
+  return topbar(true) + hero + carteAttente() + carteResultats() + hub;
 }
 
 /* ---------- « On t'attend » : les défis où c'est à toi de jouer ----------
@@ -660,6 +660,7 @@ function viewHome() {
    qui est le destinataire. */
 const ATTENTE_ECARTES = 'graine.duels.ecartes';
 let duelsAttente = null;      // null = pas encore demandé
+let duelsResultats = null;    // les duels d'épreuve terminés, côté lanceur
 let duelsTentee = false;
 
 function ecartesLus() {
@@ -680,14 +681,87 @@ function ensureDuelsAttente() {
   duelsTentee = true;
   Promise.all([
     GraineAPI.duels().catch(() => []),          // hors-ligne : l'accueil ne change pas
-    GraineAPI.epreuveDefis().then(r => (Array.isArray(r) ? r : (r && r.defis) || [])).catch(() => []),
-  ]).then(([ds, eds]) => {
+    GraineAPI.epreuveDefis().catch(() => null),
+  ]).then(([ds, rep]) => {
     const quiz = Array.isArray(ds) ? ds.filter(d => d.status === 'waiting_me') : [];
     // Les défis d'épreuve prennent la forme des duels du quiz : leur code
     // sert d'identifiant (pour « écarter »), leur lanceur de visage.
-    const epreuves = (eds || []).map(d => ({ id: d.code, opponent: { pseudo: d.de } }));
+    const eds = Array.isArray(rep) ? rep : (rep && rep.defis) || [];
+    const epreuves = eds.map(d => ({ id: d.code, opponent: { pseudo: d.de } }));
     duelsAttente = quiz.concat(epreuves);
+    // Et les duels que J'AI lancés et qu'on vient de relever : le score est
+    // arrivé, l'accueil le dit (carteResultats) au lieu de le laisser au
+    // fond du jeu concerné.
+    const duels = Array.isArray(rep) ? [] : (rep && rep.duels) || [];
+    duelsResultats = duels.filter(d => d.role === 'createur' && d.status === 'fini');
   }).then(() => renderIfIdle());
+}
+
+/* Au retour au premier plan (appli reprise depuis l'écran d'accueil, onglet
+   réaffiché) : les duels se rafraîchissent — un défi lancé pendant qu'on
+   tournait le dos doit se voir sans fermer l'appli — et le service worker
+   va voir si une nouvelle version du site existe. */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  duelsTentee = false;
+  ensureDuelsAttente();
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(r => { if (r) r.update(); }).catch(() => {});
+  }
+});
+
+/* Une nouvelle version vient de prendre la main pendant que l'appli tournait :
+   on le DIT, au lieu d'espérer deux redémarrages complets — un geste recharge,
+   sinon ce sera pour la prochaine ouverture. (Au premier passage du service
+   worker, controller est encore nul : aucune invitation ne s'affiche.) */
+if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (document.getElementById('maj-prete')) return;
+    const b = document.createElement('button');
+    b.id = 'maj-prete';
+    b.textContent = 'Une mise à jour est prête — toucher pour recharger';
+    b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:9999;'
+      + 'max-width:92vw;background:var(--accent);color:#fff;border:0;border-radius:999px;'
+      + 'padding:10px 18px;font:inherit;font-size:.9rem;font-weight:650;'
+      + 'box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer';
+    b.onclick = () => location.reload();
+    document.body.appendChild(b);
+  });
+}
+
+/* La page du jeu d'un défi d'épreuve, d'après son code (le mode départage ED-). */
+function pageDuDefi(code, mode) {
+  if (code.indexOf('FD-') === 0) return 'frise/';
+  if (code.indexOf('PD-') === 0) return 'portrait/';
+  return mode === 'Qui a dit ça ?' ? 'quiadit/' : 'ecritoupas/';
+}
+
+/* ---------- « Défi relevé ! » : les scores qu'on n'a pas encore vus ----------
+   Celui qui relève voit le résultat sur-le-champ ; celui qui a LANCÉ, lui,
+   devait retourner fouiller le jeu. La carte l'attend donc sur l'accueil,
+   scores en main — et s'écarte d'un geste, comme sa sœur « on t'attend ». */
+function carteResultats() {
+  if (!Array.isArray(duelsResultats)) return '';
+  const ecartes = ecartesLus();
+  const nouveaux = duelsResultats.filter(d => !ecartes.includes(d.code));
+  if (!nouveaux.length) return '';
+  const d = nouveaux[0];
+  const lien = nouveaux.length === 1 ? pageDuDefi(d.code, d.mode) : 'defi/';
+  const titre = nouveaux.length === 1
+    ? `${esc(d.avec || 'Ton défi')} a relevé ton défi !`
+    : `${nouveaux.length} défis relevés — les scores t'attendent`;
+  const sous = nouveaux.length === 1
+    ? `${esc(d.mode)} · Toi ${d.monScore == null ? '–' : d.monScore} — ${esc(d.avec || 'l\'autre')} ${d.sonScore == null ? '–' : d.sonScore}`
+    : nouveaux.map(x => esc(x.avec || x.code)).slice(0, 3).join(', ') + (nouveaux.length > 3 ? '…' : '');
+  return `<div class="card attente fade">
+      <a class="attente-corps" href="${lien}">
+        <span class="hub-ic">${icon('epees', 24)}</span>
+        <span class="hub-txt"><span class="hub-title">${titre}</span>
+          <span class="hub-sub">${sous}</span></span>
+      </a>
+      <button class="attente-x" data-attente-x="${nouveaux.map(x => x.code).join(',')}"
+              aria-label="Écarter">×</button>
+    </div>`;
 }
 
 function carteAttente() {
@@ -3889,13 +3963,12 @@ function wire() {
   el.querySelectorAll('[data-bqecrit]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.ecrit = b.dataset.bqecrit === '1'; render(); } }));
   el.querySelectorAll('[data-bqgenre]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.genre = b.dataset.bqgenre; render(); } }));
   el.querySelectorAll('[data-bqniveau]').forEach(b => b.addEventListener('click', () => { if (bqEdit) { bqEdit.niveau = +b.dataset.bqniveau; render(); } }));
-  const attX = q('[data-attente-x]');
-  if (attX) attX.addEventListener('click', () => {
+  el.querySelectorAll('[data-attente-x]').forEach(attX => attX.addEventListener('click', () => {
     // Un duel du quiz s'identifie par un nombre, un défi d'épreuve par son
     // code (ED-/PD-/FD-) : chacun garde sa forme, sinon l'écart ne prend pas.
     attX.dataset.attenteX.split(',').forEach(id => ecarterDuel(/^\d+$/.test(id) ? Number(id) : id));
     render();
-  });
+  }));
   el.querySelectorAll('[data-eglsel]').forEach(b => b.addEventListener('click', () => {
     egliseSel = b.dataset.eglsel; pageEdit = null; pageNotice = pageError = null;
     retenirEglise(); render();

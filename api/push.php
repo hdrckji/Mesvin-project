@@ -599,6 +599,8 @@ function handle_cron_notify(PDO $pdo): never {
     $defis = push_defis_en_attente($pdo, $cfg);
     // Même douceur pour les défis d'ÉPREUVE visés sur un ami.
     $epreuves = push_epreuve_defis_en_attente($pdo, $cfg);
+    // Et le RÉSULTAT au lanceur, dès que l'ami a relevé.
+    $resultats = push_epreuve_resultats($pdo, $cfg);
     // Les services d'église de demain : UN rappel, la veille au soir, à ceux
     // qui ont levé la main ET activé les notifications de l'appli.
     $services = push_rappels_services($pdo, $cfg);
@@ -606,7 +608,7 @@ function handle_cron_notify(PDO $pdo): never {
     // par passage, jamais une par série.
     $series = push_series_publiees($pdo, $cfg);
     json_out(['ok' => true, 'envoyes' => $envoyes, 'supprimes' => $supprimes,
-              'defis' => $defis, 'epreuves' => $epreuves,
+              'defis' => $defis, 'epreuves' => $epreuves, 'resultats' => $resultats,
               'services' => $services, 'series' => $series]);
 }
 
@@ -640,6 +642,49 @@ function push_epreuve_defis_en_attente(PDO $pdo, array $cfg): int {
 
             $abos = $pdo->prepare('SELECT * FROM push_abonnements WHERE user_id = ?');
             $abos->execute([$defi['p2_user']]);
+            foreach ($abos->fetchAll() as $abo) {
+                $res = push_send($abo, $payload, $cfg);
+                if ($res['ok']) {
+                    $envoyes++;
+                } elseif ($res['gone']) {
+                    $pdo->prepare('DELETE FROM push_abonnements WHERE id = ?')->execute([$abo['id']]);
+                }
+            }
+        }
+    }
+    return $envoyes;
+}
+
+/* ---- Le résultat d'un défi d'épreuve, annoncé au lanceur --------------------
+   Celui qui relève voit le score sur-le-champ ; celui qui a lancé, lui,
+   devait retourner fouiller le jeu. Dès que la case p2 est posée, UNE
+   notification part vers le lanceur (s'il a un compte et des notifications) —
+   marquée avant l'envoi, jamais de relance. Sans délai de politesse : le
+   cron est déjà horaire, et un résultat n'exige rien de personne. */
+function push_epreuve_resultats(PDO $pdo, array $cfg): int {
+    $envoyes = 0;
+    foreach (['epreuve_duels', 'frise_duels'] as $table) {
+        $st = $pdo->prepare(
+            "SELECT d.code, d.mode, d.total, d.p1_user, d.p1_score, d.p2_pseudo, d.p2_score FROM $table d
+             WHERE d.p2_pseudo IS NOT NULL AND d.p1_user IS NOT NULL
+               AND NOT EXISTS (SELECT 1 FROM push_epreuve_resultats p WHERE p.code = d.code)"
+        );
+        $st->execute();
+        foreach ($st->fetchAll() as $duel) {
+            $pdo->prepare('INSERT INTO push_epreuve_resultats (code, notified_at) VALUES (?, ?)')
+                ->execute([$duel['code'], now_sql()]);
+
+            $score = $duel['p2_score'] === null ? '' : ' : ' . (int) $duel['p2_score'] . ' / ' . (int) $duel['total'];
+            $moi = $duel['p1_score'] === null ? '' : ' — toi, ' . (int) $duel['p1_score'] . '.';
+            $payload = (string) json_encode([
+                'title' => '🌱 Défi relevé !',
+                'body'  => $duel['p2_pseudo'] . ' a relevé ton défi « ' . $duel['mode'] . ' »' . $score . $moi,
+                'url'   => epreuve_page_du_defi((string) $duel['code'], (string) $duel['mode']),
+                'tag'   => 'defi-resultat',
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+            $abos = $pdo->prepare('SELECT * FROM push_abonnements WHERE user_id = ?');
+            $abos->execute([$duel['p1_user']]);
             foreach ($abos->fetchAll() as $abo) {
                 $res = push_send($abo, $payload, $cfg);
                 if ($res['ok']) {

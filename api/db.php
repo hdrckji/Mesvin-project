@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 11;
+const DB_MIGRATION_DERNIERE = 12;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1243,12 +1243,26 @@ function db_migrate(PDO $pdo): void {
                 notified_at TEXT NOT NULL
             )"];
 
+    /* ---- Étape 12 — le résultat d'un défi d'épreuve annoncé une fois ------------
+       Quand l'ami relève le défi, celui qui l'a LANCÉ est prévenu (carte
+       d'accueil + une notification) — la table retient ce qui a déjà été
+       annoncé, marqué AVANT l'envoi, jamais de relance. */
+    $etape12 = db_driver($pdo) === 'mysql'
+        ? ["CREATE TABLE IF NOT EXISTS push_epreuve_resultats (
+                code VARCHAR(10) NOT NULL PRIMARY KEY,
+                notified_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"]
+        : ["CREATE TABLE IF NOT EXISTS push_epreuve_resultats (
+                code TEXT NOT NULL PRIMARY KEY,
+                notified_at TEXT NOT NULL
+            )"];
+
     /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
     foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4, 5 => $etape5,
               6 => $etape6, 7 => $etape7, 8 => $etape8,
-              9 => $etape9, 10 => $etape10, 11 => $etape11] as $version => $liste) {
+              9 => $etape9, 10 => $etape10, 11 => $etape11, 12 => $etape12] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }

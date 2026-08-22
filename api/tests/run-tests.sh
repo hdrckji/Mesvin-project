@@ -1938,6 +1938,16 @@ check "après une heure : marqué (une seule chance, même si l'envoi rate)" 1 \
 api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
 check "cron rejoué : pas de relance (epreuves = 0)" 0 "$(jval .epreuves)"
 
+# Le RÉSULTAT au lanceur : dès que l'invitée relève, une seule annonce.
+say "Notifications — le résultat d'un défi d'épreuve s'annonce une fois au lanceur"
+api POST "/api/epreuve/duel/$NCODE/score" '' '{"score":2,"pseudo":"Benoît"}' > /dev/null
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "le cron rend un compte de résultats" true "$(jval 'has("resultats")')"
+check "le défi relevé est marqué (une seule chance)" 1 \
+  "$(sqlval "SELECT COUNT(*) FROM push_epreuve_resultats WHERE code = '$NCODE'")"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "cron rejoué : pas de relance (resultats = 0)" 0 "$(jval .resultats)"
+
 say "Notifications — l'abonnement mort est retiré au 5e échec"
 sqlexec "UPDATE push_abonnements SET echecs = 4, last_sent_day = NULL"
 api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
