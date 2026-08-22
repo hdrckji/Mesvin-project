@@ -746,7 +746,9 @@ function carteResultats() {
   const nouveaux = duelsResultats.filter(d => !ecartes.includes(d.code));
   if (!nouveaux.length) return '';
   const d = nouveaux[0];
-  const lien = nouveaux.length === 1 ? pageDuDefi(d.code, d.mode) : 'defi/';
+  // Un seul résultat : droit sur SON écran (la page marque la carte comme
+  // vue en l'ouvrant) ; plusieurs : le module Défi, badges à l'appui.
+  const lien = nouveaux.length === 1 ? pageDuDefi(d.code, d.mode) + '?duel=' + d.code : 'defi/';
   const titre = nouveaux.length === 1
     ? `${esc(d.avec || 'Ton défi')} a relevé ton défi !`
     : `${nouveaux.length} défis relevés — les scores t'attendent`;

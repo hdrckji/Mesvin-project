@@ -534,8 +534,8 @@ let duelsConnus = null; // dernière liste reçue (pour le badge de l'accueil)
 
 function statutDuel(d) {
   if (d.status === 'waiting_me') return { txt: 'À toi de relever l’épreuve', cls: 'moi' };
-  if (d.status === 'waiting_them') return { txt: `En attente de ${d.opponent.pseudo}`, cls: 'eux' };
-  return { txt: 'Terminé', cls: 'fini' };
+  if (d.status === 'waiting_them') return { txt: 'En attente', cls: 'eux' };
+  return { txt: '', cls: 'fini' };
 }
 
 /* Formulation bienveillante du résultat final, quelle que soit l'issue. */
@@ -1417,6 +1417,17 @@ function renderDuelCompte() {
   document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'quiz' }; render(); };
 }
 
+/* Le fil de l'amitié d'un ami, en un souffle : « 3 duels · 2-1 pour toi ».
+   Nourri par TOUS les duels finis de la paire — quiz et épreuves confondus. */
+function bilanAmiHTML(a) {
+  const b = a.duels;
+  if (!b || !b.joues) return '';
+  const t = b.toi > b.lui ? `${b.toi}-${b.lui} pour toi`
+    : b.lui > b.toi ? `${b.lui}-${b.toi} pour ${esc(a.pseudo)}`
+    : b.toi === 0 ? 'à égalité' : `égalité ${b.toi}-${b.lui}`;
+  return ` <span class="muted" style="font-weight:400;font-size:.78rem">· ${b.joues} duel${b.joues > 1 ? 's' : ''} · ${t}</span>`;
+}
+
 /* ---------- Écran des duels (connecté) ---------- */
 function renderDuels() {
   const entete = `
@@ -1458,8 +1469,9 @@ function renderDuels() {
   const ligneDuel = (d) => {
     const s = statutDuel(d);
     const brouillon = d.status === 'waiting_me' && brouillonDe(d.id);
+    // Qui a quoi, sans ambiguïté : « Toi 8 — Ceylia 6 », jamais « 8 / 6 ».
     const scores = d.status === 'finished'
-      ? `${d.myScore ?? '–'} / ${d.theirScore ?? '–'}`
+      ? `Toi ${d.myScore ?? '–'} — ${esc(d.opponent.pseudo)} ${d.theirScore ?? '–'}`
       : (d.myScore != null ? `Toi : ${d.myScore}` : '');
     return `
       <button class="duel-row" data-id="${d.id}">
@@ -1480,7 +1492,7 @@ function renderDuels() {
         <p class="defi-lead" style="margin-bottom:6px">Choisis l'ami à défier — vous recevrez les mêmes dix questions.</p>
         ${amis.map(a => `
           <button class="duel-row ami" data-code="${esc(a.friendCode)}">
-            <span class="duel-qui">${esc(a.pseudo)}</span>
+            <span class="duel-qui">${esc(a.pseudo)}${bilanAmiHTML(a)}</span>
             <span class="duel-etat moi">Défier</span>
           </button>`).join('')}
       ` : `

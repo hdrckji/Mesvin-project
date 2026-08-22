@@ -277,5 +277,11 @@ function handle_duels_result(PDO $pdo, int $id): never {
     $st->execute([json_encode($clean), $score, $id]);
 
     $duel = duel_load($pdo, $id);
+    // Les deux ont joué : la paire d'amis avance d'un cran — le même fil de
+    // l'amitié que les duels d'épreuve (voir duel_bilan_maj, api/friends.php).
+    if ($duel['challenger_answers'] !== null && $duel['opponent_answers'] !== null) {
+        duel_bilan_maj($pdo, (int) $duel['challenger_id'], (int) $duel['opponent_id'],
+            (int) $duel['challenger_score'], (int) $duel['opponent_score']);
+    }
     json_out(['duel' => duel_payload_detail($duel, $user)]);
 }

@@ -152,6 +152,21 @@ et `GET …/duel/{code}` rend `invite`.
   (p1_user) et rejoint « Tes duels » sur tous ses appareils. Idempotent ;
   l'invité n'est jamais touché. Les pages le font automatiquement au
   chargement pour le dernier défi lancé retenu sur l'appareil.
+- `POST …/duel/{code}/score` accepte désormais `answers` à la place de
+  `score` : le serveur REJOUE la partie (choix : index d'option par carte ;
+  portrait : `{t, k}` par carte, correspondance tolérante et points
+  dégressifs ; frise : l'emplacement touché par carte, plateau rejoué) et
+  recalcule le score — le score annoncé n'est jamais cru. Un client
+  d'avant (`score` seul) reste accepté, sans revue. La case p2 posée
+  marque `finished_at` : le balayage des 7 jours se compte depuis le
+  RÉSULTAT (un duel ouvert vit 7 jours depuis sa création, comme avant).
+- `GET …/duel/{code}` rend aussi `p1Answers`/`p2Answers` (null sans revue) —
+  l'écran de résultat rejoue la partie question par question.
+- Le fil de l'amitié : chaque duel FINI entre comptes (épreuves et duels du
+  quiz) avance `duel_bilans` (paire d'amis : joués, victoires, égalités,
+  dernier). `GET /api/friends` rend pour chaque ami `duels: {joues, toi,
+  lui, egalites, dernier}` (ou null). Rien d'autre n'est archivé : le duel
+  passe, le fil reste.
 
 ## « De qui parle-t-on ? » (/portrait/) — le portrait à indices
 

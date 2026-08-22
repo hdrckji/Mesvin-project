@@ -100,7 +100,9 @@ function frise_position_juste(array $frise, int $rang): int {
 
 /** Balaie les parties finies d'être utiles (défis 7 j, veillées 24 h). */
 function frise_menage(PDO $pdo): void {
-    $pdo->prepare('DELETE FROM frise_duels WHERE created_at < ?')->execute([now_sql_plus(-7 * 86400)]);
+    // Sept jours depuis le RÉSULTAT (finished_at) — un duel encore ouvert
+    // vit sept jours depuis sa création, comme avant.
+    $pdo->prepare('DELETE FROM frise_duels WHERE COALESCE(finished_at, created_at) < ?')->execute([now_sql_plus(-7 * 86400)]);
     $st = $pdo->prepare('SELECT code FROM frise_veillees WHERE created_at < ?');
     $st->execute([now_sql_plus(-86400)]);
     foreach ($st->fetchAll() as $row) {
@@ -161,6 +163,9 @@ function frise_duel_get(PDO $pdo, string $code): never {
         // L'ami invité (pseudo, ou null pour un défi par code) : l'écran du
         // créateur peut dire « en attente de X » plutôt que montrer un code.
         'invite' => epreuve_duel_invite($pdo, $duel),
+        // Les réponses de chacun (null pour un vieux duel joué sans revue).
+        'p1Answers' => isset($duel['p1_answers']) && $duel['p1_answers'] !== null ? json_decode((string) $duel['p1_answers'], true) : null,
+        'p2Answers' => isset($duel['p2_answers']) && $duel['p2_answers'] !== null ? json_decode((string) $duel['p2_answers'], true) : null,
     ]);
 }
 
@@ -172,9 +177,18 @@ function frise_duel_score(PDO $pdo, string $code): never {
     throttle_or_429($pdo, 'frise-score', 60);
     $duel = frise_duel_row($pdo, $code);
     $body = read_json_body();
-    $score = $body['score'] ?? null;
-    if (!is_int($score) || $score < 0 || $score > (int) $duel['total']) {
-        json_error('Score invalide.', 400);
+    // Avec `answers`, le score est REJOUÉ côté serveur (epreuve_rejoue,
+    // api/epreuve.php — le préfixe FD- choisit la règle de la frise) ;
+    // un client d'avant (score seul) reste accepté.
+    $answersJson = null;
+    if (isset($body['answers'])) {
+        [$score, $norm] = epreuve_rejoue($code, json_decode((string) $duel['deck'], true), $body['answers']);
+        $answersJson = json_encode($norm, JSON_UNESCAPED_UNICODE);
+    } else {
+        $score = $body['score'] ?? null;
+        if (!is_int($score) || $score < 0 || $score > (int) $duel['total']) {
+            json_error('Score invalide.', 400);
+        }
     }
     $cle = is_string($body['cle'] ?? null) ? $body['cle'] : '';
 
@@ -182,14 +196,20 @@ function frise_duel_score(PDO $pdo, string $code): never {
         if ($duel['p1_score'] !== null) {
             json_error('Ton score est déjà posé.', 409);
         }
-        $pdo->prepare('UPDATE frise_duels SET p1_score = ? WHERE code = ? AND p1_score IS NULL')->execute([$score, $code]);
+        $pdo->prepare('UPDATE frise_duels SET p1_score = ?, p1_answers = ? WHERE code = ? AND p1_score IS NULL')
+            ->execute([$score, $answersJson, $code]);
     } else {
         if ($duel['p2_pseudo'] !== null) {
             json_error('Ce défi a déjà trouvé son adversaire.', 409);
         }
         $pseudo = frise_prenom($body['pseudo'] ?? null);
-        $pdo->prepare('UPDATE frise_duels SET p2_pseudo = ?, p2_score = ? WHERE code = ? AND p2_pseudo IS NULL')
-            ->execute([$pseudo, $score, $code]);
+        $pdo->prepare('UPDATE frise_duels SET p2_pseudo = ?, p2_score = ?, p2_answers = ?, finished_at = ? WHERE code = ? AND p2_pseudo IS NULL')
+            ->execute([$pseudo, $score, $answersJson, now_sql(), $code]);
+        // Le duel se termine ici : la paire d'amis avance d'un cran.
+        if ($duel['p1_user'] !== null && $duel['p2_user'] !== null) {
+            duel_bilan_maj($pdo, (int) $duel['p1_user'], (int) $duel['p2_user'],
+                (int) ($duel['p1_score'] ?? -1), (int) $score);
+        }
     }
     frise_duel_get($pdo, $code);
 }

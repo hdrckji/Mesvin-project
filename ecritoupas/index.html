@@ -461,6 +461,44 @@ function majBadgeDefis() {
   const span = document.getElementById('defi-attente');
   if (span) span.innerHTML = n ? ` <b style="color:var(--accent)">${n === 1 ? 'Un défi t\'attend' : n + ' défis t\'attendent'}</b>` : '';
 }
+/* Le fil de l'amitié d'un ami, en un souffle : « 3 duels · 2-1 pour toi ». */
+function bilanHTML(a) {
+  const b = a.duels;
+  if (!b || !b.joues) return '';
+  const t = b.toi > b.lui ? `${b.toi}-${b.lui} pour toi`
+    : b.lui > b.toi ? `${b.lui}-${b.toi} pour ${esc(a.pseudo)}`
+    : b.toi === 0 ? 'à égalité' : `égalité ${b.toi}-${b.lui}`;
+  return ` <span class="muted" style="font-weight:400;font-size:.78rem">· ${b.joues} duel${b.joues > 1 ? 's' : ''} · ${t}</span>`;
+}
+/* Vu : le résultat ouvert quitte la carte de l'accueil de l'appli (clé
+   partagée avec app.js — même origine, même mémoire). */
+function marquerVu(code) {
+  try {
+    const v = JSON.parse(localStorage.getItem('graine.duels.ecartes') || '[]') || [];
+    if (!v.includes(code)) { v.push(code); localStorage.setItem('graine.duels.ecartes', JSON.stringify(v.slice(-50))); }
+  } catch (e) { /* stockage refusé : la carte s'écartera à la main */ }
+}
+
+/* La revue, question par question : ce que J'AI répondu face au texte.
+   Servie par les réponses stockées côté serveur (p1Answers/p2Answers) —
+   un vieux duel joué sans elles n'affiche simplement pas de revue. */
+function revueHTML(deck, mine) {
+  if (!Array.isArray(mine) || !Array.isArray(deck) || mine.length !== deck.length) return '';
+  return `<div class="section-title">La revue, question par question</div>
+    <div class="card">${deck.map((it, i) => {
+      const m = mine[i];
+      const bon = m === it.bonne;
+      return `<div style="padding:10px 2px${i ? ';border-top:1px solid var(--line)' : ''}">
+        <p style="margin:0 0 6px">«&nbsp;${esc(it.q)}&nbsp;»</p>
+        ${bon ? `<p class="verdict ok" style="margin:0">✓ ${esc(it.options[it.bonne])}</p>`
+          : `<p class="verdict faux" style="margin:0">✗ ${typeof m === 'number' && m >= 0 ? 'Ta réponse : ' + esc(it.options[m]) : 'Pas de réponse'}</p>
+        <p class="verdict ok" style="margin:2px 0 0">La bonne : ${esc(it.options[it.bonne])}</p>`}
+        ${it.rev ? `<div class="revelation">${esc(it.rev)}</div>` : ''}
+        ${it.ref ? `<p class="refline" style="margin:4px 0 0">${esc(it.ref)} · Segond 1910</p>` : ''}
+      </div>`;
+    }).join('')}</div>`;
+}
+
 /* ?diag dans l'adresse : une ligne d'état, rien de privé — pour diagnostiquer
    à distance ce que cet appareil voit vraiment (version de page, session,
    fraîcheur des scripts, contenu des listes). */
@@ -500,7 +538,7 @@ function amisHTML() {
     nouveau = `<p class="muted" style="margin:0 0 6px;font-size:.85rem">Choisis l'ami à défier — les mêmes phrases pour vous deux.</p>
       ${amis.map(a => `
         <button class="duel-row ami" data-defiami="${esc(a.friendCode)}">
-          <span class="duel-qui">${esc(a.pseudo)}</span>
+          <span class="duel-qui">${esc(a.pseudo)}${bilanHTML(a)}</span>
           <span class="duel-etat moi">Défier</span>
         </button>`).join('')}`;
   }
@@ -511,16 +549,15 @@ function amisHTML() {
         <span class="duel-qui">${esc(d.de)}</span>
         <span class="duel-etat moi">À toi de relever l'épreuve</span>
       </button>`).concat(miens.filter(d => d.status === 'attente').map(d => `
-      <button class="duel-row" data-duelvoir="${esc(d.code)}" data-avec="${esc(d.avec || '')}">
+      <button class="duel-row" data-duelvoir="${esc(d.code)}" data-avec="${esc(d.avec || '')}" data-mien="${d.role === 'invite' ? 'p2' : 'p1'}">
         <span class="duel-qui">${esc(d.avec || 'Par code · ' + d.code)}</span>
-        <span class="duel-etat eux">En attente de ${esc(d.avec || 'ton adversaire')}</span>
+        <span class="duel-etat eux">En attente</span>
         ${d.monScore != null ? `<span class="duel-scores">Toi : ${d.monScore}</span>` : ''}
       </button>`)).join('');
   const finis = miens.filter(d => d.status === 'fini').map(d => `
-      <button class="duel-row" data-duelvoir="${esc(d.code)}" data-avec="${esc(d.avec || '')}">
+      <button class="duel-row" data-duelvoir="${esc(d.code)}" data-avec="${esc(d.avec || '')}" data-mien="${d.role === 'invite' ? 'p2' : 'p1'}" data-fini="1">
         <span class="duel-qui">${esc(d.avec || 'Par code · ' + d.code)}</span>
-        <span class="duel-etat fini">Terminé</span>
-        <span class="duel-scores">${d.monScore == null ? '–' : d.monScore} / ${d.sonScore == null ? '–' : d.sonScore}</span>
+        <span class="duel-scores">Toi ${d.monScore == null ? '–' : d.monScore} — ${esc(d.avec || 'l\'autre')} ${d.sonScore == null ? '–' : d.sonScore}</span>
       </button>`).join('');
   return `
     <div class="section-title duel-titre-ligne">Nouveau duel
@@ -529,7 +566,9 @@ function amisHTML() {
     <div class="card">${nouveau}</div>
     ${enCours ? `<div class="section-title">Duels en cours</div><div class="card">${enCours}</div>` : ''}
     ${finis ? `<div class="section-title">Duels terminés</div><div class="card">${finis}</div>` : ''}
-    <div class="section-title">Par code — même sans compte</div>`;
+    <p class="muted" style="margin:18px 4px 0;font-size:.82rem">Par code, même sans compte :
+      <button data-vers="dcfg" style="background:none;border:0;color:var(--accent);text-decoration:underline;font:inherit;font-size:.82rem;cursor:pointer;padding:0">créer un défi</button> ·
+      <button data-vers="djoin" style="background:none;border:0;color:var(--accent);text-decoration:underline;font:inherit;font-size:.82rem;cursor:pointer;padding:0">j'ai reçu un code</button></p>`;
 }
 function animEcrire(o) { try { localStorage.setItem(ANIM_KEY, JSON.stringify(o)); } catch (e) {} }
 function animLire() { try { return JSON.parse(localStorage.getItem(ANIM_KEY) || 'null'); } catch (e) { return null; } }
@@ -542,7 +581,7 @@ function demarrer(noms, enLigne, itemsServis) {
   const parTete = noms ? Math.max(3, Math.min(5, Math.floor(BANQUE.length / n))) : 0;
   const items = itemsServis || tirage(noms ? parTete * n : CARTES_PAR_SEANCE);
   seance = {
-    items: items, idx: 0, phase: 'question', choix: null,
+    items: items, idx: 0, phase: 'question', choix: null, reponses: [],
     score: 0, total: items.length,
     participants: noms ? noms.map(nom => ({ nom: nom, score: 0 })) : null, tour: 0,
     enLigne: enLigne || null, envoye: false,
@@ -554,6 +593,7 @@ function repondre(k) {
   const s = seance;
   if (s.phase !== 'question') return;
   s.choix = k;
+  s.reponses.push(k);   // la revue s'en souviendra
   s.phase = 'revele';
   if (k === s.items[s.idx].bonne) {
     if (s.participants) s.participants[s.tour].score++; else s.score++;
@@ -664,10 +704,10 @@ function envoyerScoreDuel() {
   const s = seance;
   s.envoye = true;
   const corps = s.enLigne.cle
-    ? { score: s.score, cle: s.enLigne.cle }
-    : { score: s.score, pseudo: s.enLigne.pseudo };
+    ? { score: s.score, answers: s.reponses, cle: s.enLigne.cle }
+    : { score: s.score, answers: s.reponses, pseudo: s.enLigne.pseudo };
   api('duel/' + s.enLigne.code + '/score', corps)
-    .then(r => { online = { code: s.enLigne.code, resultat: r, erreur: null, avec: s.enLigne.avec || null }; ecran = 'dres'; render(); })
+    .then(r => { online = { code: s.enLigne.code, resultat: r, erreur: null, avec: s.enLigne.avec || null, mien: s.enLigne.cle ? 'p1' : 'p2' }; ecran = 'dres'; render(); })
     .catch(e => { online = { code: s.enLigne.code, resultat: null, erreur: e.message }; ecran = 'dres'; render(); });
 }
 
@@ -736,6 +776,7 @@ function vueDuelMenu() {
     ${duelMenuLanceHTML()}
     ${amisHTML()}
     <p class="feedback faux" id="err-ligne" style="margin:0 0 12px"></p>
+    ${connecte() ? '' : `
     <button class="card hub-card" data-vers="dcfg">
       <span class="hub-ic">${icon('epees', 26)}</span>
       <span class="hub-txt"><span class="hub-title">Créer un défi</span>
@@ -748,6 +789,7 @@ function vueDuelMenu() {
         <span class="hub-sub">Un ami t'a envoyé le sien : les mêmes questions t'attendent, ton prénom suffit.</span></span>
       <span class="chev">›</span>
     </button>
+    `}
   </div>`;
 }
 
@@ -850,7 +892,7 @@ function vueDuelResultat() {
   // Un duel visé sur un AMI n'a pas besoin de code : l'en-tête le nomme,
   // tout simplement. Le code (et son bouton Copier) ne s'affichent que pour
   // un défi par code — là, c'est la seule façon d'inviter.
-  const invite = o.avec || (r && r.invite);
+  const invite = o.avec || (o.mien === 'p2' ? (r && r.p1 && r.p1.pseudo) : (r && r.invite));
   const entete = invite
     ? `<p style="font-weight:650;font-size:1.1rem;margin:0 0 8px">⚔️ Ton duel avec ${esc(invite)}</p>`
     : `<p class="muted" style="margin:0 0 4px">Le code du défi — à partager tel quel :</p>
@@ -862,6 +904,7 @@ function vueDuelResultat() {
       ${entete}
       ${corps}
     </div>
+    ${r ? revueHTML(r.deck, o.mien === 'p2' ? r.p2Answers : r.p1Answers) : ''}
   </div>`;
 }
 
@@ -1230,7 +1273,8 @@ function render() {
     try {
       const code = b.dataset.duelvoir;
       const r = await api('duel/' + code);
-      online = { code: code, resultat: r, erreur: null, avec: b.dataset.avec || null };
+      if (b.dataset.fini) marquerVu(code);
+      online = { code: code, resultat: r, erreur: null, avec: b.dataset.avec || null, mien: b.dataset.mien || 'p1' };
       ecran = 'dres'; render();
     } catch (e) { b.disabled = false; erreurLigne(e.message); }
   }));
@@ -1426,6 +1470,18 @@ if (direct && /^EV-[A-Z2-9]{5}$/.test(direct.toUpperCase())) {
   online = { code: direct.toUpperCase(), projection: true, etat: null };
   ecran = 'proj';
   pollDemarre();
+}
+/* Arrivée directe sur un RÉSULTAT de duel : ?duel=ED-XXXXX (la carte de
+   l'accueil de l'appli mène ici) ; ouvrir le résultat le marque comme vu. */
+const duelDirect = (new URLSearchParams(location.search).get('duel') || '').toUpperCase();
+if (/^ED-[A-Z2-9]{5}$/.test(duelDirect)) {
+  marquerVu(duelDirect);
+  online = { code: duelDirect, resultat: null, erreur: null,
+    mien: new URLSearchParams(location.search).get('role') === 'p2' ? 'p2' : 'p1' };
+  ecran = 'dres';
+  api('duel/' + duelDirect)
+    .then(r => { online.resultat = r; render(); })
+    .catch(e => { online.erreur = e.message; render(); });
 }
 render();
 chargerSeries();   // les séries publiées de mon église, s'il y en a

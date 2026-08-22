@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 12;
+const DB_MIGRATION_DERNIERE = 13;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1257,12 +1257,52 @@ function db_migrate(PDO $pdo): void {
                 notified_at TEXT NOT NULL
             )"];
 
+    /* ---- Étape 13 — les réponses font foi, et le fil de l'amitié ----------------
+       Trois choses que les duels d'épreuve ne savaient pas retenir :
+       - p1_answers / p2_answers : les réponses de chacun — le serveur REJOUE
+         le duel et recalcule le score (le score annoncé n'est plus cru), et
+         l'écran de résultat peut montrer la revue question par question ;
+       - finished_at : posé quand l'invité relève — le balayage des 7 jours
+         se compte depuis le RÉSULTAT, plus depuis la création ;
+       - duel_bilans : la trace durable, un gramme par paire d'amis (joués,
+         victoires, égalités, dernier duel) — le duel passe, le fil reste. */
+    $reponses = db_driver($pdo) === 'mysql' ? 'MEDIUMTEXT NULL' : 'TEXT NULL';
+    $finiTs = db_driver($pdo) === 'mysql' ? 'DATETIME NULL' : 'TEXT NULL';
+    $etape13 = [];
+    foreach (['epreuve_duels', 'frise_duels'] as $t) {
+        $etape13[] = "ALTER TABLE $t ADD COLUMN p1_answers $reponses";
+        $etape13[] = "ALTER TABLE $t ADD COLUMN p2_answers $reponses";
+        $etape13[] = "ALTER TABLE $t ADD COLUMN finished_at $finiTs";
+    }
+    $etape13[] = db_driver($pdo) === 'mysql'
+        ? "CREATE TABLE IF NOT EXISTS duel_bilans (
+                user_a INT UNSIGNED NOT NULL,
+                user_b INT UNSIGNED NOT NULL,
+                joues INT NOT NULL DEFAULT 0,
+                victoires_a INT NOT NULL DEFAULT 0,
+                victoires_b INT NOT NULL DEFAULT 0,
+                egalites INT NOT NULL DEFAULT 0,
+                dernier DATETIME NOT NULL,
+                PRIMARY KEY (user_a, user_b)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        : "CREATE TABLE IF NOT EXISTS duel_bilans (
+                user_a INTEGER NOT NULL,
+                user_b INTEGER NOT NULL,
+                joues INTEGER NOT NULL DEFAULT 0,
+                victoires_a INTEGER NOT NULL DEFAULT 0,
+                victoires_b INTEGER NOT NULL DEFAULT 0,
+                egalites INTEGER NOT NULL DEFAULT 0,
+                dernier TEXT NOT NULL,
+                PRIMARY KEY (user_a, user_b)
+            )";
+
     /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
     foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4, 5 => $etape5,
               6 => $etape6, 7 => $etape7, 8 => $etape8,
-              9 => $etape9, 10 => $etape10, 11 => $etape11, 12 => $etape12] as $version => $liste) {
+              9 => $etape9, 10 => $etape10, 11 => $etape11, 12 => $etape12,
+              13 => $etape13] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }

@@ -38,6 +38,9 @@ api() {
   curl "${args[@]}"
 }
 jval() { jq -r "$1" "$TMP/body.json"; }
+sqlval()  { php -r '$p = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
+sqlexec() { php -r '$p = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null); $p->exec($argv[2]);' "$ROOT/api/data/dev.sqlite" "$1"; }
+
 
 # ---------------------------------------------------------------------------
 say "Analyse syntaxique (php -l) de chaque fichier PHP"
@@ -181,6 +184,12 @@ $pdo->exec("ALTER TABLE epreuve_duels DROP COLUMN p1_user");
 $pdo->exec("ALTER TABLE epreuve_duels DROP COLUMN p2_user");
 $pdo->exec("ALTER TABLE frise_duels DROP COLUMN p1_user");
 $pdo->exec("ALTER TABLE frise_duels DROP COLUMN p2_user");
+// Étape 13 : les réponses et l horodatage du résultat, sur les deux tables.
+foreach (["epreuve_duels", "frise_duels"] as $t) {
+    $pdo->exec("ALTER TABLE $t DROP COLUMN p1_answers");
+    $pdo->exec("ALTER TABLE $t DROP COLUMN p2_answers");
+    $pdo->exec("ALTER TABLE $t DROP COLUMN finished_at");
+}
 // Étape 9 : les colonnes du mode auto des veillées.
 foreach (["epreuve_participants", "frise_participants", "portrait_participants"] as $t) {
     $pdo->exec("ALTER TABLE $t DROP COLUMN last_seen");
@@ -959,6 +968,65 @@ check "un duel par code créé CONNECTÉ suit son créateur" 200 "$(api POST /ap
 CCODE="$(jval .code)"
 check "→ u3 le retrouve dans SES duels" "createur/attente" "$(api GET /api/epreuve/defis "$TOKEN3" > /dev/null; jq -r '[.duels[] | select(.code == "'"$CCODE"'")][0] | "\(.role)/\(.status)"' "$TMP/body.json")"
 
+# ---------------------------------------------------------------------------
+# Le REJEU : les réponses font foi. Le serveur recalcule les scores carte par
+# carte — le score annoncé n'est jamais cru — et garde les réponses pour la
+# revue. Les clients d'avant (score seul) restent acceptés (éprouvé partout
+# ailleurs dans cette suite).
+say "Défis d'épreuve — le serveur REJOUE les réponses (le score annoncé n'est plus cru)"
+api POST /api/epreuve/duel "$TOKEN1" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"$FCODE2\"}" > /dev/null
+RJCODE="$(jval .code)"
+RJCLE="$(jval .cle)"
+check "réponses mal formées (longueur) → 400" 400 "$(api POST "/api/epreuve/duel/$RJCODE/score" '' "{\"cle\":\"$RJCLE\",\"answers\":[0,1]}")"
+check "réponses mal formées (index) → 400"    400 "$(api POST "/api/epreuve/duel/$RJCODE/score" '' "{\"cle\":\"$RJCLE\",\"answers\":[0,1,9]}")"
+check "p1 envoie ses réponses, sans score → 200" 200 "$(api POST "/api/epreuve/duel/$RJCODE/score" '' "{\"cle\":\"$RJCLE\",\"answers\":[0,1,0]}")"
+check "→ score REJOUÉ : 3"              3 "$(jval .p1.score)"
+check "→ les réponses voyagent (revue)" "[0,1,0]" "$(jq -c .p1Answers "$TMP/body.json")"
+check "p2 ANNONCE 3 mais répond faux : les réponses tranchent → 200" 200 "$(api POST "/api/epreuve/duel/$RJCODE/score" '' '{"pseudo":"Benoît","score":3,"answers":[1,2,1]}')"
+check "→ score de p2 rejoué : 0"        0 "$(jval .p2.score)"
+check "→ finished_at posé au résultat"  1 "$(sqlval "SELECT COUNT(*) FROM epreuve_duels WHERE code = '$RJCODE' AND finished_at IS NOT NULL")"
+
+say "Défis d'épreuve — la frise et le portrait se rejouent aussi"
+check "frise : création (u2 → u1) → 200" 200 "$(api POST /api/frise/duel "$TOKEN2" "{\"mode\":\"La frise\",\"deck\":$FDECK,\"opponentCode\":\"$FCODE1\"}")"
+RJF="$(jval .code)"
+RJFCLE="$(jval .cle)"
+check "frise : p1 place [1,0,3] → 200"  200 "$(api POST "/api/frise/duel/$RJF/score" '' "{\"cle\":\"$RJFCLE\",\"answers\":[1,0,3]}")"
+check "→ plateau rejoué : 2 bien placées" 2 "$(jval .p1.score)"
+check "frise : emplacement hors plateau → 400" 400 "$(api POST "/api/frise/duel/$RJF/score" '' '{"pseudo":"X","answers":[5,0,0]}')"
+PDECK2='[{"reponse":"Moïse","accepte":[],"indices":["a","b","c","d","e"]},{"reponse":"David","accepte":[],"indices":["a","b","c","d","e"]},{"reponse":"Ruth","accepte":[],"indices":["a","b","c","d","e"]}]'
+api POST /api/portrait/duel '' "{\"pseudo\":\"Zoé\",\"deck\":$PDECK2}" > /dev/null
+RJP="$(jval .code)"
+RJPCLE="$(jval .cle)"
+check "portrait : « Moise » toléré au 2e indice → 200" 200 "$(api POST "/api/portrait/duel/$RJP/score" '' "{\"cle\":\"$RJPCLE\",\"answers\":[{\"t\":\"Moise\",\"k\":2},{\"t\":\"xxx\",\"k\":1},{\"t\":\"Rut\",\"k\":5}]}")"
+check "→ 4 points rejoués (dégressif ; nom court exigé exact)" 4 "$(jval .p1.score)"
+
+say "Défis d'épreuve — le balayage se compte depuis le RÉSULTAT"
+sqlexec "UPDATE epreuve_duels SET created_at = '2026-01-01 00:00:00' WHERE code = '$RJCODE'"
+api GET /api/epreuve/defis "$TOKEN1" > /dev/null
+check "fini récemment, créé il y a longtemps : il reste" 200 "$(api GET "/api/epreuve/duel/$RJCODE")"
+sqlexec "UPDATE epreuve_duels SET finished_at = '2026-01-01 00:00:00' WHERE code = '$RJCODE'"
+api GET /api/epreuve/defis "$TOKEN1" > /dev/null
+check "résultat vieux de 7 jours : balayé → 404" 404 "$(api GET "/api/epreuve/duel/$RJCODE")"
+
+say "Le fil de l'amitié — le duel passe, le fil reste"
+api GET /api/friends "$TOKEN1" > /dev/null
+check "u1-u2 : 3 duels finis jusqu'ici (quiz compris)" 3 "$(jq -r '[.friends[] | select(.friendCode == "'"$FCODE2"'")][0].duels.joues' "$TMP/body.json")"
+check "→ victoires + égalités = joués"  3 "$(jq -r '[.friends[] | select(.friendCode == "'"$FCODE2"'")][0].duels | (.toi + .lui + .egalites)' "$TMP/body.json")"
+FCODE3="$(api GET /api/me "$TOKEN3" > /dev/null; jval .user.friendCode)"
+api POST /api/friends/add "$TOKEN3" "{\"code\":\"$FCODE1\"}" > /dev/null
+api POST /api/epreuve/duel "$TOKEN1" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"$FCODE3\"}" > /dev/null
+BLCODE="$(jval .code)"
+BLCLE="$(jval .cle)"
+api POST "/api/epreuve/duel/$BLCODE/score" '' "{\"cle\":\"$BLCLE\",\"answers\":[0,1,0]}" > /dev/null
+api POST "/api/epreuve/duel/$BLCODE/score" '' '{"pseudo":"Chloé","answers":[1,2,1]}' > /dev/null
+api GET /api/friends "$TOKEN1" > /dev/null
+check "paire neuve u1-u3 : 1 duel, 1-0 pour u1" "1/1/0/0" "$(jq -r '[.friends[] | select(.friendCode == "'"$FCODE3"'")][0].duels | "\(.joues)/\(.toi)/\(.lui)/\(.egalites)"' "$TMP/body.json")"
+api GET /api/friends "$TOKEN3" > /dev/null
+check "vu de u3, en miroir : 1-0 pour u1" "1/0/1/0" "$(jq -r '[.friends[] | select(.friendCode == "'"$FCODE1"'")][0].duels | "\(.joues)/\(.toi)/\(.lui)/\(.egalites)"' "$TMP/body.json")"
+# L'amitié d'essai se referme (le bilan, lui, reste en base — c'est le but) ;
+# la suite compte plus bas les amis de u1, qui doivent revenir à leur état.
+api DELETE "/api/friends/$FCODE3" "$TOKEN1" > /dev/null
+
 say "Groupes d'église — la création directe est fermée (le message oriente)"
 check "POST /api/groupes sans compte → 401" 401 "$(api POST /api/groupes '' '{"nom":"Béthel"}')"
 check "création directe connectée → 403" 403 "$(api POST /api/groupes "$TOKEN1" '{"nom":"Béthel"}')"
@@ -1466,8 +1534,6 @@ check "la veillée liée survit, sans église" false "$(api GET "/api/veillees/$
 # La page de l'église (fondations serveur — aucune interface encore).
 # Toujours aucun appel request-code : TOKEN1/TOKEN2/TOKEN3 suffisent.
 # Regards directs dans la base SQLite (aussi utilisés plus bas, Notifications).
-sqlval()  { php -r '$p = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
-sqlexec() { php -r '$p = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null); $p->exec($argv[2]);' "$ROOT/api/data/dev.sqlite" "$1"; }
 
 say "La page de l'église — vide au départ, réservée aux membres"
 PGCODE="$(groupe_via_demande "$TOKEN1" "Assemblée du Chemin")"
