@@ -32,11 +32,13 @@ require __DIR__ . '/groupes-page.php';
 require __DIR__ . '/duels.php';
 require __DIR__ . '/veillees.php';
 require __DIR__ . '/frise.php';
+require __DIR__ . '/epreuves-auto.php';
 require __DIR__ . '/epreuve.php';
 require __DIR__ . '/portrait.php';
 require __DIR__ . '/admin.php';
 require __DIR__ . '/admin-eglises.php';
 require __DIR__ . '/banques.php';
+require __DIR__ . '/signalements.php';
 require __DIR__ . '/visites.php';
 require __DIR__ . '/push.php';
 
@@ -290,6 +292,12 @@ if ($path === '/api/push/subscribe'   && $method === 'POST') handle_push_subscri
 if ($path === '/api/push/unsubscribe' && $method === 'POST') handle_push_unsubscribe($pdo);
 if ($path === '/api/cron/notify'      && $method === 'GET')  handle_cron_notify($pdo);
 
+/* ---- Signaler ce qui cloche (signalements.php) ----------------------------------
+   Sans compte, volontairement : celui qui repère une coquille en pleine veillée
+   n'ouvrira pas une session pour la dire. Le plafond horaire tient lieu de
+   garde-fou, et aucune IP n'est conservée. */
+if ($path === '/api/signalement' && $method === 'POST') handle_signalement_post($pdo);
+
 /* ---- Administration (ADMIN_EMAILS seulement) ----------------------------------- */
 if ($path === '/api/admin/users'   && $method === 'GET') handle_admin_users($pdo);
 if ($path === '/api/admin/log'     && $method === 'GET') handle_admin_log_get($pdo);
@@ -297,6 +305,10 @@ if ($path === '/api/admin/journal' && $method === 'GET') handle_admin_journal($p
 if ($path === '/api/admin/visites' && $method === 'GET') handle_admin_visites($pdo);
 if ($path === '/api/admin/brevo'   && $method === 'GET') handle_admin_brevo($pdo);
 if ($path === '/api/admin/eglises' && $method === 'GET') handle_admin_eglises($pdo);
+if ($path === '/api/admin/signalements' && $method === 'GET') handle_admin_signalements($pdo);
+if (preg_match('#^/api/admin/signalements/([0-9]+)$#', $path, $m) && $method === 'POST') {
+    handle_admin_signalement_classer($pdo, (int) $m[1]);
+}
 // Voir et retirer ce qu'une église a publié — sur signalement, jamais a priori.
 if ($path === '/api/admin/groupes' && $method === 'GET') handle_admin_groupes($pdo);
 if (preg_match('#^/api/admin/groupes/([^/]+)$#', $path, $m) && $method === 'GET') {
@@ -360,6 +372,9 @@ if ($path === '/api/frise/veillee' && $method === 'POST') frise_veillee_create($
 if (preg_match('#^/api/frise/veillee/(FV-[A-Z2-9]{5})/rejoindre$#', $path, $m)) {
     if ($method === 'POST') frise_veillee_rejoindre($pdo, $m[1]);
 }
+if (preg_match('#^/api/frise/veillee/(FV-[A-Z2-9]{5})/auto$#', $path, $m)) {
+    if ($method === 'POST') frise_veillee_auto($pdo, $m[1]);
+}
 if (preg_match('#^/api/frise/veillee/(FV-[A-Z2-9]{5})/avancer$#', $path, $m)) {
     if ($method === 'POST') frise_veillee_avancer($pdo, $m[1]);
 }
@@ -394,6 +409,9 @@ if ($path === '/api/epreuve/veillee' && $method === 'POST') epreuve_veillee_crea
 if (preg_match('#^/api/epreuve/veillee/(EV-[A-Z2-9]{5})/rejoindre$#', $path, $m)) {
     if ($method === 'POST') epreuve_veillee_rejoindre($pdo, $m[1]);
 }
+if (preg_match('#^/api/epreuve/veillee/(EV-[A-Z2-9]{5})/auto$#', $path, $m)) {
+    if ($method === 'POST') epreuve_veillee_auto($pdo, $m[1]);
+}
 if (preg_match('#^/api/epreuve/veillee/(EV-[A-Z2-9]{5})/avancer$#', $path, $m)) {
     if ($method === 'POST') epreuve_veillee_avancer($pdo, $m[1]);
 }
@@ -425,6 +443,9 @@ if (preg_match('#^/api/portrait/duel/(PD-[A-Z2-9]{5})/adopter$#', $path, $m)) {
 if ($path === '/api/portrait/veillee' && $method === 'POST') portrait_veillee_create($pdo);
 if (preg_match('#^/api/portrait/veillee/(PV-[A-Z2-9]{5})/rejoindre$#', $path, $m)) {
     if ($method === 'POST') portrait_veillee_rejoindre($pdo, $m[1]);
+}
+if (preg_match('#^/api/portrait/veillee/(PV-[A-Z2-9]{5})/auto$#', $path, $m)) {
+    if ($method === 'POST') portrait_veillee_auto($pdo, $m[1]);
 }
 if (preg_match('#^/api/portrait/veillee/(PV-[A-Z2-9]{5})/avancer$#', $path, $m)) {
     if ($method === 'POST') portrait_veillee_avancer($pdo, $m[1]);

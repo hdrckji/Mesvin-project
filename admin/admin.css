@@ -139,3 +139,19 @@
   color: var(--accent-ink); cursor: pointer; padding: 2px 0; text-decoration: underline;
   text-underline-offset: 3px; }
 .linkbtn.danger { color: var(--danger); }
+
+/* ---- Signalements ----------------------------------------------------------
+   Un signalement se lit en diagonale : ce qui a été signalé, ce que le lecteur
+   avait sous les yeux, ce qu'il en dit. Le liseré à gauche distingue d'un coup
+   d'œil ce qui attend d'être regardé de ce qui a déjà été classé. */
+.sig-ligne {
+  padding: 10px 12px;
+  margin: 8px 0;
+  border-left: 3px solid var(--accent, #6b8f71);
+  border-radius: 6px;
+  background: var(--surface-2, rgba(0, 0, 0, .03));
+}
+.sig-classe { border-left-color: var(--ink-soft, #999); opacity: .62; }
+.sig-tete { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; font-size: .92rem; }
+.sig-contexte { margin: 6px 0 2px; font-size: .92rem; }
+.sig-motif { margin: 2px 0 8px; font-style: italic; font-size: .92rem; }

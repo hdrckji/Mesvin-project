@@ -2635,6 +2635,38 @@ async function doPropDelete(id, nom) {
   render();
 }
 
+/* Signaler une annonce d'église.
+
+   C'est la brique que Google Play exige de toute appli où quelqu'un peut
+   publier du texte lu par d'autres : sans un moyen de signaler un contenu,
+   la fiche est refusée. Mais ce n'est pas seulement une case à cocher — une
+   assemblée est un lieu où l'on se parle, et il faut une porte quand un mot
+   dérape, sans obliger qui que ce soit à interpeller son responsable en face.
+
+   Le bouton ne paraît PAS à l'animateur : il a déjà Modifier et Supprimer,
+   et se signaler à soi-même n'aurait aucun sens. */
+async function doSignaler(b) {
+  if (b.disabled) return;
+  const cible = b.dataset.signaler;
+  const contexte = b.dataset.contexte || '';
+  const motif = window.prompt(
+    'Qu\'est-ce qui te pose problème dans cette annonce ? (facultatif)', '');
+
+  b.disabled = true;
+  const avant = b.textContent;
+  b.textContent = 'Envoi…';
+  try {
+    await GraineAPI.signaler('annonce', cible, contexte, motif || '');
+    b.textContent = 'Signalé, merci ✓';
+  } catch (err) {
+    b.disabled = false;
+    b.textContent = avant;
+    alert(err && err.offline
+      ? 'Pas de connexion — réessaie une fois revenu en ligne.'
+      : ((err && err.message) || 'Le signalement n\'est pas parti. Réessaie plus tard.'));
+  }
+}
+
 function egliseAnnonces(g, p, anime) {
   const forme = pageEdit && pageEdit.type === 'annonce' ? egliseFormAnnonce() : '';
   const liste = p.annonces.length
@@ -2644,7 +2676,8 @@ function egliseAnnonces(g, p, anime) {
         <div class="ea-meta muted">${dateAnnonceFr(a.date)}${anime ? ` ·
           <button class="linkbtn" data-pageedit="annonce" data-id="${a.id}">Modifier</button>
           <button class="linkbtn" data-pagepin="${a.id}">${a.epingle ? 'Désépingler' : 'Épingler'}</button>
-          <button class="linkbtn danger" data-pagedel="annonce" data-id="${a.id}" data-nom="${esc(a.titre)}">Supprimer</button>` : ''}</div>
+          <button class="linkbtn danger" data-pagedel="annonce" data-id="${a.id}" data-nom="${esc(a.titre)}">Supprimer</button>` : `
+          · <button class="linkbtn" data-signaler="annonce:${a.id}" data-contexte="${esc(a.titre + ' — ' + a.texte)}">Signaler</button>`}</div>
       </div>`).join('')
     : `<p class="muted fr-empty">${anime ? 'Aucune annonce — la première nouvelle de l\'assemblée se pose ici.' : 'Pas d\'annonce pour l\'instant.'}</p>`;
   return `<div class="section-title">${icon('cloche')} Annonces</div>
@@ -3871,6 +3904,7 @@ function wire() {
   el.querySelectorAll('[data-pageedit]').forEach(b => b.addEventListener('click', () => pageOuvrirForm(b.dataset.pageedit, b.dataset.id ? +b.dataset.id : null)));
   el.querySelectorAll('[data-pagedel]').forEach(b => b.addEventListener('click', () => doPageDelete(b.dataset.pagedel, +b.dataset.id, b.dataset.nom)));
   el.querySelectorAll('[data-pagepin]').forEach(b => b.addEventListener('click', () => doPagePin(+b.dataset.pagepin)));
+  el.querySelectorAll('[data-signaler]').forEach(b => b.addEventListener('click', () => doSignaler(b)));
   el.querySelectorAll('[data-svcmain]').forEach(b => b.addEventListener('click', () => doServiceMain(+b.dataset.svcmain, b.dataset.inscrit === '1')));
   el.querySelectorAll('[data-passation]').forEach(b => b.addEventListener('click', () => doGroupePassation(b.dataset.passation)));
   el.querySelectorAll('[data-corespon]').forEach(b => b.addEventListener('click', () => doCoresponsable(b.dataset.corespon, true)));

@@ -216,14 +216,19 @@ function frise_veillee_create(PDO $pdo): never {
     $deck = frise_deck_propre($body['deck'] ?? null);
     $mode = is_string($body['mode'] ?? null) ? mb_substr(trim($body['mode']), 0, 40) : 'La Frise';
 
+    // « La veillée s'enchaîne toute seule » : même réglage que sur les épreuves
+    // à choix, désactivé par défaut — sans lui, rien ne change.
+    $auto = !empty($body['auto']) ? 1 : 0;
+    $seconds = $auto ? epreuve_secondes_propres($body['seconds'] ?? null) : 0;
+
     $code = frise_code($pdo, 'frise_veillees', 'FV-');
     $cle = bin2hex(random_bytes(16));
     $st = $pdo->prepare(
-        "INSERT INTO frise_veillees (code, cle, mode, deck, phase, carte, created_at)
-         VALUES (?, ?, ?, ?, 'attente', 0, ?)"
+        "INSERT INTO frise_veillees (code, cle, mode, deck, phase, carte, auto, seconds, created_at)
+         VALUES (?, ?, ?, ?, 'attente', 0, ?, ?, ?)"
     );
-    $st->execute([$code, $cle, $mode, json_encode($deck, JSON_UNESCAPED_UNICODE), now_sql()]);
-    json_out(['code' => $code, 'cle' => $cle]);
+    $st->execute([$code, $cle, $mode, json_encode($deck, JSON_UNESCAPED_UNICODE), $auto, $seconds, now_sql()]);
+    json_out(['code' => $code, 'cle' => $cle, 'auto' => (bool) $auto, 'seconds' => $seconds]);
 }
 
 function frise_veillee_rejoindre(PDO $pdo, string $code): never {
@@ -257,6 +262,89 @@ function frise_veillee_rejoindre(PDO $pdo, string $code): never {
 }
 
 /**
+ * Sonder l'état FAIT AVANCER la veillée — le même souffle que sur les épreuves
+ * à choix (cf. epreuve_veillee_souffle, le motif d'origine). Un seul client
+ * qui interroge, et la bascule tombe ; le téléphone de l'animateur peut se
+ * verrouiller dans une salle sombre.
+ *
+ * Deux bascules, une seule dépend du mode :
+ * - placement → révélé quand tous les PRÉSENTS ont posé leur carte : toujours.
+ *   C'est la réparation, pas une option.
+ * - placement → révélé au bout du chrono, puis révélé → carte suivante après
+ *   le temps de lecture : uniquement en mode « s'enchaîne toute seule ».
+ *
+ * Chaque écriture est conditionnée sur (phase, carte) LUES : deux sondages
+ * simultanés ne produisent qu'une bascule.
+ */
+function frise_veillee_souffle(PDO $pdo, string $code, array $v, ?string $jeton): array {
+    if ($jeton !== null && $jeton !== '') {
+        $st = $pdo->prepare('SELECT id FROM frise_participants WHERE code = ? AND jeton = ?');
+        $st->execute([$code, $jeton]);
+        $moi = $st->fetchColumn();
+        if ($moi !== false) {
+            epreuve_auto_present($pdo, 'frise_participants', (int) $moi);
+        }
+    }
+
+    $phase = (string) $v['phase'];
+    $auto = (int) ($v['auto'] ?? 0) === 1;
+    $bouge = false;
+
+    if ($phase === 'placement') {
+        $compte = epreuve_auto_compte($pdo, 'frise_participants', $code);
+        $tous = epreuve_auto_tous_ont_repondu($compte);
+        $temps = $auto && epreuve_auto_temps_ecoule($v['phase_debut'] ?? null, (int) ($v['seconds'] ?? 0));
+        if ($tous || $temps) {
+            $st = $pdo->prepare("UPDATE frise_veillees SET phase = 'revele', phase_debut = ?
+                                 WHERE code = ? AND phase = 'placement' AND carte = ?");
+            $st->execute([now_sql(), $code, (int) $v['carte']]);
+            $bouge = true;
+        }
+    } elseif ($phase === 'revele' && $auto && epreuve_auto_lecture_finie($v['phase_debut'] ?? null)) {
+        // La frise compte une carte d'amorce : le total jouable est deck - 1.
+        $total = count(json_decode((string) $v['deck'], true) ?: []) - 1;
+        if ((int) $v['carte'] >= $total) {
+            $pdo->prepare("UPDATE frise_veillees SET phase = 'fin' WHERE code = ? AND phase = 'revele'")
+                ->execute([$code]);
+        } else {
+            $st = $pdo->prepare("UPDATE frise_veillees SET phase = 'placement', carte = carte + 1, phase_debut = ?
+                                 WHERE code = ? AND phase = 'revele' AND carte = ?");
+            $st->execute([now_sql(), $code, (int) $v['carte']]);
+            if ($st->rowCount() > 0) {
+                $pdo->prepare('UPDATE frise_participants SET reponse = NULL, bon = NULL WHERE code = ?')
+                    ->execute([$code]);
+            }
+        }
+        $bouge = true;
+    }
+
+    // Rechargée quoi qu'il arrive : quand un autre sondage a gagné la course,
+    // la vérité est en base, pas dans la ligne lue avant l'écriture.
+    return $bouge ? frise_veillee_row($pdo, $code) : $v;
+}
+
+/**
+ * L'animateur coupe ou rallume le mode automatique en pleine veillée — même
+ * geste que sur les épreuves à choix, mêmes raisons : une salle qui se met à
+ * commenter ne doit pas obliger à refermer la salle.
+ */
+function frise_veillee_auto(PDO $pdo, string $code): never {
+    $v = frise_veillee_row($pdo, $code);
+    $body = read_json_body();
+    $cle = $body['cle'] ?? null;
+    if (!is_string($cle) || !hash_equals((string) $v['cle'], $cle)) {
+        json_error("Seul l'animateur peut régler la veillée.", 403);
+    }
+    $actif = !empty($body['actif']) ? 1 : 0;
+    $seconds = $actif ? epreuve_secondes_propres($body['seconds'] ?? ((int) $v['seconds'] ?: null)) : 0;
+    // phase_debut repart de maintenant : on ne fait pas tomber une carte parce
+    // qu'un chrono qu'on vient d'allumer courait déjà depuis deux minutes.
+    $pdo->prepare('UPDATE frise_veillees SET auto = ?, seconds = ?, phase_debut = ? WHERE code = ?')
+        ->execute([$actif, $seconds, now_sql(), $code]);
+    frise_veillee_etat($pdo, $code, null, $cle);
+}
+
+/**
  * L'animateur fait avancer la veillée :
  * attente → placement (carte 1) → révélation → placement (carte suivante,
  * réponses remises à zéro) → … → fin quand toutes les cartes sont passées.
@@ -270,11 +358,13 @@ function frise_veillee_avancer(PDO $pdo, string $code): never {
     $deck = json_decode((string) $v['deck'], true);
     $total = count($deck) - 1;
 
+    // Chaque bascule s'horodate : le chrono d'une carte et le décompte avant
+    // la suivante se lisent tous deux sur phase_debut.
     if ($v['phase'] === 'attente') {
-        $pdo->prepare("UPDATE frise_veillees SET phase = 'placement', carte = 1 WHERE code = ?")
-            ->execute([$code]);
+        $pdo->prepare("UPDATE frise_veillees SET phase = 'placement', carte = 1, phase_debut = ? WHERE code = ?")
+            ->execute([now_sql(), $code]);
     } elseif ($v['phase'] === 'placement') {
-        $pdo->prepare("UPDATE frise_veillees SET phase = 'revele' WHERE code = ?")->execute([$code]);
+        $pdo->prepare("UPDATE frise_veillees SET phase = 'revele', phase_debut = ? WHERE code = ?")->execute([now_sql(), $code]);
     } elseif ($v['phase'] === 'revele') {
         if ((int) $v['carte'] >= $total) {
             $pdo->prepare("UPDATE frise_veillees SET phase = 'fin' WHERE code = ?")->execute([$code]);
@@ -282,7 +372,7 @@ function frise_veillee_avancer(PDO $pdo, string $code): never {
             // Conditionné sur (phase, carte) lues : deux « avancer » simultanés
             // (animateur à deux onglets) n'avancent qu'une fois ; le reset des
             // réponses ne suit que si l'avancement a bien eu lieu.
-            $st = $pdo->prepare("UPDATE frise_veillees SET phase = 'placement', carte = carte + 1 WHERE code = ? AND phase = 'revele' AND carte = ?");
+            $st = $pdo->prepare("UPDATE frise_veillees SET phase = 'placement', carte = carte + 1, phase_debut = '" + '" . now_sql() . "' + "' WHERE code = ? AND phase = 'revele' AND carte = ?");
             $st->execute([$code, (int) $v['carte']]);
             if ($st->rowCount() > 0) {
                 $pdo->prepare('UPDATE frise_participants SET reponse = NULL, bon = NULL WHERE code = ?')
@@ -339,6 +429,7 @@ function frise_veillee_reponse(PDO $pdo, string $code): never {
  */
 function frise_veillee_etat(PDO $pdo, string $code, ?string $jeton, ?string $cle): never {
     $v = frise_veillee_row($pdo, $code);
+    $v = frise_veillee_souffle($pdo, $code, $v, $jeton);
     $deck = json_decode((string) $v['deck'], true);
     $total = count($deck) - 1;
     $carte = (int) $v['carte'];
@@ -384,6 +475,16 @@ function frise_veillee_etat(PDO $pdo, string $code, ?string $jeton, ?string $cle
         }
     }
 
+    // Le décompte est ANNONCÉ, jamais subi : le grand écran affiche les
+    // secondes qui restent, et personne n'est surpris de voir la carte tourner.
+    $auto = (int) ($v['auto'] ?? 0) === 1;
+    $restant = null;
+    if ($auto && $phase === 'placement') {
+        $restant = epreuve_auto_restant($v['phase_debut'] ?? null, (int) ($v['seconds'] ?? 0));
+    } elseif ($auto && $phase === 'revele') {
+        $restant = epreuve_auto_restant($v['phase_debut'] ?? null, EPREUVE_ENCHAINEMENT_SECONDS);
+    }
+
     json_out([
         'phase'         => $phase,
         'mode'          => $v['mode'],
@@ -394,6 +495,9 @@ function frise_veillee_etat(PDO $pdo, string $code, ?string $jeton, ?string $cle
         'frise'         => $frise,
         'enCours'       => $enCours,
         'positionJuste' => $positionJuste,
+        'auto'          => $auto,
+        'seconds'       => (int) ($v['seconds'] ?? 0),
+        'restant'       => $restant,
         'animateur'     => $cle !== null && hash_equals((string) $v['cle'], $cle),
     ]);
 }

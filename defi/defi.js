@@ -707,6 +707,67 @@ async function revanche(opponent) {
 }
 
 /* ============================================================================
+   Signaler ce qui cloche
+
+   600 questions ont été relues deux fois devant le texte. Elles restent
+   écrites par des humains : la personne qui verra la 601e coquille, c'est le
+   lecteur, sa Bible ouverte à côté du téléphone. Sans un geste à sa portée,
+   ce qu'il voit meurt avec sa soirée.
+
+   Trois partis pris :
+   - le lien ne paraît qu'AU MOMENT DE LA RÉVÉLATION, à côté de la référence :
+     avant, il n'y a rien à signaler, et un lien visible pendant la question
+     serait un indice ;
+   - un tap suffit — pas de formulaire, pas de compte. Qui veut préciser peut,
+     mais on ne l'exige pas : l'exiger reviendrait à ne rien recevoir ;
+   - il reste DISCRET. Ce n'est pas une invitation à douter du texte, c'est
+     une porte de service pour celui qui a vu quelque chose.
+   ========================================================================== */
+
+/* Le lien, à poser à côté d'une référence révélée. `contexte` est figé ici :
+   c'est ce que le lecteur avait sous les yeux, et c'est ce que relira
+   l'administration même si la question est corrigée entre-temps. */
+function htmlSignaler(cible, contexte) {
+  return ` <button type="button" class="defi-signaler" data-signaler="${esc(cible)}"
+    data-contexte="${esc(contexte)}" title="Signaler une erreur dans cette question">Signaler</button>`;
+}
+
+/* Un seul écouteur, posé une fois sur le conteneur : `el.innerHTML = …` ne
+   remplace que les enfants, jamais `el` lui-même — l'écouteur survit donc à
+   tous les rendus, et aucun render() n'a à s'en souvenir. */
+function brancherSignalement() {
+  el.addEventListener('click', async ev => {
+    const b = ev.target.closest('[data-signaler]');
+    if (!b || b.disabled) return;
+    const cible = b.getAttribute('data-signaler');
+    const contexte = b.getAttribute('data-contexte') || '';
+
+    /* Le motif est facultatif : Annuler (null) envoie quand même. Ce qui
+       compte, c'est de savoir QUELLE question a fait tiquer quelqu'un. */
+    const motif = window.prompt(
+      'Qu\'est-ce qui cloche ? (facultatif — tu peux simplement valider)', '');
+
+    b.disabled = true;
+    b.textContent = 'Envoi…';
+    try {
+      await GraineAPI.signaler('question', cible, contexte, motif || '');
+      b.textContent = 'Signalé, merci ✓';
+      b.classList.add('defi-signale');
+    } catch (e) {
+      /* Hors-ligne, ou plafond atteint : on le dit sans dramatiser, et on
+         redonne la main. Un signalement perdu n'est jamais grave ; un lecteur
+         qui croit avoir signalé alors que non, si. */
+      b.disabled = false;
+      b.textContent = 'Signaler';
+      alert(e && e.offline
+        ? 'Pas de connexion — réessaie une fois revenu en ligne.'
+        : ((e && e.message) || 'Le signalement n\'est pas parti. Réessaie plus tard.'));
+    }
+  });
+}
+brancherSignalement();
+
+/* ============================================================================
    Rendu
    ========================================================================== */
 function render() {
@@ -998,7 +1059,7 @@ function renderQuestion() {
         }).join('')}
       </div>
       ${repondu ? `
-        <p class="defi-ref-line"><span class="arrow">→</span>${esc(q.reference)} <span class="muted">· à retrouver dans ta Bible</span></p>
+        <p class="defi-ref-line"><span class="arrow">→</span>${esc(q.reference)} <span class="muted">· à retrouver dans ta Bible</span>${htmlSignaler('question:' + q.id, q.question + ' — ' + q.reference)}</p>
         <button class="btn btn-primary" id="btn-suivante">${derniere ? 'Voir le résultat' : 'Question suivante'}</button>
       ` : ''}
     </div>
@@ -1224,7 +1285,7 @@ function renderQuestionMulti() {
         }).join('')}
       </div>
       ${repondu ? `
-        <p class="defi-ref-line"><span class="arrow">→</span>${esc(q.reference)} <span class="muted">· à retrouver dans ta Bible</span></p>
+        <p class="defi-ref-line"><span class="arrow">→</span>${esc(q.reference)} <span class="muted">· à retrouver dans ta Bible</span>${htmlSignaler('question:' + q.id, q.question + ' — ' + q.reference)}</p>
         <button class="btn btn-primary" id="btn-suivante">${derniere
           ? (compet ? 'Voir le classement' : 'Voir le résultat')
           : (compet ? 'Passer l’appareil' : 'Question suivante')}</button>
@@ -2698,7 +2759,7 @@ function renderVeilleeHost() {
               <span class="vl-dist"><i style="width:${Math.round(100 * (e.distribution[i] || 0) / total)}%"></i><b>${e.distribution[i] || 0}</b></span>
             </div>`).join('')}
           </div>
-          <p class="defi-ref-line"><span class="arrow">→</span>${esc(e.question.reference)} <span class="muted">· à retrouver dans vos Bibles</span></p>
+          <p class="defi-ref-line"><span class="arrow">→</span>${esc(e.question.reference)} <span class="muted">· à retrouver dans vos Bibles</span>${vl.mode === 'proj' ? '' : htmlSignaler('question:' + e.question.id, e.question.question + ' — ' + e.question.reference)}</p>
         </div>
       </div>
       ${e.players.length ? `
@@ -2989,7 +3050,7 @@ function renderVeilleeProj() {
               <span class="vl-dist"><i style="width:${Math.round(100 * (e.distribution[i] || 0) / total)}%"></i><b>${e.distribution[i] || 0}</b></span>
             </div>`).join('')}
           </div>
-          <p class="defi-ref-line"><span class="arrow">→</span>${esc(e.question.reference)} <span class="muted">· à retrouver dans vos Bibles</span></p>
+          <p class="defi-ref-line"><span class="arrow">→</span>${esc(e.question.reference)} <span class="muted">· à retrouver dans vos Bibles</span>${vl.mode === 'proj' ? '' : htmlSignaler('question:' + e.question.id, e.question.question + ' — ' + e.question.reference)}</p>
         </div>
       </div>
       ${e.players.length ? `

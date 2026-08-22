@@ -40,6 +40,14 @@ COPY guide/ ./guide/
 # Pages légales — obligatoires et référencées depuis le pied de l'application.
 COPY confidentialite/ ./confidentialite/
 COPY mentions-legales/ ./mentions-legales/
+# Suppression de compte : Google Play exige une adresse web où la demander SANS
+# installer l'application. Le bouton existe dans l'appli ; cette page est la
+# porte d'entrée pour qui ne l'a pas, ou ne l'a plus.
+COPY supprimer-mon-compte/ ./supprimer-mon-compte/
+# Digital Asset Links : prouve à Android que fr.biblehorizon.app et ce domaine
+# sont la même main. Sans ce fichier, l'application du Play Store s'ouvre avec
+# une BARRE D'ADRESSE en haut et ressemble à un navigateur déguisé.
+COPY .well-known/ ./.well-known/
 COPY data/ ./data/
 COPY lire/ ./lire/
 COPY defi/ ./defi/

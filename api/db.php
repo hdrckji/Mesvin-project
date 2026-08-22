@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 9;
+const DB_MIGRATION_DERNIERE = 11;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1157,11 +1157,83 @@ function db_migrate(PDO $pdo): void {
            'ALTER TABLE frise_duels ADD COLUMN p2_user INTEGER NULL',
            'CREATE INDEX IF NOT EXISTS idx_frised_invite ON frise_duels (p2_user)'];
 
-    /* ---- Étape 9 — le défi d'épreuve notifié une seule fois ---------------------
+    /* ---- Étape 9 — les veillées d'épreuve peuvent s'enchaîner seules ------------
+       Jusqu'ici, « Qui a dit ça ? », « Écrit… ou pas ? », « De qui parle-t-on ? »
+       et la frise n'avançaient QUE sur un geste de l'animateur. Son téléphone se
+       verrouille dans une salle sombre, et le grand écran se fige devant toute
+       l'assemblée — le Défi a été réparé, pas elles.
+       - last_seen : sonder l'état vaut signe de présence, comme pour le Défi.
+         Sans lui, un participant parti bloquerait « tous ont répondu » à jamais.
+       - auto : le mode « la veillée s'enchaîne toute seule », choisi à
+         l'ouverture. À 0, RIEN ne change : l'animateur mène comme avant.
+       - seconds : le chrono par carte (0 = aucun), seul capable de débloquer
+         une question que personne ne finit.
+       - phase_debut : depuis quand la phase courante dure. Sert au chrono comme
+         au décompte avant la carte suivante — un seul horodatage pour les deux. */
+    $tsNull = db_driver($pdo) === 'mysql' ? 'DATETIME NULL' : 'TEXT NULL';
+    $entier = db_driver($pdo) === 'mysql' ? 'TINYINT NOT NULL DEFAULT 0' : 'INTEGER NOT NULL DEFAULT 0';
+    $secondes = db_driver($pdo) === 'mysql' ? 'INT NOT NULL DEFAULT 0' : 'INTEGER NOT NULL DEFAULT 0';
+    $etape9 = [];
+    foreach (['epreuve_participants', 'frise_participants', 'portrait_participants'] as $t) {
+        $etape9[] = "ALTER TABLE $t ADD COLUMN last_seen $tsNull";
+    }
+    foreach (['epreuve_veillees', 'frise_veillees', 'portrait_veillees'] as $t) {
+        $etape9[] = "ALTER TABLE $t ADD COLUMN auto $entier";
+        $etape9[] = "ALTER TABLE $t ADD COLUMN seconds $secondes";
+        $etape9[] = "ALTER TABLE $t ADD COLUMN phase_debut $tsNull";
+    }
+
+    /* ---- Étape 10 — un lecteur peut signaler ce qui cloche --------------------
+       Deux besoins se rejoignent ici. Le nôtre : 600 questions relues deux fois
+       restent 600 questions écrites par des humains, et c'est le lecteur devant
+       sa Bible qui verra le reste. Celui de Google Play : toute appli qui laisse
+       publier du texte (les annonces d'église) doit offrir un moyen de signaler
+       un contenu, sans quoi la fiche est refusée.
+       - genre  : ce qui est visé (question, annonce, série, rendez-vous).
+       - cible  : l'identifiant dans ce genre — « question:lieu-80 » par exemple.
+       - contexte : ce que le lecteur avait sous les yeux, figé au moment du
+         signalement. Une question corrigée depuis ne doit pas effacer la trace
+         de ce qui a été signalé.
+       - auteur_id : NULL si personne n'était connecté. Signaler ne demande pas
+         de compte — l'exiger reviendrait à ne rien recevoir. Aucune IP n'est
+         conservée : le garde-fou du débit suffit, et il ne laisse rien derrière.
+       - statut : « nouveau » puis « traite ». On ne supprime pas : une trace
+         classée dit qu'on a regardé. */
+    $texteCourt = db_driver($pdo) === 'mysql' ? 'VARCHAR(120)' : 'TEXT';
+    $etape10 = [db_driver($pdo) === 'mysql'
+        ? "CREATE TABLE IF NOT EXISTS signalements (
+              id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+              genre VARCHAR(20) NOT NULL,
+              cible $texteCourt NOT NULL,
+              contexte TEXT NOT NULL,
+              motif TEXT NOT NULL,
+              auteur_id INT UNSIGNED NULL,
+              statut VARCHAR(10) NOT NULL DEFAULT 'nouveau',
+              created_at DATETIME NOT NULL,
+              traite_at DATETIME NULL,
+              INDEX idx_signalements_statut (statut, created_at)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        : "CREATE TABLE IF NOT EXISTS signalements (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              genre TEXT NOT NULL,
+              cible TEXT NOT NULL,
+              contexte TEXT NOT NULL,
+              motif TEXT NOT NULL,
+              auteur_id INTEGER NULL,
+              statut TEXT NOT NULL DEFAULT 'nouveau',
+              created_at TEXT NOT NULL,
+              traite_at TEXT NULL
+          )"];
+    if (db_driver($pdo) !== 'mysql') {
+        $etape10[] = 'CREATE INDEX IF NOT EXISTS idx_signalements_statut
+                     ON signalements (statut, created_at)';
+    }
+
+    /* ---- Étape 11 — le défi d'épreuve notifié une seule fois ---------------------
        Même précédent que push_defis (duels du quiz) : la table retient les
        défis d'épreuve déjà annoncés à l'invité — marqués AVANT l'envoi,
        jamais de relance. Le code du défi suffit d'identifiant. */
-    $etape9 = db_driver($pdo) === 'mysql'
+    $etape11 = db_driver($pdo) === 'mysql'
         ? ["CREATE TABLE IF NOT EXISTS push_epreuve_defis (
                 code VARCHAR(10) NOT NULL PRIMARY KEY,
                 notified_at DATETIME NOT NULL
@@ -1175,7 +1247,8 @@ function db_migrate(PDO $pdo): void {
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
     foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4, 5 => $etape5,
-              6 => $etape6, 7 => $etape7, 8 => $etape8, 9 => $etape9] as $version => $liste) {
+              6 => $etape6, 7 => $etape7, 8 => $etape8,
+              9 => $etape9, 10 => $etape10, 11 => $etape11] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }

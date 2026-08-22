@@ -222,6 +222,46 @@ elle sera recréée vide au prochain appel.
 - Suppression de compte = effacement total (profil, synchro, amitiés,
   duels, sessions, codes).
 
+## Publier sur Google Play (TWA)
+
+L'application du Play Store n'est qu'une **coquille Android autour de
+`biblehorizon.fr`** : les déploiements Railway continuent d'arriver
+instantanément chez les utilisateurs, sans passer par Google. Seule la coquille
+demande une mise à jour, environ une fois par an (Google relève le niveau d'API
+ciblé). Rien n'est figé.
+
+Deux chemins sont déjà en place et vérifiés par la suite de tests :
+
+| Chemin | À quoi il sert |
+|---|---|
+| `/.well-known/assetlinks.json` | Prouve à Android que le domaine et l'application sont la même main |
+| `/supprimer-mon-compte/` | Google exige une adresse **web** où demander la suppression, sans installer l'appli |
+
+**Il manque une seule chose au fichier `assetlinks.json` : l'empreinte de
+signature**, qui ne peut exister qu'une fois le compte Play Console créé. On la
+lit dans Play Console → *Configuration* → *Intégrité de l'application* →
+*Certificat de signature d'application*, sous la forme
+`AB:CD:EF:…` (95 caractères). Il suffit de la coller dans le tableau vide :
+
+```json
+"sha256_cert_fingerprints": ["AB:CD:EF:01:…:99"]
+```
+
+Tant que ce tableau est vide, la suite de tests le **dit** au lieu de laisser
+croire que tout est prêt. Et sans empreinte, l'application s'ouvre avec une
+barre d'adresse en haut — elle ressemble à un navigateur, pas à une application.
+
+Le reste du dossier ne touche pas au code : compte Play Console (25 $ une fois),
+formulaire « Sécurité des données » — qui doit déclarer honnêtement l'adresse
+e-mail, le pseudo, l'appartenance à une église et les abonnements aux
+notifications —, questionnaire de classification du contenu, et les visuels
+(bandeau 1024×500, captures). La politique de confidentialité demandée existe
+déjà : `/confidentialite/`.
+
+**L'App Store d'Apple, non.** Une coquille de site y est refusée au titre de la
+« fonctionnalité minimale ». Sur iPhone, l'installation passe par Safari →
+Partager → « Sur l'écran d'accueil ».
+
 ## Lancer les tests
 
 ```bash

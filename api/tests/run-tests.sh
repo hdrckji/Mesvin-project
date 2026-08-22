@@ -181,6 +181,15 @@ $pdo->exec("ALTER TABLE epreuve_duels DROP COLUMN p1_user");
 $pdo->exec("ALTER TABLE epreuve_duels DROP COLUMN p2_user");
 $pdo->exec("ALTER TABLE frise_duels DROP COLUMN p1_user");
 $pdo->exec("ALTER TABLE frise_duels DROP COLUMN p2_user");
+// Étape 9 : les colonnes du mode auto des veillées.
+foreach (["epreuve_participants", "frise_participants", "portrait_participants"] as $t) {
+    $pdo->exec("ALTER TABLE $t DROP COLUMN last_seen");
+}
+foreach (["epreuve_veillees", "frise_veillees", "portrait_veillees"] as $t) {
+    foreach (["auto", "seconds", "phase_debut"] as $c) { $pdo->exec("ALTER TABLE $t DROP COLUMN $c"); }
+}
+// Étape 10 : la table des signalements.
+$pdo->exec("DROP TABLE signalements");
 db_migrate($pdo);
 $tables = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql"
   ? $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()")->fetchAll(PDO::FETCH_COLUMN)
@@ -190,6 +199,21 @@ $cols = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql"
   ? $pdo->query("SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = \"groupes\"")->fetchAll(PDO::FETCH_COLUMN)
   : $pdo->query("SELECT name FROM pragma_table_info(\"groupes\")")->fetchAll(PDO::FETCH_COLUMN);
 if (!in_array("nom_style", $cols)) { echo "alter-manque"; exit; }
+// Les colonnes de l étape 9 doivent être revenues elles aussi : sans elles,
+// une veillée d épreuve ne saurait plus qui est présent ni depuis quand la
+// phase dure, et le mode « s enchaîne toute seule » tomberait en panne.
+$colsV = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql"
+  ? $pdo->query("SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = \"epreuve_veillees\"")->fetchAll(PDO::FETCH_COLUMN)
+  : $pdo->query("SELECT name FROM pragma_table_info(\"epreuve_veillees\")")->fetchAll(PDO::FETCH_COLUMN);
+foreach (["auto", "seconds", "phase_debut"] as $c) {
+    if (!in_array($c, $colsV)) { echo "etape9-manque-" . $c; exit; }
+}
+// Et la table des signalements (étape 10) : sans elle, le geste du lecteur
+// tomberait en 500 sur toute base migrée depuis un vieux déploiement.
+$tables2 = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === "mysql"
+  ? $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()")->fetchAll(PDO::FETCH_COLUMN)
+  : $pdo->query("SELECT name FROM sqlite_master WHERE type = \"table\"")->fetchAll(PDO::FETCH_COLUMN);
+if (!in_array("signalements", $tables2)) { echo "etape10-manque"; exit; }
 // Base à jour : re-migrer doit être un non-événement.
 db_migrate($pdo);
 $n = (int) $pdo->query("SELECT COUNT(*) FROM schema_migrations")->fetchColumn();
@@ -2032,6 +2056,43 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Signaler, dans un vrai navigateur. L'API sait dire qu'une route accepte un
+# signalement ; elle ne peut rien dire du GESTE, et c'est le geste qui décide
+# de tout. Un lien qu'on ne voit pas, un envoi qui ne remercie pas, et plus
+# personne ne signale rien — on croit alors que les 600 questions sont
+# parfaites parce que la boîte est vide.
+say "Signaler dans un vrai navigateur (le lecteur sans compte, puis l'administration)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if BH_JETON_ADMIN="$TOKEN1B" node "$ROOT/api/tests/navigateur/signalement.mjs" "$BASE" > "$TMP/sig.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/sig.log") — du tap du lecteur au classement en administration"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL signaler au navigateur\n'; sed 's/^/        /' "$TMP/sig.log"
+  fi
+else
+  printf '   --   Playwright absent : signalement au navigateur non joué\n'
+fi
+
+# ---------------------------------------------------------------------------
+# Le mode « s'enchaîne toute seule », côté GESTE, sur les quatre pages : le
+# réglage à l'ouverture, le décompte annoncé, la reprise en main. L'API prouve
+# les bascules ; ici on prouve que la salle les VOIT. Quatre passages avec de
+# vrais chronos (15 s) : c'est le prix d'une preuve qui ne triche pas.
+say "Mode automatique dans un vrai navigateur (les quatre pages d'épreuve)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  for PAGE_AUTO in quiadit:EV ecritoupas:EV portrait:PV frise:FV; do
+    if node "$ROOT/api/tests/navigateur/auto-veillees.mjs" "$BASE" "${PAGE_AUTO%%:*}" "${PAGE_AUTO##*:}" > "$TMP/auto.log" 2>&1; then
+      ok "${PAGE_AUTO%%:*} : $(grep -oE '^[0-9]+ réussites' "$TMP/auto.log") — réglage, décompte, reprise en main"
+    else
+      FAIL=$((FAIL + 1)); printf '   FAIL mode auto au navigateur (%s)\n' "${PAGE_AUTO%%:*}"; sed 's/^/        /' "$TMP/auto.log"
+    fi
+  done
+else
+  printf '   --   Playwright absent : mode automatique au navigateur non joué\n'
+fi
+
+# ---------------------------------------------------------------------------
 # RÉSEAU — quelle adresse le serveur retient-il ? Tout l'anti-abus en dépend :
 # throttle_or_429() compte par client_ip(), et client_ip() lit la PROXY_HOPS-ième
 # valeur de X-Forwarded-For EN PARTANT DE LA DROITE (chaque relais ajoute à
@@ -2282,6 +2343,90 @@ check "message de salle complète"  "La veillée est au complet." "$(jval .error
 check "code de salle inconnu → 404" 404 \
   "$(api POST "/api/epreuve/veillee/EV-ZZZZZ/rejoindre" '' '{"prenom":"Personne"}')"
 
+# Le cœur du chantier : une veillée d'épreuve qui avance SANS l'animateur.
+# Son téléphone se verrouille dans une salle sombre, et le grand écran restait
+# figé devant toute l'assemblée — le Défi avait été réparé, pas les épreuves.
+say "Épreuve — la carte se révèle sans l'animateur"
+
+api POST /api/epreuve/veillee '' "$PAQUET" > /dev/null
+ACODE="$(jval .code)"; ACLE="$(jval .cle)"
+check "sans réglage, le mode automatique est ÉTEINT" false "$(jval .auto)"
+api POST "/api/epreuve/veillee/$ACODE/rejoindre" '' '{"prenom":"Anne"}' > /dev/null
+AJ1="$(jval .jeton)"
+api POST "/api/epreuve/veillee/$ACODE/rejoindre" '' '{"prenom":"Bruno"}' > /dev/null
+AJ2="$(jval .jeton)"
+api POST "/api/epreuve/veillee/$ACODE/avancer" '' "{\"cle\":\"$ACLE\"}" > /dev/null
+check "la première carte est lancée" question "$(jval .phase)"
+
+# Les deux sondent : les voilà présents. Puis une seule répond.
+api GET "/api/epreuve/veillee/$ACODE/etat?jeton=$AJ1" > /dev/null
+api GET "/api/epreuve/veillee/$ACODE/etat?jeton=$AJ2" > /dev/null
+api POST "/api/epreuve/veillee/$ACODE/reponse" '' "{\"jeton\":\"$AJ1\",\"carte\":1,\"choix\":0}" > /dev/null
+check "une seule a répondu : on attend encore" question \
+  "$(api GET "/api/epreuve/veillee/$ACODE/etat" > /dev/null; jval .phase)"
+
+# Bruno répond : la carte se révèle sur le sondage du GRAND ÉCRAN, qui n'a ni
+# jeton ni clé. C'est exactement le cas de l'animateur au téléphone verrouillé.
+api POST "/api/epreuve/veillee/$ACODE/reponse" '' "{\"jeton\":\"$AJ2\",\"carte\":1,\"choix\":1}" > /dev/null
+api GET "/api/epreuve/veillee/$ACODE/etat" > /dev/null
+check "tous ont répondu : révélé, sans un geste de l'animateur" revele "$(jval .phase)"
+check "et la référence s'affiche" oui "$([ "$(jval .enCours.ref)" != null ] && echo oui || echo non)"
+check "hors mode automatique, on N'ENCHAÎNE PAS tout seul" 1 \
+  "$(api GET "/api/epreuve/veillee/$ACODE/etat" > /dev/null; jval .carte)"
+
+# Un participant qui s'en va ne doit plus bloquer la salle.
+api POST /api/epreuve/veillee '' "$PAQUET" > /dev/null
+PCODE="$(jval .code)"; PCLE="$(jval .cle)"
+api POST "/api/epreuve/veillee/$PCODE/rejoindre" '' '{"prenom":"Resté"}' > /dev/null
+PJ1="$(jval .jeton)"
+api POST "/api/epreuve/veillee/$PCODE/rejoindre" '' '{"prenom":"Parti"}' > /dev/null
+PJ2="$(jval .jeton)"
+api POST "/api/epreuve/veillee/$PCODE/avancer" '' "{\"cle\":\"$PCLE\"}" > /dev/null
+api GET "/api/epreuve/veillee/$PCODE/etat?jeton=$PJ1" > /dev/null
+api GET "/api/epreuve/veillee/$PCODE/etat?jeton=$PJ2" > /dev/null
+api POST "/api/epreuve/veillee/$PCODE/reponse" '' "{\"jeton\":\"$PJ1\",\"carte\":1,\"choix\":0}" > /dev/null
+check "l'absent n'a pas répondu : on attend" question \
+  "$(api GET "/api/epreuve/veillee/$PCODE/etat" > /dev/null; jval .phase)"
+php -r '
+$pdo = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$st = $pdo->prepare("UPDATE epreuve_participants SET last_seen = ? WHERE jeton = ?");
+$st->execute([gmdate("Y-m-d H:i:s", time() - 120), $argv[2]]);
+' "$ROOT" "$PJ2" 2>>"$TMP/presence.log"
+check "il est parti : la salle ne l'attend plus" revele \
+  "$(api GET "/api/epreuve/veillee/$PCODE/etat" > /dev/null; jval .phase)"
+
+# ---------------------------------------------------------------------------
+say "Épreuve — le mode « la veillée s'enchaîne toute seule »"
+
+api POST /api/epreuve/veillee '' "$(printf '%s' "$PAQUET" | sed 's/}$/,"auto":true,"seconds":10}/')" > /dev/null
+MCODE="$(jval .code)"; MCLE="$(jval .cle)"
+check "le mode est allumé"                true "$(jval .auto)"
+check "et le chrono avec"                   10 "$(jval .seconds)"
+api POST "/api/epreuve/veillee/$MCODE/rejoindre" '' '{"prenom":"Seule"}' > /dev/null
+MJ="$(jval .jeton)"
+api POST "/api/epreuve/veillee/$MCODE/avancer" '' "{\"cle\":\"$MCLE\"}" > /dev/null
+api GET "/api/epreuve/veillee/$MCODE/etat?jeton=$MJ" > /dev/null
+check "le décompte est ANNONCÉ au grand écran" oui \
+  "$([ "$(jval .restant)" != null ] && echo oui || echo non)"
+check "personne n'a répondu : la carte tient" question "$(jval .phase)"
+sleep 13
+check "le temps écoulé révèle, sans personne" revele \
+  "$(api GET "/api/epreuve/veillee/$MCODE/etat" > /dev/null; jval .phase)"
+sleep 9
+check "puis la veillée enchaîne toute seule" 2 \
+  "$(api GET "/api/epreuve/veillee/$MCODE/etat" > /dev/null; jval .carte)"
+check "et repart sur une question"    question "$(jval .phase)"
+
+# L'animateur reprend la main sans refermer la salle.
+check "il coupe le mode → 200" 200 \
+  "$(api POST "/api/epreuve/veillee/$MCODE/auto" '' "{\"cle\":\"$MCLE\",\"actif\":false}")"
+check "le mode est éteint"     false "$(jval .auto)"
+check "le chrono aussi"            0 "$(jval .seconds)"
+check "un inconnu ne règle rien" 403 \
+  "$(api POST "/api/epreuve/veillee/$MCODE/auto" '' '{"cle":"00000000000000000000000000000000","actif":true}')"
+
+# ---------------------------------------------------------------------------
 # La frise a ses propres routes et son propre compteur (« frise-creer »,
 # « frise-rejoindre ») : ce qui vaut pour les épreuves doit valoir pour elle.
 # Quatre cartes au minimum : trois à placer, plus la carte d'amorce.
@@ -2305,6 +2450,210 @@ done
 check "frise : quarante participants entrent sans être refoulés" oui "$FRISE_OK"
 check "frise : code inconnu → 404" 404 \
   "$(api POST "/api/frise/veillee/FV-ZZZZZ/rejoindre" '' '{"prenom":"Personne"}')"
+
+# ---------------------------------------------------------------------------
+# Les quatre épreuves doivent SE COMPORTER PAREIL : c'est la condition qu'on
+# s'est donnée avant de mettre le mode en production. Une soirée mêle les
+# quatre modules ; si l'un révèle tout seul et l'autre attend un doigt, c'est
+# l'animateur qui passe pour fautif devant sa salle.
+say "Frise — révélation quand tous ont posé, et mode automatique"
+
+api POST /api/frise/veillee '' "$(printf '%s' "$FRISE" | sed 's/}$/,"auto":true,"seconds":10}/')" > /dev/null
+FMCODE="$(jval .code)"; FMCLE="$(jval .cle)"
+check "frise : le mode est allumé"        true "$(jval .auto)"
+check "frise : et le chrono avec"           10 "$(jval .seconds)"
+api POST "/api/frise/veillee/$FMCODE/rejoindre" '' '{"prenom":"Anne"}' > /dev/null
+FMJ1="$(jval .jeton)"
+api POST "/api/frise/veillee/$FMCODE/rejoindre" '' '{"prenom":"Boaz"}' > /dev/null
+FMJ2="$(jval .jeton)"
+api POST "/api/frise/veillee/$FMCODE/avancer" '' "{\"cle\":\"$FMCLE\"}" > /dev/null
+api GET "/api/frise/veillee/$FMCODE/etat?jeton=$FMJ1" > /dev/null
+check "frise : le décompte est annoncé" oui \
+  "$([ "$(jval .restant)" != null ] && echo oui || echo non)"
+
+# Les deux posent leur carte : révélé au sondage suivant, celui du grand
+# écran, sans jeton ni clé — l'animateur au téléphone verrouillé.
+api GET "/api/frise/veillee/$FMCODE/etat?jeton=$FMJ2" > /dev/null
+api POST "/api/frise/veillee/$FMCODE/reponse" '' "{\"jeton\":\"$FMJ1\",\"carte\":1,\"position\":0}" > /dev/null
+check "frise : une seule a posé, on attend" placement \
+  "$(api GET "/api/frise/veillee/$FMCODE/etat" > /dev/null; jval .phase)"
+api POST "/api/frise/veillee/$FMCODE/reponse" '' "{\"jeton\":\"$FMJ2\",\"carte\":1,\"position\":1}" > /dev/null
+api GET "/api/frise/veillee/$FMCODE/etat" > /dev/null
+check "frise : tous ont posé — révélé sans un geste" revele "$(jval .phase)"
+check "frise : la position juste est donnée" oui \
+  "$([ "$(jval .positionJuste)" != null ] && echo oui || echo non)"
+sleep 9
+check "frise : puis on enchaîne tout seul" 2 \
+  "$(api GET "/api/frise/veillee/$FMCODE/etat" > /dev/null; jval .carte)"
+check "frise : et on replace" placement "$(jval .phase)"
+check "frise : les réponses sont remises à zéro" 0 \
+  "$(jq '[.participants[] | select(.aRepondu)] | length' "$TMP/body.json")"
+sleep 13
+check "frise : personne ne pose — le chrono révèle" revele \
+  "$(api GET "/api/frise/veillee/$FMCODE/etat" > /dev/null; jval .phase)"
+check "frise : il coupe le mode → 200" 200 \
+  "$(api POST "/api/frise/veillee/$FMCODE/auto" '' "{\"cle\":\"$FMCLE\",\"actif\":false}")"
+check "frise : le mode est éteint" false "$(jval .auto)"
+check "frise : un inconnu ne règle rien" 403 \
+  "$(api POST "/api/frise/veillee/$FMCODE/auto" '' '{"cle":"00000000000000000000000000000000","actif":false}')"
+
+# ---------------------------------------------------------------------------
+# Le portrait a sa singularité : le chrono ne révèle pas, il fait TOMBER LES
+# INDICES — et le barème suit (moins de points quand plus d'indices sont là).
+# Après le dernier indice, l'échéance suivante révèle. Et hors mode comme en
+# mode : tous les présents ont répondu → révélé, la réparation commune.
+say "Portrait — les indices tombent au chrono, la réparation vaut partout"
+
+PORTRAIT='{"deck":[
+ {"indices":["Il a construit une arche","Il a envoyé une colombe","Trois fils","Un déluge","Une alliance, un arc-en-ciel"],"reponse":"Noé","ref":"Genèse 6–9"},
+ {"indices":["Berger devenu roi","Il a affronté un géant","Il jouait de la harpe","Fils d Isaï","Il a écrit des psaumes"],"reponse":"David","ref":"1 Samuel 16"},
+ {"indices":["Elle a dit Où tu iras j irai","Moabite","Belle-fille fidèle","Glaneuse dans un champ","Aïeule de David"],"reponse":"Ruth","ref":"Ruth 1"}
+]}'
+api POST /api/portrait/veillee '' "$(printf '%s' "$PORTRAIT" | sed 's/}$/,"auto":true,"seconds":10}/')" > /dev/null
+PMCODE="$(jval .code)"; PMCLE="$(jval .cle)"
+check "portrait : le mode est allumé"     true "$(jval .auto)"
+api POST "/api/portrait/veillee/$PMCODE/rejoindre" '' '{"prenom":"Cléa"}' > /dev/null
+PMJ="$(jval .jeton)"
+api POST "/api/portrait/veillee/$PMCODE/avancer" '' "{\"cle\":\"$PMCLE\"}" > /dev/null
+api GET "/api/portrait/veillee/$PMCODE/etat?jeton=$PMJ" > /dev/null
+check "portrait : un seul indice au départ"  1 "$(jval .enCours.indice)"
+check "portrait : le décompte est annoncé" oui \
+  "$([ "$(jval .restant)" != null ] && echo oui || echo non)"
+sleep 13
+api GET "/api/portrait/veillee/$PMCODE/etat" > /dev/null
+check "portrait : l'indice suivant tombe au chrono" 2 "$(jval .enCours.indice)"
+check "portrait : sans révéler"           portrait "$(jval .phase)"
+
+# La bonne réponse de la seule présente révèle — et le barème a suivi
+# l'indice courant (6 - 2 = 4 points).
+api POST "/api/portrait/veillee/$PMCODE/reponse" '' "{\"jeton\":\"$PMJ\",\"carte\":1,\"texte\":\"Noé\"}" > /dev/null
+api GET "/api/portrait/veillee/$PMCODE/etat?jeton=$PMJ" > /dev/null
+check "portrait : tous ont répondu — révélé" revele "$(jval .phase)"
+check "portrait : le barème suit l'indice courant" 4 "$(jval .moi.points)"
+sleep 9
+check "portrait : puis on enchaîne tout seul" 2 \
+  "$(api GET "/api/portrait/veillee/$PMCODE/etat" > /dev/null; jval .carte)"
+check "portrait : premier indice de la carte suivante" 1 "$(jval .enCours.indice)"
+check "portrait : il coupe le mode → 200" 200 \
+  "$(api POST "/api/portrait/veillee/$PMCODE/auto" '' "{\"cle\":\"$PMCLE\",\"actif\":false}")"
+check "portrait : le mode est éteint" false "$(jval .auto)"
+check "portrait : un inconnu ne règle rien" 403 \
+  "$(api POST "/api/portrait/veillee/$PMCODE/auto" '' '{"cle":"00000000000000000000000000000000","actif":false}')"
+
+# Hors mode : la réparation commune vaut aussi pour le portrait.
+api POST /api/portrait/veillee '' "$PORTRAIT" > /dev/null
+PRCODE="$(jval .code)"; PRCLE="$(jval .cle)"
+api POST "/api/portrait/veillee/$PRCODE/rejoindre" '' '{"prenom":"Dina"}' > /dev/null
+PRJ="$(jval .jeton)"
+api POST "/api/portrait/veillee/$PRCODE/avancer" '' "{\"cle\":\"$PRCLE\"}" > /dev/null
+api GET "/api/portrait/veillee/$PRCODE/etat?jeton=$PRJ" > /dev/null
+api POST "/api/portrait/veillee/$PRCODE/reponse" '' "{\"jeton\":\"$PRJ\",\"carte\":1,\"texte\":\"Noé\"}" > /dev/null
+api GET "/api/portrait/veillee/$PRCODE/etat" > /dev/null
+check "portrait hors mode : tous ont répondu — révélé quand même" revele "$(jval .phase)"
+check "portrait hors mode : mais on N'ENCHAÎNE PAS tout seul" 1 \
+  "$(api GET "/api/portrait/veillee/$PRCODE/etat" > /dev/null; jval .carte)"
+
+# ---------------------------------------------------------------------------
+# Deux chemins que Google Play réclame, et dont on ne verrait pas l'absence :
+# ils ne sont liés depuis presque nulle part, mais sans eux un dossier de
+# publication échoue — ou pire, l'application Android s'ouvre avec une barre
+# d'adresse en haut, comme un navigateur déguisé.
+say "Play Store : les deux chemins que Google exige"
+check "assetlinks.json est servi"          200 "$(api GET /.well-known/assetlinks.json)"
+check "et c'est du JSON valide"            oui \
+  "$(jq -e 'type == "array"' "$TMP/body.json" > /dev/null 2>&1 && echo oui || echo non)"
+check "il déclare bien le paquet Android"  "fr.biblehorizon.app" \
+  "$(jval '.[0].target.package_name')"
+# L'empreinte de signature ne peut être connue qu'une fois le compte Play créé.
+# Tant qu'elle manque, on le DIT — plutôt que de laisser croire que tout est prêt.
+EMPREINTES="$(jq '.[0].target.sha256_cert_fingerprints | length' "$TMP/body.json")"
+if [ "$EMPREINTES" = 0 ]; then
+  printf '   --   empreinte de signature absente : à coller une fois le compte Play Console créé\n'
+else
+  ok "empreinte de signature présente ($EMPREINTES)"
+fi
+check "la page de suppression de compte est servie" 200 "$(api GET /supprimer-mon-compte/)"
+
+# Le Dockerfile copie chaque chemin racine EXPLICITEMENT : un dossier oublié
+# ici n'existe tout simplement pas en production.
+DOCKER_OK=oui
+for D in .well-known supprimer-mon-compte; do
+  grep -q "COPY $D/" "$ROOT/Dockerfile" || DOCKER_OK="$D manque au Dockerfile"
+done
+check "les deux dossiers sont copiés dans l'image" oui "$DOCKER_OK"
+
+# ---------------------------------------------------------------------------
+# Signaler ce qui cloche. Deux exigences se croisent ici, et les tests les
+# gardent toutes les deux : celle de Google Play (un contenu publié doit
+# pouvoir être signalé) et la nôtre (600 questions relues deux fois restent
+# écrites par des humains — c'est le lecteur, sa Bible ouverte, qui verra la
+# 601e coquille). D'où le point le plus important de ce bloc : signaler NE
+# DEMANDE PAS DE COMPTE. Si ce test tombe un jour, on n'aura plus de retours.
+say "Signaler — le geste du lecteur, et la pile de l'administration"
+
+# Le scénario navigateur, joué plus haut, a pu déposer ses propres traces :
+# ce bloc mesure donc un ÉCART, et se donne des cibles qui n'existent nulle
+# part ailleurs pour ne pas se confondre avec une vraie question tirée au sort.
+SIG_AVANT="$(api GET /api/admin/signalements "$TOKEN1B" > /dev/null; jval .nouveaux)"
+
+check "genre inconnu → 400"              400 \
+  "$(api POST /api/signalement '' '{"genre":"potin","cible":"x","contexte":"y","motif":"z"}')"
+check "cible vide → 400"                 400 \
+  "$(api POST /api/signalement '' '{"genre":"question","cible":"  ","contexte":"y","motif":"z"}')"
+
+# LE TEST QUI COMPTE : aucun token, et pourtant 200.
+check "sans compte, le signalement passe → 200" 200 \
+  "$(api POST /api/signalement '' '{"genre":"question","cible":"question:zz-suite","contexte":"Où Jésus envoie-t-il l aveugle se laver ? — Jean 9.7","motif":"La réponse donnée ne correspond pas au verset."}')"
+check "il est en base, tout neuf"        nouveau \
+  "$(sqlval "SELECT statut FROM signalements WHERE cible = 'question:zz-suite'")"
+check "et sans auteur : personne n était connecté" 1 \
+  "$(sqlval "SELECT COUNT(*) FROM signalements WHERE cible = 'question:zz-suite' AND auteur_id IS NULL")"
+# Le contexte est figé à l'envoi : une question corrigée demain ne doit pas
+# effacer la trace de ce qui a été signalé aujourd'hui.
+check "le contexte est conservé mot pour mot" oui \
+  "$(sqlval "SELECT CASE WHEN contexte LIKE '%Jean 9.7%' THEN 'oui' ELSE 'non' END FROM signalements WHERE cible = 'question:zz-suite'")"
+
+check "avec un compte, l auteur est retenu" 200 \
+  "$(api POST /api/signalement "$TOKEN3" '{"genre":"annonce","cible":"annonce:zz-suite","contexte":"Annonce de l église","motif":"Texte déplacé."}')"
+check "l auteur est bien rattaché"       1 \
+  "$(sqlval "SELECT COUNT(*) FROM signalements WHERE cible = 'annonce:zz-suite' AND auteur_id IS NOT NULL")"
+
+# La pile ne s'ouvre qu'à l'administration.
+check "pile sans token → 401"            401 "$(api GET /api/admin/signalements)"
+check "pile pour un membre ordinaire → 403" 403 "$(api GET /api/admin/signalements "$TOKEN3")"
+
+api GET /api/admin/signalements "$TOKEN1B" > /dev/null
+check "la pile s ouvre à l admin"        $((SIG_AVANT + 2)) "$(jval .nouveaux)"
+check "les nouveaux passent devant"      nouveau "$(jval '.signalements[0].statut')"
+# L'adresse e-mail n'a rien à faire dans un écran qu'on ouvre pour lire une
+# remarque sur un verset : l'auteur n'apparaît que par son pseudo.
+check "aucune adresse e-mail ne sort"    0 \
+  "$(jq '[.signalements[] | tostring | select(contains("@"))] | length' "$TMP/body.json")"
+check "l auteur connu apparaît par son pseudo" "Chloé" \
+  "$(jq -r '[.signalements[] | select(.cible == "annonce:zz-suite")][0].auteur' "$TMP/body.json")"
+check "l auteur anonyme reste null"      null \
+  "$(jq -r '[.signalements[] | select(.cible == "question:zz-suite")][0].auteur' "$TMP/body.json")"
+
+SIGID="$(jq -r '[.signalements[] | select(.cible == "question:zz-suite")][0].id' "$TMP/body.json")"
+check "classer → 200"                    200 "$(api POST "/api/admin/signalements/$SIGID" "$TOKEN1B" '{"statut":"traite"}')"
+check "la pile se vide d autant"         $((SIG_AVANT + 1)) "$(api GET /api/admin/signalements "$TOKEN1B" > /dev/null; jval .nouveaux)"
+# On ne supprime jamais : une trace classée dit qu'on a regardé, et se rouvre
+# si la correction s'avère fausse.
+check "la trace demeure, classée"        traite "$(sqlval "SELECT statut FROM signalements WHERE id = $SIGID")"
+check "rouvrir la remet dans la pile"    200 "$(api POST "/api/admin/signalements/$SIGID" "$TOKEN1B" '{"statut":"nouveau"}')"
+check "et elle y est"                    $((SIG_AVANT + 2)) "$(api GET /api/admin/signalements "$TOKEN1B" > /dev/null; jval .nouveaux)"
+check "classer un signalement inconnu → 404" 404 \
+  "$(api POST "/api/admin/signalements/999999" "$TOKEN1B" '{"statut":"traite"}')"
+
+# Aucune IP conservée : le plafond horaire (table throttle) suffit comme
+# garde-fou, et lui ne garde qu'un compteur haché à l'heure.
+check "la table ne garde aucune adresse IP" 0 \
+  "$(php -r '$p = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null);
+             $n = 0;
+             foreach ($p->query("SELECT * FROM signalements LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [] as $col => $v) {
+               if (stripos($col, "ip") !== false) $n++;
+             }
+             echo $n;')"
 
 # ---------------------------------------------------------------------------
 say "Divers"
