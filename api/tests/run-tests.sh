@@ -2059,6 +2059,25 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Le mode « s'enchaîne toute seule », côté GESTE, sur les quatre pages : le
+# réglage à l'ouverture, le décompte annoncé, la reprise en main. L'API prouve
+# les bascules ; ici on prouve que la salle les VOIT. Quatre passages avec de
+# vrais chronos (15 s) : c'est le prix d'une preuve qui ne triche pas.
+say "Mode automatique dans un vrai navigateur (les quatre pages d'épreuve)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  for PAGE_AUTO in quiadit:EV ecritoupas:EV portrait:PV frise:FV; do
+    if node "$ROOT/api/tests/navigateur/auto-veillees.mjs" "$BASE" "${PAGE_AUTO%%:*}" "${PAGE_AUTO##*:}" > "$TMP/auto.log" 2>&1; then
+      ok "${PAGE_AUTO%%:*} : $(grep -oE '^[0-9]+ réussites' "$TMP/auto.log") — réglage, décompte, reprise en main"
+    else
+      FAIL=$((FAIL + 1)); printf '   FAIL mode auto au navigateur (%s)\n' "${PAGE_AUTO%%:*}"; sed 's/^/        /' "$TMP/auto.log"
+    fi
+  done
+else
+  printf '   --   Playwright absent : mode automatique au navigateur non joué\n'
+fi
+
+# ---------------------------------------------------------------------------
 # RÉSEAU — quelle adresse le serveur retient-il ? Tout l'anti-abus en dépend :
 # throttle_or_429() compte par client_ip(), et client_ip() lit la PROXY_HOPS-ième
 # valeur de X-Forwarded-For EN PARTANT DE LA DROITE (chaque relais ajoute à
@@ -2416,6 +2435,108 @@ done
 check "frise : quarante participants entrent sans être refoulés" oui "$FRISE_OK"
 check "frise : code inconnu → 404" 404 \
   "$(api POST "/api/frise/veillee/FV-ZZZZZ/rejoindre" '' '{"prenom":"Personne"}')"
+
+# ---------------------------------------------------------------------------
+# Les quatre épreuves doivent SE COMPORTER PAREIL : c'est la condition qu'on
+# s'est donnée avant de mettre le mode en production. Une soirée mêle les
+# quatre modules ; si l'un révèle tout seul et l'autre attend un doigt, c'est
+# l'animateur qui passe pour fautif devant sa salle.
+say "Frise — révélation quand tous ont posé, et mode automatique"
+
+api POST /api/frise/veillee '' "$(printf '%s' "$FRISE" | sed 's/}$/,"auto":true,"seconds":10}/')" > /dev/null
+FMCODE="$(jval .code)"; FMCLE="$(jval .cle)"
+check "frise : le mode est allumé"        true "$(jval .auto)"
+check "frise : et le chrono avec"           10 "$(jval .seconds)"
+api POST "/api/frise/veillee/$FMCODE/rejoindre" '' '{"prenom":"Anne"}' > /dev/null
+FMJ1="$(jval .jeton)"
+api POST "/api/frise/veillee/$FMCODE/rejoindre" '' '{"prenom":"Boaz"}' > /dev/null
+FMJ2="$(jval .jeton)"
+api POST "/api/frise/veillee/$FMCODE/avancer" '' "{\"cle\":\"$FMCLE\"}" > /dev/null
+api GET "/api/frise/veillee/$FMCODE/etat?jeton=$FMJ1" > /dev/null
+check "frise : le décompte est annoncé" oui \
+  "$([ "$(jval .restant)" != null ] && echo oui || echo non)"
+
+# Les deux posent leur carte : révélé au sondage suivant, celui du grand
+# écran, sans jeton ni clé — l'animateur au téléphone verrouillé.
+api GET "/api/frise/veillee/$FMCODE/etat?jeton=$FMJ2" > /dev/null
+api POST "/api/frise/veillee/$FMCODE/reponse" '' "{\"jeton\":\"$FMJ1\",\"carte\":1,\"position\":0}" > /dev/null
+check "frise : une seule a posé, on attend" placement \
+  "$(api GET "/api/frise/veillee/$FMCODE/etat" > /dev/null; jval .phase)"
+api POST "/api/frise/veillee/$FMCODE/reponse" '' "{\"jeton\":\"$FMJ2\",\"carte\":1,\"position\":1}" > /dev/null
+api GET "/api/frise/veillee/$FMCODE/etat" > /dev/null
+check "frise : tous ont posé — révélé sans un geste" revele "$(jval .phase)"
+check "frise : la position juste est donnée" oui \
+  "$([ "$(jval .positionJuste)" != null ] && echo oui || echo non)"
+sleep 9
+check "frise : puis on enchaîne tout seul" 2 \
+  "$(api GET "/api/frise/veillee/$FMCODE/etat" > /dev/null; jval .carte)"
+check "frise : et on replace" placement "$(jval .phase)"
+check "frise : les réponses sont remises à zéro" 0 \
+  "$(jq '[.participants[] | select(.aRepondu)] | length' "$TMP/body.json")"
+sleep 13
+check "frise : personne ne pose — le chrono révèle" revele \
+  "$(api GET "/api/frise/veillee/$FMCODE/etat" > /dev/null; jval .phase)"
+check "frise : il coupe le mode → 200" 200 \
+  "$(api POST "/api/frise/veillee/$FMCODE/auto" '' "{\"cle\":\"$FMCLE\",\"actif\":false}")"
+check "frise : le mode est éteint" false "$(jval .auto)"
+check "frise : un inconnu ne règle rien" 403 \
+  "$(api POST "/api/frise/veillee/$FMCODE/auto" '' '{"cle":"00000000000000000000000000000000","actif":false}')"
+
+# ---------------------------------------------------------------------------
+# Le portrait a sa singularité : le chrono ne révèle pas, il fait TOMBER LES
+# INDICES — et le barème suit (moins de points quand plus d'indices sont là).
+# Après le dernier indice, l'échéance suivante révèle. Et hors mode comme en
+# mode : tous les présents ont répondu → révélé, la réparation commune.
+say "Portrait — les indices tombent au chrono, la réparation vaut partout"
+
+PORTRAIT='{"deck":[
+ {"indices":["Il a construit une arche","Il a envoyé une colombe","Trois fils","Un déluge","Une alliance, un arc-en-ciel"],"reponse":"Noé","ref":"Genèse 6–9"},
+ {"indices":["Berger devenu roi","Il a affronté un géant","Il jouait de la harpe","Fils d Isaï","Il a écrit des psaumes"],"reponse":"David","ref":"1 Samuel 16"},
+ {"indices":["Elle a dit Où tu iras j irai","Moabite","Belle-fille fidèle","Glaneuse dans un champ","Aïeule de David"],"reponse":"Ruth","ref":"Ruth 1"}
+]}'
+api POST /api/portrait/veillee '' "$(printf '%s' "$PORTRAIT" | sed 's/}$/,"auto":true,"seconds":10}/')" > /dev/null
+PMCODE="$(jval .code)"; PMCLE="$(jval .cle)"
+check "portrait : le mode est allumé"     true "$(jval .auto)"
+api POST "/api/portrait/veillee/$PMCODE/rejoindre" '' '{"prenom":"Cléa"}' > /dev/null
+PMJ="$(jval .jeton)"
+api POST "/api/portrait/veillee/$PMCODE/avancer" '' "{\"cle\":\"$PMCLE\"}" > /dev/null
+api GET "/api/portrait/veillee/$PMCODE/etat?jeton=$PMJ" > /dev/null
+check "portrait : un seul indice au départ"  1 "$(jval .enCours.indice)"
+check "portrait : le décompte est annoncé" oui \
+  "$([ "$(jval .restant)" != null ] && echo oui || echo non)"
+sleep 13
+api GET "/api/portrait/veillee/$PMCODE/etat" > /dev/null
+check "portrait : l'indice suivant tombe au chrono" 2 "$(jval .enCours.indice)"
+check "portrait : sans révéler"           portrait "$(jval .phase)"
+
+# La bonne réponse de la seule présente révèle — et le barème a suivi
+# l'indice courant (6 - 2 = 4 points).
+api POST "/api/portrait/veillee/$PMCODE/reponse" '' "{\"jeton\":\"$PMJ\",\"carte\":1,\"texte\":\"Noé\"}" > /dev/null
+api GET "/api/portrait/veillee/$PMCODE/etat?jeton=$PMJ" > /dev/null
+check "portrait : tous ont répondu — révélé" revele "$(jval .phase)"
+check "portrait : le barème suit l'indice courant" 4 "$(jval .moi.points)"
+sleep 9
+check "portrait : puis on enchaîne tout seul" 2 \
+  "$(api GET "/api/portrait/veillee/$PMCODE/etat" > /dev/null; jval .carte)"
+check "portrait : premier indice de la carte suivante" 1 "$(jval .enCours.indice)"
+check "portrait : il coupe le mode → 200" 200 \
+  "$(api POST "/api/portrait/veillee/$PMCODE/auto" '' "{\"cle\":\"$PMCLE\",\"actif\":false}")"
+check "portrait : le mode est éteint" false "$(jval .auto)"
+check "portrait : un inconnu ne règle rien" 403 \
+  "$(api POST "/api/portrait/veillee/$PMCODE/auto" '' '{"cle":"00000000000000000000000000000000","actif":false}')"
+
+# Hors mode : la réparation commune vaut aussi pour le portrait.
+api POST /api/portrait/veillee '' "$PORTRAIT" > /dev/null
+PRCODE="$(jval .code)"; PRCLE="$(jval .cle)"
+api POST "/api/portrait/veillee/$PRCODE/rejoindre" '' '{"prenom":"Dina"}' > /dev/null
+PRJ="$(jval .jeton)"
+api POST "/api/portrait/veillee/$PRCODE/avancer" '' "{\"cle\":\"$PRCLE\"}" > /dev/null
+api GET "/api/portrait/veillee/$PRCODE/etat?jeton=$PRJ" > /dev/null
+api POST "/api/portrait/veillee/$PRCODE/reponse" '' "{\"jeton\":\"$PRJ\",\"carte\":1,\"texte\":\"Noé\"}" > /dev/null
+api GET "/api/portrait/veillee/$PRCODE/etat" > /dev/null
+check "portrait hors mode : tous ont répondu — révélé quand même" revele "$(jval .phase)"
+check "portrait hors mode : mais on N'ENCHAÎNE PAS tout seul" 1 \
+  "$(api GET "/api/portrait/veillee/$PRCODE/etat" > /dev/null; jval .carte)"
 
 # ---------------------------------------------------------------------------
 # Deux chemins que Google Play réclame, et dont on ne verrait pas l'absence :

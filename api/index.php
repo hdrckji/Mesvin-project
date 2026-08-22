@@ -372,6 +372,9 @@ if ($path === '/api/frise/veillee' && $method === 'POST') frise_veillee_create($
 if (preg_match('#^/api/frise/veillee/(FV-[A-Z2-9]{5})/rejoindre$#', $path, $m)) {
     if ($method === 'POST') frise_veillee_rejoindre($pdo, $m[1]);
 }
+if (preg_match('#^/api/frise/veillee/(FV-[A-Z2-9]{5})/auto$#', $path, $m)) {
+    if ($method === 'POST') frise_veillee_auto($pdo, $m[1]);
+}
 if (preg_match('#^/api/frise/veillee/(FV-[A-Z2-9]{5})/avancer$#', $path, $m)) {
     if ($method === 'POST') frise_veillee_avancer($pdo, $m[1]);
 }
@@ -440,6 +443,9 @@ if (preg_match('#^/api/portrait/duel/(PD-[A-Z2-9]{5})/adopter$#', $path, $m)) {
 if ($path === '/api/portrait/veillee' && $method === 'POST') portrait_veillee_create($pdo);
 if (preg_match('#^/api/portrait/veillee/(PV-[A-Z2-9]{5})/rejoindre$#', $path, $m)) {
     if ($method === 'POST') portrait_veillee_rejoindre($pdo, $m[1]);
+}
+if (preg_match('#^/api/portrait/veillee/(PV-[A-Z2-9]{5})/auto$#', $path, $m)) {
+    if ($method === 'POST') portrait_veillee_auto($pdo, $m[1]);
 }
 if (preg_match('#^/api/portrait/veillee/(PV-[A-Z2-9]{5})/avancer$#', $path, $m)) {
     if ($method === 'POST') portrait_veillee_avancer($pdo, $m[1]);

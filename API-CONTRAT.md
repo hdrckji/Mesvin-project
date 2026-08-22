@@ -87,8 +87,37 @@ Plafond 10 créations/heure/IP (fichier `api/frise.php`).
   phase placement uniquement, une seule réponse par carte ; le serveur pose
   le verdict et le point.
 - `GET /api/frise/veillee/{code}/etat?jeton=…|cle=…` → `{phase, carte, total,
-  participants, moi, frise, enCours, positionJuste, animateur}` — les verdicts
-  des autres n'apparaissent qu'en phase `revele`.
+  participants, moi, frise, enCours, positionJuste, auto, seconds, restant,
+  animateur}` — les verdicts des autres n'apparaissent qu'en phase `revele`.
+
+### La veillée qui s'enchaîne toute seule (les quatre épreuves)
+
+Le même mode sur les quatre modules (`epreuve`, `frise`, `portrait`), pour
+que l'animateur retrouve le même comportement d'une épreuve à l'autre dans
+une même soirée. Les briques communes vivent dans `api/epreuves-auto.php`.
+
+Deux règles, dont UNE SEULE dépend du mode :
+
+- **Sonder l'état fait avancer la veillée.** Quand tous les PRÉSENTS ont
+  répondu (présence = a sondé dans les 30 s), la révélation tombe au sondage
+  suivant, quel qu'en soit l'auteur — le téléphone de l'animateur peut être
+  verrouillé. Ce n'est pas une option : c'est la réparation, active partout.
+- **En mode `auto` seulement** : un chrono par carte (10–90 s, défaut 25)
+  révèle ce que personne ne finit, puis, 8 s de lecture plus tard, la carte
+  suivante s'enchaîne. Le décompte est ANNONCÉ (`restant`, en secondes) —
+  jamais subi.
+
+Singularité du portrait : le chrono ne révèle pas, il fait TOMBER LES
+INDICES — un indice par échéance, le temps repart, et le barème (6 − indice)
+suit naturellement la cadence. Après le cinquième indice, l'échéance suivante
+révèle.
+
+- À la création (`POST …/veillee`) : `{auto?: bool, seconds?: int}` en plus
+  du corps habituel — retour enrichi de `{auto, seconds}`.
+- `POST …/veillee/{code}/auto` `{cle, actif, seconds?}` — couper ou rallumer
+  EN PLEINE VEILLÉE (le chrono repart de l'instant du réglage). Réservé à
+  l'animateur (403 sinon).
+- L'état porte `{auto, seconds, restant}` — `restant` est null hors mode.
 
 ## Épreuves à choix (« Qui a dit ça ? » /quiadit/, « Écrit… ou pas ? » /ecritoupas/)
 
