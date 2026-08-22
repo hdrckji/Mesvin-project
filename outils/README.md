@@ -41,6 +41,30 @@ d'urgence. Une publication sur cinq mentionne l'appli, les autres donnent.
 Et on répond aux commentaires en personne — c'est la seule croissance qui
 compte pour ce projet.
 
+## Les stories-questions (`generer-stories.js`)
+
+Le pendant « stories » du kit : des questions du **Défi** de l'appli
+(defi/data/questions.json), en visuels 1080×1920, sur lesquels on pose un
+sticker interactif d'Instagram — **Quiz** (révèle la bonne réponse au vote)
+ou **Sondage** (montre les pourcentages), au choix. Les abonnés répondent
+en un tap : un avant-goût du Défi, deux fois par jour.
+
+```
+node generer-stories.js               # semaine 1 : 14 stories (2/jour)
+node generer-stories.js --semaine 2   # la suivante, sans redite
+```
+Sortie dans `outils/kit-sortie/stories-semaine-N/` : `visuels/story-NN.png`
++ `STORIES.md` (les options du quiz, la bonne réponse, la référence, et le
+mode d'emploi complet — non versionnés, comme les lots de posts).
+
+À savoir : **aucun outil ne peut poser un sticker interactif
+automatiquement** (l'API d'Instagram ne le permet pas — ni Quiz, ni
+Sondage). Dans Metricool, on programme donc la story en « publication par
+notification », et on ajoute le sticker à la main au moment venu — une
+minute par story, tout est prêt dans STORIES.md.
+Rythme : deux par jour (midi et 19 h) ; la story n° 7 de chaque semaine
+porte en plus le sticker Lien vers biblehorizon.fr.
+
 ## Le mode d'emploi des banques de questions (`guide-banque-questions/`)
 
 Le PDF que les responsables téléchargent depuis l'écran des séries. Il est
