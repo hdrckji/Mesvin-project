@@ -196,14 +196,20 @@ function portrait_veillee_create(PDO $pdo): never {
     $body = read_json_body();
     $deck = portrait_deck_propre($body['deck'] ?? null);
 
+    // « La veillée s'enchaîne toute seule » : ici le chrono rythme les INDICES
+    // — un indice tombe à chaque échéance, et après le dernier vient la
+    // révélation. Désactivé par défaut : sans lui, rien ne change.
+    $auto = !empty($body['auto']) ? 1 : 0;
+    $seconds = $auto ? epreuve_secondes_propres($body['seconds'] ?? null) : 0;
+
     $code = frise_code($pdo, 'portrait_veillees', 'PV-');
     $cle = bin2hex(random_bytes(16));
     $st = $pdo->prepare(
-        "INSERT INTO portrait_veillees (code, cle, mode, deck, phase, carte, indice, created_at)
-         VALUES (?, ?, 'De qui parle-t-on ?', ?, 'attente', 0, 0, ?)"
+        "INSERT INTO portrait_veillees (code, cle, mode, deck, phase, carte, indice, auto, seconds, created_at)
+         VALUES (?, ?, 'De qui parle-t-on ?', ?, 'attente', 0, 0, ?, ?, ?)"
     );
-    $st->execute([$code, $cle, json_encode($deck, JSON_UNESCAPED_UNICODE), now_sql()]);
-    json_out(['code' => $code, 'cle' => $cle]);
+    $st->execute([$code, $cle, json_encode($deck, JSON_UNESCAPED_UNICODE), $auto, $seconds, now_sql()]);
+    json_out(['code' => $code, 'cle' => $cle, 'auto' => (bool) $auto, 'seconds' => $seconds]);
 }
 
 function portrait_veillee_rejoindre(PDO $pdo, string $code): never {
@@ -240,6 +246,94 @@ function portrait_veillee_rejoindre(PDO $pdo, string $code): never {
  * (montrer la réponse), 'suivant' (portrait suivant, ou fin).
  * Depuis 'attente', toute action lance le premier portrait, premier indice.
  */
+/**
+ * Sonder l'état FAIT AVANCER la veillée — le même souffle que sur les autres
+ * épreuves (cf. epreuve_veillee_souffle), avec la singularité du portrait :
+ * le chrono ne révèle pas, il fait TOMBER LES INDICES. À chaque échéance,
+ * l'indice suivant paraît et le temps repart — le barème (6 - indice points)
+ * suit donc naturellement la cadence. Après le dernier indice, l'échéance
+ * suivante révèle.
+ *
+ * Indépendamment du mode : quand tous les PRÉSENTS ont répondu, on révèle —
+ * c'est la réparation commune aux quatre épreuves, pas une option.
+ */
+function portrait_veillee_souffle(PDO $pdo, string $code, array $v, ?string $jeton): array {
+    if ($jeton !== null && $jeton !== '') {
+        $st = $pdo->prepare('SELECT id FROM portrait_participants WHERE code = ? AND jeton = ?');
+        $st->execute([$code, $jeton]);
+        $moi = $st->fetchColumn();
+        if ($moi !== false) {
+            epreuve_auto_present($pdo, 'portrait_participants', (int) $moi);
+        }
+    }
+
+    $phase = (string) $v['phase'];
+    $auto = (int) ($v['auto'] ?? 0) === 1;
+    $bouge = false;
+
+    if ($phase === 'portrait') {
+        $compte = epreuve_auto_compte($pdo, 'portrait_participants', $code);
+        if (epreuve_auto_tous_ont_repondu($compte)) {
+            $st = $pdo->prepare("UPDATE portrait_veillees SET phase = 'revele', phase_debut = ?
+                                 WHERE code = ? AND phase = 'portrait' AND carte = ?");
+            $st->execute([now_sql(), $code, (int) $v['carte']]);
+            $bouge = true;
+        } elseif ($auto && epreuve_auto_temps_ecoule($v['phase_debut'] ?? null, (int) ($v['seconds'] ?? 0))) {
+            if ((int) $v['indice'] < PORTRAIT_INDICES) {
+                // L'indice suivant tombe, le temps repart. Conditionné sur
+                // (carte, indice) lus : deux sondages, un seul indice.
+                $st = $pdo->prepare("UPDATE portrait_veillees SET indice = indice + 1, phase_debut = ?
+                                     WHERE code = ? AND phase = 'portrait' AND carte = ? AND indice = ?");
+                $st->execute([now_sql(), $code, (int) $v['carte'], (int) $v['indice']]);
+            } else {
+                $st = $pdo->prepare("UPDATE portrait_veillees SET phase = 'revele', phase_debut = ?
+                                     WHERE code = ? AND phase = 'portrait' AND carte = ?");
+                $st->execute([now_sql(), $code, (int) $v['carte']]);
+            }
+            $bouge = true;
+        }
+    } elseif ($phase === 'revele' && $auto && epreuve_auto_lecture_finie($v['phase_debut'] ?? null)) {
+        $total = count(json_decode((string) $v['deck'], true) ?: []);
+        if ((int) $v['carte'] >= $total) {
+            $pdo->prepare("UPDATE portrait_veillees SET phase = 'fin' WHERE code = ? AND phase = 'revele'")
+                ->execute([$code]);
+        } else {
+            $st = $pdo->prepare("UPDATE portrait_veillees SET phase = 'portrait', carte = carte + 1, indice = 1, phase_debut = ?
+                                 WHERE code = ? AND phase = 'revele' AND carte = ?");
+            $st->execute([now_sql(), $code, (int) $v['carte']]);
+            if ($st->rowCount() > 0) {
+                $pdo->prepare('UPDATE portrait_participants SET reponse = NULL, bon = NULL, points = NULL WHERE code = ?')
+                    ->execute([$code]);
+            }
+        }
+        $bouge = true;
+    }
+
+    // Rechargée quoi qu'il arrive : quand un autre sondage a gagné la course,
+    // la vérité est en base, pas dans la ligne lue avant l'écriture.
+    return $bouge ? portrait_veillee_row($pdo, $code) : $v;
+}
+
+/**
+ * L'animateur coupe ou rallume le mode automatique en pleine veillée — même
+ * geste, mêmes raisons que sur les autres épreuves.
+ */
+function portrait_veillee_auto(PDO $pdo, string $code): never {
+    $v = portrait_veillee_row($pdo, $code);
+    $body = read_json_body();
+    $cle = $body['cle'] ?? null;
+    if (!is_string($cle) || !hash_equals((string) $v['cle'], $cle)) {
+        json_error("Seul l'animateur peut régler la veillée.", 403);
+    }
+    $actif = !empty($body['actif']) ? 1 : 0;
+    $seconds = $actif ? epreuve_secondes_propres($body['seconds'] ?? ((int) $v['seconds'] ?: null)) : 0;
+    // phase_debut repart de maintenant : on ne fait pas tomber un indice parce
+    // qu'un chrono qu'on vient d'allumer courait déjà depuis deux minutes.
+    $pdo->prepare('UPDATE portrait_veillees SET auto = ?, seconds = ?, phase_debut = ? WHERE code = ?')
+        ->execute([$actif, $seconds, now_sql(), $code]);
+    portrait_veillee_etat($pdo, $code, null, $cle);
+}
+
 function portrait_veillee_avancer(PDO $pdo, string $code): never {
     $v = portrait_veillee_row($pdo, $code);
     $body = read_json_body();
@@ -251,23 +345,25 @@ function portrait_veillee_avancer(PDO $pdo, string $code): never {
     $deck = json_decode((string) $v['deck'], true);
     $total = count($deck);
 
+    // Chaque bascule s'horodate : le chrono des indices et le décompte avant
+    // la carte suivante se lisent tous deux sur phase_debut.
     if ($v['phase'] === 'attente') {
-        $pdo->prepare("UPDATE portrait_veillees SET phase = 'portrait', carte = 1, indice = 1 WHERE code = ?")
-            ->execute([$code]);
+        $pdo->prepare("UPDATE portrait_veillees SET phase = 'portrait', carte = 1, indice = 1, phase_debut = ? WHERE code = ?")
+            ->execute([now_sql(), $code]);
     } elseif ($v['phase'] === 'portrait' && $action === 'indice') {
         if ((int) $v['indice'] >= PORTRAIT_INDICES) {
             json_error('Tous les indices sont déjà révélés.', 409);
         }
-        $pdo->prepare('UPDATE portrait_veillees SET indice = indice + 1 WHERE code = ? AND phase = \'portrait\' AND indice = ?')->execute([$code, (int) $v['indice']]);
+        $pdo->prepare('UPDATE portrait_veillees SET indice = indice + 1, phase_debut = ? WHERE code = ? AND phase = \'portrait\' AND indice = ?')->execute([now_sql(), $code, (int) $v['indice']]);
     } elseif ($v['phase'] === 'portrait' && $action === 'reveler') {
-        $pdo->prepare("UPDATE portrait_veillees SET phase = 'revele' WHERE code = ?")->execute([$code]);
+        $pdo->prepare("UPDATE portrait_veillees SET phase = 'revele', phase_debut = ? WHERE code = ?")->execute([now_sql(), $code]);
     } elseif ($v['phase'] === 'revele' && $action === 'suivant') {
         if ((int) $v['carte'] >= $total) {
             $pdo->prepare("UPDATE portrait_veillees SET phase = 'fin' WHERE code = ?")->execute([$code]);
         } else {
             // Conditionné sur (phase, carte) lues — cf. frise_veillee_avancer.
-            $st = $pdo->prepare("UPDATE portrait_veillees SET phase = 'portrait', carte = carte + 1, indice = 1 WHERE code = ? AND phase = 'revele' AND carte = ?");
-            $st->execute([$code, (int) $v['carte']]);
+            $st = $pdo->prepare("UPDATE portrait_veillees SET phase = 'portrait', carte = carte + 1, indice = 1, phase_debut = ? WHERE code = ? AND phase = 'revele' AND carte = ?");
+            $st->execute([now_sql(), $code, (int) $v['carte']]);
             if ($st->rowCount() > 0) {
                 $pdo->prepare('UPDATE portrait_participants SET reponse = NULL, bon = NULL, points = NULL WHERE code = ?')
                     ->execute([$code]);
@@ -318,6 +414,7 @@ function portrait_veillee_reponse(PDO $pdo, string $code): never {
  */
 function portrait_veillee_etat(PDO $pdo, string $code, ?string $jeton, ?string $cle): never {
     $v = portrait_veillee_row($pdo, $code);
+    $v = portrait_veillee_souffle($pdo, $code, $v, $jeton);
     $deck = json_decode((string) $v['deck'], true);
     $total = count($deck);
     $carte = (int) $v['carte'];
@@ -358,6 +455,16 @@ function portrait_veillee_etat(PDO $pdo, string $code, ?string $jeton, ?string $
         }
     }
 
+    // Le décompte est ANNONCÉ, jamais subi. En phase « portrait », il dit
+    // quand le prochain indice tombera ; à la révélation, quand on enchaîne.
+    $auto = (int) ($v['auto'] ?? 0) === 1;
+    $restant = null;
+    if ($auto && $phase === 'portrait') {
+        $restant = epreuve_auto_restant($v['phase_debut'] ?? null, (int) ($v['seconds'] ?? 0));
+    } elseif ($auto && $phase === 'revele') {
+        $restant = epreuve_auto_restant($v['phase_debut'] ?? null, EPREUVE_ENCHAINEMENT_SECONDS);
+    }
+
     json_out([
         'phase'        => $phase,
         'mode'         => (string) $v['mode'],
@@ -366,6 +473,9 @@ function portrait_veillee_etat(PDO $pdo, string $code, ?string $jeton, ?string $
         'participants' => $participants,
         'moi'          => $moi,
         'enCours'      => $enCours,
+        'auto'         => $auto,
+        'seconds'      => (int) ($v['seconds'] ?? 0),
+        'restant'      => $restant,
         'animateur'    => $cle !== null && hash_equals((string) $v['cle'], $cle),
     ]);
 }

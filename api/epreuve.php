@@ -353,14 +353,21 @@ function epreuve_veillee_create(PDO $pdo): never {
     $deck = epreuve_deck_propre($body['deck'] ?? null);
     $mode = is_string($body['mode'] ?? null) ? mb_substr(trim($body['mode']), 0, 40) : 'Épreuve';
 
+    // « La veillée s'enchaîne toute seule » : un seul réglage, désactivé par
+    // défaut. Sans lui, rien ne change — l'animateur mène comme toujours.
+    // Le chrono ne vit que dans ce mode : c'est le seul moyen de débloquer une
+    // carte que personne ne finit, et hors de ce mode personne n'en veut.
+    $auto = !empty($body['auto']) ? 1 : 0;
+    $seconds = $auto ? epreuve_secondes_propres($body['seconds'] ?? null) : 0;
+
     $code = frise_code($pdo, 'epreuve_veillees', 'EV-');
     $cle = bin2hex(random_bytes(16));
     $st = $pdo->prepare(
-        "INSERT INTO epreuve_veillees (code, cle, mode, deck, phase, carte, created_at)
-         VALUES (?, ?, ?, ?, 'attente', 0, ?)"
+        "INSERT INTO epreuve_veillees (code, cle, mode, deck, phase, carte, auto, seconds, created_at)
+         VALUES (?, ?, ?, ?, 'attente', 0, ?, ?, ?)"
     );
-    $st->execute([$code, $cle, $mode, json_encode($deck, JSON_UNESCAPED_UNICODE), now_sql()]);
-    json_out(['code' => $code, 'cle' => $cle]);
+    $st->execute([$code, $cle, $mode, json_encode($deck, JSON_UNESCAPED_UNICODE), $auto, $seconds, now_sql()]);
+    json_out(['code' => $code, 'cle' => $cle, 'auto' => (bool) $auto, 'seconds' => $seconds]);
 }
 
 function epreuve_veillee_rejoindre(PDO $pdo, string $code): never {
@@ -393,6 +400,83 @@ function epreuve_veillee_rejoindre(PDO $pdo, string $code): never {
     json_out(['jeton' => $jeton]);
 }
 
+/**
+ * Sonder l'état FAIT AVANCER la veillée. C'est tout l'objet du chantier : un
+ * seul client qui interroge — un participant, le grand écran, n'importe qui —
+ * et la réponse tombe. L'appareil de l'animateur n'est plus indispensable ;
+ * son téléphone peut se verrouiller dans une salle sombre.
+ *
+ * Deux bascules, et une seule dépend du mode :
+ * - question → révélé quand tous les PRÉSENTS ont répondu : toujours, mode ou
+ *   pas. C'est la réparation, pas une option.
+ * - question → révélé quand le temps est écoulé, puis révélé → carte suivante
+ *   après le temps de lecture : uniquement en mode « s'enchaîne toute seule ».
+ *
+ * Chaque écriture est conditionnée sur (phase, carte) LUES : deux sondages
+ * simultanés ne produisent qu'une bascule, et aucun n'emporte la carte
+ * suivante si l'animateur vient d'enchaîner entre la lecture et l'écriture.
+ * Retourne la veillée rechargée si l'on a bougé, sinon celle qu'on avait.
+ */
+function epreuve_veillee_souffle(PDO $pdo, string $code, array $v, ?string $jeton): array {
+    if ($jeton !== null && $jeton !== '') {
+        $st = $pdo->prepare('SELECT id FROM epreuve_participants WHERE code = ? AND jeton = ?');
+        $st->execute([$code, $jeton]);
+        $moi = $st->fetchColumn();
+        if ($moi !== false) {
+            epreuve_auto_present($pdo, 'epreuve_participants', (int) $moi);
+        }
+    }
+
+    $phase = (string) $v['phase'];
+    $auto = (int) ($v['auto'] ?? 0) === 1;
+    $bouge = false;
+
+    if ($phase === 'question') {
+        $compte = epreuve_auto_compte($pdo, 'epreuve_participants', $code);
+        $tous = epreuve_auto_tous_ont_repondu($compte);
+        $temps = $auto && epreuve_auto_temps_ecoule($v['phase_debut'] ?? null, (int) ($v['seconds'] ?? 0));
+        if ($tous || $temps) {
+            $st = $pdo->prepare("UPDATE epreuve_veillees SET phase = 'revele', phase_debut = ?
+                                 WHERE code = ? AND phase = 'question' AND carte = ?");
+            $st->execute([now_sql(), $code, (int) $v['carte']]);
+            $bouge = true;
+        }
+    } elseif ($phase === 'revele' && $auto && epreuve_auto_lecture_finie($v['phase_debut'] ?? null)) {
+        $total = count(json_decode((string) $v['deck'], true) ?: []);
+        if ((int) $v['carte'] >= $total) {
+            $pdo->prepare("UPDATE epreuve_veillees SET phase = 'fin' WHERE code = ? AND phase = 'revele'")
+                ->execute([$code]);
+        } else {
+            $st = $pdo->prepare("UPDATE epreuve_veillees SET phase = 'question', carte = carte + 1, phase_debut = ?
+                                 WHERE code = ? AND phase = 'revele' AND carte = ?");
+            $st->execute([now_sql(), $code, (int) $v['carte']]);
+            if ($st->rowCount() > 0) {
+                $pdo->prepare('UPDATE epreuve_participants SET reponse = NULL, bon = NULL WHERE code = ?')
+                    ->execute([$code]);
+            }
+        }
+        $bouge = true;
+    }
+
+    // Rechargée quoi qu'il arrive : quand un autre sondage a gagné la course,
+    // la vérité est en base, pas dans la ligne lue avant l'écriture.
+    return $bouge ? epreuve_veillee_row($pdo, $code) : $v;
+}
+
+/**
+ * Le chrono, borné. Trois cadences suffisent — Vif, Posé, Tranquille, comme sur
+ * le Défi — mais on accepte n'importe quelle valeur dans les bornes plutôt que
+ * d'imposer une liste : une salle d'enfants et un groupe d'anciens ne lisent
+ * pas à la même vitesse.
+ */
+function epreuve_secondes_propres(mixed $v): int {
+    $n = is_int($v) ? $v : (is_string($v) && ctype_digit($v) ? (int) $v : 0);
+    if ($n <= 0) {
+        return EPREUVE_SECONDES_DEFAUT;
+    }
+    return max(EPREUVE_SECONDES_MIN, min(EPREUVE_SECONDES_MAX, $n));
+}
+
 /** attente → question (carte 1) → revele → question suivante → … → fin. */
 function epreuve_veillee_avancer(PDO $pdo, string $code): never {
     $v = epreuve_veillee_row($pdo, $code);
@@ -403,17 +487,19 @@ function epreuve_veillee_avancer(PDO $pdo, string $code): never {
     $deck = json_decode((string) $v['deck'], true);
     $total = count($deck);
 
+    // Chaque bascule s'horodate : le chrono d'une carte et le décompte avant la
+    // suivante se lisent tous deux sur phase_debut.
     if ($v['phase'] === 'attente') {
-        $pdo->prepare("UPDATE epreuve_veillees SET phase = 'question', carte = 1 WHERE code = ?")
-            ->execute([$code]);
+        $pdo->prepare("UPDATE epreuve_veillees SET phase = 'question', carte = 1, phase_debut = ? WHERE code = ?")
+            ->execute([now_sql(), $code]);
     } elseif ($v['phase'] === 'question') {
-        $pdo->prepare("UPDATE epreuve_veillees SET phase = 'revele' WHERE code = ?")->execute([$code]);
+        $pdo->prepare("UPDATE epreuve_veillees SET phase = 'revele', phase_debut = ? WHERE code = ?")->execute([now_sql(), $code]);
     } elseif ($v['phase'] === 'revele') {
         if ((int) $v['carte'] >= $total) {
             $pdo->prepare("UPDATE epreuve_veillees SET phase = 'fin' WHERE code = ?")->execute([$code]);
         } else {
             // Conditionné sur (phase, carte) lues — cf. frise_veillee_avancer.
-            $st = $pdo->prepare("UPDATE epreuve_veillees SET phase = 'question', carte = carte + 1 WHERE code = ? AND phase = 'revele' AND carte = ?");
+            $st = $pdo->prepare("UPDATE epreuve_veillees SET phase = 'question', carte = carte + 1, phase_debut = '" . now_sql() . "' WHERE code = ? AND phase = 'revele' AND carte = ?");
             $st->execute([$code, (int) $v['carte']]);
             if ($st->rowCount() > 0) {
                 $pdo->prepare('UPDATE epreuve_participants SET reponse = NULL, bon = NULL WHERE code = ?')
@@ -423,6 +509,30 @@ function epreuve_veillee_avancer(PDO $pdo, string $code): never {
     } else {
         json_error('La veillée est déjà terminée.', 409);
     }
+    epreuve_veillee_etat($pdo, $code, null, $cle);
+}
+
+/**
+ * L'animateur coupe ou rallume le mode automatique EN PLEINE VEILLÉE.
+ * Indispensable : si la salle se met à commenter une réponse, il ne doit pas
+ * avoir à refermer la salle pour reprendre la main. Le « Suivant » manuel
+ * reste de toute façon disponible et prend le pas sur le décompte.
+ */
+function epreuve_veillee_auto(PDO $pdo, string $code): never {
+    $v = epreuve_veillee_row($pdo, $code);
+    $body = read_json_body();
+    $cle = $body['cle'] ?? null;
+    if (!is_string($cle) || !hash_equals((string) $v['cle'], $cle)) {
+        json_error("Seul l'animateur peut régler la veillée.", 403);
+    }
+    $actif = !empty($body['actif']) ? 1 : 0;
+    // Rallumer en cours de route redonne un chrono : sans lui, « tout seul »
+    // s'arrêterait à la première carte que personne ne finit.
+    $seconds = $actif ? epreuve_secondes_propres($body['seconds'] ?? ((int) $v['seconds'] ?: null)) : 0;
+    // phase_debut repart de maintenant : on ne fait pas tomber une carte parce
+    // qu'un chrono qu'on vient d'allumer courait déjà depuis deux minutes.
+    $pdo->prepare('UPDATE epreuve_veillees SET auto = ?, seconds = ?, phase_debut = ? WHERE code = ?')
+        ->execute([$actif, $seconds, now_sql(), $code]);
     epreuve_veillee_etat($pdo, $code, null, $cle);
 }
 
@@ -464,6 +574,7 @@ function epreuve_veillee_reponse(PDO $pdo, string $code): never {
  */
 function epreuve_veillee_etat(PDO $pdo, string $code, ?string $jeton, ?string $cle): never {
     $v = epreuve_veillee_row($pdo, $code);
+    $v = epreuve_veillee_souffle($pdo, $code, $v, $jeton);
     $deck = json_decode((string) $v['deck'], true);
     $total = count($deck);
     $carte = (int) $v['carte'];
@@ -500,6 +611,16 @@ function epreuve_veillee_etat(PDO $pdo, string $code, ?string $jeton, ?string $c
         }
     }
 
+    // Le décompte est ANNONCÉ, jamais subi : le grand écran affiche les
+    // secondes qui restent, et personne n'est surpris de voir la carte tourner.
+    $auto = (int) ($v['auto'] ?? 0) === 1;
+    $restant = null;
+    if ($auto && $phase === 'question') {
+        $restant = epreuve_auto_restant($v['phase_debut'] ?? null, (int) ($v['seconds'] ?? 0));
+    } elseif ($auto && $phase === 'revele') {
+        $restant = epreuve_auto_restant($v['phase_debut'] ?? null, EPREUVE_ENCHAINEMENT_SECONDS);
+    }
+
     json_out([
         'phase'        => $phase,
         'mode'         => $v['mode'],
@@ -508,6 +629,9 @@ function epreuve_veillee_etat(PDO $pdo, string $code, ?string $jeton, ?string $c
         'participants' => $participants,
         'moi'          => $moi,
         'enCours'      => $enCours,
+        'auto'         => $auto,
+        'seconds'      => (int) ($v['seconds'] ?? 0),
+        'restant'      => $restant,
         'animateur'    => $cle !== null && hash_equals((string) $v['cle'], $cle),
     ]);
 }

@@ -320,6 +320,10 @@ function veillee_state_payload(PDO $pdo, array $v, ?array $me): array {
         } else { // reveal ou done : on peut tout montrer
             $out['question']['bonne'] = (int) $q['bonne'];
             $out['question']['reference'] = $q['reference'];
+            // L'identifiant ne sort qu'ici, avec la révélation : il ne sert
+            // qu'à signaler la question, et l'envoyer plus tôt n'apporterait
+            // rien tout en donnant une prise inutile.
+            $out['question']['id'] = (string) $q['id'];
             $dist = array_fill(0, count($q['options']), 0);
             foreach ($answers as $a) {
                 $i = (int) $a['answer'];

@@ -387,6 +387,12 @@ let seance = null;   // { items, idx, phase:'question'|'revele', choix, score, t
                      //   participants|null, tour, enLigne|null, envoye }
 let config = { noms: ['', ''] };
 let online = null;
+
+/* ---- Le mode « la veillée s'enchaîne toute seule » --------------------------
+   Choisi à l'ouverture de la salle, coupé ou rallumé en pleine veillée.
+   Désactivé par défaut : sans lui, RIEN ne change, l'animateur mène. */
+let vauto = { actif: false, seconds: 25 };
+const CADENCES = [[15, 'Vif · 15 s'], [25, 'Posé · 25 s'], [40, 'Tranquille · 40 s']];
 let saisie = { pseudo: '', code: '' };
 let repriseAnim = null; // veillée animée retrouvée au chargement : { code, cle }
 
@@ -863,6 +869,15 @@ function vueVeilleeConfig() {
     <h1 style="font-size:1.25rem;margin-top:10px">Animer la veillée</h1>
     <p class="muted" style="margin:4px 0 0">Tu ouvres la salle et tu donnes le code : tout le monde voit la même question au même moment, et c'est toi qui rythmes.</p>
     <div class="card">
+      <p class="mode-title">Le rythme</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 4px">
+        <button class="pill ${vauto.actif ? '' : 'on'}" data-vauto="0">Tu mènes</button>
+        <button class="pill ${vauto.actif ? 'on' : ''}" data-vauto="1">Elle s'enchaîne toute seule</button>
+      </div>
+      ${vauto.actif ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 4px">
+        ${CADENCES.map(([s, l]) => `<button class="pill ${vauto.seconds === s ? 'on' : ''}" data-vsec="${s}">${l}</button>`).join('')}
+      </div>
+      <p class="muted" style="margin:2px 0 0;font-size:.85rem">Chaque question reste le temps choisi, la réponse s'affiche, puis on enchaîne — et tu peux reprendre la main à tout moment.</p>` : ''}
       <button class="btn btn-grow" data-veilgo="1" style="margin-top:4px">Ouvrir la veillée</button>
       <p class="feedback faux" id="err-ligne"></p>
     </div>
@@ -906,7 +921,7 @@ function vueAnim() {
       <p class="muted" style="margin:0 0 4px">Le code de la salle :</p>
       <div class="code-big">${esc(o.code)}</div>
       <button class="btn btn-ghost" data-copie="${esc(o.code)}">Copier le code</button>
-      ${controle}
+      ${controle}${htmlAutoAnim(e)}
       <p class="muted" style="font-size:.85rem;margin:14px 2px 0">Grand écran : sur l'ordinateur relié au projecteur, ouvre cette adresse.</p>
       <div style="font-size:.82rem;overflow-wrap:anywhere;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:8px"><code>${esc(lienProj)}</code></div>
       <button class="btn btn-ghost" data-copie-lien="${esc(lienProj)}">Copier l'adresse du grand écran</button>
@@ -1010,6 +1025,42 @@ function vueProj() {
   </div>`;
 }
 
+
+/* Vu de l'animateur : où en est le mode, et l'interrupteur. Reprendre la main
+   ne referme rien — la salle reste ouverte, seul le rythme change de mains. */
+function htmlAutoAnim(e) {
+  if (!e || e.phase === 'fin') return '';
+  if (e.auto) {
+    return `<button class="btn btn-ghost" data-autobascule="0" style="margin-top:8px">Reprendre la main</button>`;
+  }
+  return `<button class="btn btn-ghost" data-autobascule="1" style="margin-top:8px">Laisser la veillée s'enchaîner toute seule</button>`;
+}
+
+/* ---- Le décompte, ANNONCÉ ------------------------------------------------
+   Une pastille fixe, hors de l'écran re-rendu : le grand écran comme les
+   téléphones voient les secondes tomber, et personne n'est surpris de voir
+   la carte tourner. Le serveur donne `restant` à chaque sondage (2,5 s) ;
+   entre deux sondages, on décompte localement depuis ce repère. */
+function majDecompte() {
+  let b = document.getElementById('decompte-veillee');
+  const enLigne = (ecran === 'anim' || ecran === 'part' || ecran === 'proj') && online && online.etat ? online.etat : null;
+  let reste = null;
+  if (enLigne && enLigne.auto && enLigne.restant != null && enLigne.phase !== 'fin' && enLigne.phase !== 'attente') {
+    const depuis = online.resteTs ? Math.floor((Date.now() - online.resteTs) / 1000) : 0;
+    reste = Math.max(0, enLigne.restant - depuis);
+  }
+  if (reste === null) { if (b) b.hidden = true; return; }
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'decompte-veillee';
+    b.style.cssText = 'position:fixed;top:10px;right:10px;z-index:50;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:700;font-size:clamp(.92rem,2.2vw,1.5rem);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.12)';
+    document.body.appendChild(b);
+  }
+  b.hidden = false;
+  b.textContent = enLigne.phase === 'revele' ? 'On enchaîne dans ' + reste + ' s' : '⏳ ' + reste + ' s';
+}
+setInterval(majDecompte, 1000);
+
 /* ---------- L'interrogation régulière (écrans en ligne) ---------- */
 function pollArret() { if (minuterie) { clearInterval(minuterie); minuterie = null; } }
 function pollDemarre() {
@@ -1024,6 +1075,8 @@ function pollDemarre() {
         const vAvant = online.v || 0;
         const q = ecran === 'anim' ? 'cle=' + online.cle : ecran === 'part' ? 'jeton=' + online.jeton : '';
         const e = await api('veillee/' + online.code + '/etat' + (q ? '?' + q : ''));
+        if (online) { online.resteTs = Date.now(); }
+        majDecompte();
         if (online && (online.v || 0) === vAvant
             && JSON.stringify(e) !== JSON.stringify(online.etat)) { online.etat = e; render(); }
         if (online && online.cle && e && e.phase === 'fin') animOubli(); // veillée finie : plus rien à reprendre
@@ -1214,13 +1267,29 @@ function render() {
     } catch (e) { projgo.disabled = false; erreurLigne(e.message); }
   });
 
+  el.querySelectorAll('[data-vauto]').forEach(b => b.addEventListener('click', () => {
+    vauto.actif = b.dataset.vauto === '1'; render();
+  }));
+  el.querySelectorAll('[data-vsec]').forEach(b => b.addEventListener('click', () => {
+    vauto.seconds = parseInt(b.dataset.vsec, 10); render();
+  }));
+  const autob = el.querySelector('[data-autobascule]');
+  if (autob) autob.addEventListener('click', async () => {
+    autob.disabled = true;
+    try {
+      online.etat = await api('veillee/' + online.code + '/auto',
+        { cle: online.cle, actif: autob.dataset.autobascule === '1', seconds: vauto.seconds });
+      online.resteTs = Date.now();
+      render();
+    } catch (err) { render(); }
+  });
   const veilgo = q1('[data-veilgo]');
   if (veilgo) veilgo.addEventListener('click', async () => {
     veilgo.disabled = true;
     try {
       await chargerBanque();
       const deck = tirage(CARTES_PAR_SEANCE);
-      const r = await api('veillee', { mode: TITRE, deck: deck });
+      const r = await api('veillee', { mode: TITRE, deck: deck, auto: vauto.actif, seconds: vauto.seconds });
       online = { code: r.code, cle: r.cle, etat: null };
       animEcrire({ code: r.code, cle: r.cle, ts: Date.now() });
       ecran = 'anim'; render(); pollDemarre();
