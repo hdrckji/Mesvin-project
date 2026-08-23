@@ -61,7 +61,9 @@ jobs:
       - name: Outils
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq php8.3-cli php8.3-sqlite3 php8.3-mysql jq default-mysql-client
+          sudo apt-get install -y -qq \
+            php8.3-cli php8.3-mbstring php8.3-curl php8.3-sqlite3 php8.3-mysql \
+            jq default-mysql-client
           sudo update-alternatives --set php /usr/bin/php8.3
 
       # Mieux vaut échouer ici, en trois lignes lisibles, qu'au milieu de la
@@ -78,8 +80,14 @@ jobs:
             exit 1
           fi
           echo "  php $OBTENUE — la version que le Dockerfile déploie"
-          for ext in pdo_sqlite pdo_mysql openssl; do
-            php -m | grep -qx "$ext" || { echo "::error::extension PHP manquante : $ext"; exit 1; }
+          # La liste vient du code, pas d'une habitude : mb_* dans les
+          # validations de pseudo, curl_* pour les envois sortants, openssl_*
+          # pour la crypto Web Push, et les deux PDO pour les deux dialectes.
+          # Les nommer ici plutôt que de compter sur ce que l'image du runner
+          # embarque : le jour où elle en retire une, l'échec est lisible en
+          # une ligne au lieu de se disperser en dizaines d'assertions fausses.
+          for ext in mbstring curl openssl pdo_sqlite pdo_mysql json; do
+            php -m | grep -qix "$ext" || { echo "::error::extension PHP manquante : $ext"; exit 1; }
             echo "  php: $ext ok"
           done
           jq --version && node --version
