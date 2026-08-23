@@ -2170,6 +2170,42 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# La mise à jour de l'appli, en conditions réelles : c'est la classe de bugs
+# qui a le plus mordu en production (numéro de cache oublié, vieilles pages
+# avec un nouveau client d'API) et qu'aucun test d'endpoint ne peut voir.
+# Le scénario copie le site dans un dossier temporaire, y VIT un déploiement
+# (bump du cache + fichier modifié) avec son propre serveur — il ne touche ni
+# au vrai arbre ni à la base des autres tests.
+say "Mise à jour du service worker dans un vrai navigateur (un déploiement vécu)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/mise-a-jour.mjs" "$ROOT" 8189 > "$TMP/maj.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/maj.log") — installation, invitation, bascule, hors-ligne"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL mise à jour au navigateur\n'; sed 's/^/        /' "$TMP/maj.log"
+  fi
+else
+  printf '   --   Playwright absent : mise à jour au navigateur non jouée\n'
+fi
+
+# ---------------------------------------------------------------------------
+# La connexion par le VRAI écran. Les autres tests navigateur posent une
+# session toute faite dans localStorage — le bon outil pour tester les duels,
+# pas la porte d'entrée. Ici on la passe au doigt : e-mail, code (faux puis
+# juste), pseudo, bienvenue, et la session qui survit au rechargement.
+say "Connexion par le vrai écran dans un vrai navigateur (e-mail, code, pseudo)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/connexion.mjs" "$BASE" > "$TMP/conn.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/conn.log") — du premier e-mail au retour d'habituée"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL connexion au navigateur\n'; sed 's/^/        /' "$TMP/conn.log"
+  fi
+else
+  printf '   --   Playwright absent : connexion au navigateur non jouée\n'
+fi
+
+# ---------------------------------------------------------------------------
 # Signaler, dans un vrai navigateur. L'API sait dire qu'une route accepte un
 # signalement ; elle ne peut rien dire du GESTE, et c'est le geste qui décide
 # de tout. Un lien qu'on ne voit pas, un envoi qui ne remercie pas, et plus
