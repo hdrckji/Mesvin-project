@@ -1,0 +1,89 @@
+# ============================================================================
+# La suite, à chaque poussée — dans LES DEUX DIALECTES.
+#
+# Pourquoi les deux à chaque fois, et pas MySQL seulement sur la branche
+# principale : `db_migrate()` porte deux blocs DDL qui divergent réellement
+# (ENUM contre CHECK, sémantique de `rowCount()`, types de dates). Le README de
+# l'API le dit — « avant tout déploiement qui touche à la base, jouer les
+# deux » — mais c'est une consigne qui reposait entièrement sur la mémoire de
+# quelqu'un, au moment précis où il est pressé de déployer. Ici, elle ne repose
+# plus sur personne.
+#
+# Playwright n'est pas une dépendance du dépôt : on l'installe HORS de l'arbre
+# de travail, et on le désigne par BH_PLAYWRIGHT. Le dépôt reste sans
+# dépendance, y compris ici.
+# ============================================================================
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  suite:
+    name: SQLite puis MySQL, navigateur compris
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: bh_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -ptest"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Les extensions PDO des deux dialectes, plus `jq` et le client MySQL
+      # dont se sert la suite. Aucune action tierce : que des paquets de la
+      # distribution.
+      - name: Outils
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq php-cli php-sqlite3 php-mysql jq default-mysql-client
+
+      # Mieux vaut échouer ici, en trois lignes lisibles, qu'au milieu de la
+      # suite sur une erreur de driver PDO.
+      - name: Vérifier l'outillage
+        run: |
+          php -v | head -1
+          for ext in pdo_sqlite pdo_mysql openssl; do
+            php -m | grep -qx "$ext" || { echo "::error::extension PHP manquante : $ext"; exit 1; }
+            echo "  php: $ext ok"
+          done
+          jq --version && node --version
+
+      # La suite VIDE la base à chaque passe ; la seconde, suffixée « _mig »,
+      # sert au contrôle de migration.
+      - name: La seconde base, pour le contrôle de migration
+        run: mysql -h 127.0.0.1 -P 3306 -uroot -ptest -e "CREATE DATABASE IF NOT EXISTS bh_test_mig;"
+
+      # Hors de l'arbre de travail, pour que le dépôt reste sans dépendance.
+      # La version installée décide elle-même du Chromium qui lui correspond :
+      # rien à épingler, donc rien à faire vieillir.
+      - name: Playwright et son Chromium
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw"
+          cd "$RUNNER_TEMP/pw"
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund playwright
+          npx playwright install --with-deps chromium
+
+      - name: Les deux dialectes
+        env:
+          BH_PLAYWRIGHT: ${{ runner.temp }}/pw/node_modules
+          BH_TEST_MYSQL_URL: mysql://root:test@127.0.0.1:3306/bh_test
+        run: bash api/tests/run-tests-dialectes.sh
