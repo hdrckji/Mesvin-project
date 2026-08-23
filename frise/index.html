@@ -369,6 +369,15 @@ function duelEcrire(o) { try { localStorage.setItem(DUEL_KEY, JSON.stringify(o))
 function duelLire() { try { return JSON.parse(localStorage.getItem(DUEL_KEY) || 'null'); } catch (e) { return null; } }
 function duelOubli() { try { localStorage.removeItem(DUEL_KEY); } catch (e) {} }
 let repriseDuel = null;   // { code, p1, p2, total, invite } une fois relu du serveur
+/* Le score JOUÉ mais pas encore CONFIRMÉ par le serveur. L'unique envoi de
+   fin de partie était sans filet : un réseau qui flanche ou une appli
+   refermée à cet instant, et l'épreuve pourtant terminée restait « – » pour
+   toujours. On garde l'envoi ici jusqu'à la confirmation — bouton
+   « Réessayer », et nouvelle tentative discrète à chaque ouverture. */
+const ENVOI_KEY = 'graine.frise.envoi.v1';
+function envoiEcrire(o) { try { localStorage.setItem(ENVOI_KEY, JSON.stringify(o)); } catch (e) {} }
+function envoiLire() { try { return JSON.parse(localStorage.getItem(ENVOI_KEY) || 'null'); } catch (e) { return null; } }
+function envoiOubli() { try { localStorage.removeItem(ENVOI_KEY); } catch (e) {} }
 
 /* ---------- Défier un AMI (compte facultatif) ----------
    Connecté, la liste d'amis remplace l'échange de code : un geste pour
@@ -468,7 +477,7 @@ function revueHTML(deck, mine) {
 function diagHTML() {
   if (!/[?&]diag/.test(location.search)) return '';
   const u = connecte() ? GraineAPI.user() : null;
-  const l = ['page frise·d76'];
+  const l = ['page frise·d77'];
   l.push(u ? 'connecté : ' + (u.pseudo || '?') : 'NON connecté');
   if (amisErreur) l.push('erreur : ' + amisErreur);
   if (amisLigne) {
@@ -507,17 +516,29 @@ function amisHTML() {
   }
   const miens = duelsDuJeu();
   const recus = defisRecus();
+  // Un duel LANCÉ dont mon score manque (appli refermée, envoi perdu…) :
+  // le jouer reste possible — même s'il est déjà « terminé » avec un « – ».
+  const aJouer = d => d.role === 'createur' && d.monScore == null;
   const enCours = recus.map(d => `
       <button class="duel-row" data-defirecu="${esc(d.code)}">
         <span class="duel-qui">${esc(d.de)}</span>
         <span class="duel-etat moi">À toi de relever l'épreuve</span>
-      </button>`).concat(miens.filter(d => d.status === 'attente').map(d => `
+      </button>`).concat(miens.filter(d => d.status === 'attente').map(d => aJouer(d) ? `
+      <button class="duel-row" data-dueljouer="${esc(d.code)}" data-avec="${esc(d.avec || '')}">
+        <span class="duel-qui">${esc(d.avec || 'Par code · ' + d.code)}</span>
+        <span class="duel-etat moi">À toi de jouer ton épreuve</span>
+      </button>` : `
       <button class="duel-row" data-duelvoir="${esc(d.code)}" data-avec="${esc(d.avec || '')}" data-mien="${d.role === 'invite' ? 'p2' : 'p1'}">
         <span class="duel-qui">${esc(d.avec || 'Par code · ' + d.code)}</span>
         <span class="duel-etat eux">En attente</span>
         ${d.monScore != null ? `<span class="duel-scores">Toi : ${d.monScore}</span>` : ''}
       </button>`)).join('');
-  const finis = miens.filter(d => d.status === 'fini').map(d => `
+  const finis = miens.filter(d => d.status === 'fini').map(d => aJouer(d) ? `
+      <button class="duel-row" data-dueljouer="${esc(d.code)}" data-avec="${esc(d.avec || '')}">
+        <span class="duel-qui">${esc(d.avec || 'Par code · ' + d.code)}</span>
+        <span class="duel-etat moi">À toi de jouer ton épreuve</span>
+        <span class="duel-scores">${esc(d.avec || 'l\'autre')} : ${d.sonScore == null ? '–' : d.sonScore}</span>
+      </button>` : `
       <button class="duel-row" data-duelvoir="${esc(d.code)}" data-avec="${esc(d.avec || '')}" data-mien="${d.role === 'invite' ? 'p2' : 'p1'}" data-fini="1">
         <span class="duel-qui">${esc(d.avec || 'Par code · ' + d.code)}</span>
         <span class="duel-scores">Toi ${d.monScore == null ? '–' : d.monScore} — ${esc(d.avec || 'l\'autre')} ${d.sonScore == null ? '–' : d.sonScore}</span>
@@ -528,7 +549,8 @@ function amisHTML() {
     </div>
     <div class="card">${nouveau}</div>
     ${enCours ? `<div class="section-title">Duels en cours</div><div class="card">${enCours}</div>` : ''}
-    ${finis ? `<div class="section-title">Duels terminés</div><div class="card">${finis}</div>` : ''}
+    ${finis ? `<div class="section-title">Duels terminés</div><div class="card">${finis}</div>
+    <p class="muted" style="margin:6px 4px 0;font-size:.78rem">Les duels terminés restent visibles sept jours — le fil à côté du nom de l'ami, lui, se souvient de tout.</p>` : ''}
     <p class="muted" style="margin:18px 4px 0;font-size:.82rem">Par code, même sans compte :
       <button data-vers="dcfg" style="background:none;border:0;color:var(--accent);text-decoration:underline;font:inherit;font-size:.82rem;cursor:pointer;padding:0">créer un défi</button> ·
       <button data-vers="djoin" style="background:none;border:0;color:var(--accent);text-decoration:underline;font:inherit;font-size:.82rem;cursor:pointer;padding:0">j'ai reçu un code</button></p>`;
@@ -931,7 +953,9 @@ function vueDuelResultat() {
   const r = o.resultat;
   let corps = '';
   if (o.erreur) {
-    corps = `<p class="feedback faux">${esc(o.erreur)}</p>`;
+    corps = `<p class="feedback faux">${esc(o.erreur)}</p>` + (o.renvoi
+      ? `<p class="muted" style="margin:0 0 8px;font-size:.85rem">Ton épreuve est jouée — il ne manque que l'envoi. Rien n'est perdu : il repartira aussi tout seul à la prochaine ouverture.</p>
+         <button class="btn btn-primary" data-renvoi="1">Réessayer l'envoi</button>` : '');
   } else if (r) {
     const ligne = j => j ? `<div class="frow"><span>${esc(j.pseudo)}</span><b>${j.score === null ? 'pas encore terminé' : j.score + ' / ' + r.total}</b></div>` : '';
     let verdict = '';
@@ -1321,12 +1345,50 @@ function vueFinMulti() {
 function envoyerScoreDuel() {
   const s = seance;
   s.envoye = true;
-  const corps = s.enLigne.cle
-    ? { score: s.score, answers: s.reponses, cle: s.enLigne.cle }
-    : { score: s.score, answers: s.reponses, pseudo: s.enLigne.pseudo };
-  api('duel/' + s.enLigne.code + '/score', corps)
-    .then(resultat => { online = { code: s.enLigne.code, resultat: resultat, erreur: null, avec: s.enLigne.avec || null, mien: s.enLigne.cle ? 'p1' : 'p2' }; ecran = 'dres'; render(); })
-    .catch(e => { online = { code: s.enLigne.code, resultat: null, erreur: e.message }; ecran = 'dres'; render(); });
+  const l = s.enLigne;
+  const corps = l.cle
+    ? { score: s.score, answers: s.reponses, cle: l.cle }
+    : { score: s.score, answers: s.reponses, pseudo: l.pseudo || monPseudo() };
+  const envoi = { code: l.code, corps: corps, avec: l.avec || null,
+    mien: l.mien || (l.cle ? 'p1' : 'p2'), ts: Date.now() };
+  envoiEcrire(envoi);   // le filet : gardé jusqu'à la confirmation du serveur
+  posterScoreDuel(envoi);
+}
+
+/* L'envoi lui-même — depuis la fin de partie, le bouton « Réessayer » ou la
+   reprise au chargement. Oublié seulement quand le serveur a tranché :
+   accepté, ou refusé pour de bon (déjà posé, défi disparu…). Un souci
+   passager (réseau, trop de demandes) le garde pour la prochaine fois. */
+function posterScoreDuel(envoi) {
+  api('duel/' + envoi.code + '/score', envoi.corps)
+    .then(r => {
+      envoiOubli();
+      online = { code: envoi.code, resultat: r, erreur: null, avec: envoi.avec, mien: envoi.mien };
+      ecran = 'dres'; render();
+    })
+    .catch(e => {
+      const definitif = e.status && e.status >= 400 && e.status < 500 && e.status !== 429;
+      if (definitif) envoiOubli();
+      online = { code: envoi.code, resultat: null, erreur: e.message, avec: envoi.avec,
+        mien: envoi.mien, renvoi: !definitif };
+      ecran = 'dres'; render();
+    });
+}
+
+/* Un score resté en souffrance (appli refermée, réseau tombé pendant
+   l'envoi) : nouvelle tentative discrète à chaque ouverture de la page. */
+async function renvoyerScoreEnSouffrance() {
+  const p = envoiLire();
+  if (!p || !p.code || !p.corps) return;
+  if (Date.now() - (p.ts || 0) > 7 * 86400000) { envoiOubli(); return; } // le ménage serveur est passé
+  try {
+    await api('duel/' + p.code + '/score', p.corps);
+    envoiOubli();
+    amisLigne = null; amisErreur = null;   // les listes se rechargeront à jour
+    if (ecran === 'dmenu' || ecran === 'accueil') render();
+  } catch (e) {
+    if (e.status && e.status >= 400 && e.status < 500 && e.status !== 429) envoiOubli();
+  }
 }
 
 function vueFin() {
@@ -1477,6 +1539,23 @@ function render() {
       erreurLigne(e.message);
     }
   }));
+  // …et jouer MON épreuve restée sans score (lancée puis interrompue) : le
+  // serveur reconnaît le créateur connecté, la clé d'origine n'est plus
+  // indispensable — même depuis un autre appareil.
+  el.querySelectorAll('[data-dueljouer]').forEach(b => b.addEventListener('click', async () => {
+    el.querySelectorAll('[data-dueljouer]').forEach(x => { x.disabled = true; });
+    try {
+      const code = b.dataset.dueljouer;
+      const r = await api('duel/' + code);
+      if (r.p1 && r.p1.score !== null) throw new Error('Ton score est déjà posé — actualise la liste.');
+      const garde = duelLire();
+      demarrerServi(r.deck, r.mode, { code: code, cle: garde && garde.code === code ? garde.cle : null,
+        pseudo: monPseudo(), mien: 'p1', avec: b.dataset.avec || null });
+    } catch (e) {
+      el.querySelectorAll('[data-dueljouer]').forEach(x => { x.disabled = false; });
+      erreurLigne(e.message);
+    }
+  }));
   const actualiser = el.querySelector('[data-actualiser]');
   if (actualiser) actualiser.addEventListener('click', () => { amisLigne = null; amisErreur = null; render(); });
   // Revoir un de MES duels — en attente ou fini : l'écran de résultat,
@@ -1603,6 +1682,15 @@ function render() {
   });
 
   // l'écran de résultat de défi s'actualise tant que l'adversaire manque
+  // « Réessayer l'envoi » : le score joué attend dans le filet (envoiLire).
+  const renvoi = el.querySelector('[data-renvoi]');
+  if (renvoi) renvoi.addEventListener('click', () => {
+    const p = envoiLire();
+    if (!p || p.code !== online.code) { online.erreur = 'Cet envoi n\'est plus là — rouvre le duel depuis la liste.'; online.renvoi = false; render(); return; }
+    renvoi.disabled = true; renvoi.textContent = 'Envoi…';
+    posterScoreDuel(p);
+  });
+
   if (ecran === 'dres' && online && !online.erreur && !minuterie) pollDemarre();
 
   // Connecté, l'accueil et le menu de défi savent qui sont tes amis et si
@@ -1665,6 +1753,7 @@ if (/^FD-[A-Z2-9]{5}$/.test(duelDirect)) {
 }
 render();
 verifierRepriseDuel();  // et le défi qu'on a lancé, s'il en reste un
+renvoyerScoreEnSouffrance(); // un score joué jamais confirmé repart tout seul
 if (!online) verifierRepriseAnim(); // pas de projection en cours : propose la reprise si besoin
 </script>
 </body>

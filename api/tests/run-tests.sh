@@ -928,18 +928,22 @@ api GET "/api/epreuve/duel/$EDCODE" > /dev/null
 check "le duel porte le pseudo du compte" Alice "$(jval .p1.pseudo)"
 check "et nomme l'invité"               Benoît "$(jval .invite)"
 
-say "Défis d'épreuve entre amis — l'invité les retrouve (GET /api/epreuve/defis)"
+say "Défis d'épreuve entre amis — livré à l'invité UNE FOIS l'épreuve du lanceur passée"
 check "sans session → 401"              401 "$(api GET /api/epreuve/defis)"
 check "u2 les liste → 200"              200 "$(api GET /api/epreuve/defis "$TOKEN2")"
-check "un défi l'attend"                1 "$(jval '.defis | length')"
+# Alice n'a pas encore joué : son défi ne doit PAS être livré — un duel
+# abandonné à la création devenait un « fantôme », fini avec un score « – ».
+check "Alice n'a pas joué : rien chez u2"  0 "$(jval '.defis | length')"
+check "u1 pose son score (clé) → 200"   200 "$(api POST "/api/epreuve/duel/$EDCODE/score" '' "{\"score\":2,\"cle\":\"$EDCLE\"}")"
+check "u2 les liste → 200"              200 "$(api GET /api/epreuve/defis "$TOKEN2")"
+check "un défi l'attend désormais"      1 "$(jval '.defis | length')"
 check "→ le bon code"                   "$EDCODE" "$(jval '.defis[0].code')"
 check "→ lancé par Alice"               Alice "$(jval '.defis[0].de')"
 check "→ le bon mode"                   "Qui a dit ça ?" "$(jval '.defis[0].mode')"
 check "u1 (créateur), lui, n'a rien"    0 "$(api GET /api/epreuve/defis "$TOKEN1" > /dev/null; jval '.defis | length')"
 check "u3 non plus"                     0 "$(api GET /api/epreuve/defis "$TOKEN3" > /dev/null; jval '.defis | length')"
 
-say "Défis d'épreuve entre amis — les deux jouent, le défi quitte la liste"
-check "u1 pose son score (clé) → 200"   200 "$(api POST "/api/epreuve/duel/$EDCODE/score" '' "{\"score\":2,\"cle\":\"$EDCLE\"}")"
+say "Défis d'épreuve entre amis — l'invité joue, le défi quitte la liste"
 check "u2 pose le sien (pseudo) → 200"  200 "$(api POST "/api/epreuve/duel/$EDCODE/score" '' '{"score":3,"pseudo":"Benoît"}')"
 check "les deux scores sont là"         3 "$(jval .p2.score)"
 check "la liste de u2 est vide"         0 "$(api GET /api/epreuve/defis "$TOKEN2" > /dev/null; jval '.defis | length')"
@@ -948,7 +952,8 @@ say "Défis d'épreuve — annuler un défi jamais relevé"
 check "u1 lance un défi visé sur u2 → 200" 200 "$(api POST /api/epreuve/duel "$TOKEN1" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"$FCODE2\"}")"
 ANCODE="$(jval .code)"
 ANCLE="$(jval .cle)"
-check "il attend bien u2"               1 "$(api GET /api/epreuve/defis "$TOKEN2" > /dev/null; jval '.defis | length')"
+api POST "/api/epreuve/duel/$ANCODE/score" '' "{\"score\":1,\"cle\":\"$ANCLE\"}" > /dev/null
+check "joué par u1, il attend bien u2"  1 "$(api GET /api/epreuve/defis "$TOKEN2" > /dev/null; jval '.defis | length')"
 check "annuler sans la clé → 403"       403 "$(api POST "/api/epreuve/duel/$ANCODE/annuler" '' '{"cle":"mauvaise"}')"
 check "annuler avec la clé → 200"       200 "$(api POST "/api/epreuve/duel/$ANCODE/annuler" '' "{\"cle\":\"$ANCLE\"}")"
 check "le code n'existe plus → 404"     404 "$(api GET "/api/epreuve/duel/$ANCODE")"
@@ -960,7 +965,9 @@ say "Défis d'épreuve entre amis — la Frise aussi (FD-), et le défi par code
 FDECK='[{"t":"Création","r":null,"o":1},{"t":"Déluge","r":null,"o":2},{"t":"Abraham","r":null,"o":3},{"t":"Moïse","r":null,"o":4}]'
 check "u2 défie u1 sur la Frise → 200"  200 "$(api POST /api/frise/duel "$TOKEN2" "{\"mode\":\"Livres · toute la Bible\",\"deck\":$FDECK,\"opponentCode\":\"$FCODE1\"}")"
 FDCODE="$(jval .code)"
-check "u1 le retrouve dans ses défis"   "$FDCODE" "$(api GET /api/epreuve/defis "$TOKEN1" > /dev/null; jval '.defis[0].code')"
+FDCLE="$(jval .cle)"
+api POST "/api/frise/duel/$FDCODE/score" '' "{\"score\":2,\"cle\":\"$FDCLE\"}" > /dev/null
+check "u2 a joué : u1 le retrouve dans ses défis" "$FDCODE" "$(api GET /api/epreuve/defis "$TOKEN1" > /dev/null; jval '.defis[0].code')"
 api POST /api/epreuve/duel '' "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"pseudo\":\"Zoé\"}" > /dev/null
 ANONCODE="$(jval .code)"
 check "duel par code : invite null"     null "$(api GET "/api/epreuve/duel/$ANONCODE" > /dev/null; jval .invite)"
@@ -1048,6 +1055,24 @@ check "vu de u3, en miroir : 1-0 pour u1" "1/0/1/0" "$(jq -r '[.friends[] | sele
 # L'amitié d'essai se referme (le bilan, lui, reste en base — c'est le but) ;
 # la suite compte plus bas les amis de u1, qui doivent revenir à leur état.
 api DELETE "/api/friends/$FCODE3" "$TOKEN1" > /dev/null
+
+# ---------------------------------------------------------------------------
+# Le duel fantôme, réparé de bout en bout : un défi lancé puis jamais joué
+# n'est pas livré ; s'il est joué quand même (par code), le fil n'avance pas
+# sur un score absent ; et le créateur CONNECTÉ pose son score après coup,
+# sans la clé — son compte suffit — ce qui termine vraiment le duel.
+say "Défis d'épreuve — plus de duel fantôme : le créateur rattrape son score sans clé"
+api POST /api/epreuve/duel "$TOKEN1" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"$FCODE2\"}" > /dev/null
+GHCODE="$(jval .code)"
+AVANT="$(api GET /api/friends "$TOKEN1" > /dev/null; jq -r '[.friends[] | select(.friendCode == "'"$FCODE2"'")][0].duels.joues' "$TMP/body.json")"
+check "pas joué par u1 : invisible pour u2" 0 "$(api GET /api/epreuve/defis "$TOKEN2" > /dev/null; jq -r '[.defis[] | select(.code == "'"$GHCODE"'")] | length' "$TMP/body.json")"
+check "u2, connecté mais pas créateur, joue par code : case 2 → 200" 200 "$(api POST "/api/epreuve/duel/$GHCODE/score" "$TOKEN2" '{"score":1,"pseudo":"Benoît"}')"
+check "→ bien posé côté invité"         Benoît "$(jval .p2.pseudo)"
+check "le fil n'a PAS avancé (pas de défaite sur un score absent)" "$AVANT" "$(api GET /api/friends "$TOKEN1" > /dev/null; jq -r '[.friends[] | select(.friendCode == "'"$FCODE2"'")][0].duels.joues' "$TMP/body.json")"
+check "u1 pose son score sans clé (son compte suffit) → 200" 200 "$(api POST "/api/epreuve/duel/$GHCODE/score" "$TOKEN1" '{"answers":[0,1,0]}')"
+check "→ posé côté créateur, rejoué : 3" 3 "$(jval .p1.score)"
+check "→ le fil avance MAINTENANT, d'un seul cran" "$((AVANT + 1))" "$(api GET /api/friends "$TOKEN1" > /dev/null; jq -r '[.friends[] | select(.friendCode == "'"$FCODE2"'")][0].duels.joues' "$TMP/body.json")"
+check "u1 re-pose (case déjà écrite) → 409" 409 "$(api POST "/api/epreuve/duel/$GHCODE/score" "$TOKEN1" '{"score":1}')"
 
 say "Groupes d'église — la création directe est fermée (le message oriente)"
 check "POST /api/groupes sans compte → 401" 401 "$(api POST /api/groupes '' '{"nom":"Béthel"}')"
