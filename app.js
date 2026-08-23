@@ -388,6 +388,7 @@ function schedule(card, quality) {
   if (!isMastered(card)) card.interval = Math.min(card.interval, 3);
   card.interval = Math.min(card.interval, 365);
   card.due = t + card.interval;
+  card.revisedAt = t; // jour de la dernière révision — départage la fusion (voir mergeMemo)
 }
 function stageOf(card) {
   if (card.interval <= 3) return { iconName: 'germe', label: 'Germe' };
@@ -1396,9 +1397,15 @@ function minN(a, b) { if (!isNum(a)) return isNum(b) ? b : undefined; if (!isNum
 const setIf = (obj, key, v) => { if (v !== undefined) obj[key] = v; };
 
 // memo (graine.v3) — union des cards ; par card commune : max(validations),
-// max(attempts), min(due) (le plus prudent : elle revient plus tôt),
-// max(lapses/ease/interval) ; streak/bestStreak/activeDays = max ;
-// union des collections complétées ; objectif local prioritaire.
+// max(attempts/lapses) ; le bloc de planification (due/interval/ease) vient
+// ENTIER du côté révisé le plus récemment (revisedAt), car ces trois champs
+// se calculent ensemble — et surtout, min(due) seul empêchait la date
+// d'avancer : le pull précédant toujours le push, chaque synchro ressuscitait
+// la date d'avant-session et les versets restaient dus pour toujours.
+// Sans revisedAt d'aucun côté (anciennes données), ou à égalité, on garde la
+// règle prudente historique : min(due), max(ease/interval).
+// streak/bestStreak/activeDays = max ; union des collections complétées ;
+// objectif local prioritaire.
 function mergeMemo(local, server) {
   if (!server || typeof server !== 'object') return deepCopy(local);
   if (!local || typeof local !== 'object') return deepCopy(server);
@@ -1410,11 +1417,23 @@ function mergeMemo(local, server) {
     if (!lc || typeof lc !== 'object') { out.cards[id] = sc; continue; }
     lc.validations = maxN(lc.validations, sc.validations) || 0;
     lc.attempts = maxN(lc.attempts, sc.attempts) || 0;
-    setIf(lc, 'due', minN(lc.due, sc.due));
     setIf(lc, 'lapses', maxN(lc.lapses, sc.lapses));
-    setIf(lc, 'ease', maxN(lc.ease, sc.ease));
-    setIf(lc, 'interval', maxN(lc.interval, sc.interval));
     setIf(lc, 'addedDay', minN(lc.addedDay, sc.addedDay));
+    // Planification : le côté révisé le plus récemment gagne due/interval/ease
+    // d'un bloc. Un côté sans revisedAt n'a pas révisé depuis ce correctif :
+    // il est forcément moins récent qu'un côté qui l'a.
+    const lr = isNum(lc.revisedAt) ? lc.revisedAt : -1;
+    const sr = isNum(sc.revisedAt) ? sc.revisedAt : -1;
+    if (sr > lr) {
+      setIf(lc, 'due', sc.due);
+      setIf(lc, 'interval', sc.interval);
+      setIf(lc, 'ease', sc.ease);
+      lc.revisedAt = sr;
+    } else if (lr === sr) {
+      setIf(lc, 'due', minN(lc.due, sc.due));
+      setIf(lc, 'ease', maxN(lc.ease, sc.ease));
+      setIf(lc, 'interval', maxN(lc.interval, sc.interval));
+    } // lr > sr : le local, plus récent, garde son bloc tel quel
   }
   const ls = out.streak && typeof out.streak === 'object' ? out.streak : {};
   const ss = srv.streak && typeof srv.streak === 'object' ? srv.streak : {};
