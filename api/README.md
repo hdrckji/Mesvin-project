@@ -284,6 +284,23 @@ base contenant quoi que ce soit d'utile. Une seconde base suffixée `_mig` (ici
 `bh_test_mig`) sert au contrôle de migration et doit être accessible au même
 compte.
 
+### Ce que la production servira vraiment
+
+`api/tests/parite-image.mjs` reconstitue `/app/public` à partir des seules
+directives `COPY` du Dockerfile, puis vérifie que tout ce que le code **réclame**
+s'y trouve : la coquille du service worker, les livres bibliques, les icônes du
+manifeste, et chaque ressource référencée par chaque page. Un filet inverse
+ferme la boucle — ce que les tests servent et que l'image n'a pas.
+
+C'est le seul garde-fou contre le piège que le Dockerfile signale lui-même : la
+copie y est **explicite**, alors que `php -S` sert tout le dépôt. Un fichier
+ajouté à la racine et oublié dans le `COPY` laisse donc la suite verte de bout
+en bout et manque en ligne — où `addAll()`, qui est **atomique**, échoue alors
+en bloc : plus aucun hors-ligne, sans un mot à l'écran.
+
+Ni serveur ni navigateur : quelques millisecondes de lecture de fichiers. Il
+tourne à chaque passe.
+
 ### Les veillées dans un vrai navigateur
 
 Une veillée se joue sur **trois écrans à la fois** : le téléphone de
@@ -306,3 +323,30 @@ BH_PLAYWRIGHT=/chemin/vers/node_modules bash api/tests/run-tests.sh
 
 Le scénario ouvre sa propre session d'animateur (mode dev) et donne à chaque
 participant son propre contexte de navigateur — c'est-à-dire son téléphone.
+
+### Mémoriser, et la vitrine
+
+Deux scénarios plus récents comblent des angles morts de longue date.
+
+`navigateur/memorisation.mjs` — **Mémoriser est le module racine, et sa
+planification ne parle à aucune route** : elle vit entièrement dans `app.js`.
+La suite d'endpoints pouvait donc rester verte pendant que la répétition
+espacée, c'est-à-dire le cœur du produit, dérivait sans que rien ne le dise.
+Le scénario appelle le vrai `schedule()` depuis la page — pas une copie
+recollée, qui ne prouverait que sa propre cohérence. Il fige des valeurs
+(3 jours, ×2,5, plafond à 365) : le jour où l'on retouche **délibérément** la
+courbe, il passe au rouge et les valeurs sont à reprendre. C'est voulu — on
+veut être prévenu quand on change la courbe.
+
+`navigateur/pages.mjs` — les six autres scénarios éprouvent des *parcours* et
+visitent surtout les écrans de l'appli. Restaient les pages qu'aucun test ne
+touchait : référencement et pages légales, la vitrine publique. Une page cassée
+là ne gêne aucun utilisateur connecté ; personne ne s'en aperçoit. La liste
+n'est pas écrite en dur — les pages sont découvertes sur le disque, pour qu'une
+page ajoutée demain soit couverte sans que personne y pense.
+
+Les erreurs de console y sont **rapportées, jamais fatales** : un avertissement
+de navigateur rendrait le test rouge sans qu'aucun défaut existe, et un test qui
+crie pour rien finit par ne plus être lu. Ce qui échoue, ce sont les faits durs —
+la page ne répond pas, ne se peint pas, lève une exception, ou réclame un
+fichier qui n'existe pas.
