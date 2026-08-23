@@ -376,7 +376,14 @@ const isMastered = c => c.validations >= MASTERY;
 function schedule(card, quality) {
   // quality: 'fail' | 'ok' | 'clean'
   const t = todayNum();
-  if (quality === 'fail') { card.ease = Math.max(EASE_MIN, card.ease - 0.2); card.interval = 1; }
+  if (quality === 'fail') {
+    card.ease = Math.max(EASE_MIN, card.ease - 0.2);
+    // Un oubli ne repart plus de zéro : le verset redescend d'un cran
+    // (intervalle divisé par deux) au lieu de retomber à 1 jour. Le plafond
+    // d'apprentissage ci-dessous borne ensuite le retour à 3 jours — c'est
+    // voulu : un verset qu'on vient de rater a besoin de contacts rapprochés.
+    card.interval = Math.max(1, Math.round((card.interval || 0) / 2));
+  }
   else {
     const step = card.validations; // déjà incrémenté avant l'appel
     if (step <= 1) card.interval = 1;
