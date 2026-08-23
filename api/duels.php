@@ -23,18 +23,57 @@ const DUEL_MAX_PER_LEVEL    = 4;
 /* ---- Tirage des questions -------------------------------------------------- */
 
 /**
+ * Les filtres OPTIONNELS d'un duel : la catégorie doit exister dans la
+ * banque (liste blanche — jamais une chaîne prise telle quelle), le niveau
+ * tenir dans 1..3. 400 sinon. Retourne [catégorie|null, niveau|null].
+ */
+function duel_filtres(array $bank, array $body): array {
+    $categorie = null;
+    $niveau = null;
+    if (isset($body['categorie'])) {
+        if (!is_string($body['categorie'])) {
+            json_error('Catégorie invalide.', 400);
+        }
+        $categorie = trim($body['categorie']);
+        $connues = [];
+        foreach ($bank as $q) {
+            $connues[(string) ($q['categorie'] ?? '')] = true;
+        }
+        if ($categorie === '' || !isset($connues[$categorie])) {
+            json_error('Catégorie inconnue.', 400);
+        }
+    }
+    if (isset($body['niveau'])) {
+        if (!is_int($body['niveau']) || $body['niveau'] < 1 || $body['niveau'] > 3) {
+            json_error('Niveau invalide (1 à 3).', 400);
+        }
+        $niveau = $body['niveau'];
+    }
+    return [$categorie, $niveau];
+}
+
+/**
  * Tire 10 questions variées de la banque et fixe l'ordre des options.
  * Chaque entrée stockée : { id, question, options[4], bonne, reference }
  * (bonne = index de la bonne réponse APRÈS mélange des options).
+ * Un filtre (catégorie, niveau) restreint le vivier — et lève alors le
+ * quota correspondant, sinon rien ne pourrait sortir d'une seule catégorie.
  */
-function duel_pick_questions(PDO $pdo): array {
+function duel_pick_questions(PDO $pdo, ?string $categorie = null, ?int $niveau = null): array {
     $all = quiz_bank($pdo);
+    if ($categorie !== null) {
+        $all = array_values(array_filter($all, fn (array $q): bool => (string) ($q['categorie'] ?? '') === $categorie));
+    }
+    if ($niveau !== null) {
+        $all = array_values(array_filter($all, fn (array $q): bool => (int) ($q['niveau'] ?? 0) === $niveau));
+    }
     if (count($all) < DUEL_QUESTION_COUNT) {
-        throw new RuntimeException('Banque de questions incomplète.');
+        json_error('Pas assez de questions dans ce choix (' . count($all)
+            . ') — élargis la catégorie ou le niveau.', 400);
     }
 
-    // Variété : on mélange toute la banque, puis on prend au plus
-    // 2 questions par catégorie et 4 par niveau, jusqu'à en avoir 10.
+    // Variété : on mélange le vivier, puis on prend au plus 2 questions par
+    // catégorie et 4 par niveau (quota levé sur l'axe déjà filtré).
     shuffle($all);
     $picked = [];
     $perCategory = [];
@@ -42,8 +81,8 @@ function duel_pick_questions(PDO $pdo): array {
     foreach ($all as $q) {
         $cat = (string) ($q['categorie'] ?? '');
         $lvl = (int) ($q['niveau'] ?? 0);
-        if (($perCategory[$cat] ?? 0) >= DUEL_MAX_PER_CATEGORY) continue;
-        if (($perLevel[$lvl] ?? 0) >= DUEL_MAX_PER_LEVEL) continue;
+        if ($categorie === null && ($perCategory[$cat] ?? 0) >= DUEL_MAX_PER_CATEGORY) continue;
+        if ($niveau === null && ($perLevel[$lvl] ?? 0) >= DUEL_MAX_PER_LEVEL) continue;
         $picked[] = $q;
         $perCategory[$cat] = ($perCategory[$cat] ?? 0) + 1;
         $perLevel[$lvl] = ($perLevel[$lvl] ?? 0) + 1;
@@ -165,7 +204,8 @@ function duel_payload_detail(array $duel, array $user): array {
 
 function handle_duels_create(PDO $pdo): never {
     $user = require_user($pdo);
-    $code = normalize_friend_code(read_json_body()['opponentCode'] ?? null);
+    $body = read_json_body();
+    $code = normalize_friend_code($body['opponentCode'] ?? null);
     if ($code === null) {
         json_error('Code ami invalide (format attendu : GRN-XXXX).', 400);
     }
@@ -183,7 +223,8 @@ function handle_duels_create(PDO $pdo): never {
         json_error('Vous devez d\'abord être amis pour vous défier.', 403);
     }
 
-    $questions = duel_pick_questions($pdo);
+    [$categorie, $niveau] = duel_filtres(quiz_bank($pdo), $body);
+    $questions = duel_pick_questions($pdo, $categorie, $niveau);
     $st = $pdo->prepare(
         'INSERT INTO duels (challenger_id, opponent_id, questions_json, created_at)
          VALUES (?, ?, ?, ?)'

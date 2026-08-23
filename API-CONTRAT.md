@@ -253,6 +253,9 @@ par le client n'est jamais cru).
 Corps : `{ "opponentCode": "GRN-XXXX" }` (doit être un ami)
 → `{ "duel": { "id": 12, "opponent": { "pseudo": "..." }, "questions": [ { "id": "...", "question": "...", "options": [ ... ] } ] } }`
 (l'ordre des options est fixé par le serveur ; la bonne réponse n'est PAS envoyée)
+`categorie` et `niveau` (1..3) sont facultatifs : la catégorie est vérifiée
+en liste blanche contre la banque, le tirage reste fait PAR le serveur, et
+un choix qui ne laisse pas dix questions est refusé (400).
 
 ### GET /api/duels
 → `{ "duels": [ { "id": 12, "opponent": { "pseudo": "..." }, "iChallenged": true,

@@ -80,6 +80,21 @@ async function pageDe(session) {
   }
   return ctx.newPage();
 }
+/* Attendre que l'écran DISE quelque chose (plutôt que le lire une fois et
+   risquer la course d'un rendu) ; l'échec embarque l'écran réel. */
+async function attendreEcran(p, veut, m) {
+  try {
+    await p.waitForFunction(ms => {
+      const t = (document.body && document.body.textContent) || '';
+      return ms.every(x => t.includes(x));
+    }, veut, { timeout: 10000 });
+    ok(m);
+  } catch (e) {
+    const t = ((await p.textContent('body').catch(() => '')) || '').replace(/\s+/g, ' ').slice(0, 220);
+    raté(m + ' — écran réel : « ' + t + ' »');
+  }
+}
+
 async function jouerChoix(p) {
   await p.waitForSelector('.opts .opt', { timeout: 8000 });
   for (let i = 0; i < 10; i++) { await p.click('.opts .opt:first-child'); await p.click('[data-suiv]'); }
@@ -103,13 +118,12 @@ try {
   await pj.goto(BASE + '/quiadit/');
   await pj.click('[data-vers="dmenu"]');
   await pj.waitForSelector('.duel-row.ami', { timeout: 8000 });
-  const menu = (await pj.textContent('.fade')).replace(/\s+/g, ' ');
+  const menu = (await pj.textContent('.fade')).replace(/\s+/g, ' ');   // lecture unique voulue : écran stable
   attendu(menu.includes('Par code, même sans compte') && !menu.includes('Créer un défi '),
     'connecté : le « par code » est replié en une ligne');
   await pj.click('.duel-row.ami');
   await jouerChoix(pj);
-  let ecran = (await pj.textContent('.fade')).replace(/\s+/g, ' ');
-  attendu(ecran.includes('La revue, question par question') && /✓|✗/.test(ecran),
+  await attendreEcran(pj, ['La revue, question par question'],
     'le lanceur joue et reçoit sa revue, verdicts à l’appui');
 
   const pc = await pageDe({ token: cey.token, user: cey.user });
@@ -121,8 +135,7 @@ try {
     'l’invitée trouve « Jim — À toi de relever l’épreuve »');
   await pc.click('[data-defirecu]');
   await jouerChoix(pc);
-  ecran = (await pc.textContent('.fade')).replace(/\s+/g, ' ');
-  attendu(ecran.includes('Ton duel avec Jim') && ecran.includes('La revue'),
+  await attendreEcran(pc, ['Ton duel avec Jim', 'La revue'],
     'l’invitée aussi : « Ton duel avec Jim » et sa propre revue');
 
   /* ==== ÉPREUVE 2 — « Tes duels » dit qui a quoi, et le fil de l'amitié ===== */
@@ -156,6 +169,21 @@ try {
   await ph.waitForSelector('.card.attente', { timeout: 8000 });
   const restantes = await ph.$$eval('.card.attente', els => els.length);
   attendu(restantes === 1, 'le résultat consulté a quitté l’accueil, l’autre attend toujours');
+
+  /* ==== ÉPREUVE 4 — le duel du quiz choisit son terrain ===================== */
+  const pq = await pageDe({ token: jim.token, user: jim.user });
+  await pq.goto(BASE + '/defi/');
+  await pq.click('#btn-quiz');
+  await pq.click('#btn-ami');
+  await pq.waitForSelector('.duel-row.ami', { timeout: 8000 });
+  await pq.click('.duel-row.ami');
+  await pq.waitForSelector('#pills-dcat .pill', { timeout: 8000 });
+  await pq.waitForFunction(() => document.querySelectorAll('#pills-dcat .pill').length > 1, null, { timeout: 8000 });
+  ok('le tap sur l’ami ouvre le terrain : catégories et niveaux en pastilles');
+  await pq.click('#pills-dniv .pill:nth-child(2)');   // Découverte
+  await pq.click('#btn-duel-partir');
+  await pq.waitForSelector('.defi-option', { timeout: 8000 });
+  ok('« C’est parti » : le duel démarre sur le terrain choisi');
 
   /* ==== CONTRE-ÉPREUVES — ce qui doit rater, rate =========================== */
   // Le score annoncé ne vaut rien : les réponses tranchent.

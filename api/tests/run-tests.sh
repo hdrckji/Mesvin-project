@@ -401,6 +401,28 @@ check "u2 : myScore = $SCORE2"          "$SCORE2" "$(jval '.duels[0].myScore')"
 check "u2 : theirScore = $SCORE1"       "$SCORE1" "$(jval '.duels[0].theirScore')"
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Le terrain d'un duel : catégorie en LISTE BLANCHE, niveau borné, tirage
+# conforme — et refus propre quand le choix ne laisse pas dix questions.
+say "Duels — le choix du terrain (catégorie, niveau), tenu par le serveur"
+check "catégorie inconnue → 400"        400 "$(api POST /api/duels "$TOKEN1" "{\"opponentCode\":\"$FCODE2\",\"categorie\":\"Licornes\"}")"
+check "catégorie non-chaîne → 400"      400 "$(api POST /api/duels "$TOKEN1" "{\"opponentCode\":\"$FCODE2\",\"categorie\":7}")"
+check "niveau hors bornes → 400"        400 "$(api POST /api/duels "$TOKEN1" "{\"opponentCode\":\"$FCODE2\",\"niveau\":7}")"
+api GET /api/questions > /dev/null
+DCAT="$(jq -r '[.questions[] | .categorie] | group_by(.) | map({c: .[0], k: length}) | max_by(.k) | .c' "$TMP/body.json")"
+SPARSE="$(jq -r '[.questions[] | {c: .categorie, n: .niveau}] | group_by([.c, .n]) | map({c: .[0].c, n: .[0].n, k: length}) | map(select(.k < 10)) | first | if . == null then "" else (.c + "|" + (.n | tostring)) end' "$TMP/body.json")"
+check "création filtrée (catégorie la plus fournie) → 201" 201 "$(api POST /api/duels "$TOKEN1" "{\"opponentCode\":\"$FCODE2\",\"categorie\":\"$DCAT\"}")"
+QIDS_JSON="$(jq -c '[.duel.questions[].id]' "$TMP/body.json")"
+api GET /api/questions > /dev/null
+check "les 10 questions tirées respectent la catégorie" 10 \
+  "$(jq --argjson ids "$QIDS_JSON" --arg c "$DCAT" '[.questions[] | select((.id as $i | $ids | index($i)) and .categorie == $c)] | length' "$TMP/body.json")"
+if [ -n "$SPARSE" ]; then
+  check "choix trop étroit → 400 (pas assez de questions)" 400 \
+    "$(api POST /api/duels "$TOKEN1" "{\"opponentCode\":\"$FCODE2\",\"categorie\":\"${SPARSE%|*}\",\"niveau\":${SPARSE#*|}}")"
+else
+  ok "toutes les combinaisons de la banque ont ≥ 10 questions — pas de cas « trop étroit » à jouer"
+fi
+
 say "Config publique & connexion Google (non configurée en test)"
 check "GET /api/config → 200"           200  "$(api GET /api/config)"
 check "→ googleClientId null"           null "$(jval .googleClientId)"

@@ -229,6 +229,7 @@ function tirageCoop(filtres, n) {
 /* ---------- État de l'écran ---------- */
 let vue = { ecran: 'accueil' };
 let filtresLibre = { categorie: null, niveau: null };
+let filtresDuel = { categorie: null, niveau: null };   // le terrain des duels
 
 function demarrer(mode) {
   const items = tirage(mode, filtresLibre);
@@ -573,17 +574,76 @@ async function chargerDuels() {
   render();
 }
 
+/* ---------- Le terrain du duel : catégorie et niveau, comme le défi libre ----
+   Un écran LÉGER entre l'ami et le tirage — « Toutes / Tous » par défaut, un
+   seul geste de plus. Le serveur revalide tout : catégorie en liste blanche,
+   niveau borné, et refus si le choix ne laisse pas dix questions. */
+function ouvrirDuelPrep(code, pseudo) {
+  vue = { ecran: 'duelPrep', code: code, pseudo: pseudo, erreur: null };
+  if (!CATEGORIES.length) {
+    chargerBanque().then(() => { if (vue.ecran === 'duelPrep') render(); }).catch(() => {});
+  }
+  render();
+}
+
 /* ---------- Créer un duel puis relever sa part tout de suite ---------- */
-async function nouveauDuel(code) {
+async function nouveauDuel(code, pseudo) {
   vue = { ecran: 'duels', chargement: true, amis: null, duels: null, erreur: null };
   render();
   try {
-    const duel = await GraineAPI.createDuel(code);
+    const duel = await GraineAPI.createDuel(code, filtresDuel);
     demarrerDuelDistant(duel, null);
   } catch (e) {
-    vue = { ecran: 'duels', chargement: false, amis: null, duels: null, erreur: messageDoux(e) };
+    if (e && e.status === 400) {
+      // Choix trop étroit ou refusé : retour au terrain, message à l'appui.
+      vue = { ecran: 'duelPrep', code: code, pseudo: pseudo, erreur: messageDoux(e) };
+    } else {
+      vue = { ecran: 'duels', chargement: false, amis: null, duels: null, erreur: messageDoux(e) };
+    }
     render();
   }
+}
+
+function renderDuelPrep() {
+  el.innerHTML = `
+  <div class="fade">
+    <button class="back-link" id="btn-retour-duels">‹ Défier un ami</button>
+    <div class="topbar">
+      <div class="brand">
+        <h1 class="app-title">Défier ${esc(vue.pseudo || 'un ami')} <span class="seed">•</span> <span class="muted">mêmes questions pour vous deux</span></h1>
+      </div>
+    </div>
+    <div class="card">
+      <p class="defi-lead">Choisis le terrain — ou laisse tout ouvert, le tirage reste équilibré.</p>
+      <div class="defi-filters">
+        <label class="lbl">Catégorie</label>
+        <div class="pill-row" id="pills-dcat">
+          <button class="pill ${filtresDuel.categorie === null ? 'on' : ''}" data-cat="">Toutes</button>
+          ${CATEGORIES.length
+            ? CATEGORIES.map(c => `<button class="pill ${filtresDuel.categorie === c ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('')
+            : '<span class="muted" style="font-size:.82rem">Un instant…</span>'}
+        </div>
+        <label class="lbl">Niveau</label>
+        <div class="pill-row" id="pills-dniv">
+          <button class="pill ${filtresDuel.niveau === null ? 'on' : ''}" data-niv="">Tous</button>
+          ${[1, 2, 3].map(n => `<button class="pill ${filtresDuel.niveau === n ? 'on' : ''}" data-niv="${n}">${NIVEAUX[n]}</button>`).join('')}
+        </div>
+      </div>
+      ${vue.erreur ? `<p class="defi-lead" style="font-weight:650;margin-top:10px">${esc(vue.erreur)}</p>` : ''}
+      <div class="defi-actions">
+        <button class="btn btn-primary btn-block" id="btn-duel-partir">C'est parti — dix questions</button>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('btn-retour-duels').onclick = ouvrirDuels;
+  document.querySelectorAll('#pills-dcat .pill').forEach(b => {
+    b.onclick = () => { filtresDuel.categorie = b.dataset.cat || null; renderDuelPrep(); };
+  });
+  document.querySelectorAll('#pills-dniv .pill').forEach(b => {
+    b.onclick = () => { filtresDuel.niveau = b.dataset.niv ? Number(b.dataset.niv) : null; renderDuelPrep(); };
+  });
+  document.getElementById('btn-duel-partir').onclick = () => nouveauDuel(vue.code, vue.pseudo);
 }
 
 /* ---------- Ouvrir un duel existant (relever ma part, ou voir le résultat) ---------- */
@@ -788,6 +848,7 @@ function render() {
   if (vue.ecran === 'mfin') return m.mode === 'compet' ? renderFinCompet() : renderFinCoop();
   if (vue.ecran === 'duelCompte') return renderDuelCompte();
   if (vue.ecran === 'duels') return renderDuels();
+  if (vue.ecran === 'duelPrep') return renderDuelPrep();
   if (vue.ecran === 'duelQuestion') return vue.recap ? renderDuelEnvoi() : renderDuelQuestion();
   if (vue.ecran === 'duelReview') return renderDuelReview();
   if (vue.ecran === 'veillee') return renderVeillee();
@@ -1520,7 +1581,10 @@ function renderDuels() {
   const ip = document.getElementById('btn-inviter-proche');
   if (ip) ip.onclick = () => partager(texteInvitationDuel());
   document.querySelectorAll('.duel-row.ami').forEach(b => {
-    b.onclick = () => nouveauDuel(b.dataset.code);
+    b.onclick = () => {
+      const a = amis.find(x => x.friendCode === b.dataset.code);
+      ouvrirDuelPrep(b.dataset.code, a ? a.pseudo : '');
+    };
   });
   document.querySelectorAll('.duel-row[data-id]').forEach(b => {
     b.onclick = () => {

@@ -108,7 +108,14 @@
     async removeFriend(code) { return call('DELETE', '/api/friends/' + encodeURIComponent(code)); },
 
     /* ---- duels ---- */
-    async createDuel(opponentCode) { return (await call('POST', '/api/duels', { opponentCode })).duel; },
+    // filtres facultatifs { categorie, niveau } : le serveur les valide (liste
+    // blanche) et tire les mêmes dix questions pour les deux joueurs.
+    async createDuel(opponentCode, filtres) {
+      const corps = { opponentCode };
+      if (filtres && filtres.categorie) corps.categorie = filtres.categorie;
+      if (filtres && filtres.niveau) corps.niveau = filtres.niveau;
+      return (await call('POST', '/api/duels', corps)).duel;
+    },
     // Les défis d'ÉPREUVE (quiadit, ecritoupas, portrait, frise) : `defis` =
     // lancés par un ami et qui m'attendent, `duels` = les miens (lancés ou
     // relevés, en attente ou finis). Toutes épreuves confondues — chaque page
