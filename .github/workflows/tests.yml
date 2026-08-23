@@ -23,7 +23,12 @@ on:
 jobs:
   suite:
     name: SQLite puis MySQL, navigateur compris
-    runs-on: ubuntu-latest
+    # Version FIGÉE, et pas « latest » : c'est elle qui garantit que php8.3 —
+    # celui de la production — reste disponible dans l'archive de la
+    # distribution. Le jour où l'on passe à une Ubuntu plus récente, il faudra
+    # vérifier que le PHP de production s'y installe encore ; l'étape
+    # « Vérifier l'outillage » ci-dessous le dira sans détour.
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
 
     services:
@@ -47,19 +52,32 @@ jobs:
         with:
           node-version: '22'
 
-      # Les extensions PDO des deux dialectes, plus `jq` et le client MySQL
-      # dont se sert la suite. Aucune action tierce : que des paquets de la
-      # distribution.
+      # PHP est demandé par sa version EXACTE, celle que le Dockerfile envoie en
+      # production — pas le « php-cli » générique de la distribution. La nuance
+      # n'est pas cosmétique : la table des plages réservées de
+      # FILTER_FLAG_NO_RES_RANGE a changé entre 8.3 et 8.4, et client_ip() s'y
+      # appuie pour décider quelle adresse porte les plafonds anti-abus. Tester
+      # sur une autre version, c'est tester un autre logiciel.
       - name: Outils
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq php-cli php-sqlite3 php-mysql jq default-mysql-client
+          sudo apt-get install -y -qq php8.3-cli php8.3-sqlite3 php8.3-mysql jq default-mysql-client
+          sudo update-alternatives --set php /usr/bin/php8.3
 
       # Mieux vaut échouer ici, en trois lignes lisibles, qu'au milieu de la
-      # suite sur une erreur de driver PDO.
+      # suite sur une erreur de driver PDO — ou pire, sur une divergence de
+      # version qu'on mettrait une heure à comprendre.
       - name: Vérifier l'outillage
         run: |
           php -v | head -1
+          ATTENDUE=$(grep -oE 'frankenphp:[0-9]+-php[0-9]+\.[0-9]+' Dockerfile | grep -oE '[0-9]+\.[0-9]+$')
+          OBTENUE=$(php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;')
+          if [ "$ATTENDUE" != "$OBTENUE" ]; then
+            echo "::error::PHP $OBTENUE ici, mais le Dockerfile déploie PHP $ATTENDUE."
+            echo "::error::Aligner ce workflow sur le Dockerfile — sinon la CI valide un autre logiciel que celui qui part en ligne."
+            exit 1
+          fi
+          echo "  php $OBTENUE — la version que le Dockerfile déploie"
           for ext in pdo_sqlite pdo_mysql openssl; do
             php -m | grep -qx "$ext" || { echo "::error::extension PHP manquante : $ext"; exit 1; }
             echo "  php: $ext ok"

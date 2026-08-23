@@ -2405,8 +2405,17 @@ check "1 relais : « 1.2.3.4, 5.6.7.8 » → 5.6.7.8" 5.6.7.8 \
   "$(retenue $PORT_RELAIS '1.2.3.4, 5.6.7.8')"
 check "on lit À DROITE, quelle que soit la longueur" 9.9.9.9 \
   "$(retenue $PORT_RELAIS '1.2.3.4, 5.6.7.8, 9.9.9.9')"
-check "1 relais : IPv6 acceptée"            2001:db8::1 \
-  "$(retenue $PORT_RELAIS '1.2.3.4, 2001:db8::1')"
+# SURTOUT PAS 2001:db8::1 ici. C'est le préfixe de DOCUMENTATION (RFC 3849) :
+# par définition ce n'est pas une adresse publique, et ip_interne() a donc
+# raison de la ranger parmi les internes — ce que PHP 8.3 fait et PHP 8.4 ne
+# fait plus. L'assertion passait donc sur une machine en 8.4 et tombait sur la
+# version de la PRODUCTION (Dockerfile : frankenphp:1-php8.3).
+# L'adresse ci-dessous est une vraie adresse d'abonné, publique sur les deux
+# versions, et c'est bien ce que la ligne veut éprouver : l'IPv6 d'un visiteur
+# est retenue. Ne pas ajouter d'assertion sur le sort d'une adresse de
+# documentation : il dépend de la version de PHP, et aucun visiteur n'en a.
+check "1 relais : IPv6 publique acceptée"   2a01:e0a:1de:3cf0::1 \
+  "$(retenue $PORT_RELAIS '1.2.3.4, 2a01:e0a:1de:3cf0::1')"
 check "valeur non-IP → repli sur REMOTE_ADDR" 127.0.0.1 \
   "$(retenue $PORT_RELAIS '1.2.3.4, pas-une-ip')"
 check "en-tête malformé (virgule en trop) → repli" 127.0.0.1 \
