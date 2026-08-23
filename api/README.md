@@ -301,6 +301,42 @@ en bloc : plus aucun hors-ligne, sans un mot à l'écran.
 Ni serveur ni navigateur : quelques millisecondes de lecture de fichiers. Il
 tourne à chaque passe.
 
+### Et après la mise en ligne : la sonde de production
+
+```bash
+bash api/tests/sonde-production.sh            # https://biblehorizon.fr
+bash api/tests/sonde-production.sh https://…  # ou une autre adresse
+```
+
+`parite-image.mjs` raisonne sur un **modèle** du Dockerfile ; cette sonde-ci
+interroge l'image **telle qu'elle tourne**. C'est la différence entre « d'après
+mes calculs le fichier devrait y être » et « je viens de le demander, il y est ».
+
+Elle couvre surtout ce qu'aucun autre test ne peut voir, parce que ça n'existe
+que dans le Caddyfile : les **en-têtes de sécurité** (CSP, HSTS, X-Frame-Options,
+Referrer-Policy, Permissions-Policy), les **14 redirections 301**, et le
+`Cache-Control: no-store` sur `/api/*`. Le serveur de test, lui, n'en pose aucun.
+Puis elle demande les 38 entrées de la coquille et les 66 livres **un par un sur
+le domaine**, contrôle le manifeste et ses icônes, `assetlinks.json`, et vérifie
+que `/api/db.php` n'est toujours pas servi tel quel.
+
+Enfin elle répond à la question qu'on se pose vraiment après un `git push` :
+**ma version est-elle en ligne ?** — en comparant le numéro de cache du `sw.js`
+servi à celui du dépôt.
+
+**Strictement en lecture** : que des `GET` et des `HEAD`. Aucune écriture, aucune
+authentification, aucun compte créé, aucun e-mail déclenché. On peut la lancer
+sur la production en pleine journée sans rien déranger — c'est ce que fait
+n'importe quel visiteur.
+
+Elle n'a **pas** sa place dans la CI, qui n'a aucune raison d'aller taper le
+domaine à chaque poussée : c'est un contrôle d'après-déploiement, lancé à la main.
+
+Et surtout : **ne jamais pointer `run-tests.sh` sur la production.** La suite
+vide la base à chaque passe, tourne en mode dev (où le code de connexion est
+renvoyé dans la réponse) et envoie de vrais e-mails. La sonde est la seule
+chose de ce dossier qui puisse regarder le domaine en ligne.
+
 ### Les veillées dans un vrai navigateur
 
 Une veillée se joue sur **trois écrans à la fois** : le téléphone de
