@@ -147,9 +147,14 @@ function epreuve_mes_defis(PDO $pdo): never {
     frise_menage($pdo);
     $defis = [];
     foreach (['epreuve_duels', 'frise_duels'] as $table) {
+        // p1_score exigé : un défi n'est présenté à l'ami qu'une fois
+        // l'épreuve du lanceur passée. Avant, un duel créé puis abandonné
+        // (appli fermée, envoi perdu) arrivait quand même chez l'invité —
+        // qui le jouait et le figeait en « terminé » avec un score « – »
+        // définitif pour le lanceur.
         $st = $pdo->prepare(
             "SELECT code, mode, total, p1_pseudo, created_at FROM $table
-             WHERE p2_user = ? AND p2_pseudo IS NULL"
+             WHERE p2_user = ? AND p2_pseudo IS NULL AND p1_score IS NOT NULL"
         );
         $st->execute([$user['id']]);
         foreach ($st->fetchAll() as $row) {
@@ -405,11 +410,30 @@ function epreuve_rejoue_frise(array $deck, array $answers): array {
     return [$score, $norm];
 }
 
-/** Même règle que la Frise : la clé → case 1 ; sans clé → case 2, une fois.
- *  Avec `answers`, le score est REJOUÉ ici (jamais cru) ; la case 2 posée
- *  marque finished_at et fait avancer le fil de l'amitié. */
+/** Le créateur est-il reconnu ? La clé d'abord ; sinon, pour un duel relié à
+ *  un compte (p1_user), le compte connecté suffit. La clé ne vit que dans le
+ *  localStorage de l'appareil de création : perdue ou restée sur un autre
+ *  appareil, le duel devenait injouable pour son propre lanceur. */
+function duel_est_createur(PDO $pdo, array $duel, string $cle): bool {
+    if ($cle !== '' && hash_equals((string) $duel['cle'], $cle)) {
+        return true;
+    }
+    if (!isset($duel['p1_user']) || $duel['p1_user'] === null) {
+        return false;
+    }
+    $u = optional_user($pdo);
+    return $u !== null && (int) $u['id'] === (int) $duel['p1_user'];
+}
+
+/** Même règle que la Frise : le créateur (clé ou compte) → case 1 ; sinon →
+ *  case 2, une fois. Avec `answers`, le score est REJOUÉ ici (jamais cru) ;
+ *  la case 2 posée marque finished_at. Le fil de l'amitié n'avance que
+ *  lorsque les DEUX scores sont là — quel que soit leur ordre d'arrivée. */
 function epreuve_duel_score(PDO $pdo, string $code): never {
-    throttle_or_429($pdo, 'epreuve-score', 60);
+    // 300 et non 60 : toute une assemblée (ou un réseau mobile partagé) sort
+    // par la même adresse IP — même raison que « epreuve-rejoindre ». Refuser
+    // un score joué honnêtement, c'est le perdre pour toujours.
+    throttle_or_429($pdo, 'epreuve-score', 300);
     $duel = epreuve_duel_row($pdo, $code);
     $body = read_json_body();
     $answersJson = null;
@@ -424,12 +448,18 @@ function epreuve_duel_score(PDO $pdo, string $code): never {
     }
     $cle = is_string($body['cle'] ?? null) ? $body['cle'] : '';
 
-    if ($cle !== '' && hash_equals((string) $duel['cle'], $cle)) {
+    if (duel_est_createur($pdo, $duel, $cle)) {
         if ($duel['p1_score'] !== null) {
             json_error('Ton score est déjà posé.', 409);
         }
         $pdo->prepare('UPDATE epreuve_duels SET p1_score = ?, p1_answers = ? WHERE code = ? AND p1_score IS NULL')
             ->execute([$score, $answersJson, $code]);
+        // L'ami avait déjà joué (duel resté « – » côté lanceur) : ce score-ci
+        // termine vraiment le duel — le fil de l'amitié avance maintenant.
+        if ($duel['p2_score'] !== null && $duel['p1_user'] !== null && $duel['p2_user'] !== null) {
+            duel_bilan_maj($pdo, (int) $duel['p1_user'], (int) $duel['p2_user'],
+                $score, (int) $duel['p2_score']);
+        }
     } else {
         if ($duel['p2_pseudo'] !== null) {
             json_error('Ce défi a déjà trouvé son adversaire.', 409);
@@ -439,9 +469,11 @@ function epreuve_duel_score(PDO $pdo, string $code): never {
             ->execute([$pseudo, $score, $answersJson, now_sql(), $code]);
         // Le duel se termine ici : la paire d'amis avance d'un cran (les
         // défis par code, anonymes, ne comptent pas — on ignore qui joue).
-        if ($duel['p1_user'] !== null && $duel['p2_user'] !== null) {
+        // Jamais avec un score fantôme : si le lanceur n'a pas encore joué,
+        // rien n'est compté — son score, arrivé plus tard, comptera (ci-dessus).
+        if ($duel['p1_user'] !== null && $duel['p2_user'] !== null && $duel['p1_score'] !== null) {
             duel_bilan_maj($pdo, (int) $duel['p1_user'], (int) $duel['p2_user'],
-                (int) ($duel['p1_score'] ?? -1), (int) $score);
+                (int) $duel['p1_score'], (int) $score);
         }
     }
     epreuve_duel_get($pdo, $code);

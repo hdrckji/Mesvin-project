@@ -41,7 +41,8 @@
   d'église**, où toute l'assemblée sort par un seul wifi, donc par une seule
   adresse : ouvrir une salle d'épreuve ou de frise **40/heure**, y entrer
   **300/heure** (quarante participants par salle, plusieurs salles dans la
-  soirée), remettre un score **60/heure**, demander un groupe **30/heure**.
+  soirée), remettre un score **300/heure** (même logique — refuser un score
+  joué honnêtement, c'est le perdre), demander un groupe **30/heure**.
   Les veillées du Défi n'ont, elles, aucun plafond. Le seul endroit où l'abus
   coûte vraiment — l'envoi d'e-mails — reste tenu à 30/heure.
   L'adresse vient de `client_ip()`, qui lit la `PROXY_HOPS`-ième valeur de
@@ -78,7 +79,10 @@ Plafond 10 créations/heure/IP (fichier `api/frise.php`).
   `invite` = pseudo de l'ami invité, ou null pour un défi par code.
 - `POST /api/frise/duel/{code}/score` `{score, cle}` (créateur) ou
   `{score, pseudo}` (case p2, premier arrivé) → l'état du duel ; chaque case
-  ne s'écrit qu'une fois (409 sinon).
+  ne s'écrit qu'une fois (409 sinon). Un créateur CONNECTÉ dont le duel est
+  relié à son compte (p1_user) est reconnu SANS la clé : son score va en
+  case p1 — la clé ne vit que sur l'appareil de création, sa perte ne rend
+  plus le duel injouable pour son propre lanceur.
 - `POST /api/frise/veillee` `{mode, deck}` → `{code, cle}` (clé = animateur).
 - `POST /api/frise/veillee/{code}/rejoindre` `{prenom}` → `{jeton}` (40 max).
 - `POST /api/frise/veillee/{code}/avancer` `{cle}` — attente → placement
@@ -139,7 +143,10 @@ et `GET …/duel/{code}` rend `invite`.
   confondues (préfixes ED-/PD-/FD- ; chaque page filtre sur son préfixe et
   son mode). `defis` = `[{code, mode, total, de, createdAt}]`, les défis
   lancés PAR UN AMI qui m'attendent (un défi joué, annulé ou balayé à
-  7 jours disparaît). `duels` = `[{code, mode, total, role: createur|invite,
+  7 jours disparaît). Un défi n'y apparaît qu'une fois l'épreuve du LANCEUR
+  passée (p1_score posé) : un duel créé puis abandonné n'est jamais livré —
+  fini les duels « fantômes » terminés avec un score « – » définitif.
+  `duels` = `[{code, mode, total, role: createur|invite,
   avec, monScore, sonScore, status: attente|fini, createdAt}]`, MES duels —
   lancés (même par code : le créateur connecté est retenu) ou relevés —
   pour l'écran « Tes duels » des épreuves ; même durée de vie de 7 jours.
@@ -160,6 +167,10 @@ et `GET …/duel/{code}` rend `invite`.
   d'avant (`score` seul) reste accepté, sans revue. La case p2 posée
   marque `finished_at` : le balayage des 7 jours se compte depuis le
   RÉSULTAT (un duel ouvert vit 7 jours depuis sa création, comme avant).
+  Le créateur connecté est reconnu sans la clé (voir la Frise ci-dessus) et
+  peut poser son score APRÈS l'invité — un duel resté « – » se rattrape.
+  Le fil de l'amitié n'avance que lorsque les DEUX scores sont là, quel que
+  soit leur ordre d'arrivée : jamais de victoire sur un score absent.
 - `GET …/duel/{code}` rend aussi `p1Answers`/`p2Answers` (null sans revue) —
   l'écran de résultat rejoue la partie question par question.
 - Le fil de l'amitié : chaque duel FINI entre comptes (épreuves et duels du
