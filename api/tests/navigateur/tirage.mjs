@@ -67,8 +67,11 @@ const jouer = (filtres, parties) => page.evaluate(([f, n]) => {
 console.log('\n-- Un niveau, toutes catégories : le tour complet doit précéder toute redite');
 {
   const r = await jouer({ categorie: null, niveau: 3 }, 60);
-  r.vivier === 200 ? ok(`le vivier compte ${r.vivier} questions`) : bad(`vivier de ${r.vivier}, attendu 200`);
-  const attendu = Math.floor(r.vivier / 10);   // 20 parties pour 200 questions
+  // On ne fige PAS la taille du vivier : elle a vocation à grandir, et un test
+  // qui l'empêcherait travaillerait contre le produit. Ce qui doit tenir, c'est
+  // l'invariant ci-dessous.
+  r.vivier >= 200 ? ok(`le vivier compte ${r.vivier} questions`) : bad(`vivier de ${r.vivier}, attendu au moins 200`);
+  const attendu = Math.floor(r.vivier / 10);
   r.ecartMin === null || r.ecartMin >= attendu
     ? ok(`aucune redite avant ${attendu} parties (écart le plus court : ${r.ecartMin})`)
     : bad(`une question est revenue après ${r.ecartMin} partie(s), attendu ${attendu} au minimum`);

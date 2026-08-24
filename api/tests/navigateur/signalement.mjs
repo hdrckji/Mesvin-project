@@ -97,7 +97,14 @@ async function lecteurSignale(b) {
   await attendre(1500);
 
   const enQuestion = await attendreTexte(p, /Question\s*1|\/\s*\d/i);
-  dire(/\?|\./.test(enQuestion), 'une question est posée');
+  // On prouve la présence de la question par son ÉLÉMENT, pas par sa
+  // ponctuation : « Complète le verset » se termine par « ___ » et non par un
+  // point. L'ancienne assertion tenait au hasard du tirage.
+  const texteQuestion = await p.evaluate(() => {
+    const e = document.querySelector('.defi-question');
+    return e ? (e.innerText || '').trim() : '';
+  });
+  dire(texteQuestion.length > 10, 'une question est posée', enQuestion);
 
   /* Avant de répondre, RIEN à signaler — et un lien visible ici serait un
      indice de plus sur l'écran. */
