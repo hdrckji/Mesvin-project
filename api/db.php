@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 13;
+const DB_MIGRATION_DERNIERE = 14;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1296,13 +1296,34 @@ function db_migrate(PDO $pdo): void {
                 PRIMARY KEY (user_a, user_b)
             )";
 
+    /* ---- Étape 14 — le résultat d'un duel du quiz annoncé au premier fini -------
+       Le pendant de push_epreuve_resultats (étape 12), pour les duels du
+       quiz. Différence de fond : un duel du quiz est SYMÉTRIQUE — n'importe
+       lequel des deux joueurs peut finir en premier, et la table duels ne
+       garde pas qui c'était. C'est donc handle_duels_result() qui pose la
+       ligne À L'INSTANT où le duel se termine, en nommant le destinataire
+       (celui qui attendait) ; le cron n'a plus qu'à envoyer, une fois.
+       notified_at NULL = en attente d'envoi ; posé = annoncé, jamais de
+       relance. */
+    $etape14 = db_driver($pdo) === 'mysql'
+        ? ["CREATE TABLE IF NOT EXISTS push_duels_resultats (
+                duel_id INT UNSIGNED NOT NULL PRIMARY KEY,
+                destinataire INT UNSIGNED NOT NULL,
+                notified_at DATETIME NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"]
+        : ["CREATE TABLE IF NOT EXISTS push_duels_resultats (
+                duel_id INTEGER NOT NULL PRIMARY KEY,
+                destinataire INTEGER NOT NULL,
+                notified_at TEXT NULL
+            )"];
+
     /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
     foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4, 5 => $etape5,
               6 => $etape6, 7 => $etape7, 8 => $etape8,
               9 => $etape9, 10 => $etape10, 11 => $etape11, 12 => $etape12,
-              13 => $etape13] as $version => $liste) {
+              13 => $etape13, 14 => $etape14] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }

@@ -323,6 +323,16 @@ function handle_duels_result(PDO $pdo, int $id): never {
     if ($duel['challenger_answers'] !== null && $duel['opponent_answers'] !== null) {
         duel_bilan_maj($pdo, (int) $duel['challenger_id'], (int) $duel['opponent_id'],
             (int) $duel['challenger_score'], (int) $duel['opponent_score']);
+        // Celui qui a fini en PREMIER attendait ce moment sans le voir : on
+        // met le résultat en file pour le prochain tour du cron — voir
+        // push_duels_resultats() dans push.php. Celui qui vient de jouer a
+        // déjà le score sous les yeux : il ne recevra rien. C'est ICI que le
+        // destinataire se décide, car le duel est symétrique et la table
+        // duels ne garde pas qui a joué le premier ; seul cet instant le sait.
+        $premier = $iChallenged ? (int) $duel['opponent_id'] : (int) $duel['challenger_id'];
+        $pdo->prepare('INSERT INTO push_duels_resultats (duel_id, destinataire, notified_at)
+                       VALUES (?, ?, NULL)')
+            ->execute([$id, $premier]);
     }
     json_out(['duel' => duel_payload_detail($duel, $user)]);
 }

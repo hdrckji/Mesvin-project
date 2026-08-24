@@ -141,6 +141,15 @@ un cron trop zélé ne spamme personne. Clé fausse → 403. La réponse
 `{ "ok": true, "envoyes": n, "supprimes": m }` compte les versets offerts et
 les abonnements morts retirés (404/410 du service push, ou 5 échecs de suite).
 
+Le même passage horaire porte aussi les **autres annonces**, chacune une seule
+fois et marquée avant l'envoi (le détail vit en tête de chaque fonction dans
+`push.php`) : le défi qui attend depuis plus d'une heure (`defis`, `epreuves`),
+le résultat d'un défi d'épreuve à son lanceur (`resultats`), le résultat d'un
+duel du quiz au joueur qui a fini en premier (`duels_finis`), le rappel d'un
+service d'église la veille au soir (`services`) et les séries publiées
+(`series`). **Si ce cron n'est pas branché, aucune de ces notifications ne
+part jamais** — c'est le premier point à vérifier quand « je n'ai rien reçu ».
+
 ### 6. Vérifier que tout marche
 
 Ouvrir `https://<mon-domaine>/api/health` :

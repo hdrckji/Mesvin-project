@@ -2078,6 +2078,30 @@ check "le défi relevé est marqué (une seule chance)" 1 \
 api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
 check "cron rejoué : pas de relance (resultats = 0)" 0 "$(jval .resultats)"
 
+# Le résultat d'un duel du QUIZ, au joueur qui a fini en PREMIER. Le duel est
+# symétrique — n'importe lequel des deux peut finir d'abord — donc c'est la
+# FIN du duel qui nomme le destinataire (handle_duels_result), et le cron qui
+# porte l'annonce. Ici u2 joue avant u1 : le destinataire doit être u2, le
+# cas que le modèle des épreuves (lanceur toujours premier) ne couvre pas.
+say "Notifications — le résultat d'un duel du quiz s'annonce une fois, au premier fini"
+U2ID="$(sqlval "SELECT id FROM users WHERE email = 'benoit@example.org'")"
+api POST /api/duels "$TOKEN1" "{\"opponentCode\":\"$FCODE2\"}" > /dev/null
+NDUEL="$(jval .duel.id)"
+check "duel créé : rien en file"        0 "$(sqlval "SELECT COUNT(*) FROM push_duels_resultats WHERE duel_id = $NDUEL")"
+api POST "/api/duels/$NDUEL/result" "$TOKEN2" '{"answers":[0,0,0,0,0,0,0,0,0,0]}' > /dev/null
+check "un seul a joué : toujours rien"  0 "$(sqlval "SELECT COUNT(*) FROM push_duels_resultats WHERE duel_id = $NDUEL")"
+api POST "/api/duels/$NDUEL/result" "$TOKEN1" '{"answers":[0,0,0,0,0,0,0,0,0,0]}' > /dev/null
+check "fini : la ligne nomme u2, premier à avoir joué" "$U2ID" \
+  "$(sqlval "SELECT destinataire FROM push_duels_resultats WHERE duel_id = $NDUEL")"
+check "et attend le cron (notified_at vide)" 1 \
+  "$(sqlval "SELECT COUNT(*) FROM push_duels_resultats WHERE duel_id = $NDUEL AND notified_at IS NULL")"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "le cron rend un compte de duels finis" true "$(jval 'has("duels_finis")')"
+check "marquée envoyée (une seule chance, même si l'envoi rate)" 1 \
+  "$(sqlval "SELECT COUNT(*) FROM push_duels_resultats WHERE duel_id = $NDUEL AND notified_at IS NOT NULL")"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "cron rejoué : pas de relance (duels_finis = 0)" 0 "$(jval .duels_finis)"
+
 say "Notifications — l'abonnement mort est retiré au 5e échec"
 sqlexec "UPDATE push_abonnements SET echecs = 4, last_sent_day = NULL"
 api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
