@@ -26,6 +26,13 @@ const STORE_KEY = 'graine.defi.v1';
 const NB_QUESTIONS = 10;
 
 const NIVEAUX = { 1: 'Découverte', 2: 'Habitué', 3: 'Connaisseur' };
+// Bibliophile n'est PAS un quatrième niveau de questions : c'est le niveau 3
+// joué SANS les propositions. Quatre options soufflent la réponse — les
+// retirer fait passer de « reconnaître » à « se souvenir », et c'est le plus
+// grand saut de difficulté possible sans écrire une seule question nouvelle.
+// Le modèle de données reste donc intact : `niveau` vaut toujours 1 à 3, en
+// base, dans l'API et dans l'éditeur d'administration.
+const NIVEAU_BIBLIOPHILE = 3;
 
 /* ---------- Aides ---------- */
 const el = document.getElementById('app');
@@ -63,6 +70,53 @@ function rngSeme(seedTxt) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+/* ---------- Saisie libre (Bibliophile) ----------------------------------
+   MÊME RÈGLE que portrait_correspond() dans api/portrait.php : une faute de
+   frappe est tolérée, JAMAIS une confusion. Toute retouche ici doit y être
+   reportée à l'identique, et réciproquement.
+
+   La normalisation ne laisse que [a-z0-9 ] : accents, majuscules, traits
+   d'union et ponctuation disparaissent. « Belschatsar », « belschatsar » et
+   « Belschatsar. » sont donc la même saisie. */
+const saisieNorm = s => String(s)
+  .toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9 ]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+/* Distance de Levenshtein, bornée à 2 : au-delà, la réponse est refusée de
+   toute façon, inutile de remplir toute la matrice. */
+function distance(a, b) {
+  if (a === b) return 0;
+  if (Math.abs(a.length - b.length) > 1) return 2;
+  let ligne = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let prec = ligne[0];
+    ligne[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const tmp = ligne[j];
+      ligne[j] = Math.min(ligne[j] + 1, ligne[j - 1] + 1, prec + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prec = tmp;
+    }
+  }
+  return ligne[b.length];
+}
+
+/* La saisie vaut-elle la bonne réponse ? `autres` sont les mauvaises options :
+   si la saisie est aussi proche de l'une d'elles, on REFUSE — on ne devine
+   jamais à la place du lecteur. */
+function saisieCorrespond(texte, bonne, autres) {
+  const n = saisieNorm(texte);
+  if (n === '') return false;
+  const b = saisieNorm(bonne);
+  if (n === b) return true;
+  // Les cibles courtes (Paul, Saül, Élie, Sara…) restent en correspondance
+  // exacte : à quatre lettres, une faute change le mot au lieu de l'abîmer.
+  if (b.length < 5 || distance(n, b) > 1) return false;
+  return !autres.some(a => { const x = saisieNorm(a); return x !== b && distance(n, x) <= 1; });
+}
+
 function melange(arr, rnd) {
   const r = arr.slice();
   for (let i = r.length - 1; i > 0; i--) {
@@ -228,7 +282,7 @@ function tirageCoop(filtres, n) {
 
 /* ---------- État de l'écran ---------- */
 let vue = { ecran: 'accueil' };
-let filtresLibre = { categorie: null, niveau: null };
+let filtresLibre = { categorie: null, niveau: null, bibliophile: false };
 let filtresDuel = { categorie: null, niveau: null };   // le terrain des duels
 
 function demarrer(mode) {
@@ -241,7 +295,11 @@ function demarrer(mode) {
     index: 0,
     score: 0,
     repondu: null,     // position choisie pour la question en cours (null = pas encore)
-    ratees: []         // questions manquées, pour le récapitulatif
+    ratees: [],        // questions manquées, pour le récapitulatif
+    // Bibliophile ne vaut que pour le défi libre : le défi du jour est le même
+    // pour tout le monde, on ne le durcit pas dans le dos des autres.
+    bibliophile: mode === 'libre' && filtresLibre.bibliophile,
+    saisie: ''         // ce que le lecteur a écrit, pour le lui remontrer
   };
   render();
 }
@@ -249,8 +307,38 @@ function demarrer(mode) {
 function repondre(pos) {
   if (vue.repondu !== null) return;
   const item = vue.items[vue.index];
-  const ok = pos === item.bonnePos;
   vue.repondu = pos;
+  compter(pos === item.bonnePos, item);
+}
+
+/* Bibliophile : la réponse est ÉCRITE, pas choisie. On note « -1 » plutôt
+   qu'une position, pour que l'écran n'accuse aucune option que le lecteur n'a
+   jamais touchée : il verra la bonne réponse mise en avant, et la sienne à
+   côté. */
+function repondreTexte() {
+  if (vue.repondu !== null) return;
+  const item = vue.items[vue.index], q = item.q;
+  const champ = document.getElementById('saisie');
+  const texte = champ ? champ.value : '';
+  // Valider à vide, c'est un doigt qui a glissé : on ne compte pas d'échec.
+  if (saisieNorm(texte) === '') { if (champ) champ.focus(); return; }
+  vue.saisie = texte.trim();
+  const ok = saisieCorrespond(texte, q.options[q.bonne], q.options.filter((_, i) => i !== q.bonne));
+  vue.repondu = ok ? item.bonnePos : -1;
+  compter(ok, item);
+}
+
+/* « Je ne trouve pas » : la question compte comme manquée, sans détour — on
+   ne fait pas deviner quelqu'un qui a déjà renoncé. */
+function donnerSaLangue() {
+  if (vue.repondu !== null) return;
+  vue.saisie = '';
+  vue.repondu = -1;
+  compter(false, vue.items[vue.index]);
+}
+
+/* Le décompte, commun aux deux façons de répondre. */
+function compter(ok, item) {
   if (ok) {
     vue.score++;
     store.serie++;
@@ -269,6 +357,7 @@ function suivante() {
   if (vue.index + 1 < vue.items.length) {
     vue.index++;
     vue.repondu = null;
+    vue.saisie = '';
     render();
   } else {
     terminer();
@@ -1058,9 +1147,13 @@ function renderSolo() {
         </div>
         <label class="lbl">Niveau</label>
         <div class="pill-row" id="pills-niv">
-          <button class="pill ${filtresLibre.niveau === null ? 'on' : ''}" data-niv="">Tous</button>
-          ${[1, 2, 3].map(n => `<button class="pill ${filtresLibre.niveau === n ? 'on' : ''}" data-niv="${n}">${NIVEAUX[n]}</button>`).join('')}
+          <button class="pill ${!filtresLibre.bibliophile && filtresLibre.niveau === null ? 'on' : ''}" data-niv="">Tous</button>
+          ${[1, 2, 3].map(n => `<button class="pill ${!filtresLibre.bibliophile && filtresLibre.niveau === n ? 'on' : ''}" data-niv="${n}">${NIVEAUX[n]}</button>`).join('')}
+          <button class="pill ${filtresLibre.bibliophile ? 'on' : ''}" data-niv="bibliophile">Bibliophile</button>
         </div>
+        ${filtresLibre.bibliophile
+          ? `<p class="defi-lead" style="margin:6px 0 0">Les questions les plus exigeantes, <b>sans les propositions</b> : tu écris la réponse. Une faute de frappe est pardonnée.</p>`
+          : ''}
       </div>
       <div class="defi-actions">
         <button class="btn btn-grow btn-block" id="btn-libre">Relever un défi libre</button>
@@ -1085,7 +1178,14 @@ function renderSolo() {
     b.onclick = () => { filtresLibre.categorie = b.dataset.cat || null; renderSolo(); };
   });
   document.querySelectorAll('#pills-niv .pill').forEach(b => {
-    b.onclick = () => { filtresLibre.niveau = b.dataset.niv ? Number(b.dataset.niv) : null; renderSolo(); };
+    b.onclick = () => {
+      // Bibliophile occupe la place d'un niveau dans la rangée — il en choisit
+      // donc un (le plus exigeant) et allume la saisie libre.
+      const v = b.dataset.niv;
+      filtresLibre.bibliophile = v === 'bibliophile';
+      filtresLibre.niveau = v === 'bibliophile' ? NIVEAU_BIBLIOPHILE : (v ? Number(v) : null);
+      renderSolo();
+    };
   });
 }
 
@@ -1102,12 +1202,18 @@ function renderQuestion() {
     <button class="back-link" id="btn-quitter">‹ Quitter le défi</button>
     <div class="defi-meta">
       <span>Question ${num}/${total}</span>
-      <span>${esc(q.categorie)} · ${NIVEAUX[q.niveau] || ''}</span>
+      <span>${esc(q.categorie)} · ${vue.bibliophile ? 'Bibliophile' : (NIVEAUX[q.niveau] || '')}</span>
     </div>
     <div class="defi-progress"><i style="width:${Math.round(((num - (repondu ? 0 : 1)) / total) * 100)}%"></i></div>
 
     <div class="card">
       <p class="defi-question">${esc(q.question)}</p>
+      ${vue.bibliophile && !repondu ? `
+        <input id="saisie" class="saisie-libre" type="text" placeholder="Écris ta réponse"
+               autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+        <button class="btn btn-primary btn-block" id="btn-valider">Valider</button>
+        <button class="btn btn-ghost btn-block" id="btn-langue" style="margin-top:8px">Je ne trouve pas</button>
+      ` : `
       <div id="options">
         ${item.ordre.map((idxOpt, pos) => {
           let cls = 'defi-option';
@@ -1118,7 +1224,15 @@ function renderQuestion() {
           }
           return `<button class="${cls}" data-pos="${pos}" ${repondu ? 'disabled' : ''}>${esc(q.options[idxOpt])}</button>`;
         }).join('')}
-      </div>
+      </div>`}
+      ${repondu && vue.bibliophile ? `<p class="defi-saisie-rappel">${
+        !vue.saisie ? 'Tu as passé la question.'
+        : saisieNorm(vue.saisie) === saisieNorm(q.options[q.bonne])
+          ? `Tu avais écrit <b>${esc(vue.saisie)}</b>.`
+          : vue.repondu === item.bonnePos
+            ? `Tu avais écrit <b>${esc(vue.saisie)}</b> — la faute de frappe est pardonnée.`
+            : `Tu avais écrit <b>${esc(vue.saisie)}</b>.`
+      }</p>` : ''}
       ${repondu ? `
         <p class="defi-ref-line"><span class="arrow">→</span>${esc(q.reference)} <span class="muted">· à retrouver dans ta Bible</span>${htmlSignaler('question:' + q.id, q.question + ' — ' + q.reference)}</p>
         <button class="btn btn-primary" id="btn-suivante">${derniere ? 'Voir le résultat' : 'Question suivante'}</button>
@@ -1127,7 +1241,14 @@ function renderQuestion() {
   </div>`;
 
   document.getElementById('btn-quitter').onclick = () => { vue = { ecran: 'solo' }; render(); };
-  if (!repondu) {
+  if (!repondu && vue.bibliophile) {
+    const champ = document.getElementById('saisie');
+    document.getElementById('btn-valider').onclick = repondreTexte;
+    document.getElementById('btn-langue').onclick = donnerSaLangue;
+    // Entrée valide : sur un téléphone, c'est la touche qu'on a sous le pouce.
+    champ.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); repondreTexte(); } };
+    champ.focus();
+  } else if (!repondu) {
     document.querySelectorAll('#options .defi-option').forEach(b => {
       b.onclick = () => repondre(Number(b.dataset.pos));
     });
