@@ -209,12 +209,28 @@ function habille(q, rnd) {
    vit dans le localStorage de l'appareil (store.vues) — une fois la case
    épuisée, elle se réinitialise et le cycle recommence. */
 function tirageSansRemise(caseKey, pool, n, rnd) {
-  const vues = new Set(store.vues[caseKey] || []);
-  let frais = pool.filter(q => !vues.has(q.id));
-  if (frais.length < n) { vues.clear(); frais = pool; }
-  const tirees = melange(frais, rnd).slice(0, n);
-  tirees.forEach(q => vues.add(q.id));
-  store.vues[caseKey] = [...vues];
+  const parId = new Map(pool.map(q => [q.id, q]));
+  // La FILE des questions déjà servies, de la plus ancienne à la plus récente.
+  // On oublie au passage celles qui ont quitté le vivier (banque retouchée).
+  const file = (store.vues[caseKey] || []).filter(id => parId.has(id));
+  const vues = new Set(file);
+  const frais = melange(pool.filter(q => !vues.has(q.id)), rnd);
+
+  let tirees = frais.slice(0, n);
+  if (tirees.length < n) {
+    // Vivier épuisé. On reprend alors par les PLUS ANCIENNES, jamais au
+    // hasard : c'est ce qui garantit un tour complet du vivier avant qu'une
+    // seule question ne revienne. L'ancienne version effaçait toute la
+    // mémoire et repartait du tas entier — une question vue la veille pouvait
+    // donc revenir le lendemain, et c'est ce que les lecteurs signalaient.
+    const reprises = file.slice(0, n - tirees.length).map(id => parId.get(id));
+    tirees = melange(tirees.concat(reprises), rnd);
+  }
+
+  // Les questions servies repartent en FIN de file : elles ne reviendront
+  // qu'après toutes les autres.
+  const servies = new Set(tirees.map(q => q.id));
+  store.vues[caseKey] = file.filter(id => !servies.has(id)).concat(tirees.map(q => q.id));
   saveStore();
   return tirees;
 }
