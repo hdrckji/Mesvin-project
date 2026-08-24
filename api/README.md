@@ -141,6 +141,30 @@ un cron trop zélé ne spamme personne. Clé fausse → 403. La réponse
 `{ "ok": true, "envoyes": n, "supprimes": m }` compte les versets offerts et
 les abonnements morts retirés (404/410 du service push, ou 5 échecs de suite).
 
+Le même passage horaire porte aussi les **autres annonces**, chacune une seule
+fois et marquée avant l'envoi (le détail vit en tête de chaque fonction dans
+`push.php`) : le défi qui attend depuis plus d'une heure (`defis`, `epreuves`),
+le résultat d'un défi d'épreuve à son lanceur (`resultats`), le résultat d'un
+duel du quiz au joueur qui a fini en premier (`duels_finis`), le rappel d'un
+service d'église la veille au soir (`services`) et les séries publiées
+(`series`). **Si ce cron n'est pas branché, aucune de ces notifications ne
+part jamais** — c'est le premier point à vérifier quand « je n'ai rien reçu ».
+
+**Le battement de cœur.** Chaque passage complet laisse son heure en base, et
+`GET /api/health` la montre — réponse **anonyme** comprise :
+
+```json
+{ "ok": true, "cron": { "dernier": "2026-08-24T21:00:12Z", "enPlaceDepuis": "…" } }
+```
+
+`dernier` à plus de trois heures (deux passages manqués d'affilée), ou resté
+`null` trois heures après `enPlaceDepuis` : le cron ne tourne pas. La **sonde
+de production** fait ce calcul toute seule — et comme le workflow « En ligne »
+la lance après chaque fusion, **un cron mort met la pastille au rouge** au lieu
+d'attendre qu'un lecteur remarque le silence. Un pinger arrêté, une clé qui a
+changé après une re-création de la base : les deux se voyaient jusqu'ici en ne
+recevant plus rien pendant des jours.
+
 ### 6. Vérifier que tout marche
 
 Ouvrir `https://<mon-domaine>/api/health` :

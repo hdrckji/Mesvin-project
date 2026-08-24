@@ -284,6 +284,13 @@ say "Santé (anonyme : réponse minimale, le détail est réservé aux admins)"
 check "GET /api/health → 200"           200     "$(api GET /api/health)"
 check "health : ok"                     true    "$(jval .ok)"
 check "health anonyme : pas de détail"  null    "$(jval .db)"
+# Seule exception au minimalisme anonyme : le battement de cœur du cron —
+# health_cron() dans push.php dit pourquoi. Base neuve : jamais passé encore,
+# mais la date de pose existe déjà (c'est elle qui transforme « jamais » en
+# verdict quand elle vieillit).
+check "health anonyme : cœur pas encore battu (cron.dernier null)" null \
+  "$(jval .cron.dernier)"
+check "mais la date de pose est là"     true "$(jval '.cron.enPlaceDepuis != null')"
 
 say "Statique toujours servi à l'identique"
 check "GET / → 200"                     200 "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/")"
@@ -2033,6 +2040,10 @@ check "l'échec est compté (echecs = 1)"  1 "$(sqlval 'SELECT echecs FROM push_
 check "last_sent_day posé AVANT l'envoi (idempotence)" 1 "$(sqlval 'SELECT COUNT(*) FROM push_abonnements WHERE last_sent_day IS NOT NULL')"
 api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
 check "2e cron du même jour : rien ne repart (echecs reste 1)" 1 "$(sqlval 'SELECT echecs FROM push_abonnements')"
+# Le battement de cœur : posé par le passage COMPLET, et la santé anonyme le
+# montre — c'est lui qui permet à la sonde de dire « le cron vit » sans jeton.
+check "le battement de cœur est posé"    1 "$(sqlval 'SELECT COUNT(*) FROM cron_passages WHERE id = 1 AND dernier IS NOT NULL')"
+check "et la santé anonyme le montre"    true "$(api GET /api/health > /dev/null; jval '.cron.dernier != null')"
 
 # L'annonce d'une nouvelle série. Groupée : un responsable qui publie trois
 # séries d'affilée ne réveille son assemblée qu'une fois. Le drapeau est posé
@@ -2077,6 +2088,30 @@ check "le défi relevé est marqué (une seule chance)" 1 \
   "$(sqlval "SELECT COUNT(*) FROM push_epreuve_resultats WHERE code = '$NCODE'")"
 api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
 check "cron rejoué : pas de relance (resultats = 0)" 0 "$(jval .resultats)"
+
+# Le résultat d'un duel du QUIZ, au joueur qui a fini en PREMIER. Le duel est
+# symétrique — n'importe lequel des deux peut finir d'abord — donc c'est la
+# FIN du duel qui nomme le destinataire (handle_duels_result), et le cron qui
+# porte l'annonce. Ici u2 joue avant u1 : le destinataire doit être u2, le
+# cas que le modèle des épreuves (lanceur toujours premier) ne couvre pas.
+say "Notifications — le résultat d'un duel du quiz s'annonce une fois, au premier fini"
+U2ID="$(sqlval "SELECT id FROM users WHERE email = 'benoit@example.org'")"
+api POST /api/duels "$TOKEN1" "{\"opponentCode\":\"$FCODE2\"}" > /dev/null
+NDUEL="$(jval .duel.id)"
+check "duel créé : rien en file"        0 "$(sqlval "SELECT COUNT(*) FROM push_duels_resultats WHERE duel_id = $NDUEL")"
+api POST "/api/duels/$NDUEL/result" "$TOKEN2" '{"answers":[0,0,0,0,0,0,0,0,0,0]}' > /dev/null
+check "un seul a joué : toujours rien"  0 "$(sqlval "SELECT COUNT(*) FROM push_duels_resultats WHERE duel_id = $NDUEL")"
+api POST "/api/duels/$NDUEL/result" "$TOKEN1" '{"answers":[0,0,0,0,0,0,0,0,0,0]}' > /dev/null
+check "fini : la ligne nomme u2, premier à avoir joué" "$U2ID" \
+  "$(sqlval "SELECT destinataire FROM push_duels_resultats WHERE duel_id = $NDUEL")"
+check "et attend le cron (notified_at vide)" 1 \
+  "$(sqlval "SELECT COUNT(*) FROM push_duels_resultats WHERE duel_id = $NDUEL AND notified_at IS NULL")"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "le cron rend un compte de duels finis" true "$(jval 'has("duels_finis")')"
+check "marquée envoyée (une seule chance, même si l'envoi rate)" 1 \
+  "$(sqlval "SELECT COUNT(*) FROM push_duels_resultats WHERE duel_id = $NDUEL AND notified_at IS NOT NULL")"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "cron rejoué : pas de relance (duels_finis = 0)" 0 "$(jval .duels_finis)"
 
 say "Notifications — l'abonnement mort est retiré au 5e échec"
 sqlexec "UPDATE push_abonnements SET echecs = 4, last_sent_day = NULL"
