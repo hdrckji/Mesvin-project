@@ -51,6 +51,23 @@ done
 check "php -l sans erreur" oui "$LINT_OK"
 
 # ---------------------------------------------------------------------------
+# Ce que la PRODUCTION servira vraiment. Le Dockerfile copie fichier par
+# fichier ; `php -S`, lui, sert TOUT le dépôt. Un fichier ajouté à la racine et
+# oublié dans le Dockerfile laisse donc cette suite verte de bout en bout et
+# manque en ligne — où la coquille du service worker, posée par un addAll()
+# ATOMIQUE, échoue alors en bloc : plus aucun hors-ligne, sans un mot à l'écran.
+say "Parité dépôt / image de production (le Dockerfile copie fichier par fichier)"
+if command -v node > /dev/null 2>&1; then
+  if node "$ROOT/api/tests/parite-image.mjs" > "$TMP/parite.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/parite.log") — coquille, Bible, icônes, références des pages"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL parité dépôt / image\n'; sed 's/^/        /' "$TMP/parite.log"
+  fi
+else
+  printf '   --   node absent : parité dépôt / image non vérifiée\n'
+fi
+
+# ---------------------------------------------------------------------------
 say "Crypto Web Push : vecteur RFC 8291 (annexe A) et JWT VAPID"
 if php "$ROOT/api/tests/push-crypto-test.php" > "$TMP/crypto.log" 2>&1; then
   ok "vecteur RFC 8291 reproduit à l'octet près + VAPID vérifié (openssl_verify)"
@@ -2268,6 +2285,40 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# MÉMORISER est le module racine, et sa planification ne parle à AUCUNE route :
+# elle vit entièrement dans app.js. Cette suite pouvait donc rester verte de
+# bout en bout pendant que la répétition espacée — le cœur du produit — dérivait
+# sans que rien ne le dise. Le scénario appelle le VRAI schedule() depuis la
+# page, et non une copie recollée qui ne prouverait que sa propre cohérence.
+say "Mémorisation dans un vrai navigateur (la répétition espacée, sur le vrai app.js)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/memorisation.mjs" "$BASE" > "$TMP/memo.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/memo.log") — oubli adouci, courbe intacte, jardin cohérent"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL mémorisation au navigateur\n'; sed 's/^/        /' "$TMP/memo.log"
+  fi
+else
+  printf '   --   Playwright absent : mémorisation au navigateur non jouée\n'
+fi
+
+# ---------------------------------------------------------------------------
+# Les pages que les six parcours ci-dessus ne traversent jamais : référencement
+# et pages légales. Une page cassée là ne gêne aucun utilisateur connecté —
+# personne ne s'en aperçoit, et c'est pourtant la vitrine publique.
+say "Toutes les pages du site dans un vrai navigateur (vitrine et pages légales)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/pages.mjs" "$BASE" > "$TMP/pages.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/pages.log") — chaque page peinte, sans exception ni requête morte"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL pages au navigateur\n'; sed 's/^/        /' "$TMP/pages.log"
+  fi
+else
+  printf '   --   Playwright absent : parcours des pages non joué\n'
+fi
+
+# ---------------------------------------------------------------------------
 # RÉSEAU — quelle adresse le serveur retient-il ? Tout l'anti-abus en dépend :
 # throttle_or_429() compte par client_ip(), et client_ip() lit la PROXY_HOPS-ième
 # valeur de X-Forwarded-For EN PARTANT DE LA DROITE (chaque relais ajoute à
@@ -2354,8 +2405,17 @@ check "1 relais : « 1.2.3.4, 5.6.7.8 » → 5.6.7.8" 5.6.7.8 \
   "$(retenue $PORT_RELAIS '1.2.3.4, 5.6.7.8')"
 check "on lit À DROITE, quelle que soit la longueur" 9.9.9.9 \
   "$(retenue $PORT_RELAIS '1.2.3.4, 5.6.7.8, 9.9.9.9')"
-check "1 relais : IPv6 acceptée"            2001:db8::1 \
-  "$(retenue $PORT_RELAIS '1.2.3.4, 2001:db8::1')"
+# SURTOUT PAS 2001:db8::1 ici. C'est le préfixe de DOCUMENTATION (RFC 3849) :
+# par définition ce n'est pas une adresse publique, et ip_interne() a donc
+# raison de la ranger parmi les internes — ce que PHP 8.3 fait et PHP 8.4 ne
+# fait plus. L'assertion passait donc sur une machine en 8.4 et tombait sur la
+# version de la PRODUCTION (Dockerfile : frankenphp:1-php8.3).
+# L'adresse ci-dessous est une vraie adresse d'abonné, publique sur les deux
+# versions, et c'est bien ce que la ligne veut éprouver : l'IPv6 d'un visiteur
+# est retenue. Ne pas ajouter d'assertion sur le sort d'une adresse de
+# documentation : il dépend de la version de PHP, et aucun visiteur n'en a.
+check "1 relais : IPv6 publique acceptée"   2a01:e0a:1de:3cf0::1 \
+  "$(retenue $PORT_RELAIS '1.2.3.4, 2a01:e0a:1de:3cf0::1')"
 check "valeur non-IP → repli sur REMOTE_ADDR" 127.0.0.1 \
   "$(retenue $PORT_RELAIS '1.2.3.4, pas-une-ip')"
 check "en-tête malformé (virgule en trop) → repli" 127.0.0.1 \
