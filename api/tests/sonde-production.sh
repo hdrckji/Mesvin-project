@@ -22,8 +22,16 @@
 # lancer sur la production en pleine journée sans rien déranger : c'est ce que
 # fait n'importe quel visiteur.
 #
-# À LANCER APRÈS CHAQUE MISE EN LIGNE — pas dans la CI, qui n'a aucune raison
-# d'aller taper le domaine à chaque poussée.
+# QUAND ELLE TOURNE. Le workflow .github/workflows/en-ligne.yml la lance tout
+# seul après chaque fusion sur `main`, une fois la version du dépôt réellement
+# servie par le domaine — c'est ce qui répond à « est-ce que c'est en ligne ? »
+# sans que personne ait à scruter le tableau de bord Railway.
+#
+# Elle reste lançable à la main, et sur n'importe quelle adresse (premier
+# argument), ce qui est utile pour éprouver un environnement de recette.
+#
+# Ce qu'elle ne fait PAS : tourner à chaque poussée. La CI n'a aucune raison
+# d'aller taper le domaine quand on pousse sur une branche de travail.
 #
 # Nécessite : curl, jq.
 # ============================================================================

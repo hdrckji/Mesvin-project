@@ -329,8 +329,34 @@ authentification, aucun compte créé, aucun e-mail déclenché. On peut la lanc
 sur la production en pleine journée sans rien déranger — c'est ce que fait
 n'importe quel visiteur.
 
-Elle n'a **pas** sa place dans la CI, qui n'a aucune raison d'aller taper le
-domaine à chaque poussée : c'est un contrôle d'après-déploiement, lancé à la main.
+Elle n'a **pas** sa place dans la suite de tests, qui n'a aucune raison d'aller
+taper le domaine à chaque poussée sur une branche de travail. Mais elle n'a plus
+besoin d'être lancée à la main pour autant — voir juste en dessous.
+
+### « Est-ce que c'est en ligne ? », répondu tout seul
+
+`.github/workflows/en-ligne.yml` se déclenche à **chaque fusion sur `main`**.
+Il attend que le `sw.js` servi par le domaine porte le numéro de coquille du
+dépôt — jusqu'à vingt minutes, le temps que Railway construise l'image et
+bascule — puis lance la sonde ci-dessus.
+
+La pastille sur le commit veut donc dire **« c'est déployé ET ça répond bien »**,
+et non « ça compile ». C'est le seul contrôle du dépôt qui parle de la
+production ; tous les autres parlent du code.
+
+Le rouge est **informatif** : ce workflow ne garde aucune fusion. Il dit qu'entre
+le dépôt et le domaine, quelque chose ne suit pas — et le message nomme les
+suspects habituels : service Railway en pause, branche surveillée changée, lien
+GitHub rompu.
+
+Deux limites, dites franchement. Quand un commit ne touche pas à la coquille, les
+deux numéros sont égaux dès la première seconde : ce tour-là prouve que le site
+répond, **pas** qu'un déploiement vient de passer — et le workflow l'écrit noir
+sur blanc au lieu de crier victoire. Et le numéro de coquille n'est un témoin de
+version que parce que la convention du dépôt veut qu'on l'incrémente dès qu'on
+touche à la coquille : c'est la même discipline qui fait apparaître la bannière
+« Une mise à jour est prête ». Elle se tient d'elle-même, les deux dépendent l'une
+de l'autre.
 
 Et surtout : **ne jamais pointer `run-tests.sh` sur la production.** La suite
 vide la base à chaque passe, tourne en mode dev (où le code de connexion est
