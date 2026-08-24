@@ -226,6 +226,42 @@ for f in robots.txt sitemap.xml og-image.png; do
 done
 
 # ---------------------------------------------------------------------------
+# Sans le cron horaire, AUCUNE notification ne part — verset du matin compris —
+# et rien ne le disait : on s'en apercevait des jours plus tard, au doute
+# (« je ne suis plus sûr d'en avoir reçu ces derniers jours »). L'appli expose
+# désormais son battement de cœur ; ici on le prend. Trois heures = deux
+# passages horaires manqués d'affilée : ce n'est plus un raté du pinger,
+# c'est une panne.
+say "Le cœur des notifications (le cron horaire)"
+if curl -sS --max-time 20 "$BASE/api/health" -o "$TMP/h.json" \
+   && jq -e '.ok == true' "$TMP/h.json" > /dev/null 2>&1; then
+  DERNIER=$(jq -r '.cron.dernier // empty' "$TMP/h.json")
+  DEPUIS=$(jq -r '.cron.enPlaceDepuis // empty' "$TMP/h.json")
+  MAINT=$(date -u +%s)
+  # âge ISO_8601 → minutes ; vide si la date ne se lit pas (date non-GNU).
+  age_min() { local s; s=$(date -u -d "$1" +%s 2>/dev/null) || return 1; echo $(( (MAINT - s) / 60 )); }
+  if [ -n "$DERNIER" ] && AGE=$(age_min "$DERNIER"); then
+    if [ "$AGE" -le 180 ]; then
+      ok "le cron est passé il y a $AGE min"
+    else
+      bad "le cron ne passe PLUS (dernier passage il y a $((AGE / 60)) h)" \
+          "aucune notification ne part — vérifier le pinger (cron-job.org ou service cron Railway) et la clé : api/README.md, section 5"
+    fi
+  elif [ -n "$DEPUIS" ] && AGE=$(age_min "$DEPUIS"); then
+    if [ "$AGE" -le 180 ]; then
+      printf '   --   battement de cœur tout neuf (%s min) : premier passage attendu dans l'\''heure — repasser la sonde ensuite\n' "$AGE"
+    else
+      bad "le cron n'est JAMAIS passé depuis la pose du battement de cœur ($((AGE / 60)) h)" \
+          "il n'est probablement pas branché du tout — api/README.md, section 5, dit comment"
+    fi
+  else
+    printf '   --   la version en ligne ne connaît pas encore le battement de cœur (elle date d'\''avant — déployer, puis repasser)\n'
+  fi
+else
+  bad "impossible de lire /api/health" "la santé ne répond pas : voir d'abord les sections précédentes"
+fi
+
+# ---------------------------------------------------------------------------
 # La question qu'on se pose vraiment après un « git push » : est-ce que ma
 # version est EN LIGNE ? Le numéro de cache du service worker la porte.
 say "Le déploiement a-t-il atterri ?"

@@ -609,10 +609,38 @@ function handle_cron_notify(PDO $pdo): never {
     // Les séries qu'une église vient de publier : UNE annonce par église et
     // par passage, jamais une par série.
     $series = push_series_publiees($pdo, $cfg);
+    // Le battement de cœur : posé en FIN de course seulement — un passage qui
+    // casse en route ne compte pas comme un passage. C'est lui que
+    // /api/health et la sonde de production lisent pour dire « le cœur bat »
+    // ou « le cron ne passe plus » (voir health_cron ci-dessous).
+    $pdo->prepare('UPDATE cron_passages SET dernier = ? WHERE id = 1')->execute([now_sql()]);
     json_out(['ok' => true, 'envoyes' => $envoyes, 'supprimes' => $supprimes,
               'defis' => $defis, 'epreuves' => $epreuves, 'resultats' => $resultats,
               'duels_finis' => $duelsFinis,
               'services' => $services, 'series' => $series]);
+}
+
+/* ---- Le battement de cœur, pour /api/health ---------------------------------
+   ANONYME compris, et c'est voulu : ce champ ne dévoile ni clé ni donnée —
+   juste « le cœur bat / ne bat plus » — alors que sans lui, un cron mort ne se
+   voit que muni d'un jeton d'admin. Or c'est une sonde SANS secret (celle que
+   la CI lance après chaque mise en ligne) qui doit pouvoir donner l'alerte :
+   un défaut silencieux qui exige un jeton pour être vu reste un défaut
+   silencieux. Le reste de la santé anonyme demeure minimal — la comparaison
+   s'arrête là. */
+function health_cron(PDO $pdo): ?array {
+    try {
+        $r = $pdo->query('SELECT dernier, en_place_depuis FROM cron_passages WHERE id = 1')->fetch();
+    } catch (Throwable $e) {
+        return null; // table pas encore migrée : la santé ne casse pas pour ça
+    }
+    if ($r === false) {
+        return null;
+    }
+    return [
+        'dernier'       => sql_to_iso($r['dernier']),
+        'enPlaceDepuis' => sql_to_iso($r['en_place_depuis']),
+    ];
 }
 
 /* ---- Les défis d'ÉPREUVE qui attendent -------------------------------------

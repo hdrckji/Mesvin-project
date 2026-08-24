@@ -284,6 +284,13 @@ say "Santé (anonyme : réponse minimale, le détail est réservé aux admins)"
 check "GET /api/health → 200"           200     "$(api GET /api/health)"
 check "health : ok"                     true    "$(jval .ok)"
 check "health anonyme : pas de détail"  null    "$(jval .db)"
+# Seule exception au minimalisme anonyme : le battement de cœur du cron —
+# health_cron() dans push.php dit pourquoi. Base neuve : jamais passé encore,
+# mais la date de pose existe déjà (c'est elle qui transforme « jamais » en
+# verdict quand elle vieillit).
+check "health anonyme : cœur pas encore battu (cron.dernier null)" null \
+  "$(jval .cron.dernier)"
+check "mais la date de pose est là"     true "$(jval '.cron.enPlaceDepuis != null')"
 
 say "Statique toujours servi à l'identique"
 check "GET / → 200"                     200 "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/")"
@@ -2033,6 +2040,10 @@ check "l'échec est compté (echecs = 1)"  1 "$(sqlval 'SELECT echecs FROM push_
 check "last_sent_day posé AVANT l'envoi (idempotence)" 1 "$(sqlval 'SELECT COUNT(*) FROM push_abonnements WHERE last_sent_day IS NOT NULL')"
 api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
 check "2e cron du même jour : rien ne repart (echecs reste 1)" 1 "$(sqlval 'SELECT echecs FROM push_abonnements')"
+# Le battement de cœur : posé par le passage COMPLET, et la santé anonyme le
+# montre — c'est lui qui permet à la sonde de dire « le cron vit » sans jeton.
+check "le battement de cœur est posé"    1 "$(sqlval 'SELECT COUNT(*) FROM cron_passages WHERE id = 1 AND dernier IS NOT NULL')"
+check "et la santé anonyme le montre"    true "$(api GET /api/health > /dev/null; jval '.cron.dernier != null')"
 
 # L'annonce d'une nouvelle série. Groupée : un responsable qui publie trois
 # séries d'affilée ne réveille son assemblée qu'une fois. Le drapeau est posé
