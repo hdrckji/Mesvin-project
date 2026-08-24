@@ -564,9 +564,25 @@ const go = (name, param) => {
   route = { name, param: param || null }; render(); window.scrollTo(0, 0);
 };
 
-function render() {
+// Le dernier écran RÉELLEMENT posé, tel qu'on l'a fabriqué. On garde la chaîne
+// générée plutôt que de relire el.innerHTML : le navigateur re-sérialise le DOM
+// à la lecture (« <img src="x" /> » ressort « <img src="x"> », les attributs se
+// normalisent), donc la comparaison échouerait TOUJOURS — et sans rien dire.
+let dernierRendu = '';
+function render(siRien) {
   const v = { home: viewHome, memo: viewMemo, study: viewStudy, session: viewSession, moi: viewMoi, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections, account: viewAccount, eglise: viewEglise, banques: viewEgliseBanques, rejoindre: viewRejoindre }[route.name] || viewHome;
-  el.innerHTML = v() + tabbar();
+  const html = v() + tabbar();
+  // siRien n'est posé QUE par renderIfIdle() : une réponse réseau qui n'apporte
+  // rien de neuf ne doit pas démolir l'écran. `el.innerHTML =` détruit et
+  // rebâtit tout — barre du haut, contenu, onglets — et le fondu d'entrée de
+  // .fade se rejoue alors depuis le transparent. C'était le second clignotement
+  // du lancement : /api/config répondait 250 ms après le premier rendu et
+  // reconstruisait un écran STRICTEMENT identique.
+  // Les 131 autres appels passent render() sans argument : rien ne change pour
+  // eux, et surtout pas pour un rendu qui suit un geste de l'utilisateur.
+  if (siRien && html === dernierRendu) return;
+  dernierRendu = html;
+  el.innerHTML = html;
   wire();
 }
 function topbar(withAccount) {
@@ -1668,7 +1684,7 @@ function renderIfIdle() {
   if (route.name === 'session') return;
   const a = document.activeElement;
   if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return;
-  render();
+  render(true); // « seulement si ça change » — voir render()
 }
 // Fonctions de fusion exposées, pures et testables.
 window.GraineSync = { mergeMemo, mergeLire, mergeDefi, syncNow, scheduleSync, status: () => Object.assign({}, syncUi) };
