@@ -2285,6 +2285,42 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# LE TIRAGE. Des lecteurs signalaient que les questions revenaient trop vite.
+# Leur NOMBRE est arithmétique (200 questions, 10 par partie : 20 parties), mais
+# leur ESPACEMENT se corrige : l'ancien tirage effaçait toute la mémoire dès
+# qu'il restait moins de dix fraîches, puis repiochait dans le tas entier — une
+# question vue la veille pouvait revenir le lendemain. On éprouve donc ici
+# l'invariant : le tour complet du vivier précède la moindre redite.
+say "Tirage sans remise dans un vrai navigateur (le tour complet avant toute redite)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/tirage.mjs" "$BASE" > "$TMP/tirage.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/tirage.log") — écart maximal garanti, mémoire bornée"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL tirage au navigateur\n'; sed 's/^/        /' "$TMP/tirage.log"
+  fi
+else
+  printf '   --   Playwright absent : tirage au navigateur non joué\n'
+fi
+
+# ---------------------------------------------------------------------------
+# BIBLIOPHILE : le niveau 3 joué SANS les propositions. Ce qui compte ici n'est
+# pas l'affichage mais la RÈGLE de saisie — une faute de frappe pardonnée,
+# jamais une confusion — la même que portrait_correspond() côté serveur. Trop
+# sévère, elle décourage ; trop laxiste, elle valide une réponse fausse.
+say "Bibliophile dans un vrai navigateur (le niveau 3 sans les propositions)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/bibliophile.mjs" "$BASE" > "$TMP/biblio.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/biblio.log") — faute pardonnée, confusion refusée, QCM intact ailleurs"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL bibliophile au navigateur\n'; sed 's/^/        /' "$TMP/biblio.log"
+  fi
+else
+  printf '   --   Playwright absent : bibliophile au navigateur non joué\n'
+fi
+
+# ---------------------------------------------------------------------------
 # MÉMORISER est le module racine, et sa planification ne parle à AUCUNE route :
 # elle vit entièrement dans app.js. Cette suite pouvait donc rester verte de
 # bout en bout pendant que la répétition espacée — le cœur du produit — dérivait
