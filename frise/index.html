@@ -7,13 +7,20 @@
      AVANT OU APRÈS ? — l'épreuve de la frise (accessible depuis Sonder).
      Chaque carte doit trouver sa place : les LIVRES dans l'ordre de la Bible,
      les ÉVÉNEMENTS dans l'ordre où la Bible les raconte.
+
+     DEUX NOMS COEXISTENT, c'est voulu. À l'écran, on dit « la ligne du
+     temps » : des lecteurs butaient sur « frise ». Le nom TECHNIQUE reste
+     frise — l'adresse /frise/, les classes CSS, les clés de stockage et les
+     tables n'ont pas bougé, parce que les favoris, le cache hors-ligne, les
+     redirections 301 et les notifications déjà parties en dépendent. Ne pas
+     « finir le renommage » : il est fini.
      Modes : solo, à plusieurs sur un téléphone, défi à distance par code et
      veillée en direct (endpoints dédiés /api/frise/*, sans compte).
      Page autonome (style, script et données dans ce seul fichier), née dans
      l'atelier frise-essai.html — qui redirige désormais ici.
      ========================================================================== -->
 <title>Avant ou après ? — Bible Horizon</title>
-<meta name="description" content="Replace les livres et les grands événements de la Bible dans l'ordre : la frise se construit sous tes yeux. Seul, à plusieurs, par code ou en veillée. Gratuit, sans publicité." />
+<meta name="description" content="Replace les livres et les grands événements de la Bible dans l'ordre : la ligne du temps se construit sous tes yeux. Seul, à plusieurs, par code ou en veillée. Gratuit, sans publicité." />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Bible Horizon" />
 <meta property="og:locale" content="fr_FR" />
@@ -646,7 +653,7 @@ function deckServeur(mode, portee, nb) {
 function titrePaquet(mode, portee) {
   return mode === 'livres'
     ? "L'ordre des livres" + (portee === 'at' ? ' · Ancien Testament' : portee === 'nt' ? ' · Nouveau Testament' : ' · toute la Bible')
-    : 'La frise des événements';
+    : 'La ligne du temps des événements';
 }
 
 /* Construit le paquet d'une séance : chaque carte = { titre, ref?, ordre }. */
@@ -685,7 +692,7 @@ function demarrer(mode, portee, noms) {
   seance = {
     titre: mode === 'livres'
       ? "L'ordre des livres" + (portee === 'at' ? ' · Ancien Testament' : portee === 'nt' ? ' · Nouveau Testament' : ' · toute la Bible')
-      : 'La frise des événements',
+      : 'La ligne du temps des événements',
     mode: mode, portee: portee,
     participants: noms ? noms.map(nom => ({ nom: nom, score: 0 })) : null,
     tour: 0,
@@ -746,13 +753,13 @@ function vueAccueil() {
   return `<div class="fade">
     <button class="quit" data-retour-defi="1">‹ Défi</button>
     <h1 style="margin-top:10px">Avant ou après <span class="seed">?</span></h1>
-    <p class="muted" style="margin:4px 0 16px">Chaque carte doit trouver sa place dans la frise : les livres dans l'ordre de la Bible, les événements dans l'ordre où elle les raconte.</p>
+    <p class="muted" style="margin:4px 0 16px">Chaque carte doit trouver sa place dans la ligne du temps : les livres dans l'ordre de la Bible, les événements dans l'ordre où elle les raconte.</p>
 
     <button class="card hub-card" data-solo="1">
       <span class="hub-ic">${icon('seul', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Seul</span>
-        <span class="hub-sub">Dix cartes à placer — choisis ton paquet, la frise se construit sous tes yeux.</span>
+        <span class="hub-sub">Dix cartes à placer — choisis ton paquet, la ligne du temps se construit sous tes yeux.</span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -761,7 +768,7 @@ function vueAccueil() {
       <span class="hub-ic">${icon('groupe', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">À plusieurs, ici</span>
-        <span class="hub-sub">Le téléphone passe de main en main : chacun son tour place une carte dans la frise commune. De 2 à 6.</span>
+        <span class="hub-sub">Le téléphone passe de main en main : chacun son tour place une carte dans la ligne du temps commune. De 2 à 6.</span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -770,7 +777,7 @@ function vueAccueil() {
       <span class="hub-ic">${icon('epees', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Défier un ami</span>
-        <span class="hub-sub">À distance : la même frise pour vous deux, chacun quand il veut.<span id="defi-attente"></span></span>
+        <span class="hub-sub">À distance : la même ligne du temps pour vous deux, chacun quand il veut.<span id="defi-attente"></span></span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -817,7 +824,7 @@ function vueDuelMenu() {
   return `<div class="fade">
     <button class="quit" data-quit="1">‹ Avant ou après ?</button>
     <h1 style="font-size:1.25rem;margin-top:10px">Défier un ami</h1>
-    <p class="muted" style="margin:4px 0 16px">La même frise pour vous deux, chacun quand il veut.</p>
+    <p class="muted" style="margin:4px 0 16px">La même ligne du temps pour vous deux, chacun quand il veut.</p>
     ${diagHTML()}
     ${duelMenuLanceHTML()}
     ${amisHTML()}
@@ -827,7 +834,7 @@ function vueDuelMenu() {
       <span class="hub-ic">${icon('epees', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Créer un défi</span>
-        <span class="hub-sub">Tu fais ta frise maintenant et tu reçois le code à envoyer à ton ami.</span>
+        <span class="hub-sub">Tu fais ta ligne du temps maintenant et tu reçois le code à envoyer à ton ami.</span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -836,7 +843,7 @@ function vueDuelMenu() {
       <span class="hub-ic">${icon('rejoindre', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">J'ai reçu un code</span>
-        <span class="hub-sub">Un ami t'a envoyé le sien : la même frise t'attend, ton prénom suffit.</span>
+        <span class="hub-sub">Un ami t'a envoyé le sien : la même ligne du temps t'attend, ton prénom suffit.</span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -872,7 +879,7 @@ function vueVeilleeMenu() {
       <span class="hub-ic">${icon('microphone', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Animer</span>
-        <span class="hub-sub">Ouvre la veillée, donne le code — et c'est toi qui rythmes la frise commune.</span>
+        <span class="hub-sub">Ouvre la veillée, donne le code — et c'est toi qui rythmes la ligne du temps commune.</span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -881,7 +888,7 @@ function vueVeilleeMenu() {
       <span class="hub-ic">${icon('ecranDirect', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Grand écran</span>
-        <span class="hub-sub">Sur l'ordinateur du projecteur : la frise s'affiche en grand pour toute la salle.</span>
+        <span class="hub-sub">Sur l'ordinateur du projecteur : la ligne du temps s'affiche en grand pour toute la salle.</span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -899,7 +906,7 @@ function vueDuelConfig() {
   return `<div class="fade">
     <button class="quit" data-vers="dmenu">‹ Défier un ami</button>
     <h1 style="font-size:1.25rem;margin-top:10px">Créer un défi</h1>
-    <p class="muted" style="margin:4px 0 0">Tu fais ta frise maintenant, tu reçois un code — ton ami fera exactement la même, quand il voudra.</p>
+    <p class="muted" style="margin:4px 0 0">Tu fais ta ligne du temps maintenant, tu reçois un code — ton ami fera exactement la même, quand il voudra.</p>
     <div class="card">
       <p class="mode-title" style="margin-top:0">Le paquet</p>
       <div class="deckrow">${decks.map(([m, p, l]) =>
@@ -939,7 +946,7 @@ function vueProjection() {
   return `<div class="fade">
     <button class="quit" data-vers="vmenu">‹ En direct, dans ton église</button>
     <h1 style="font-size:1.25rem;margin-top:10px">Grand écran</h1>
-    <p class="muted" style="margin:4px 0 0">Sur l'ordinateur relié au projecteur : le code de la veillée, et la frise s'affiche en grand pour toute la salle.</p>
+    <p class="muted" style="margin:4px 0 0">Sur l'ordinateur relié au projecteur : le code de la veillée, et la ligne du temps s'affiche en grand pour toute la salle.</p>
     <div class="card">
       <input class="pin" id="in-code" maxlength="8" placeholder="Code (FV-XXXXX)" value="${esc(saisie.code)}" autocapitalize="characters">
       <button class="btn btn-primary" data-projgo="1">Afficher la veillée</button>
@@ -961,7 +968,7 @@ function vueDuelResultat() {
     let verdict = '';
     if (r.p1 && r.p2 && r.p1.score !== null && r.p2.score !== null) {
       verdict = r.p1.score === r.p2.score ? '<p style="font-weight:650;margin:12px 0 0">Égalité parfaite 🙂</p>'
-        : `<p style="font-weight:650;margin:12px 0 0">${esc(r.p1.score > r.p2.score ? r.p1.pseudo : r.p2.pseudo)} connaît sa frise 🏅</p>`;
+        : `<p style="font-weight:650;margin:12px 0 0">${esc(r.p1.score > r.p2.score ? r.p1.pseudo : r.p2.pseudo)} connaît sa ligne du temps 🏅</p>`;
     } else if (!r.p2) {
       verdict = r.invite
         ? `<p class="muted" style="margin:12px 0 0">En attente de <b>${esc(r.invite)}</b> — le défi l'attend dans son écran « Défier un ami », pas besoin de code.</p>`
@@ -1031,7 +1038,7 @@ function htmlFriseEtat(etat, marquerBon) {
     cartes.splice(etat.positionJuste, 0,
       `<div class="fcarte ${cls}"><span class="t">${esc(etat.enCours.t)}</span>${etat.enCours.r ? ` <span class="r">· ${esc(etat.enCours.r)}</span>` : ''}</div>`);
   }
-  return `<p class="sep">La frise — du plus ancien au plus récent</p>
+  return `<p class="sep">La ligne du temps — du plus ancien au plus récent</p>
     <div class="frise">${cartes.map(c => c + '<div style="height:8px"></div>').join('')}</div>`;
 }
 
@@ -1100,7 +1107,7 @@ function vuePart() {
           frise.push(`<div class="fcarte"><span class="t">${esc(e.frise[k].t)}</span>${e.frise[k].r ? ` <span class="r">· ${esc(e.frise[k].r)}</span>` : ''}</div>`);
         }
       }
-      corps = carte + `<p class="sep">La frise — du plus ancien au plus récent</p><div class="frise">${frise.join('')}</div>`;
+      corps = carte + `<p class="sep">La ligne du temps — du plus ancien au plus récent</p><div class="frise">${frise.join('')}</div>`;
     } else {
       corps = carte + `<p class="feedback ok">Réponse posée ✓ — on attend les autres (${e.participants.filter(p => p.aRepondu).length} / ${e.participants.length}).</p>`
         + htmlFriseEtat(e, null);
@@ -1138,7 +1145,7 @@ function vueProj() {
     if (avecEnCours && e.enCours && e.positionJuste !== null) {
       cartes.splice(e.positionJuste, 0, { t: e.enCours.t, r: e.enCours.r, cls: ' bon' });
     }
-    return `<p class="sep">La frise — du plus ancien au plus récent</p>
+    return `<p class="sep">La ligne du temps — du plus ancien au plus récent</p>
       <div class="proj-frise">${cartes.map((c, i) =>
         `<div class="fcarte${c.cls}"><span class="num">${i + 1}.</span><span class="t">${esc(c.t)}</span>${c.r ? ` <span class="r">· ${esc(c.r)}</span>` : ''}</div>`).join('')}</div>`;
   };
@@ -1269,7 +1276,7 @@ function vueConfig() {
   return `<div class="fade">
     <button class="quit" data-quit="1">‹ Avant ou après ?</button>
     <h1 style="font-size:1.25rem;margin-top:10px">À plusieurs, ici</h1>
-    <p class="muted" style="margin:4px 0 0">Chacun son tour : une carte, un choix, et la frise grandit pour tout le monde.</p>
+    <p class="muted" style="margin:4px 0 0">Chacun son tour : une carte, un choix, et la ligne du temps grandit pour tout le monde.</p>
     <div class="card">
       <p class="mode-title" style="margin-top:0">Le paquet</p>
       <div class="deckrow">${decks.map(([m, p, l]) =>
@@ -1318,7 +1325,7 @@ function vueSeance() {
     ${tablee}
     ${courante}
     ${fb}
-    <p class="sep">La frise — du plus ancien au plus récent</p>
+    <p class="sep">La ligne du temps — du plus ancien au plus récent</p>
     <div class="frise">${frise.join('')}</div>
   </div>`;
 }
@@ -1328,8 +1335,8 @@ function vueFinMulti() {
   const top = cls[0].score;
   const gagnants = cls.filter(p => p.score === top);
   const mot = gagnants.length > 1
-    ? 'Ex æquo en tête — la frise vous départagera une autre fois 🙂'
-    : `${esc(gagnants[0].nom)} connaît sa frise 🏅`;
+    ? 'Ex æquo en tête — la ligne du temps vous départagera une autre fois 🙂'
+    : `${esc(gagnants[0].nom)} connaît sa ligne du temps 🏅`;
   const lignes = cls.map((p, i) => `<div class="frow ${p.score === top ? 'tete' : ''}">
       <span>${i + 1}. ${esc(p.nom)}</span><b>${p.score} carte${p.score > 1 ? 's' : ''}</b></div>`).join('');
   return `<div class="card fin fade">
@@ -1401,7 +1408,7 @@ function vueFin() {
   const s = seance;
   const parfait = s.score === s.total;
   const bien = s.score >= Math.ceil(s.total * 0.7);
-  const mot = parfait ? 'Sans une seule erreur — la frise est limpide pour toi ✨'
+  const mot = parfait ? 'Sans une seule erreur — la ligne du temps est limpide pour toi ✨'
     : bien ? 'Belle séance — les repères se mettent en place 🌱'
     : "Chaque carte mal placée t'a montré sa vraie place — c'est comme ça qu'on apprend 🌱";
   return `<div class="card fin fade">

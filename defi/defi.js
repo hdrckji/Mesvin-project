@@ -988,7 +988,7 @@ function renderAccueil() {
       <span class="hub-ic">${icon('sablier', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Avant ou après ?</span>
-        <span class="hub-sub">Replace les livres et les grands événements dans l'ordre — la frise se construit sous tes yeux.<span id="attente-avantapres"></span></span>
+        <span class="hub-sub">Replace les livres et les grands événements dans l'ordre — la ligne du temps se construit sous tes yeux.<span id="attente-avantapres"></span></span>
       </span>
       <span class="chev">›</span>
     </button>
