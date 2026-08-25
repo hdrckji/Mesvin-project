@@ -125,7 +125,7 @@ function frise_duel_create(PDO $pdo): never {
     // api/epreuve.php ; le duel par code reste ouvert à tous.
     $ami = epreuve_defi_ami($pdo, $body);
     $deck = frise_deck_propre($body['deck'] ?? null);
-    $mode = is_string($body['mode'] ?? null) ? mb_substr(trim($body['mode']), 0, 40) : 'La Frise';
+    $mode = is_string($body['mode'] ?? null) ? mb_substr(trim($body['mode']), 0, 40) : 'La ligne du temps';
     $pseudo = frise_prenom($body['pseudo'] ?? ($ami['pseudo'] ?? null));
 
     $code = frise_code($pdo, 'frise_duels', 'FD-');
@@ -245,7 +245,7 @@ function frise_veillee_create(PDO $pdo): never {
     frise_menage($pdo);
     $body = read_json_body();
     $deck = frise_deck_propre($body['deck'] ?? null);
-    $mode = is_string($body['mode'] ?? null) ? mb_substr(trim($body['mode']), 0, 40) : 'La Frise';
+    $mode = is_string($body['mode'] ?? null) ? mb_substr(trim($body['mode']), 0, 40) : 'La ligne du temps';
 
     // « La veillée s'enchaîne toute seule » : même réglage que sur les épreuves
     // à choix, désactivé par défaut — sans lui, rien ne change.

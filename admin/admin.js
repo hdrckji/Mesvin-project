@@ -916,7 +916,7 @@ function htmlSelecteurEpreuve() {
     <div class="adm-epreuves" id="q-epreuves">${entrees.map(([m, t]) =>
       `<button class="adm-epreuve ${epreuve === m ? 'on' : ''}" data-epreuve="${m}">${icon(EPREUVE_ICONES[m], 18)}<span>${esc(t)}</span></button>`).join('')}
     </div>
-    <p class="muted adm-epreuve-note">« Avant ou après ? » (la frise) n'est pas encore modifiable ici — sa chronologie arrive dans une prochaine étape.</p>`;
+    <p class="muted adm-epreuve-note">« Avant ou après ? » (la ligne du temps) n'est pas encore modifiable ici — sa chronologie arrive dans une prochaine étape.</p>`;
 }
 
 function htmlQuestions() {
