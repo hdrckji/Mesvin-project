@@ -315,7 +315,8 @@ function demarrer(mode) {
     // Bibliophile ne vaut que pour le défi libre : le défi du jour est le même
     // pour tout le monde, on ne le durcit pas dans le dos des autres.
     bibliophile: mode === 'libre' && filtresLibre.bibliophile,
-    saisie: ''         // ce que le lecteur a écrit, pour le lui remontrer
+    saisie: '',        // ce que le lecteur a écrit, pour le lui remontrer
+    indice: false      // propositions révélées (Bibliophile) : la question vaut ½
   };
   render();
 }
@@ -324,7 +325,20 @@ function repondre(pos) {
   if (vue.repondu !== null) return;
   const item = vue.items[vue.index];
   vue.repondu = pos;
-  compter(pos === item.bonnePos, item);
+  // En Bibliophile, on ne touche une option qu'après avoir révélé les
+  // propositions : la question ne vaut alors plus que la moitié.
+  compter(pos === item.bonnePos, item, vue.bibliophile && vue.indice);
+}
+
+/* Bibliophile : « Voir les propositions — ½ point ». Le prix est annoncé SUR
+   le bouton, jamais après coup. Porte à sens unique : une fois révélées, on
+   répond en touchant — même si la mémoire revient entre-temps, la question
+   reste à ½. Sans ça, l'indice serait gratuit pour qui sait se raviser. */
+function voirPropositions() {
+  if (vue.repondu !== null || vue.indice) return;
+  vue.indice = true;
+  vue.saisie = '';
+  render();
 }
 
 /* Bibliophile : la réponse est ÉCRITE, pas choisie. On note « -1 » plutôt
@@ -332,7 +346,7 @@ function repondre(pos) {
    jamais touchée : il verra la bonne réponse mise en avant, et la sienne à
    côté. */
 function repondreTexte() {
-  if (vue.repondu !== null) return;
+  if (vue.repondu !== null || vue.indice) return; // propositions révélées : on répond en touchant
   const item = vue.items[vue.index], q = item.q;
   const champ = document.getElementById('saisie');
   const texte = champ ? champ.value : '';
@@ -353,10 +367,15 @@ function donnerSaLangue() {
   compter(false, vue.items[vue.index]);
 }
 
-/* Le décompte, commun aux deux façons de répondre. */
-function compter(ok, item) {
+/* Le décompte, commun à toutes les façons de répondre. `demi` : réponse
+   trouvée APRÈS avoir révélé les propositions (Bibliophile) — elle vaut ½
+   point, et c'est le SEUL prix. La série continue et la catégorie compte un
+   succès : le lecteur a bien trouvé, il a déjà payé en points. Multiplier les
+   pénalités cachées rendrait la règle illisible ; une seule, annoncée sur le
+   bouton, suffit. */
+function compter(ok, item, demi) {
   if (ok) {
-    vue.score++;
+    vue.score += demi ? 0.5 : 1;
     store.serie++;
     if (store.serie > store.meilleureSerie) store.meilleureSerie = store.serie;
   } else {
@@ -374,10 +393,17 @@ function suivante() {
     vue.index++;
     vue.repondu = null;
     vue.saisie = '';
+    vue.indice = false; // chaque question repart en saisie libre, à 1 point
     render();
   } else {
     terminer();
   }
+}
+
+/* « 7,5 » et pas « 7.5 » : le score peut porter des demi-points (Bibliophile
+   avec propositions révélées), et on écrit les décimales à la française. */
+function fmtScore(n) {
+  return String(n).replace('.', ',');
 }
 
 function terminer() {
@@ -1224,12 +1250,15 @@ function renderQuestion() {
 
     <div class="card">
       <p class="defi-question">${esc(q.question)}</p>
-      ${vue.bibliophile && !repondu ? `
+      ${vue.bibliophile && !repondu && !vue.indice ? `
         <input id="saisie" class="saisie-libre" type="text" placeholder="Écris ta réponse"
                autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
         <button class="btn btn-primary btn-block" id="btn-valider">Valider</button>
+        <button class="btn btn-ghost btn-block" id="btn-indice" style="margin-top:8px">Voir les propositions — ½ point</button>
         <button class="btn btn-ghost btn-block" id="btn-langue" style="margin-top:8px">Je ne trouve pas</button>
       ` : `
+      ${vue.bibliophile && vue.indice && !repondu
+        ? '<p class="defi-saisie-rappel">Propositions révélées — cette question vaut ½ point.</p>' : ''}
       <div id="options">
         ${item.ordre.map((idxOpt, pos) => {
           let cls = 'defi-option';
@@ -1242,7 +1271,11 @@ function renderQuestion() {
         }).join('')}
       </div>`}
       ${repondu && vue.bibliophile ? `<p class="defi-saisie-rappel">${
-        !vue.saisie ? 'Tu as passé la question.'
+        vue.indice
+          ? (vue.repondu === item.bonnePos
+              ? 'Trouvée avec les propositions : ½ point.'
+              : 'Répondu avec les propositions.')
+        : !vue.saisie ? 'Tu as passé la question.'
         : saisieNorm(vue.saisie) === saisieNorm(q.options[q.bonne])
           ? `Tu avais écrit <b>${esc(vue.saisie)}</b>.`
           : vue.repondu === item.bonnePos
@@ -1257,9 +1290,10 @@ function renderQuestion() {
   </div>`;
 
   document.getElementById('btn-quitter').onclick = () => { vue = { ecran: 'solo' }; render(); };
-  if (!repondu && vue.bibliophile) {
+  if (!repondu && vue.bibliophile && !vue.indice) {
     const champ = document.getElementById('saisie');
     document.getElementById('btn-valider').onclick = repondreTexte;
+    document.getElementById('btn-indice').onclick = voirPropositions;
     document.getElementById('btn-langue').onclick = donnerSaLangue;
     // Entrée valide : sur un téléphone, c'est la touche qu'on a sous le pouce.
     champ.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); repondreTexte(); } };
@@ -1279,7 +1313,7 @@ function renderFin() {
   <div class="fade">
     <div class="card hero done-screen">
       <div class="seal">🌾</div>
-      <div class="defi-score">${vue.score}<span class="of">/${total}</span></div>
+      <div class="defi-score">${fmtScore(vue.score)}<span class="of">/${total}</span></div>
       <p class="defi-word">${esc(motDeFin(vue.score, total))}</p>
       ${vue.mode === 'jour' ? `<p style="margin:10px 0 0"><button class="linkbtn" id="btn-partager-score">Partager mon score</button></p>` : ''}
     </div>
