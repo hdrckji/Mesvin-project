@@ -117,6 +117,64 @@ const apresRenonce = await txt();
 const score2 = await page.evaluate(() => vue.score);
 score2 === 1 ? ok('et ne rapporte aucun point') : bad(`score = ${score2}, attendu 1`);
 
+console.log('\n-- « Voir les propositions — ½ point » : l\'indice au prix annoncé');
+// Question 3 : le prix est écrit SUR le bouton, avant tout engagement.
+await page.click('#btn-suivante'); await page.waitForTimeout(600);
+const avantIndice = await txt();
+/Voir les propositions — ½ point/.test(avantIndice)
+  ? ok('le bouton annonce son prix avant le tap')
+  : bad('le prix n\'est pas annoncé sur le bouton', avantIndice);
+await page.click('#btn-indice'); await page.waitForTimeout(600);
+(await page.$('#saisie')) === null
+  ? ok('propositions révélées : le champ de saisie disparaît — porte à sens unique')
+  : bad('le champ de saisie survit à la révélation');
+const revele = await page.$$('#options .defi-option');
+revele.length === 4 ? ok('les 4 propositions apparaissent') : bad(`${revele.length} propositions`);
+/cette question vaut ½ point/.test(await txt())
+  ? ok('et l\'écran redit le prix pendant qu\'on choisit')
+  : bad('le prix n\'est pas rappelé à l\'écran');
+// On touche la BONNE : ½ point, la série continue.
+const serieAvant = await page.evaluate(() => store.serie);
+await page.evaluate(() => {
+  const it = vue.items[vue.index];
+  document.querySelector(`#options .defi-option[data-pos="${it.bonnePos}"]`).click();
+});
+await page.waitForTimeout(600);
+const s3 = await page.evaluate(() => ({ score: vue.score, serie: store.serie, ratees: vue.ratees.length }));
+s3.score === 1.5 ? ok('la bonne réponse touchée vaut ½ point (score 1,5)') : bad(`score = ${s3.score}, attendu 1.5`);
+s3.serie === serieAvant + 1 ? ok('la série continue : trouver reste trouver') : bad(`série ${s3.serie}, attendu ${serieAvant + 1}`);
+s3.ratees === 1 ? ok('et la question ne part pas dans les ratées') : bad(`${s3.ratees} ratées, attendu 1`);
+/Trouvée avec les propositions : ½ point/.test(await txt())
+  ? ok('le rappel dit comment elle a été trouvée')
+  : bad('rappel absent ou muet sur l\'indice');
+
+// Question 4 : indice puis MAUVAISE option — zéro, comme un tap raté en Connaisseur.
+await page.click('#btn-suivante'); await page.waitForTimeout(600);
+await page.click('#btn-indice'); await page.waitForTimeout(600);
+await page.evaluate(() => {
+  const it = vue.items[vue.index];
+  const faux = [0, 1, 2, 3].find(p => p !== it.bonnePos);
+  document.querySelector(`#options .defi-option[data-pos="${faux}"]`).click();
+});
+await page.waitForTimeout(600);
+const s4 = await page.evaluate(() => ({ score: vue.score, ratees: vue.ratees.length }));
+s4.score === 1.5 ? ok('se tromper après l\'indice ne rapporte rien') : bad(`score = ${s4.score}, attendu 1.5`);
+s4.ratees === 2 ? ok('et la question rejoint les ratées') : bad(`${s4.ratees} ratées, attendu 2`);
+
+// Question 5 : l'indice ne colle pas d'une question à l'autre.
+await page.click('#btn-suivante'); await page.waitForTimeout(600);
+(await page.$('#saisie')) ? ok('la question suivante repart en saisie libre, à 1 point')
+                          : bad('l\'indice a débordé sur la question suivante');
+
+// La fin de partie écrit les demi-points à la française. On renonce jusqu'au bout.
+for (let i = 4; i < 10; i++) {
+  await page.click('#btn-langue'); await page.waitForTimeout(350);
+  await page.click('#btn-suivante'); await page.waitForTimeout(350);
+}
+const fin = await txt();
+/1,5\s*\/\s*10/.test(fin) ? ok('l\'écran de fin affiche « 1,5/10 » — virgule française')
+                          : bad('le demi-point ne s\'écrit pas 1,5', fin.slice(0, 200));
+
 console.log('\n-- Le reste de l\'appli n\'a pas bougé');
 await page.goto(BASE + '/defi/', { waitUntil: 'load' }); await page.waitForTimeout(700);
 await page.getByText('Qui, où, quand ?').click(); await page.waitForTimeout(400);
@@ -126,6 +184,7 @@ await page.getByText('Relever un défi libre').click(); await page.waitForTimeou
 const normal = await page.$$('#options .defi-option');
 normal.length === 4 ? ok('un défi Connaisseur ordinaire garde ses 4 propositions') : bad(`${normal.length} propositions`);
 (await page.$('#saisie')) ? bad('un champ de saisie traîne là où il ne devrait pas') : ok('et aucun champ de saisie');
+(await page.$('#btn-indice')) ? bad('le bouton d\'indice n\'a rien à faire en Connaisseur') : ok('ni bouton d\'indice — les propositions y sont déjà gratuites');
 
 erreurs.length === 0 ? ok('aucune exception JS de bout en bout') : bad('exceptions', erreurs.join(' | '));
 
