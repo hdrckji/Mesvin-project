@@ -173,7 +173,7 @@ async function telechargerBanque() {
 }
 async function chargerBanque() {
   // La copie mémorisée sur l'appareil d'abord : le module s'ouvre sans
-  // attendre le re-téléchargement des 600 questions (~150 Ko à chaque
+  // attendre le re-téléchargement des 1 500 questions (~460 Ko à chaque
   // visite, sinon). Le serveur est consulté en arrière-plan et sa version
   // remplace la copie pour la PROCHAINE ouverture — jamais en pleine partie,
   // le tirage du jour ne doit pas changer sous les pieds du joueur.
@@ -243,7 +243,7 @@ function tirage(mode, filtres) {
     // SANS REDITE : la banque entière est mélangée une fois par « période »
     // de floor(N/10) jours, et chaque jour prend sa tranche de 10 questions.
     // Une question ne peut donc pas revenir avant la fin de la période
-    // (~30 jours avec 300 questions). Tout dérive de la date : même défi
+    // (~150 jours avec 1 500 questions). Tout dérive de la date : même défi
     // pour tout le monde, sans serveur ni mémoire locale.
     const jour = Math.floor(Date.parse(dateISO() + 'T00:00:00Z') / 86400000);
     const parPeriode = Math.max(1, Math.floor(BANQUE.length / NB_QUESTIONS));
@@ -900,8 +900,8 @@ async function revanche(opponent) {
 /* ============================================================================
    Signaler ce qui cloche
 
-   600 questions ont été relues deux fois devant le texte. Elles restent
-   écrites par des humains : la personne qui verra la 601e coquille, c'est le
+   1 500 questions ont été relues deux fois devant le texte. Elles restent
+   écrites par des humains : la personne qui verra la 1 501e coquille, c'est le
    lecteur, sa Bible ouverte à côté du téléphone. Sans un geste à sa portée,
    ce qu'il voit meurt avec sa soirée.
 

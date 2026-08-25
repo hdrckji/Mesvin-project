@@ -32,7 +32,7 @@ célébration sobre en fin de livre.
 
 Connaissance des récits bibliques : questions strictement **factuelles** (qui, quoi, où),
 jamais d'interprétation. **Défi du jour** (10 questions, les mêmes pour tous, tirées
-de la date — la banque de 300 questions tourne en cycle complet de 30 jours, **sans
+de la date — la banque de 1 500 questions tourne en cycle complet de 150 jours, **sans
 redite** d'un jour à l'autre) et **défi libre** (par catégorie et niveau). Après chaque réponse,
 la **référence biblique** ramène vers le texte. Se vit **seul**, **à plusieurs sur un
 même appareil**, en **duel à distance** avec un ami, ou en **veillée en direct** :
@@ -51,7 +51,7 @@ data/collections.json            # collections thématiques
 lire/index.html, lire.js, lire.css
 lire/data/marc.json, jean.json   # texte biblique des chemins de lecture
 defi/index.html, defi.js, defi.css
-defi/data/questions.json         # 300 questions factuelles (50 par catégorie)
+defi/data/questions.json         # 1 500 questions factuelles, six catégories, trois niveaux
 manifest.webmanifest, sw.js      # installation PWA & hors-ligne complet
 icon.svg
 ```
