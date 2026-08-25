@@ -12852,7 +12852,7 @@
    "id": "at-148",
    "categorie": "Ancien Testament",
    "niveau": 1,
-   "question": "Combien de tribus Jacob bénit-il, « toutes les douze » ?",
+   "question": "Combien de tribus d'Israël Jacob bénit-il, chacune selon sa bénédiction ?",
    "options": [
     "Douze",
     "Dix",
@@ -12997,7 +12997,7 @@
     "Celui d'Aaron",
     "Celui de Moïse",
     "Celui de Josué",
-    "Celui de Lévi"
+    "Celui d'Éléazar"
    ],
    "bonne": 0,
    "reference": "Nombres 17.8"
@@ -14829,9 +14829,9 @@
    "question": "Qu'est-ce qui « n'était plus », dans le nouveau ciel et la nouvelle terre ?",
    "options": [
     "La mer",
-    "La nuit",
-    "Le soleil",
-    "La montagne"
+    "Les montagnes",
+    "Les fleuves",
+    "Le désert"
    ],
    "bonne": 0,
    "reference": "Apocalypse 21.1"
@@ -17295,7 +17295,7 @@
     "Adam",
     "Jéricho",
     "Guilgal",
-    "Tsarthan"
+    "Sichem"
    ],
    "bonne": 0,
    "reference": "Josué 3.16"
