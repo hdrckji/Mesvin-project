@@ -1,0 +1,13 @@
+# Clé de signature Android : ne JAMAIS committer (livrée à part, conservée hors dépôt).
+twa/android.keystore
+twa/*.keystore
+twa/*.jks
+
+# Fichiers propres à la machine de build
+twa/local.properties
+twa/.gradle/
+twa/build/
+twa/app/build/
+
+# Base SQLite locale (mode dev)
+api/data/*.sqlite*

@@ -1,0 +1,38 @@
+# Ce workflow compile à la demande (déclenchement manuel) le projet Android TWA
+# du dossier `twa/` et publie l'AAB non signé sur la branche, dans `twa/dist/`.
+# La signature se fait hors CI, avec la clé d'upload conservée hors dépôt.
+
+name: Build TWA AAB
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build de l'AAB (non signé)
+        working-directory: twa
+        run: |
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon
+
+      - name: Publier l'AAB sur la branche
+        run: |
+          mkdir -p twa/dist
+          cp twa/app/build/outputs/bundle/release/app-release.aab twa/dist/app-release-unsigned.aab
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f twa/dist/app-release-unsigned.aab
+          git commit -m "CI : AAB non signé généré par bundleRelease"
+          git push

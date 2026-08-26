@@ -1,0 +1,42 @@
+{
+  "packageId": "fr.biblehorizon.app",
+  "host": "biblehorizon.fr",
+  "name": "Bible Horizon",
+  "launcherName": "Horizon",
+  "display": "standalone",
+  "themeColor": "#F7F3EA",
+  "themeColorDark": "#000000",
+  "navigationColor": "#F7F3EA",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#00000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#F7F3EA",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "http://localhost:8765/icon-512.png",
+  "maskableIconUrl": "http://localhost:8765/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "biblehorizon"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "http://localhost:8765/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://biblehorizon.fr/",
+  "minSdkVersion": 21,
+  "orientation": "default",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": []
+}

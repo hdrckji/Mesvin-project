@@ -3,3 +3,7 @@
 README.md
 # Base SQLite locale (mode dev) : jamais embarquée dans l'image.
 api/data/*.sqlite*
+
+# Projet Android TWA et CI : pas du contenu du site.
+twa
+.github

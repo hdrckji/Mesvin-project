@@ -4,7 +4,9 @@
     "target": {
       "namespace": "android_app",
       "package_name": "fr.biblehorizon.app",
-      "sha256_cert_fingerprints": []
+      "sha256_cert_fingerprints": [
+        "6E:7F:AC:9C:BB:CF:6F:C7:C2:71:FB:62:6E:AA:D0:6B:C6:96:9E:86:19:AD:3D:A6:50:01:33:B0:A4:3A:D3:3B"
+      ]
     }
   }
 ]
