@@ -6,6 +6,9 @@ name: Build TWA AAB
 
 on:
   workflow_dispatch:
+  push:
+    branches: ['claude/google-developer-account-check-xa8wfg']
+    paths: ['twa/**', '.github/workflows/build-twa.yml']
 
 permissions:
   contents: write
