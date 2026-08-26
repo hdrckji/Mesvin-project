@@ -146,7 +146,7 @@ fi
 # désormais, écrites AUTREMENT l'une de l'autre — la première compare des
 # chaînes, la seconde des suites de mots, et vérifie en plus qu'aucune autre
 # proposition ne conviendrait. Elles portent sur TOUTES les questions du Défi
-# (1 500 et quelques), les trois banques d'épreuves et les 100 versets de la
+# (2 000 désormais), les trois banques d'épreuves et les 100 versets de la
 # bibliothèque.
 say "Contenu biblique : chaque citation se lit-elle dans le texte de l'appli ?"
 if command -v python3 > /dev/null 2>&1; then
@@ -743,7 +743,7 @@ check "catégorie inconnue → 400" 400 \
   "$(api POST /api/veillees "$TOKEN1" '{"nb":5,"categorie":"Recettes de cuisine"}')"
 check "niveau hors bornes → 400" 400 \
   "$(api POST /api/veillees "$TOKEN1" '{"nb":5,"niveau":9}')"
-# Le filtre doit vraiment MORDRE. La banque compte 1 500 questions réparties en
+# Le filtre doit vraiment MORDRE. La banque compte 2 000 questions réparties en
 # six catégories : si le tirage puisait dans le tas entier, vingt questions
 # tirées « Nouveau Testament » en contiendraient forcément d'autres. On tire
 # donc le maximum et on vérifie que les vingt portent la bonne étiquette.
@@ -2287,7 +2287,7 @@ fi
 # Signaler, dans un vrai navigateur. L'API sait dire qu'une route accepte un
 # signalement ; elle ne peut rien dire du GESTE, et c'est le geste qui décide
 # de tout. Un lien qu'on ne voit pas, un envoi qui ne remercie pas, et plus
-# personne ne signale rien — on croit alors que les 1 500 questions sont
+# personne ne signale rien — on croit alors que les 2 000 questions sont
 # parfaites parce que la boîte est vide.
 say "Signaler dans un vrai navigateur (le lecteur sans compte, puis l'administration)"
 if node -e "import('playwright')" > /dev/null 2>&1 \
@@ -2892,9 +2892,9 @@ check "les deux dossiers sont copiés dans l'image" oui "$DOCKER_OK"
 # ---------------------------------------------------------------------------
 # Signaler ce qui cloche. Deux exigences se croisent ici, et les tests les
 # gardent toutes les deux : celle de Google Play (un contenu publié doit
-# pouvoir être signalé) et la nôtre (1 500 questions relues deux fois restent
+# pouvoir être signalé) et la nôtre (2 000 questions relues deux fois restent
 # écrites par des humains — c'est le lecteur, sa Bible ouverte, qui verra la
-# 1 501e coquille). D'où le point le plus important de ce bloc : signaler NE
+# 2 001e coquille). D'où le point le plus important de ce bloc : signaler NE
 # DEMANDE PAS DE COMPTE. Si ce test tombe un jour, on n'aura plus de retours.
 say "Signaler — le geste du lecteur, et la pile de l'administration"
 
