@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
   push:
     branches: ['claude/google-developer-account-check-xa8wfg']
-    paths: ['twa/**', '.github/workflows/build-twa.yml']
+    paths: ['twa/**', '!twa/dist/**', '.github/workflows/build-twa.yml']
 
 permissions:
   contents: write
@@ -37,5 +37,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f twa/dist/app-release-unsigned.aab
-          git commit -m "CI : AAB non signé généré par bundleRelease"
+          git commit -m "CI : AAB non signé généré par bundleRelease" || echo "AAB inchangé, rien à committer"
           git push
