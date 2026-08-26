@@ -10,6 +10,15 @@
 - Erreurs : code HTTP approprié + corps `{ "error": "message lisible en français" }`.
 - **Connexion sans mot de passe** : code à 6 chiffres envoyé par e-mail
   (plus fiable qu'un lien magique dans une PWA installée : on reste dans l'appli).
+- **Compte de démonstration (revue Google Play)** : l'adresse
+  `demo-play@biblehorizon.fr` (surchargeable : `DEMO_PLAY_EMAIL`) accepte un
+  code **fixe** — `316705` par défaut, remplacé par `DEMO_PLAY_CODE`
+  (6 chiffres), coupé si la variable est définie à vide ou invalide. Aucun
+  e-mail n'est envoyé, rien n'est stocké dans `login_codes`, le code est
+  rejouable, et le compte (pseudo d'office « Démo Google ») se recrée au
+  premier passage — même après suppression. C'est un compte **ordinaire, sans
+  privilège** : l'équivalent de ce que n'importe qui obtient avec sa propre
+  adresse (fonctions `demo_play_email()` / `demo_play_code()`, `api/auth.php`).
 - Données personnelles : **e-mail + pseudo, rien d'autre**. Le vrai nom n'est
   jamais demandé. Suppression de compte = effacement total.
 - Le local reste la base : l'appli fonctionne sans compte ; le serveur ne fait

@@ -316,6 +316,23 @@ check "token de 64 hex"                 64  "${#TOKEN1}"
 check "code ami au format GRN-XXXX"     GRN "${FCODE1%-*}"
 check "code consommé : rejouer → 400"   400 "$(api POST /api/auth/verify '' "{\"email\":\"alice@example.org\",\"code\":\"$CODE1\"}")"
 
+say "Compte de démonstration (revue Google Play)"
+check "request-code démo → 200"         200 "$(api POST /api/auth/request-code '' '{"email":"demo-play@biblehorizon.fr"}')"
+check "→ pas de devCode : rien n'est envoyé" null "$(jval .devCode)"
+check "mauvais code démo → 401"         401 "$(api POST /api/auth/verify '' '{"email":"demo-play@biblehorizon.fr","code":"000000"}')"
+check "code fixe démo → 200"            200 "$(api POST /api/auth/verify '' '{"email":"demo-play@biblehorizon.fr","code":"316705"}')"
+check "→ pseudo d'office"               "Démo Google" "$(jval .user.pseudo)"
+TOKEND="$(jval .token)"
+check "session démo (GET /api/me) → 200" 200 "$(api GET /api/me "$TOKEND")"
+check "code fixe rejouable → 200"       200 "$(api POST /api/auth/verify '' '{"email":"demo-play@biblehorizon.fr","code":"316705"}')"
+TOKEND="$(jval .token)"
+check "le compte démo s'efface comme un autre → 200" 200 "$(api DELETE /api/me "$TOKEND")"
+check "et le code fixe le fait renaître → 200" 200 "$(api POST /api/auth/verify '' '{"email":"demo-play@biblehorizon.fr","code":"316705"}')"
+TOKEND="$(jval .token)"
+# On laisse la base comme on l'a trouvée : les comptages de la suite (admin,
+# suppression totale) ne doivent pas dépendre du passage de l'examinateur.
+check "grand ménage final → 200"        200 "$(api DELETE /api/me "$TOKEND")"
+
 say "Profil"
 check "GET /api/me sans token → 401"    401 "$(api GET /api/me)"
 check "GET /api/me → 200"               200 "$(api GET /api/me "$TOKEN1")"

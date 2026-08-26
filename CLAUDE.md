@@ -43,6 +43,15 @@ Les commits s'écrivent en français, dans le style narratif de l'historique exi
 - Déjà en ligne côté site : politique de confidentialité (`/confidentialite`),
   suppression de compte (`/supprimer-mon-compte`), icône 512 (`icon-512.png`).
 
+### Compte démo pour la revue Google (déclaration « Accès à l'appli »)
+- `demo-play@biblehorizon.fr` + code fixe **316705** (la connexion de l'appli est
+  sans mot de passe, par code e-mail — l'examinateur utilise ce code fixe).
+- Implémenté dans `api/auth.php` (`demo_play_email()` / `demo_play_code()`),
+  documenté dans API-CONTRAT.md, couvert par la suite de tests. Env :
+  `DEMO_PLAY_CODE` remplace le code (6 chiffres) ou, définie à vide, coupe le
+  compte ; `DEMO_PLAY_EMAIL` remplace l'adresse. Compte ordinaire sans
+  privilège, recréé à chaque passage. **Actif en prod après merge + déploiement.**
+
 ### Étapes restantes (dans l'ordre)
 1. Jimmy crée l'appli dans la Play Console et remplit les déclarations
    (il a un prompt Cowork dédié pour se faire guider écran par écran).

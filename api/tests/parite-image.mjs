@@ -170,8 +170,9 @@ absents.length ? bad(`${absents.length} référence(s) pointant dans le vide`, a
 console.log('\n-- Servi pendant les tests, mais absent de l\'image');
 // Ce qui n'a rien à faire dans l'image parce que ce n'est pas le SITE :
 // l'atelier de communication, le backend (servi par réécriture, pas en
-// statique), les tests, et l'outillage de dépôt.
-const HORS = ['outils/', 'api/', 'lire/tests/', '.github/'];
+// statique), les tests, l'outillage de dépôt, et l'appli Android (twa/ :
+// le paquet TWA destiné au Play Store — il EMBARQUE le site, il n'en est pas).
+const HORS = ['outils/', 'api/', 'lire/tests/', '.github/', 'twa/'];
 const horsimage = fichiersDe('.')
   .map(f => f.replace(/^\.\//, ''))
   // Les fichiers CACHÉS ne sont jamais servis (.dockerignore, .gitignore…) —

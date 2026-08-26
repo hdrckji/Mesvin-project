@@ -50,10 +50,46 @@ function auth_read_email(array $body): string {
     return $email;
 }
 
+/* ---- Compte de démonstration (revue Google Play) -------------------------- */
+
+/**
+ * Google Play exige des identifiants de test pour examiner une appli dont des
+ * fonctions demandent une connexion. Notre connexion étant sans mot de passe
+ * (code reçu par e-mail), l'examinateur ne recevrait jamais rien : une adresse
+ * réservée accepte donc un code FIXE, sans aucun envoi. Le compte ainsi ouvert
+ * est un compte ordinaire, sans le moindre privilège — le même que n'importe
+ * qui peut se créer librement avec sa propre adresse.
+ */
+function demo_play_email(): string {
+    $email = strtolower(trim((string) (getenv('DEMO_PLAY_EMAIL') ?: '')));
+    return $email !== '' ? $email : 'demo-play@biblehorizon.fr';
+}
+
+/**
+ * Le code fixe du compte de démonstration, ou null si le compte est coupé.
+ * DEMO_PLAY_CODE le remplace (6 chiffres) ; vide, elle coupe le compte démo.
+ */
+function demo_play_code(): ?string {
+    $code = getenv('DEMO_PLAY_CODE');
+    if ($code === false) {
+        return '316705';
+    }
+    $code = trim($code);
+    return preg_match('/^[0-9]{6}$/', $code) === 1 ? $code : null;
+}
+
 /* ---- POST /api/auth/request-code ---------------------------------------- */
 
 function handle_auth_request_code(PDO $pdo): never {
     $email = auth_read_email(read_json_body());
+
+    // Compte de démonstration : rien n'existe derrière cette adresse — le code
+    // est fixe, il n'y a ni e-mail à envoyer, ni ligne à stocker. Vu de
+    // l'appli, le parcours reste le parcours normal (« code envoyé »).
+    if (demo_play_code() !== null && $email === demo_play_email()) {
+        journal_log($pdo, 'code_demande', $email, 'compte démo');
+        json_out(['ok' => true]);
+    }
 
     // Plafond PAR IP en plus de la limite par e-mail : sans lui, on pourrait
     // faire envoyer des codes à des centaines d'adresses différentes (spam
@@ -113,6 +149,34 @@ function handle_auth_verify(PDO $pdo): never {
     $code = trim((string) ($body['code'] ?? ''));
     if (!preg_match('/^[0-9]{6}$/', $code)) {
         json_error('Le code doit comporter 6 chiffres.', 400);
+    }
+
+    // Compte de démonstration (revue Google Play) : code fixe, compte recréé
+    // au premier passage avec un pseudo d'office — l'examinateur ne doit
+    // jamais rencontrer l'étape « choisis un pseudo ». Rien n'est consommé :
+    // le code fixe est rejouable, y compris après suppression du compte.
+    $demoCode = demo_play_code();
+    if ($demoCode !== null && $email === demo_play_email()) {
+        if (!hash_equals($demoCode, $code)) {
+            journal_log($pdo, 'code_incorrect', $email, 'compte démo');
+            json_error('Code incorrect.', 401);
+        }
+        $st = $pdo->prepare('SELECT * FROM users WHERE email = ?');
+        $st->execute([$email]);
+        $user = $st->fetch();
+        if ($user === false) {
+            $st = $pdo->prepare(
+                'INSERT INTO users (email, pseudo, friend_code, created_at, last_seen)
+                 VALUES (?, ?, ?, ?, ?)'
+            );
+            $st->execute([$email, 'Démo Google', generate_friend_code($pdo), now_sql(), now_sql()]);
+            $st = $pdo->prepare('SELECT * FROM users WHERE email = ?');
+            $st->execute([$email]);
+            $user = $st->fetch();
+            journal_log($pdo, 'compte_cree', $email, 'Démo Google');
+        }
+        journal_log($pdo, 'code_verifie_ok', $email, 'compte démo');
+        json_out(['token' => open_session($pdo, $user), 'user' => user_payload($user)]);
     }
 
     // TOUS les codes encore valables pour cet e-mail (du plus récent au plus

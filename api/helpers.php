@@ -468,6 +468,10 @@ function config_checklist(): array {
         // ce qui est le cas de Railway. On l'affiche quand même pour qu'on
         // sache qu'elle existe et qu'on puisse la corriger sans lire le code.
         ['variable' => 'PROXY_HOPS',       'libelle' => 'Relais de confiance',      'definie' => $definie('PROXY_HOPS')],
+        // Facultative : le compte de démonstration Google Play (revue) marche
+        // avec son code par défaut — affichée pour qu'on sache qu'elle existe
+        // (la remplacer : 6 chiffres ; la définir à vide : compte démo coupé).
+        ['variable' => 'DEMO_PLAY_CODE',   'libelle' => 'Code du compte démo (revue Play)', 'definie' => $definie('DEMO_PLAY_CODE')],
     ];
     // La voie SMTP est une ALTERNATIVE à Brevo : on ne l'affiche que si elle
     // est entamée (SMTP_HOST posée), pour ne pas semer des « manquante ✗ »
