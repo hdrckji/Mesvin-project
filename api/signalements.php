@@ -4,9 +4,9 @@
 
    Deux besoins se rejoignent dans ce fichier.
 
-   Le nôtre : les 2 000 questions du Défi ont été relues deux fois devant le
+   Le nôtre : les 2 500 questions du Défi ont été relues deux fois devant le
    texte, mais elles restent écrites par des humains. La personne qui verra
-   la 2 001e coquille, c'est le lecteur, sa Bible ouverte à côté du téléphone.
+   la 2 501e coquille, c'est le lecteur, sa Bible ouverte à côté du téléphone.
    Sans un geste à sa portée, ce qu'il voit meurt avec sa soirée.
 
    Celui de Google Play : une appli qui laisse publier du texte — nos annonces

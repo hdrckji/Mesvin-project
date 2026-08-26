@@ -4,7 +4,7 @@
    L'API sait dire qu'une route accepte un signalement. Elle ne peut rien dire
    du geste lui-même, et c'est le geste qui décide de tout : un lien qu'on ne
    voit pas, un formulaire qui décourage, un envoi qui ne dit pas merci, et
-   plus personne ne signale rien — on croit alors que les 2 000 questions sont
+   plus personne ne signale rien — on croit alors que les 2 500 questions sont
    parfaites parce que la boîte est vide.
 
    Ce scénario joue donc les deux bouts de la chaîne :

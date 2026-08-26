@@ -28065,6 +28065,6950 @@
    ],
    "bonne": 0,
    "reference": "Apocalypse 3.19"
+  },
+  {
+   "id": "per-306",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel âge avait Abram lorsqu'il sortit de Charan ?",
+   "options": [
+    "Soixante-quinze ans",
+    "Soixante ans",
+    "Quatre-vingt-dix ans",
+    "Cent ans"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 12.4"
+  },
+  {
+   "id": "per-307",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel âge avait Isaac à la naissance d'Ésaü et de Jacob ?",
+   "options": [
+    "Soixante ans",
+    "Quarante ans",
+    "Cent ans",
+    "Soixante-quinze ans"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 25.26"
+  },
+  {
+   "id": "per-308",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel âge avait Joseph quand il faisait paître le troupeau avec ses frères ?",
+   "options": [
+    "Dix-sept ans",
+    "Trente ans",
+    "Douze ans",
+    "Vingt ans"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 37.2"
+  },
+  {
+   "id": "per-309",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel âge avait Moïse lorsqu'il parla à Pharaon ?",
+   "options": [
+    "Quatre-vingts ans",
+    "Quarante ans",
+    "Cent vingt ans",
+    "Soixante ans"
+   ],
+   "bonne": 0,
+   "reference": "Exode 7.7"
+  },
+  {
+   "id": "per-310",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Que Pharaon mit-il au cou de Joseph, avec l'anneau et les habits de fin lin ?",
+   "options": [
+    "Un collier d'or",
+    "Une couronne",
+    "Un sceau de pierre",
+    "Un manteau de pourpre"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 41.42"
+  },
+  {
+   "id": "per-311",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel frère Joseph fit-il enchaîner sous les yeux des autres ?",
+   "options": [
+    "Siméon",
+    "Ruben",
+    "Juda",
+    "Benjamin"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 42.24"
+  },
+  {
+   "id": "per-312",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Combien d'années Jacob passa-t-il chez Laban ?",
+   "options": [
+    "Vingt ans",
+    "Sept ans",
+    "Quatorze ans",
+    "Quarante ans"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 31.41"
+  },
+  {
+   "id": "per-313",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Que se démit Jacob en luttant toute la nuit avec l'homme ?",
+   "options": [
+    "L'emboîture de la hanche",
+    "L'épaule",
+    "Le genou",
+    "Le poignet"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 32.25"
+  },
+  {
+   "id": "per-314",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Avec quelle arme Schamgar battit-il six cents Philistins ?",
+   "options": [
+    "Un aiguillon à bœufs",
+    "Une mâchoire d'âne",
+    "Une fronde",
+    "Une épée à deux tranchants"
+   ],
+   "bonne": 0,
+   "reference": "Juges 3.31"
+  },
+  {
+   "id": "per-315",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Que promit Anne à l'Éternel au sujet du fils qu'elle demandait ?",
+   "options": [
+    "Que le rasoir ne passerait point sur sa tête",
+    "Qu'il serait roi",
+    "Qu'il bâtirait le temple",
+    "Qu'il ne quitterait jamais Rama"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 1.11"
+  },
+  {
+   "id": "per-316",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Comment Saül se distinguait-il de tous les enfants d'Israël ?",
+   "options": [
+    "Il les dépassait tous de la tête",
+    "Il était le plus âgé",
+    "Il savait lire la loi",
+    "Il était de la tribu de Juda"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 9.2"
+  },
+  {
+   "id": "per-317",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel était le nom du frère aîné de David, présent à la guerre contre les Philistins ?",
+   "options": [
+    "Éliab",
+    "Abinadab",
+    "Schamma",
+    "Nethaneel"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 17.13"
+  },
+  {
+   "id": "per-318",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Que David devait-il porter au chef du millier de ses frères ?",
+   "options": [
+    "Dix fromages",
+    "Dix pains",
+    "Un agneau",
+    "Une outre de vin"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 17.18"
+  },
+  {
+   "id": "per-319",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Que fit David en apprenant la mort de son enfant, à la surprise de ses serviteurs ?",
+   "options": [
+    "Il se leva, se lava, adora, puis mangea",
+    "Il déchira ses vêtements",
+    "Il jeûna sept jours de plus",
+    "Il s'enfuit au désert"
+   ],
+   "bonne": 0,
+   "reference": "2 Samuel 12.20"
+  },
+  {
+   "id": "per-320",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Combien pesaient les cheveux qu'Absalom se faisait couper chaque année ?",
+   "options": [
+    "Deux cents sicles",
+    "Cent sicles",
+    "Cinquante sicles",
+    "Mille sicles"
+   ],
+   "bonne": 0,
+   "reference": "2 Samuel 14.26"
+  },
+  {
+   "id": "per-321",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Combien de sentences Salomon a-t-il prononcées ?",
+   "options": [
+    "Trois mille",
+    "Mille cinq",
+    "Sept cents",
+    "Dix mille"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 4.32"
+  },
+  {
+   "id": "per-322",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Comment le roi d'Israël entra-t-il au combat de Ramoth en Galaad ?",
+   "options": [
+    "Déguisé, tandis que Josaphat gardait ses habits",
+    "En tête de ses chars, couronne en tête",
+    "À pied, parmi les archers",
+    "Porté sur une litière"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 22.30"
+  },
+  {
+   "id": "per-323",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "À quoi la sentinelle reconnut-elle Jéhu de loin ?",
+   "options": [
+    "Il conduisait d'une manière insensée",
+    "À son étendard",
+    "À sa cuirasse dorée",
+    "Au nombre de ses chars"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 9.20"
+  },
+  {
+   "id": "per-324",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel chef des gardes de Nebucadnetsar brûla la maison de l'Éternel ?",
+   "options": [
+    "Nebuzaradan",
+    "Nebuschasban",
+    "Rabsaris",
+    "Nergal-Scharetser"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 25.8-9"
+  },
+  {
+   "id": "per-325",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Comment Élihu explique-t-il que l'intelligence vienne à l'homme ?",
+   "options": [
+    "Par le souffle du Tout-Puissant",
+    "Par le grand nombre des années",
+    "Par la richesse",
+    "Par l'étude des anciens"
+   ],
+   "bonne": 0,
+   "reference": "Job 32.8"
+  },
+  {
+   "id": "per-326",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Que fit Esdras le scribe, placé sur une estrade de bois ?",
+   "options": [
+    "Il lut la loi devant le peuple",
+    "Il offrit un holocauste",
+    "Il proclama un roi",
+    "Il jugea les querelles du peuple"
+   ],
+   "bonne": 0,
+   "reference": "Néhémie 8.4-5"
+  },
+  {
+   "id": "per-327",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Comment travaillaient ceux qui bâtissaient la muraille de Jérusalem, du temps de Néhémie ?",
+   "options": [
+    "D'une main, l'autre tenant une arme",
+    "Par équipes de nuit seulement",
+    "Les yeux bandés contre la poussière",
+    "En chantant les psaumes des degrés"
+   ],
+   "bonne": 0,
+   "reference": "Néhémie 4.17"
+  },
+  {
+   "id": "per-328",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Que l'Éternel accorda-t-il à Job, quand celui-ci eut prié pour ses amis ?",
+   "options": [
+    "Le double de tout ce qu'il avait possédé",
+    "Une longue vie sans maladie",
+    "Un royaume en Orient",
+    "La moitié de ses biens"
+   ],
+   "bonne": 0,
+   "reference": "Job 42.10"
+  },
+  {
+   "id": "per-329",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Qui écrivit sous la dictée de Paul l'épître aux Romains ?",
+   "options": [
+    "Tertius",
+    "Timothée",
+    "Silas",
+    "Quartus"
+   ],
+   "bonne": 0,
+   "reference": "Romains 16.22"
+  },
+  {
+   "id": "per-330",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quelle charge Éraste occupait-il à Corinthe ?",
+   "options": [
+    "Trésorier de la ville",
+    "Chef de la synagogue",
+    "Centenier",
+    "Proconsul"
+   ],
+   "bonne": 0,
+   "reference": "Romains 16.23"
+  },
+  {
+   "id": "per-331",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Combien d'hommes environ Paul baptisa-t-il à Éphèse, qui reçurent ensuite le Saint-Esprit ?",
+   "options": [
+    "Environ douze",
+    "Environ trois mille",
+    "Sept",
+    "Environ soixante-dix"
+   ],
+   "bonne": 0,
+   "reference": "Actes 19.7"
+  },
+  {
+   "id": "per-332",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Quel disciple d'Éphèse avait-on vu avec Paul dans la ville, d'où l'accusation contre lui ?",
+   "options": [
+    "Trophime",
+    "Tychique",
+    "Aristarque",
+    "Timothée"
+   ],
+   "bonne": 0,
+   "reference": "Actes 21.29"
+  },
+  {
+   "id": "per-333",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Qui accompagnait le roi Agrippa à Césarée, venu saluer Festus ?",
+   "options": [
+    "Bérénice",
+    "Drusille",
+    "Hérodias",
+    "Salomé"
+   ],
+   "bonne": 0,
+   "reference": "Actes 25.13"
+  },
+  {
+   "id": "per-334",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Combien de temps les Égyptiens pleurèrent-ils Jacob ?",
+   "options": [
+    "Soixante-dix jours",
+    "Quarante jours",
+    "Trente jours",
+    "Sept jours"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 50.3"
+  },
+  {
+   "id": "per-335",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Qui Caleb donna-t-il pour femme à Othniel, qui s'était emparé de la ville ?",
+   "options": [
+    "Sa fille Acsa",
+    "Sa sœur",
+    "Sa nièce",
+    "Sa servante"
+   ],
+   "bonne": 0,
+   "reference": "Juges 1.13"
+  },
+  {
+   "id": "per-336",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Comment mourut David, selon les Chroniques ?",
+   "options": [
+    "Dans une heureuse vieillesse, rassasié de jours",
+    "Frappé par une flèche",
+    "De la peste envoyée sur Israël",
+    "En exil, hors de Jérusalem"
+   ],
+   "bonne": 0,
+   "reference": "1 Chroniques 29.28"
+  },
+  {
+   "id": "per-337",
+   "categorie": "Personnages",
+   "niveau": 2,
+   "question": "Que demanda Salomon à Dieu, selon les Chroniques ?",
+   "options": [
+    "De la sagesse et de l'intelligence pour conduire le peuple",
+    "Une longue vie",
+    "La paix avec l'Égypte",
+    "Un fils pour lui succéder"
+   ],
+   "bonne": 0,
+   "reference": "2 Chroniques 1.10"
+  },
+  {
+   "id": "per-338",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien de serviteurs Abram arma-t-il pour délivrer Lot ?",
+   "options": [
+    "Trois cent dix-huit",
+    "Quatre cents",
+    "Trois cents",
+    "Cinq cents"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 14.14"
+  },
+  {
+   "id": "per-339",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel âge avait Sara, selon Abraham riant en son cœur, à l'annonce de la promesse ?",
+   "options": [
+    "Quatre-vingt-dix ans",
+    "Soixante-quinze ans",
+    "Cent ans",
+    "Soixante ans"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 17.17"
+  },
+  {
+   "id": "per-340",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Comment le bélier offert à la place d'Isaac était-il retenu ?",
+   "options": [
+    "Par les cornes, dans un buisson",
+    "Par une corde, à un piquet",
+    "Par un berger, au pied du mont",
+    "Par les pattes, dans une fosse"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 22.13"
+  },
+  {
+   "id": "per-341",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien de fois Laban changea-t-il le salaire de Jacob ?",
+   "options": [
+    "Dix fois",
+    "Sept fois",
+    "Trois fois",
+    "Vingt fois"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 31.41"
+  },
+  {
+   "id": "per-342",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien d'années Jacob servit-il pour ses deux femmes, et combien pour le troupeau ?",
+   "options": [
+    "Quatorze ans et six ans",
+    "Sept ans et sept ans",
+    "Dix ans et dix ans",
+    "Vingt ans et six ans"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 31.41"
+  },
+  {
+   "id": "per-343",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Qui Paul appelle-t-il « mon hôte et celui de toute l'Église » ?",
+   "options": [
+    "Gaïus",
+    "Quartus",
+    "Éraste",
+    "Tertius"
+   ],
+   "bonne": 0,
+   "reference": "Romains 16.23"
+  },
+  {
+   "id": "per-344",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Avec quelle plante devait-on toucher le linteau et les poteaux avec le sang de la Pâque ?",
+   "options": [
+    "Un bouquet d'hysope",
+    "Une branche de myrte",
+    "Un rameau de palmier",
+    "Une gerbe de blé"
+   ],
+   "bonne": 0,
+   "reference": "Exode 12.22"
+  },
+  {
+   "id": "per-345",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quels chefs Jéthro conseilla-t-il à Moïse d'établir sur le peuple ?",
+   "options": [
+    "Des chefs de mille, de cent, de cinquante et de dix",
+    "Douze chefs, un par tribu",
+    "Soixante-dix anciens",
+    "Des chefs de dix mille"
+   ],
+   "bonne": 0,
+   "reference": "Exode 18.21"
+  },
+  {
+   "id": "per-346",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Que fit Moïse du veau d'or, après l'avoir brûlé et réduit en poudre ?",
+   "options": [
+    "Il la répandit sur l'eau et la fit boire aux Israélites",
+    "Il l'enfouit sous l'autel",
+    "Il la dispersa au vent du désert",
+    "Il la jeta dans le torrent du Sinaï"
+   ],
+   "bonne": 0,
+   "reference": "Exode 32.20"
+  },
+  {
+   "id": "per-347",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien d'hommes périrent le jour où les fils de Lévi exécutèrent l'ordre de Moïse ?",
+   "options": [
+    "Environ trois mille",
+    "Environ mille",
+    "Deux cent cinquante",
+    "Quatorze mille sept cents"
+   ],
+   "bonne": 0,
+   "reference": "Exode 32.28"
+  },
+  {
+   "id": "per-348",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien d'hommes furent dénombrés au premier recensement du désert ?",
+   "options": [
+    "Six cent trois mille cinq cent cinquante",
+    "Six cent mille",
+    "Quatre cent trente mille",
+    "Sept cent mille"
+   ],
+   "bonne": 0,
+   "reference": "Nombres 1.46"
+  },
+  {
+   "id": "per-349",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien de jours Marie resta-t-elle enfermée hors du camp ?",
+   "options": [
+    "Sept jours",
+    "Trois jours",
+    "Quarante jours",
+    "Un mois"
+   ],
+   "bonne": 0,
+   "reference": "Nombres 12.14-15"
+  },
+  {
+   "id": "per-350",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien d'hommes le feu consuma-t-il, ceux qui offraient le parfum avec Koré ?",
+   "options": [
+    "Deux cent cinquante",
+    "Trois mille",
+    "Quatorze mille",
+    "Cent"
+   ],
+   "bonne": 0,
+   "reference": "Nombres 16.35"
+  },
+  {
+   "id": "per-351",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien d'autels Balaam demanda-t-il à Balak de bâtir ?",
+   "options": [
+    "Sept",
+    "Trois",
+    "Douze",
+    "Un seul"
+   ],
+   "bonne": 0,
+   "reference": "Nombres 23.1"
+  },
+  {
+   "id": "per-352",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien de fils Jaïr le Galaadite avait-il, montés sur autant d'ânons ?",
+   "options": [
+    "Trente",
+    "Quarante",
+    "Soixante-dix",
+    "Douze"
+   ],
+   "bonne": 0,
+   "reference": "Juges 10.4"
+  },
+  {
+   "id": "per-353",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel mot les gens de Galaad faisaient-ils prononcer aux fuyards d'Éphraïm ?",
+   "options": [
+    "Schibboleth",
+    "Sibboleth",
+    "Béthel",
+    "Salem"
+   ],
+   "bonne": 0,
+   "reference": "Juges 12.6"
+  },
+  {
+   "id": "per-354",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien chacun des princes philistins promit-il à Delila ?",
+   "options": [
+    "Mille et cent sicles d'argent",
+    "Trente sicles d'argent",
+    "Cent sicles d'or",
+    "Dix mille sicles"
+   ],
+   "bonne": 0,
+   "reference": "Juges 16.5"
+  },
+  {
+   "id": "per-355",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Que faisait Samson dans la prison de Gaza, après qu'on lui eut crevé les yeux ?",
+   "options": [
+    "Il tournait la meule",
+    "Il portait les pierres du mur",
+    "Il gardait les troupeaux",
+    "Il broyait le blé à la main"
+   ],
+   "bonne": 0,
+   "reference": "Juges 16.21"
+  },
+  {
+   "id": "per-356",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel nom la belle-fille d'Éli donna-t-elle à son fils, en mourant ?",
+   "options": [
+    "I-Kabod",
+    "Ébed-Mélec",
+    "Ben-Oni",
+    "Lo-Ammi"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 4.21"
+  },
+  {
+   "id": "per-357",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Comment s'appelaient les deux fils de Samuel, juges à Beer-Schéba ?",
+   "options": [
+    "Joël et Abija",
+    "Hophni et Phinées",
+    "Nadab et Abihu",
+    "Éliab et Abinadab"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 8.2"
+  },
+  {
+   "id": "per-358",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien de flèches Jonathan devait-il tirer, comme s'il visait un but ?",
+   "options": [
+    "Trois",
+    "Deux",
+    "Cinq",
+    "Sept"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 20.20"
+  },
+  {
+   "id": "per-359",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "À qui Mérab, fille de Saül, fut-elle donnée pour femme, au lieu de David ?",
+   "options": [
+    "À Adriel de Mehola",
+    "À Palthiel de Gallim",
+    "À Abner",
+    "À Nabal de Carmel"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 18.19"
+  },
+  {
+   "id": "per-360",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Comment Joab tua-t-il Amasa ?",
+   "options": [
+    "En le saisissant par la barbe pour le baiser, puis en le frappant au ventre",
+    "En le perçant de trois javelots",
+    "En le faisant tomber d'un rocher",
+    "En l'égorgeant dans son sommeil"
+   ],
+   "bonne": 0,
+   "reference": "2 Samuel 20.9-10"
+  },
+  {
+   "id": "per-361",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien de doigts avait, en tout, le géant de Gath issu de Rapha ?",
+   "options": [
+    "Vingt-quatre",
+    "Vingt",
+    "Vingt-deux",
+    "Trente"
+   ],
+   "bonne": 0,
+   "reference": "2 Samuel 21.20"
+  },
+  {
+   "id": "per-362",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Que répondit Tsiba à David, au sujet du fils de son maître ?",
+   "options": [
+    "Qu'il était resté à Jérusalem, espérant le royaume",
+    "Qu'il avait fui en Galaad",
+    "Qu'il s'était joint à Absalom",
+    "Qu'il était malade à Lodebar"
+   ],
+   "bonne": 0,
+   "reference": "2 Samuel 16.3"
+  },
+  {
+   "id": "per-363",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien de cantiques Salomon a-t-il composés ?",
+   "options": [
+    "Mille cinq",
+    "Trois mille",
+    "Mille",
+    "Cinq mille"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 4.32"
+  },
+  {
+   "id": "per-364",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Comment Salomon nomma-t-il les deux colonnes du portique du temple ?",
+   "options": [
+    "Jakin et Boaz",
+    "Jakin et Kidon",
+    "Boaz et Obed",
+    "Ariel et Jakin"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 7.21"
+  },
+  {
+   "id": "per-365",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Pourquoi les sacrificateurs ne purent-ils rester pour faire le service, à la dédicace du temple ?",
+   "options": [
+    "La nuée remplissait la maison de l'Éternel",
+    "Le feu était descendu du ciel",
+    "La terre avait tremblé",
+    "L'arche s'était mise à luire"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 8.10-11"
+  },
+  {
+   "id": "per-366",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Comment Élisée rendit-il mangeable le potage où l'on avait mis des coloquintes sauvages ?",
+   "options": [
+    "Il y jeta de la farine",
+    "Il y jeta du sel",
+    "Il pria sept fois",
+    "Il fit apporter un vase neuf"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 4.39-41"
+  },
+  {
+   "id": "per-367",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Qui lut le livre de la loi devant le roi Josias ?",
+   "options": [
+    "Le secrétaire Schaphan",
+    "Le sacrificateur Hilkija",
+    "Le prophète Jérémie",
+    "Le roi lui-même"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 22.10"
+  },
+  {
+   "id": "per-368",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel était le nombre total de l'assemblée revenue de l'exil avec Zorobabel ?",
+   "options": [
+    "Quarante-deux mille trois cent soixante",
+    "Cinquante mille",
+    "Douze mille",
+    "Quarante mille"
+   ],
+   "bonne": 0,
+   "reference": "Esdras 2.64"
+  },
+  {
+   "id": "per-369",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Que faisaient les vieillards ayant vu la première maison, quand on posa les fondements de la seconde ?",
+   "options": [
+    "Ils pleuraient à grand bruit",
+    "Ils bénissaient en silence",
+    "Ils refusaient de venir",
+    "Ils sonnaient des trompettes"
+   ],
+   "bonne": 0,
+   "reference": "Esdras 3.12"
+  },
+  {
+   "id": "per-370",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Avec Josué fils de Jotsadak, qui bâtit l'autel du Dieu d'Israël au retour de l'exil ?",
+   "options": [
+    "Zorobabel, fils de Schealthiel",
+    "Esdras, le scribe",
+    "Néhémie, l'échanson",
+    "Aggée, le prophète"
+   ],
+   "bonne": 0,
+   "reference": "Esdras 3.2"
+  },
+  {
+   "id": "per-371",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Qui se tenait à la droite de Josué, le souverain sacrificateur, pour l'accuser ?",
+   "options": [
+    "Satan",
+    "L'ange de l'Éternel",
+    "Le roi de Perse",
+    "Le prophète Zacharie"
+   ],
+   "bonne": 0,
+   "reference": "Zacharie 3.1"
+  },
+  {
+   "id": "per-372",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien de sicles d'argent furent pesés au prophète pour son salaire, dans Zacharie ?",
+   "options": [
+    "Trente",
+    "Vingt",
+    "Cinquante",
+    "Cent"
+   ],
+   "bonne": 0,
+   "reference": "Zacharie 11.12"
+  },
+  {
+   "id": "per-373",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Que devaient faire les fils des Récabites, selon l'ordre de leur père Jonadab ?",
+   "options": [
+    "Ne jamais boire de vin",
+    "Ne jamais quitter Jérusalem",
+    "Ne jamais porter les armes",
+    "Ne jamais couper leurs cheveux"
+   ],
+   "bonne": 0,
+   "reference": "Jérémie 35.6"
+  },
+  {
+   "id": "per-374",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Que devait écrire Ézéchiel sur la seconde pièce de bois ?",
+   "options": [
+    "Pour Joseph, bois d'Éphraïm",
+    "Pour Juda et les enfants d'Israël",
+    "Pour Lévi et les sacrificateurs",
+    "Pour David, mon serviteur"
+   ],
+   "bonne": 0,
+   "reference": "Ézéchiel 37.16"
+  },
+  {
+   "id": "per-375",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel rang Énoch occupe-t-il depuis Adam, selon l'épître de Jude ?",
+   "options": [
+    "Le septième",
+    "Le cinquième",
+    "Le dixième",
+    "Le troisième"
+   ],
+   "bonne": 0,
+   "reference": "Jude 14"
+  },
+  {
+   "id": "per-376",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quels deux hommes sont nommés comme rongeant la foi « comme la gangrène » ?",
+   "options": [
+    "Hyménée et Philète",
+    "Jannès et Jambrès",
+    "Démas et Alexandre",
+    "Phygelle et Hermogène"
+   ],
+   "bonne": 0,
+   "reference": "2 Timothée 2.17"
+  },
+  {
+   "id": "per-377",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel agitateur, avant Judas le Galiléen, rallia environ quatre cents hommes ?",
+   "options": [
+    "Theudas",
+    "Barabbas",
+    "Simon le magicien",
+    "Bar-Jésus"
+   ],
+   "bonne": 0,
+   "reference": "Actes 5.36"
+  },
+  {
+   "id": "per-378",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Qui informa Paul du guet-apens des quarante conjurés ?",
+   "options": [
+    "Le fils de sa sœur",
+    "Le tribun Lysias",
+    "Un centenier",
+    "Trophime"
+   ],
+   "bonne": 0,
+   "reference": "Actes 23.16"
+  },
+  {
+   "id": "per-379",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien d'hommes formèrent le complot de tuer Paul, s'engageant par serment ?",
+   "options": [
+    "Plus de quarante",
+    "Douze",
+    "Environ dix",
+    "Plus de cent"
+   ],
+   "bonne": 0,
+   "reference": "Actes 23.13"
+  },
+  {
+   "id": "per-380",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quels noms les Corinthiens se donnaient-ils, chacun réclamant un maître ?",
+   "options": [
+    "Paul, Apollos, Céphas, Christ",
+    "Pierre, Jacques, Jean, Paul",
+    "Barnabas, Silas, Tite, Luc",
+    "Moïse, Élie, Jean, Jésus"
+   ],
+   "bonne": 0,
+   "reference": "1 Corinthiens 1.12"
+  },
+  {
+   "id": "per-381",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Qui Paul reprit-il en face à Antioche, parce qu'il était répréhensible ?",
+   "options": [
+    "Céphas",
+    "Barnabas",
+    "Jacques",
+    "Jean-Marc"
+   ],
+   "bonne": 0,
+   "reference": "Galates 2.11"
+  },
+  {
+   "id": "per-382",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Combien de prophètes Abdias cacha-t-il, cinquante par cinquante, dans une caverne ?",
+   "options": [
+    "Cent",
+    "Cinquante",
+    "Quatre cents",
+    "Sept mille"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 18.4"
+  },
+  {
+   "id": "per-383",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Comment s'appelait la troisième fille de Job, née après son épreuve ?",
+   "options": [
+    "Kéren-Happuc",
+    "Jemima",
+    "Ketsia",
+    "Milca"
+   ],
+   "bonne": 0,
+   "reference": "Job 42.14"
+  },
+  {
+   "id": "per-384",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel prêtre d'On était le beau-père de Joseph ?",
+   "options": [
+    "Poti-Phéra",
+    "Potiphar",
+    "Tsaphnath",
+    "Asnath"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 41.45"
+  },
+  {
+   "id": "per-385",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Que resta-t-il à Job, selon sa propre plainte ?",
+   "options": [
+    "La peau des dents",
+    "Le souffle seulement",
+    "Un manteau déchiré",
+    "La cendre du foyer"
+   ],
+   "bonne": 0,
+   "reference": "Job 19.20"
+  },
+  {
+   "id": "per-386",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Qui, avec Luc, salue les Colossiens à la fin de la lettre ?",
+   "options": [
+    "Démas",
+    "Onésime",
+    "Épaphras",
+    "Justus"
+   ],
+   "bonne": 0,
+   "reference": "Colossiens 4.14"
+  },
+  {
+   "id": "per-387",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Quel était le nom d'Esther avant qu'on l'appelle ainsi ?",
+   "options": [
+    "Hadassa",
+    "Vasthi",
+    "Zéresch",
+    "Abigaïl"
+   ],
+   "bonne": 0,
+   "reference": "Esther 2.7"
+  },
+  {
+   "id": "per-388",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Que fit Néhémie à ceux qui avaient épousé des étrangères ?",
+   "options": [
+    "Il les maudit et leur arracha les cheveux",
+    "Il les chassa de la ville",
+    "Il les livra aux sacrificateurs",
+    "Il leur imposa une amende"
+   ],
+   "bonne": 0,
+   "reference": "Néhémie 13.25"
+  },
+  {
+   "id": "per-389",
+   "categorie": "Personnages",
+   "niveau": 3,
+   "question": "Qui Paul salue-t-il comme « mes parents et mes compagnons de captivité » ?",
+   "options": [
+    "Andronicus et Junias",
+    "Aquilas et Priscille",
+    "Tryphène et Tryphose",
+    "Philologue et Julie"
+   ],
+   "bonne": 0,
+   "reference": "Romains 16.7"
+  },
+  {
+   "id": "at-289",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Sur quoi Dieu dit-il que l'homme dominerait, en le créant ?",
+   "options": [
+    "Sur les poissons, les oiseaux et le bétail",
+    "Sur les anges",
+    "Sur le soleil et la lune",
+    "Sur les autres peuples"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 1.26"
+  },
+  {
+   "id": "at-290",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Avec quoi David abattit-il Goliath ?",
+   "options": [
+    "Une fronde et une pierre",
+    "Une épée",
+    "Un arc",
+    "Une lance"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 17.50"
+  },
+  {
+   "id": "at-291",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Quel animal engloutit Jonas ?",
+   "options": [
+    "Un grand poisson",
+    "Une baleine blanche",
+    "Un crocodile",
+    "Un monstre à sept têtes"
+   ],
+   "bonne": 0,
+   "reference": "Jonas 1.17"
+  },
+  {
+   "id": "at-292",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Combien de jours Jonas resta-t-il dans le ventre du poisson ?",
+   "options": [
+    "Trois jours et trois nuits",
+    "Un jour",
+    "Sept jours",
+    "Quarante jours"
+   ],
+   "bonne": 0,
+   "reference": "Jonas 1.17"
+  },
+  {
+   "id": "at-293",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Quel jeune berger fut oint roi par Samuel, le dernier de ses frères ?",
+   "options": [
+    "David",
+    "Jonathan",
+    "Éliab",
+    "Salomon"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 16.13"
+  },
+  {
+   "id": "at-294",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Dans quel jardin Adam et Ève furent-ils placés ?",
+   "options": [
+    "Le jardin d'Éden",
+    "Le jardin de Gethsémané",
+    "Le jardin de Sion",
+    "Le jardin de Nod"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 2.15"
+  },
+  {
+   "id": "at-295",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Que vit Moïse brûler sans se consumer ?",
+   "options": [
+    "Un buisson",
+    "Un cèdre",
+    "Une gerbe de blé",
+    "Un rouleau"
+   ],
+   "bonne": 0,
+   "reference": "Exode 3.2"
+  },
+  {
+   "id": "at-296",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Quel roi fit bâtir le temple de Jérusalem ?",
+   "options": [
+    "Salomon",
+    "David",
+    "Josias",
+    "Ézéchias"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 6.1"
+  },
+  {
+   "id": "at-297",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "Que devait-on faire de la terre la septième année, selon la loi ?",
+   "options": [
+    "La laisser en repos, sans semer ni tailler",
+    "La semer deux fois",
+    "La vendre aux étrangers",
+    "La partager entre les Lévites"
+   ],
+   "bonne": 0,
+   "reference": "Lévitique 25.4"
+  },
+  {
+   "id": "at-298",
+   "categorie": "Ancien Testament",
+   "niveau": 1,
+   "question": "À quel insecte les Proverbes envoient-ils le paresseux ?",
+   "options": [
+    "La fourmi",
+    "L'abeille",
+    "La sauterelle",
+    "La cigale"
+   ],
+   "bonne": 0,
+   "reference": "Proverbes 6.6"
+  },
+  {
+   "id": "at-299",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quel animal les Israélites pouvaient-ils manger, selon la loi ?",
+   "options": [
+    "Celui qui a la corne fendue et qui rumine",
+    "Celui qui vit près des eaux",
+    "Celui qui a des ailes et quatre pieds",
+    "Celui qui ne mange pas de chair"
+   ],
+   "bonne": 0,
+   "reference": "Lévitique 11.3"
+  },
+  {
+   "id": "at-300",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Combien de jours devait-on compter jusqu'au lendemain du septième sabbat ?",
+   "options": [
+    "Cinquante",
+    "Quarante",
+    "Sept",
+    "Cent"
+   ],
+   "bonne": 0,
+   "reference": "Lévitique 23.16"
+  },
+  {
+   "id": "at-301",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Combien de fois par année tous les mâles devaient-ils se présenter devant l'Éternel ?",
+   "options": [
+    "Trois fois",
+    "Une fois",
+    "Deux fois",
+    "Sept fois"
+   ],
+   "bonne": 0,
+   "reference": "Exode 23.17"
+  },
+  {
+   "id": "at-302",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que devait-on mettre continuellement sur la table, devant la face de l'Éternel ?",
+   "options": [
+    "Les pains de proposition",
+    "L'huile d'onction",
+    "Les pierres du souvenir",
+    "Le parfum de myrrhe"
+   ],
+   "bonne": 0,
+   "reference": "Exode 25.30"
+  },
+  {
+   "id": "at-303",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "De quel bois l'arche de l'alliance devait-elle être faite ?",
+   "options": [
+    "Du bois d'acacia",
+    "Du bois de gopher",
+    "Du cèdre",
+    "Du cyprès"
+   ],
+   "bonne": 0,
+   "reference": "Exode 25.10"
+  },
+  {
+   "id": "at-304",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que fit Moïse en voyant le veau d'or et les danses ?",
+   "options": [
+    "Il jeta les tables et les brisa",
+    "Il pria toute la nuit",
+    "Il retourna sur la montagne",
+    "Il fit sonner la trompette"
+   ],
+   "bonne": 0,
+   "reference": "Exode 32.19"
+  },
+  {
+   "id": "at-305",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Combien d'hommes de pied partirent de Ramsès, sans compter les enfants ?",
+   "options": [
+    "Environ six cent mille",
+    "Environ cent mille",
+    "Environ un million",
+    "Environ soixante mille"
+   ],
+   "bonne": 0,
+   "reference": "Exode 12.37"
+  },
+  {
+   "id": "at-306",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Combien de chars d'élite Pharaon prit-il pour poursuivre Israël ?",
+   "options": [
+    "Six cents",
+    "Trois cents",
+    "Mille",
+    "Cent"
+   ],
+   "bonne": 0,
+   "reference": "Exode 14.7"
+  },
+  {
+   "id": "at-307",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Qu'indiqua l'Éternel à Moïse pour adoucir les eaux de Mara ?",
+   "options": [
+    "Un bois à jeter dans l'eau",
+    "Une source cachée",
+    "Une poignée de sel",
+    "Un rocher à frapper"
+   ],
+   "bonne": 0,
+   "reference": "Exode 15.25"
+  },
+  {
+   "id": "at-308",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que devint le vêtement des Israélites pendant les quarante années au désert ?",
+   "options": [
+    "Il ne s'usa point",
+    "Il fut renouvelé chaque année",
+    "Il devint blanc comme neige",
+    "Il fut donné aux Lévites"
+   ],
+   "bonne": 0,
+   "reference": "Deutéronome 8.4"
+  },
+  {
+   "id": "at-309",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que l'Éternel ordonna-t-il à Josué de faire avec des couteaux de pierre ?",
+   "options": [
+    "Circoncire de nouveau les enfants d'Israël",
+    "Tailler les pierres de l'autel",
+    "Marquer les bornes du pays",
+    "Graver les noms des tribus"
+   ],
+   "bonne": 0,
+   "reference": "Josué 5.2"
+  },
+  {
+   "id": "at-310",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quand la manne cessa-t-elle ?",
+   "options": [
+    "Le lendemain de la Pâque, quand ils mangèrent du blé du pays",
+    "À la mort de Moïse",
+    "À l'entrée dans Jéricho",
+    "Au partage du pays"
+   ],
+   "bonne": 0,
+   "reference": "Josué 5.12"
+  },
+  {
+   "id": "at-311",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Combien de rois se cachèrent dans la caverne de Makkéda ?",
+   "options": [
+    "Cinq",
+    "Trois",
+    "Sept",
+    "Douze"
+   ],
+   "bonne": 0,
+   "reference": "Josué 10.16"
+  },
+  {
+   "id": "at-312",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Combien d'hommes restèrent à Gédéon après le renvoi des craintifs ?",
+   "options": [
+    "Dix mille",
+    "Trois cents",
+    "Vingt-deux mille",
+    "Mille"
+   ],
+   "bonne": 0,
+   "reference": "Juges 7.3"
+  },
+  {
+   "id": "at-313",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que devinrent les cheveux de Samson dans la prison ?",
+   "options": [
+    "Ils recommencèrent à croître",
+    "Ils blanchirent",
+    "Ils tombèrent tout à fait",
+    "Ils furent rasés chaque mois"
+   ],
+   "bonne": 0,
+   "reference": "Juges 16.22"
+  },
+  {
+   "id": "at-314",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Pourquoi Saül offrit-il lui-même l'holocauste à Guilgal ?",
+   "options": [
+    "Le peuple se dispersait et Samuel tardait",
+    "Les sacrificateurs étaient morts",
+    "L'Éternel le lui avait ordonné",
+    "Il voulait honorer Jonathan"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 13.11-12"
+  },
+  {
+   "id": "at-315",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que devint le proverbe né de l'étonnement du peuple, à propos de Saül ?",
+   "options": [
+    "Saül est-il aussi parmi les prophètes ?",
+    "Saül a frappé ses mille",
+    "Qui est comme Saül en Israël ?",
+    "Saül règne, mais Dieu délivre"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 10.12"
+  },
+  {
+   "id": "at-316",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quelles dimensions avait la maison que Salomon bâtit à l'Éternel ?",
+   "options": [
+    "Soixante coudées de long, vingt de large, trente de haut",
+    "Cent coudées de long, cinquante de large",
+    "Trente coudées de long, dix de large",
+    "Deux cents coudées de long, cent de large"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 6.2"
+  },
+  {
+   "id": "at-317",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Combien de jours Ézéchiel dut-il porter l'iniquité de la maison d'Israël, couché sur le côté ?",
+   "options": [
+    "Trois cent quatre-vingt-dix jours",
+    "Quarante jours",
+    "Sept jours",
+    "Mille jours"
+   ],
+   "bonne": 0,
+   "reference": "Ézéchiel 4.5"
+  },
+  {
+   "id": "at-318",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que valait une tête d'âne pendant la famine de Samarie ?",
+   "options": [
+    "Quatre-vingts sicles d'argent",
+    "Dix sicles d'argent",
+    "Un sicle d'or",
+    "Cinq sicles d'argent"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 6.25"
+  },
+  {
+   "id": "at-319",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que fit Josaphat demander, devant les prophètes réunis d'Achab ?",
+   "options": [
+    "S'il n'y avait plus un prophète de l'Éternel à consulter",
+    "Un signe dans le ciel",
+    "Un délai de trois jours",
+    "L'avis du peuple"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 22.7"
+  },
+  {
+   "id": "at-320",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quel objet Jérémie dut-il aller cacher dans la fente d'un rocher ?",
+   "options": [
+    "Une ceinture de lin",
+    "Un rouleau écrit",
+    "Un vase de terre",
+    "Un joug de bois"
+   ],
+   "bonne": 0,
+   "reference": "Jérémie 13.4"
+  },
+  {
+   "id": "at-321",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que contenaient les deux paniers montrés à Jérémie ?",
+   "options": [
+    "Des figues, très bonnes et très mauvaises",
+    "Du blé et de la paille",
+    "Des olives et des raisins",
+    "De l'or et de la cendre"
+   ],
+   "bonne": 0,
+   "reference": "Jérémie 24.2"
+  },
+  {
+   "id": "at-322",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "À qui ressemblait le quatrième homme aperçu dans la fournaise ?",
+   "options": [
+    "À un fils des dieux",
+    "À un ange de lumière",
+    "Au prophète Daniel",
+    "À un serviteur du roi"
+   ],
+   "bonne": 0,
+   "reference": "Daniel 3.25"
+  },
+  {
+   "id": "at-323",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que fit le prophète des trente sicles d'argent qu'on lui avait pesés ?",
+   "options": [
+    "Il les jeta dans la maison de l'Éternel, pour le potier",
+    "Il les donna aux pauvres",
+    "Il les enfouit près de Béthel",
+    "Il les rendit aux marchands"
+   ],
+   "bonne": 0,
+   "reference": "Zacharie 11.13"
+  },
+  {
+   "id": "at-324",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Qui l'Éternel promet-il d'envoyer avant le jour grand et redoutable ?",
+   "options": [
+    "Élie, le prophète",
+    "Un ange exterminateur",
+    "Le fils de David",
+    "Un roi étranger"
+   ],
+   "bonne": 0,
+   "reference": "Malachie 4.5"
+  },
+  {
+   "id": "at-325",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que fit l'homme, dans Ésaïe, avec la moitié du bois qu'il avait coupé ?",
+   "options": [
+    "Il en cuisit sa viande et se chauffa",
+    "Il en bâtit une maison",
+    "Il en fit un navire",
+    "Il l'offrit en holocauste"
+   ],
+   "bonne": 0,
+   "reference": "Ésaïe 44.16"
+  },
+  {
+   "id": "at-326",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Comment sera nommé l'enfant annoncé par Ésaïe, « un fils nous est donné » ?",
+   "options": [
+    "Admirable, Conseiller, Dieu puissant, Père éternel, Prince de la paix",
+    "Emmanuel seulement",
+    "Fils de David, roi de Juda",
+    "Serviteur souffrant"
+   ],
+   "bonne": 0,
+   "reference": "Ésaïe 9.6"
+  },
+  {
+   "id": "at-327",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Qui conduira le loup, l'agneau et le lionceau réunis, selon Ésaïe ?",
+   "options": [
+    "Un petit enfant",
+    "Un berger de Juda",
+    "Un ange",
+    "Le roi lui-même"
+   ],
+   "bonne": 0,
+   "reference": "Ésaïe 11.6"
+  },
+  {
+   "id": "at-328",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que fit Josias en entendant les paroles du livre de la loi ?",
+   "options": [
+    "Il déchira ses vêtements",
+    "Il fit sonner les trompettes",
+    "Il renvoya le sacrificateur",
+    "Il monta au mont des Oliviers"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 22.11"
+  },
+  {
+   "id": "at-329",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Comment l'insensé parle-t-il en son cœur, selon le psaume ?",
+   "options": [
+    "Il n'y a point de Dieu",
+    "Demain je serai riche",
+    "Nul ne me voit",
+    "Je vivrai toujours"
+   ],
+   "bonne": 0,
+   "reference": "Psaume 14.1"
+  },
+  {
+   "id": "at-330",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "À quoi l'âme du psalmiste est-elle comparée, soupirant après Dieu ?",
+   "options": [
+    "À une biche qui soupire après des courants d'eau",
+    "À une colombe blessée",
+    "À une terre desséchée",
+    "À un veilleur qui attend le matin"
+   ],
+   "bonne": 0,
+   "reference": "Psaume 42.1"
+  },
+  {
+   "id": "at-331",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Combien de fois Balaam avait-il frappé son ânesse, selon le reproche qu'elle lui fit ?",
+   "options": [
+    "Trois fois",
+    "Deux fois",
+    "Sept fois",
+    "Une fois"
+   ],
+   "bonne": 0,
+   "reference": "Nombres 22.28"
+  },
+  {
+   "id": "at-332",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Comment se présenta l'homme à l'épée nue rencontré par Josué près de Jéricho ?",
+   "options": [
+    "Comme chef de l'armée de l'Éternel",
+    "Comme un envoyé du roi de Jéricho",
+    "Comme un exilé de Madian",
+    "Comme l'ange de la mort"
+   ],
+   "bonne": 0,
+   "reference": "Josué 5.14"
+  },
+  {
+   "id": "at-333",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que le futur roi d'Israël ne devait-il pas multiplier, selon la loi de Moïse ?",
+   "options": [
+    "Les chevaux, les femmes, l'argent et l'or",
+    "Les villes fortes et les chars",
+    "Les serviteurs et les troupeaux",
+    "Les autels et les hauts lieux"
+   ],
+   "bonne": 0,
+   "reference": "Deutéronome 17.16-17"
+  },
+  {
+   "id": "at-334",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que jeta Élisée dans la source pour en assainir les eaux ?",
+   "options": [
+    "Du sel, dans un plat neuf",
+    "De la farine",
+    "Un bois taillé",
+    "Un vase de bronze"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 2.20-21"
+  },
+  {
+   "id": "at-335",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que demanda Anne, la mère de Samuel, à l'Éternel des armées ?",
+   "options": [
+    "Un enfant mâle",
+    "La paix pour Israël",
+    "La mort de sa rivale",
+    "Une longue vie"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 1.11"
+  },
+  {
+   "id": "at-336",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Sur quoi Aaron jetait-il le sort, au jour des expiations ?",
+   "options": [
+    "Sur les deux boucs",
+    "Sur les douze pains",
+    "Sur les tribus",
+    "Sur les sacrificateurs"
+   ],
+   "bonne": 0,
+   "reference": "Lévitique 16.8"
+  },
+  {
+   "id": "at-337",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Où le bouc chargé des iniquités d'Israël était-il chassé ?",
+   "options": [
+    "Dans le désert",
+    "Dans la mer",
+    "Au-delà du Jourdain",
+    "Sur la montagne sainte"
+   ],
+   "bonne": 0,
+   "reference": "Lévitique 16.22"
+  },
+  {
+   "id": "at-338",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quelle année devait-on sanctifier en publiant la liberté dans le pays ?",
+   "options": [
+    "La cinquantième",
+    "La septième",
+    "La quarantième",
+    "La centième"
+   ],
+   "bonne": 0,
+   "reference": "Lévitique 25.10"
+  },
+  {
+   "id": "at-339",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que la loi défend-elle de faire au bœuf qui foule le grain ?",
+   "options": [
+    "De lui mettre une muselière",
+    "De le faire travailler la nuit",
+    "De le vendre avant trois ans",
+    "De le marquer au fer"
+   ],
+   "bonne": 0,
+   "reference": "Deutéronome 25.4"
+  },
+  {
+   "id": "at-340",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que fit David de l'eau puisée à la citerne de Bethléhem au péril de trois vies ?",
+   "options": [
+    "Il la répandit devant l'Éternel",
+    "Il la but en pleurant",
+    "Il la donna à ses vaillants",
+    "Il en aspergea l'autel"
+   ],
+   "bonne": 0,
+   "reference": "1 Chroniques 11.18-19"
+  },
+  {
+   "id": "at-341",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que demanda Jaebets à Dieu, qui le lui accorda ?",
+   "options": [
+    "D'être béni et de voir ses limites étendues",
+    "Un fils dans sa vieillesse",
+    "La ruine de ses ennemis",
+    "Un troupeau sans nombre"
+   ],
+   "bonne": 0,
+   "reference": "1 Chroniques 4.10"
+  },
+  {
+   "id": "at-342",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que Job maudit-il, après avoir gardé le silence sept jours ?",
+   "options": [
+    "Le jour de sa naissance",
+    "Ses trois amis",
+    "Le nom de sa femme",
+    "Le vent du désert"
+   ],
+   "bonne": 0,
+   "reference": "Job 3.1"
+  },
+  {
+   "id": "at-343",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "À quoi Job compare-t-il la rapidité de ses jours ?",
+   "options": [
+    "À la navette du tisserand",
+    "À la fumée du matin",
+    "À l'ombre du soir",
+    "Au vol du corbeau"
+   ],
+   "bonne": 0,
+   "reference": "Job 7.6"
+  },
+  {
+   "id": "at-344",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Qu'était Job pour l'aveugle et pour le boiteux, au temps de sa prospérité ?",
+   "options": [
+    "L'œil de l'aveugle et le pied du boiteux",
+    "Le pain des pauvres",
+    "Le juge des veuves",
+    "Le refuge des étrangers"
+   ],
+   "bonne": 0,
+   "reference": "Job 29.15"
+  },
+  {
+   "id": "at-345",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Avec quoi Job dit-il avoir fait un pacte ?",
+   "options": [
+    "Avec ses yeux",
+    "Avec sa langue",
+    "Avec ses mains",
+    "Avec son cœur"
+   ],
+   "bonne": 0,
+   "reference": "Job 31.1"
+  },
+  {
+   "id": "at-346",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Chez qui l'Éternel envoya-t-il Jérémie pour lui parler par un signe ?",
+   "options": [
+    "Chez le potier",
+    "Chez le forgeron",
+    "Chez le tisserand",
+    "Chez le berger"
+   ],
+   "bonne": 0,
+   "reference": "Jérémie 18.3"
+  },
+  {
+   "id": "at-347",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Dans quoi Jérémie fut-il descendu avec des cordes, s'enfonçant dans la boue ?",
+   "options": [
+    "La citerne de Malkija",
+    "La fosse aux lions",
+    "Le puits de Bethléhem",
+    "La prison de Guibea"
+   ],
+   "bonne": 0,
+   "reference": "Jérémie 38.6"
+  },
+  {
+   "id": "at-348",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quel goût eut, dans la bouche d'Ézéchiel, le rouleau qu'il mangea ?",
+   "options": [
+    "Doux comme du miel",
+    "Amer comme le fiel",
+    "Salé comme la mer",
+    "Brûlant comme le feu"
+   ],
+   "bonne": 0,
+   "reference": "Ézéchiel 3.3"
+  },
+  {
+   "id": "at-349",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quel cœur l'Éternel promet-il de donner, à la place du cœur de pierre ?",
+   "options": [
+    "Un cœur de chair",
+    "Un cœur d'or",
+    "Un cœur nouveau seulement",
+    "Un cœur de lumière"
+   ],
+   "bonne": 0,
+   "reference": "Ézéchiel 36.26"
+  },
+  {
+   "id": "at-350",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Comme quoi l'Éternel établit-il Ézéchiel sur la maison d'Israël ?",
+   "options": [
+    "Comme sentinelle",
+    "Comme berger",
+    "Comme juge",
+    "Comme héraut"
+   ],
+   "bonne": 0,
+   "reference": "Ézéchiel 33.7"
+  },
+  {
+   "id": "at-351",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quelle femme l'Éternel ordonna-t-il à Osée de prendre ?",
+   "options": [
+    "Une femme prostituée",
+    "Une étrangère de Moab",
+    "Une fille de sacrificateur",
+    "Une veuve de Samarie"
+   ],
+   "bonne": 0,
+   "reference": "Osée 1.2"
+  },
+  {
+   "id": "at-352",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que l'Éternel préfère-t-il aux holocaustes, selon Osée ?",
+   "options": [
+    "La connaissance de Dieu",
+    "Le jeûne et la cendre",
+    "Les dîmes exactes",
+    "Le silence du peuple"
+   ],
+   "bonne": 0,
+   "reference": "Osée 6.6"
+  },
+  {
+   "id": "at-353",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quel métier Amos exerçait-il avant d'être prophète ?",
+   "options": [
+    "Berger et cultivateur de sycomores",
+    "Potier",
+    "Scribe du roi",
+    "Vigneron de Juda"
+   ],
+   "bonne": 0,
+   "reference": "Amos 7.14"
+  },
+  {
+   "id": "at-354",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quelle famine l'Éternel annonce-t-il par Amos ?",
+   "options": [
+    "La faim d'entendre les paroles de l'Éternel",
+    "Une disette de sept ans",
+    "La sécheresse des puits",
+    "La stérilité des troupeaux"
+   ],
+   "bonne": 0,
+   "reference": "Amos 8.11"
+  },
+  {
+   "id": "at-355",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quelle ville, « petite entre les milliers de Juda », Michée annonce-t-il ?",
+   "options": [
+    "Bethléhem Éphrata",
+    "Anathoth",
+    "Thékoa",
+    "Ramathaïm"
+   ],
+   "bonne": 0,
+   "reference": "Michée 5.2"
+  },
+  {
+   "id": "at-356",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Que l'Éternel demande-t-il de l'homme, selon Michée ?",
+   "options": [
+    "Pratiquer la justice, aimer la miséricorde, marcher humblement",
+    "Offrir le premier-né",
+    "Jeûner trois fois par semaine",
+    "Bâtir un autel en chaque ville"
+   ],
+   "bonne": 0,
+   "reference": "Michée 6.8"
+  },
+  {
+   "id": "at-357",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Sur quelle monture le roi de Sion vient-il, selon Zacharie ?",
+   "options": [
+    "Un âne, le petit d'une ânesse",
+    "Un cheval blanc",
+    "Un char de feu",
+    "Un chameau"
+   ],
+   "bonne": 0,
+   "reference": "Zacharie 9.9"
+  },
+  {
+   "id": "at-358",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Sur quelle montagne se poseront les pieds de l'Éternel, au jour annoncé par Zacharie ?",
+   "options": [
+    "La montagne des oliviers",
+    "Le mont Sinaï",
+    "La montagne de Sion",
+    "Le mont Carmel"
+   ],
+   "bonne": 0,
+   "reference": "Zacharie 14.4"
+  },
+  {
+   "id": "at-359",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Qu'est-ce que l'Éternel invite à lui apporter, pour le mettre à l'épreuve ?",
+   "options": [
+    "Toutes les dîmes",
+    "Les prémices des troupeaux",
+    "Le premier-né des fils",
+    "L'or des nations"
+   ],
+   "bonne": 0,
+   "reference": "Malachie 3.10"
+  },
+  {
+   "id": "at-360",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "À quel rythme se renouvellent les compassions de l'Éternel, selon les Lamentations ?",
+   "options": [
+    "Chaque matin",
+    "Chaque sabbat",
+    "Chaque année",
+    "À chaque nouvelle lune"
+   ],
+   "bonne": 0,
+   "reference": "Lamentations 3.23"
+  },
+  {
+   "id": "at-361",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Sur qui l'Éternel promet-il, par Joël, de répandre son esprit ?",
+   "options": [
+    "Sur toute chair",
+    "Sur les seuls prophètes",
+    "Sur la maison de David",
+    "Sur les sacrificateurs"
+   ],
+   "bonne": 0,
+   "reference": "Joël 2.28"
+  },
+  {
+   "id": "at-362",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Qu'ordonne le Lévitique envers son prochain, après avoir défendu la rancune ?",
+   "options": [
+    "De l'aimer comme soi-même",
+    "De le juger avec droiture",
+    "De lui prêter sans intérêt",
+    "De le reprendre en public"
+   ],
+   "bonne": 0,
+   "reference": "Lévitique 19.18"
+  },
+  {
+   "id": "at-363",
+   "categorie": "Ancien Testament",
+   "niveau": 2,
+   "question": "Quel prophète « comme moi » l'Éternel promet-il de susciter, selon Moïse ?",
+   "options": [
+    "Un prophète pris du milieu de ses frères",
+    "Un roi issu de Juda",
+    "Un sacrificateur éternel",
+    "Un ange envoyé du ciel"
+   ],
+   "bonne": 0,
+   "reference": "Deutéronome 18.15"
+  },
+  {
+   "id": "at-364",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel nom Agar donna-t-elle à l'Éternel qui lui avait parlé ?",
+   "options": [
+    "Atta-El-roï",
+    "El-Schaddaï",
+    "Jehova-Jiré",
+    "El-Béthel"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 16.13"
+  },
+  {
+   "id": "at-365",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que fit Abraham en apprenant qu'il aurait un fils à cent ans ?",
+   "options": [
+    "Il tomba sur sa face et rit",
+    "Il offrit un sacrifice",
+    "Il pleura de joie",
+    "Il partit vers Guérar"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 17.17"
+  },
+  {
+   "id": "at-366",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Combien de jours dura l'embaumement de Jacob, avant le deuil des Égyptiens ?",
+   "options": [
+    "Quarante jours",
+    "Sept jours",
+    "Trente jours",
+    "Soixante-dix jours"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 50.3"
+  },
+  {
+   "id": "at-367",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Qui furent établis sur Israël en Égypte pour l'accabler de travaux ?",
+   "options": [
+    "Des chefs de corvées",
+    "Des princes de Pharaon",
+    "Des scribes du temple",
+    "Des juges du peuple"
+   ],
+   "bonne": 0,
+   "reference": "Exode 1.11"
+  },
+  {
+   "id": "at-368",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que devaient faire les Israélites après avoir touché le linteau avec le sang ?",
+   "options": [
+    "Ne pas sortir de leur maison jusqu'au matin",
+    "Éteindre toutes les lampes",
+    "Se rassembler au bord du fleuve",
+    "Chanter jusqu'à l'aube"
+   ],
+   "bonne": 0,
+   "reference": "Exode 12.22"
+  },
+  {
+   "id": "at-369",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quelles étaient les dimensions de l'arche d'acacia ?",
+   "options": [
+    "Deux coudées et demie sur une et demie",
+    "Trois coudées sur deux",
+    "Cinq coudées sur trois",
+    "Une coudée sur une coudée"
+   ],
+   "bonne": 0,
+   "reference": "Exode 25.10"
+  },
+  {
+   "id": "at-370",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Comment fut nommé le lieu où le peuple fut mis à l'épreuve, après l'eau adoucie ?",
+   "options": [
+    "C'est là que l'Éternel donna des lois et des ordonnances",
+    "Kibroth-Hattaava",
+    "Massa seulement",
+    "Rephidim"
+   ],
+   "bonne": 0,
+   "reference": "Exode 15.25"
+  },
+  {
+   "id": "at-371",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel critère, avec la crainte de Dieu, Jéthro donna-t-il pour choisir les chefs ?",
+   "options": [
+    "Être intègres et ennemis de la cupidité",
+    "Être des anciens de plus de soixante ans",
+    "Être de la tribu de Lévi",
+    "Savoir lire et écrire"
+   ],
+   "bonne": 0,
+   "reference": "Exode 18.21"
+  },
+  {
+   "id": "at-372",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Qui exécuta l'ordre de Moïse après l'épisode du veau d'or ?",
+   "options": [
+    "Les enfants de Lévi",
+    "Les enfants de Juda",
+    "Les anciens du peuple",
+    "Les fils des sacrificateurs"
+   ],
+   "bonne": 0,
+   "reference": "Exode 32.28"
+  },
+  {
+   "id": "at-373",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Combien de personnes furent dénombrées, selon le second livre du Pentateuque, à la sortie de Ramsès ?",
+   "options": [
+    "Environ six cent mille hommes de pied",
+    "Six cent trois mille cinq cent cinquante",
+    "Quarante-deux mille",
+    "Cent vingt mille"
+   ],
+   "bonne": 0,
+   "reference": "Exode 12.37"
+  },
+  {
+   "id": "at-374",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que rapportèrent les explorateurs de la vallée d'Eschcol, outre la grappe ?",
+   "options": [
+    "Des grenades et des figues",
+    "Des olives et du miel",
+    "Du blé et de l'orge",
+    "Des dattes et des amandes"
+   ],
+   "bonne": 0,
+   "reference": "Nombres 13.23"
+  },
+  {
+   "id": "at-375",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Où Israël mangea-t-il pour la première fois du blé du pays ?",
+   "options": [
+    "Le lendemain de la Pâque, à Guilgal",
+    "Au passage du Jourdain",
+    "Après la prise de Jéricho",
+    "Au mont Ébal"
+   ],
+   "bonne": 0,
+   "reference": "Josué 5.11"
+  },
+  {
+   "id": "at-376",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Combien d'hommes d'Éphraïm périrent aux gués du Jourdain, sous Jephthé ?",
+   "options": [
+    "Quarante-deux mille",
+    "Vingt-deux mille",
+    "Trente mille",
+    "Douze mille"
+   ],
+   "bonne": 0,
+   "reference": "Juges 12.6"
+  },
+  {
+   "id": "at-377",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Qu'annonça le buisson d'épines aux arbres, s'ils l'oignaient de mauvaise foi ?",
+   "options": [
+    "Un feu dévorerait les cèdres du Liban",
+    "La sécheresse viendrait sur eux",
+    "Les vents les déracineraient",
+    "Leur roi les abandonnerait"
+   ],
+   "bonne": 0,
+   "reference": "Juges 9.15"
+  },
+  {
+   "id": "at-378",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Où les Philistins firent-ils descendre Samson après lui avoir crevé les yeux ?",
+   "options": [
+    "À Gaza",
+    "À Askalon",
+    "À Ékron",
+    "À Asdod"
+   ],
+   "bonne": 0,
+   "reference": "Juges 16.21"
+  },
+  {
+   "id": "at-379",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que signifiait le nom I-Kabod, donné par la belle-fille d'Éli ?",
+   "options": [
+    "La gloire est bannie d'Israël",
+    "Dieu a eu pitié",
+    "L'Éternel voit",
+    "Fils de ma douleur"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 4.21"
+  },
+  {
+   "id": "at-380",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Comment le peuple reconnut-il que Samuel était établi prophète ?",
+   "options": [
+    "Depuis Dan jusqu'à Beer-Schéba, tout Israël le reconnut",
+    "Par un signe au ciel",
+    "Par le tirage du sort à Silo",
+    "Par la voix des sacrificateurs"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 3.20"
+  },
+  {
+   "id": "at-381",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que reprocha Samuel à Saül, après l'holocauste offert à Guilgal ?",
+   "options": [
+    "Tu as agi en insensé, tu n'as pas observé le commandement",
+    "Tu as épargné le roi Agag",
+    "Tu as consulté une magicienne",
+    "Tu n'as pas attendu Jonathan"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 13.13"
+  },
+  {
+   "id": "at-382",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel roi d'Israël fut frappé au défaut de la cuirasse par une flèche tirée au hasard ?",
+   "options": [
+    "Achab",
+    "Joram",
+    "Josias",
+    "Saül"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 22.29-34"
+  },
+  {
+   "id": "at-383",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que crièrent les hommes en goûtant le potage d'Élisée ?",
+   "options": [
+    "La mort est dans le pot, homme de Dieu !",
+    "L'Éternel nous a livrés !",
+    "Le pain manque à Guilgal !",
+    "Qui a cueilli ces herbes ?"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 4.40"
+  },
+  {
+   "id": "at-384",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quelle année du règne d'Osée le roi d'Assyrie prit-il Samarie ?",
+   "options": [
+    "La neuvième",
+    "La troisième",
+    "La douzième",
+    "La vingtième"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 17.6"
+  },
+  {
+   "id": "at-385",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quelle année du règne de Nebucadnetsar Jérusalem fut-elle brûlée ?",
+   "options": [
+    "La dix-neuvième",
+    "La onzième",
+    "La septième",
+    "La trentième"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 25.8"
+  },
+  {
+   "id": "at-386",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Combien d'hommes accompagnaient Ismaël quand il frappa Guedalia ?",
+   "options": [
+    "Dix",
+    "Sept",
+    "Trente",
+    "Cent"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 25.25"
+  },
+  {
+   "id": "at-387",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Qui pleurait à grand bruit pendant qu'on posait les fondements de la seconde maison ?",
+   "options": [
+    "Les vieillards qui avaient vu la première",
+    "Les femmes de Jérusalem",
+    "Les Lévites seulement",
+    "Les prophètes Aggée et Zacharie"
+   ],
+   "bonne": 0,
+   "reference": "Esdras 3.12"
+  },
+  {
+   "id": "at-388",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Qui découvrit que les Syriens avaient abandonné leur camp devant Samarie ?",
+   "options": [
+    "Quatre lépreux, à l'entrée de la porte",
+    "Les sentinelles du roi",
+    "Le serviteur du prophète",
+    "Des marchands venus de Damas"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 7.3-5"
+  },
+  {
+   "id": "at-389",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Comment les filles de Job s'appelaient-elles, après son rétablissement ?",
+   "options": [
+    "Jemima, Ketsia et Kéren-Happuc",
+    "Milca, Thirtsa et Hogla",
+    "Sara, Rebecca et Rachel",
+    "Abigaïl, Rispa et Michal"
+   ],
+   "bonne": 0,
+   "reference": "Job 42.14"
+  },
+  {
+   "id": "at-390",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que fait l'homme de la moitié restante de son bois, selon Ésaïe ?",
+   "options": [
+    "Il en fait un dieu et se prosterne devant lui",
+    "Il la vend au marché",
+    "Il la donne à l'étranger",
+    "Il en construit l'appui de sa maison"
+   ],
+   "bonne": 0,
+   "reference": "Ésaïe 44.17"
+  },
+  {
+   "id": "at-391",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que devint la maison de Rahab, à la prise de Jéricho ?",
+   "options": [
+    "Elle fut épargnée avec toute sa famille",
+    "Elle fut brûlée la dernière",
+    "Elle fut donnée aux Lévites",
+    "Elle fut rasée après le partage"
+   ],
+   "bonne": 0,
+   "reference": "Josué 6.25"
+  },
+  {
+   "id": "at-392",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Dans quel état Jérémie retrouva-t-il sa ceinture ?",
+   "options": [
+    "Elle était gâtée, et n'était plus bonne à rien",
+    "Elle était intacte",
+    "Elle avait blanchi au soleil",
+    "Elle avait disparu"
+   ],
+   "bonne": 0,
+   "reference": "Jérémie 13.7"
+  },
+  {
+   "id": "at-393",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "À quoi ressemblaient les bonnes figues du panier montré à Jérémie ?",
+   "options": [
+    "Aux figues de la première récolte",
+    "Aux figues de Bethphagé",
+    "Aux figues séchées de Sichem",
+    "Aux figues du désert"
+   ],
+   "bonne": 0,
+   "reference": "Jérémie 24.2"
+  },
+  {
+   "id": "at-394",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que Jérémie mit-il devant les Récabites, pour les éprouver ?",
+   "options": [
+    "Des coupes pleines de vin",
+    "Des pains sans levain",
+    "Un rouleau scellé",
+    "Un joug de bois"
+   ],
+   "bonne": 0,
+   "reference": "Jérémie 35.5"
+  },
+  {
+   "id": "at-395",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que représente le rassemblement des nations dans la vallée de Josaphat ?",
+   "options": [
+    "Un jugement au sujet d'Israël, son peuple",
+    "Un festin de réconciliation",
+    "Un recensement universel",
+    "Une alliance avec les rois voisins"
+   ],
+   "bonne": 0,
+   "reference": "Joël 3.2"
+  },
+  {
+   "id": "at-396",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Où se dressaient les colonnes Jakin et Boaz ?",
+   "options": [
+    "Dans le portique du temple",
+    "Aux portes de la ville",
+    "Devant le palais du roi",
+    "À l'entrée du parvis des femmes"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 7.21"
+  },
+  {
+   "id": "at-397",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Combien de coudées de hauteur avait la maison bâtie par Salomon ?",
+   "options": [
+    "Trente",
+    "Vingt",
+    "Soixante",
+    "Quarante"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 6.2"
+  },
+  {
+   "id": "at-398",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que trouva-t-on à Achmetha, sous le règne de Darius ?",
+   "options": [
+    "Un rouleau portant le mémoire de l'édit",
+    "Les vases du temple",
+    "Le trésor de Cyrus",
+    "La généalogie des sacrificateurs"
+   ],
+   "bonne": 0,
+   "reference": "Esdras 6.2"
+  },
+  {
+   "id": "at-399",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Pourquoi ne pouvait-on distinguer les cris de joie des pleurs, à la pose des fondements ?",
+   "options": [
+    "Le peuple poussait de grands cris qui s'entendaient au loin",
+    "Les trompettes couvraient tout",
+    "La foule était trop éloignée",
+    "Les Lévites chantaient en même temps"
+   ],
+   "bonne": 0,
+   "reference": "Esdras 3.13"
+  },
+  {
+   "id": "at-400",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Comment le fer d'une hache tombé dans l'eau revint-il à la surface, sous Élisée ?",
+   "options": [
+    "Élisée jeta un morceau de bois à cet endroit",
+    "Un homme plongea le chercher",
+    "L'eau se retira",
+    "Il fut retrouvé le lendemain"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 6.6"
+  },
+  {
+   "id": "at-401",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que fit Élisée pour que les Syriens ne le reconnaissent pas ?",
+   "options": [
+    "Il pria l'Éternel de les frapper d'aveuglement",
+    "Il changea de vêtements",
+    "Il se cacha dans une caverne",
+    "Il envoya son serviteur à sa place"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 6.18"
+  },
+  {
+   "id": "at-402",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel prophète oignit Jéhu en secret, par la main d'un jeune homme ?",
+   "options": [
+    "Élisée",
+    "Élie",
+    "Michée",
+    "Nathan"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 9.1-6"
+  },
+  {
+   "id": "at-403",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel roi de Juda fut caché six ans dans la maison de l'Éternel ?",
+   "options": [
+    "Joas",
+    "Ozias",
+    "Manassé",
+    "Amon"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 11.3"
+  },
+  {
+   "id": "at-404",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel roi de Juda fit passer son fils par le feu et dressa des autels aux astres ?",
+   "options": [
+    "Manassé",
+    "Josias",
+    "Ézéchias",
+    "Joas"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 21.3-6"
+  },
+  {
+   "id": "at-405",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Combien d'années dura le règne de Manassé à Jérusalem ?",
+   "options": [
+    "Cinquante-cinq ans",
+    "Vingt-neuf ans",
+    "Quarante ans",
+    "Deux ans"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 21.1"
+  },
+  {
+   "id": "at-406",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que fit Josias des ossements tirés des sépulcres, à Béthel ?",
+   "options": [
+    "Il les brûla sur l'autel pour le souiller",
+    "Il les fit enterrer à Jérusalem",
+    "Il les jeta dans le Cédron",
+    "Il les rendit aux familles"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 23.16"
+  },
+  {
+   "id": "at-407",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que devint Jojakin, roi de Juda, à la fin du second livre des Rois ?",
+   "options": [
+    "Le roi de Babylone releva sa tête et lui donna une place d'honneur",
+    "Il mourut en prison",
+    "Il revint régner à Jérusalem",
+    "Il fut vendu comme esclave"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 25.27-28"
+  },
+  {
+   "id": "at-408",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quelle punition frappa Ozias pour avoir voulu brûler le parfum ?",
+   "options": [
+    "La lèpre au front",
+    "La cécité",
+    "La mutité",
+    "La paralysie"
+   ],
+   "bonne": 0,
+   "reference": "2 Chroniques 26.19"
+  },
+  {
+   "id": "at-409",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel roi de Juda chercha les médecins plutôt que l'Éternel, malade des pieds ?",
+   "options": [
+    "Asa",
+    "Josaphat",
+    "Joram",
+    "Achaz"
+   ],
+   "bonne": 0,
+   "reference": "2 Chroniques 16.12"
+  },
+  {
+   "id": "at-410",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel prophète reprocha à Asa de s'être appuyé sur le roi de Syrie ?",
+   "options": [
+    "Hanani, le voyant",
+    "Azaria, fils d'Obed",
+    "Jéhu, fils de Hanani",
+    "Michée, fils de Jimla"
+   ],
+   "bonne": 0,
+   "reference": "2 Chroniques 16.7"
+  },
+  {
+   "id": "at-411",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que firent les chantres de Josaphat, marchant devant l'armée ?",
+   "options": [
+    "Ils célébraient l'Éternel, revêtus d'ornements sacrés",
+    "Ils sonnaient de la trompette",
+    "Ils portaient les vases du temple",
+    "Ils jetaient des palmes sur la route"
+   ],
+   "bonne": 0,
+   "reference": "2 Chroniques 20.21"
+  },
+  {
+   "id": "at-412",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Où Ozias fut-il enterré, parce qu'on disait de lui « Il est lépreux » ?",
+   "options": [
+    "Dans le champ de la sépulture des rois",
+    "Hors des murs de Jérusalem",
+    "Dans le jardin du palais",
+    "À Béthel, chez sa mère"
+   ],
+   "bonne": 0,
+   "reference": "2 Chroniques 26.23"
+  },
+  {
+   "id": "at-413",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "De combien de jours l'assemblée réunie par Ézéchias prolongea-t-elle la fête ?",
+   "options": [
+    "Sept autres jours",
+    "Trois autres jours",
+    "Un mois entier",
+    "Quarante jours"
+   ],
+   "bonne": 0,
+   "reference": "2 Chroniques 30.23"
+  },
+  {
+   "id": "at-414",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel ouvrage Ézéchias fit-il pour amener les eaux de Guihon dans la ville ?",
+   "options": [
+    "Il en boucha l'issue supérieure et les conduisit vers la cité de David",
+    "Il éleva une digue sur le Cédron",
+    "Il fit bâtir un aqueduc de pierre",
+    "Il creusa un puits dans le temple"
+   ],
+   "bonne": 0,
+   "reference": "2 Chroniques 32.30"
+  },
+  {
+   "id": "at-415",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Comment le livre des Chroniques s'achève-t-il ?",
+   "options": [
+    "Par l'édit de Cyrus invitant à monter à Jérusalem",
+    "Par la mort de Josias",
+    "Par la déportation à Babylone",
+    "Par la généalogie de David"
+   ],
+   "bonne": 0,
+   "reference": "2 Chroniques 36.22-23"
+  },
+  {
+   "id": "at-416",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Combien d'années le pays dévasté se reposa-t-il, jusqu'à ce qu'il ait joui de ses sabbats ?",
+   "options": [
+    "Soixante-dix ans",
+    "Quarante ans",
+    "Sept ans",
+    "Cent ans"
+   ],
+   "bonne": 0,
+   "reference": "2 Chroniques 36.21"
+  },
+  {
+   "id": "at-417",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Où le peuple dressa-t-il les tentes de rameaux, au temps de Néhémie ?",
+   "options": [
+    "Sur les toits, dans les cours et sur les places",
+    "Hors de la ville, dans la vallée",
+    "Dans le parvis du roi seulement",
+    "Au sommet du mont des Oliviers"
+   ],
+   "bonne": 0,
+   "reference": "Néhémie 8.16"
+  },
+  {
+   "id": "at-418",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Combien de jours dura le festin d'Assuérus pour tout le peuple de Suse ?",
+   "options": [
+    "Sept jours",
+    "Trois jours",
+    "Cent quatre-vingts jours",
+    "Un mois"
+   ],
+   "bonne": 0,
+   "reference": "Esther 1.5"
+  },
+  {
+   "id": "at-419",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que découvrit-on dans le livre des annales, la nuit où le roi ne put dormir ?",
+   "options": [
+    "Que Mardochée avait dénoncé un complot",
+    "Qu'Esther était juive",
+    "Qu'Haman avait volé le trésor",
+    "Que Vasthi était morte"
+   ],
+   "bonne": 0,
+   "reference": "Esther 6.1-2"
+  },
+  {
+   "id": "at-420",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel est le premier malheur annoncé à Job, ce jour-là ?",
+   "options": [
+    "Les Sabéens ont enlevé bœufs et ânesses",
+    "Le feu de Dieu a brûlé les brebis",
+    "Les Chaldéens ont pris les chameaux",
+    "La maison est tombée sur ses enfants"
+   ],
+   "bonne": 0,
+   "reference": "Job 1.14-15"
+  },
+  {
+   "id": "at-421",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Combien d'amis vinrent consoler Job, assis sept jours en silence ?",
+   "options": [
+    "Trois",
+    "Quatre",
+    "Deux",
+    "Sept"
+   ],
+   "bonne": 0,
+   "reference": "Job 2.11-13"
+  },
+  {
+   "id": "at-422",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel animal l'Éternel décrit-il à Job comme « la première des œuvres de Dieu » ?",
+   "options": [
+    "Le béhémoth",
+    "Le léviathan",
+    "L'autruche",
+    "Le cheval"
+   ],
+   "bonne": 0,
+   "reference": "Job 40.19"
+  },
+  {
+   "id": "at-423",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "À quoi le psalmiste compare-t-il l'homme heureux, planté près d'un courant ?",
+   "options": [
+    "À un arbre qui donne son fruit en sa saison",
+    "À une vigne bien taillée",
+    "À un cèdre du Liban",
+    "À une source jaillissante"
+   ],
+   "bonne": 0,
+   "reference": "Psaume 1.3"
+  },
+  {
+   "id": "at-424",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Qui le psaume 119 déclare-t-il heureux, dès son premier verset ?",
+   "options": [
+    "Ceux qui sont intègres dans leur voie",
+    "Ceux qui craignent le jugement",
+    "Ceux qui offrent des sacrifices",
+    "Ceux qui habitent le sanctuaire"
+   ],
+   "bonne": 0,
+   "reference": "Psaume 119.1"
+  },
+  {
+   "id": "at-425",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que dit l'Ecclésiaste de ce qui se fait sous le soleil ?",
+   "options": [
+    "Tout est vanité et poursuite du vent",
+    "Tout est bon en son temps",
+    "Tout revient à la poussière",
+    "Tout est sagesse cachée"
+   ],
+   "bonne": 0,
+   "reference": "Ecclésiaste 1.14"
+  },
+  {
+   "id": "at-426",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quelle prophétie d'Ésaïe annonce un rejeton sorti du tronc d'Isaï ?",
+   "options": [
+    "Un rejeton naîtra de ses racines",
+    "Un roi viendra de Babylone",
+    "Une étoile se lèvera de Jacob",
+    "Un serviteur souffrant sera méprisé"
+   ],
+   "bonne": 0,
+   "reference": "Ésaïe 11.1"
+  },
+  {
+   "id": "at-427",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "À combien d'années le psaume 90 fixe-t-il les jours de nos années ?",
+   "options": [
+    "Soixante-dix ans",
+    "Cent vingt ans",
+    "Quarante ans",
+    "Cent ans"
+   ],
+   "bonne": 0,
+   "reference": "Psaume 90.10"
+  },
+  {
+   "id": "at-428",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Où les exilés étaient-ils assis, pleurant en se souvenant de Sion ?",
+   "options": [
+    "Sur les bords des fleuves de Babylone",
+    "Aux portes de Ninive",
+    "Sur les collines de Moab",
+    "Dans les jardins de Suse"
+   ],
+   "bonne": 0,
+   "reference": "Psaume 137.1"
+  },
+  {
+   "id": "at-429",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Par quoi s'achève le livre des Psaumes ?",
+   "options": [
+    "Que tout ce qui respire loue l'Éternel",
+    "Par une lamentation sur Sion",
+    "Par la bénédiction de Moïse",
+    "Par le cantique de la mer"
+   ],
+   "bonne": 0,
+   "reference": "Psaume 150.6"
+  },
+  {
+   "id": "at-430",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Comment la bien-aimée du Cantique se décrit-elle ?",
+   "options": [
+    "Un narcisse de Saron, un lis des vallées",
+    "Une colombe des rochers",
+    "Une vigne de Thimna",
+    "Une source scellée du Liban"
+   ],
+   "bonne": 0,
+   "reference": "Cantique des cantiques 2.1"
+  },
+  {
+   "id": "at-431",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "À quoi l'amour est-il comparé, dans le Cantique des cantiques ?",
+   "options": [
+    "Il est fort comme la mort",
+    "Il est doux comme le miel",
+    "Il est vaste comme la mer",
+    "Il est léger comme le vent"
+   ],
+   "bonne": 0,
+   "reference": "Cantique des cantiques 8.6"
+  },
+  {
+   "id": "at-432",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quels petits animaux ravagent les vignes en fleur, dans le Cantique ?",
+   "options": [
+    "Les petits renards",
+    "Les sauterelles",
+    "Les souris des champs",
+    "Les oiseaux du ciel"
+   ],
+   "bonne": 0,
+   "reference": "Cantique des cantiques 2.15"
+  },
+  {
+   "id": "at-433",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Combien Osée paya-t-il pour racheter sa femme ?",
+   "options": [
+    "Quinze sicles d'argent, un homer et un léthec d'orge",
+    "Trente sicles",
+    "Cinquante sicles",
+    "Un homer de blé"
+   ],
+   "bonne": 0,
+   "reference": "Osée 3.2"
+  },
+  {
+   "id": "at-434",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Combien Jérémie pesa-t-il d'argent pour le champ d'Anathoth ?",
+   "options": [
+    "Dix-sept sicles",
+    "Trente sicles",
+    "Cinquante sicles",
+    "Quatre cents sicles"
+   ],
+   "bonne": 0,
+   "reference": "Jérémie 32.9"
+  },
+  {
+   "id": "at-435",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel deuil fut interdit à Ézéchiel, à la mort de sa femme ?",
+   "options": [
+    "Toute lamentation et toute larme",
+    "L'offrande du soir",
+    "Le port du turban",
+    "Le jeûne de sept jours"
+   ],
+   "bonne": 0,
+   "reference": "Ézéchiel 24.16-18"
+  },
+  {
+   "id": "at-436",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que vit Ézéchiel peint sur la muraille du temple ?",
+   "options": [
+    "Des reptiles et des bêtes abominables",
+    "Les noms des rois de Juda",
+    "Les douze tribus en procession",
+    "Des chérubins et des palmiers"
+   ],
+   "bonne": 0,
+   "reference": "Ézéchiel 8.10"
+  },
+  {
+   "id": "at-437",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Qu'était-il écrit, en dedans et en dehors, sur le rouleau montré à Ézéchiel ?",
+   "options": [
+    "Des lamentations, des plaintes et des gémissements",
+    "Les lois du sabbat",
+    "Les noms des justes",
+    "Les jours de l'exil"
+   ],
+   "bonne": 0,
+   "reference": "Ézéchiel 2.10"
+  },
+  {
+   "id": "at-438",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quand vécut Amos, selon la première ligne de son livre ?",
+   "options": [
+    "Deux ans avant le tremblement de terre",
+    "La quatrième année de Josias",
+    "Au temps de la captivité",
+    "La dernière année de Salomon"
+   ],
+   "bonne": 0,
+   "reference": "Amos 1.1"
+  },
+  {
+   "id": "at-439",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Par quoi le juste vivra-t-il, selon Habacuc ?",
+   "options": [
+    "Par sa foi",
+    "Par ses œuvres",
+    "Par la loi",
+    "Par la crainte"
+   ],
+   "bonne": 0,
+   "reference": "Habacuc 2.4"
+  },
+  {
+   "id": "at-440",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel reproche Aggée adresse-t-il au peuple au sujet de leurs maisons ?",
+   "options": [
+    "Elles sont lambrissées quand la maison de l'Éternel est détruite",
+    "Elles sont bâties hors des murs",
+    "Elles sont trop hautes",
+    "Elles sont vendues aux étrangers"
+   ],
+   "bonne": 0,
+   "reference": "Aggée 1.4"
+  },
+  {
+   "id": "at-441",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quel orgueil Abdias reproche-t-il à Édom ?",
+   "options": [
+    "Celui d'habiter le creux des rochers",
+    "Celui d'avoir beaucoup d'or",
+    "Celui de mépriser la loi",
+    "Celui d'avoir un roi puissant"
+   ],
+   "bonne": 0,
+   "reference": "Abdias 3"
+  },
+  {
+   "id": "at-442",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quelle bénédiction Aaron et ses fils devaient-ils prononcer sur Israël ?",
+   "options": [
+    "Que l'Éternel te bénisse et qu'il te garde",
+    "Que ta postérité soit sans nombre",
+    "Que ta main soit forte au combat",
+    "Que ta maison soit remplie de blé"
+   ],
+   "bonne": 0,
+   "reference": "Nombres 6.24"
+  },
+  {
+   "id": "at-443",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Où Israël devait-il écrire les paroles de la loi, selon le Deutéronome ?",
+   "options": [
+    "Sur les poteaux de la maison et sur les portes",
+    "Sur les pierres du Jourdain",
+    "Sur le front des sacrificateurs",
+    "Sur les portes du temple seulement"
+   ],
+   "bonne": 0,
+   "reference": "Deutéronome 6.9"
+  },
+  {
+   "id": "at-444",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que devait-il advenir, le jour même, du corps d'un pendu ?",
+   "options": [
+    "Il devait être enterré, car un pendu est un objet de malédiction",
+    "Il devait être brûlé hors du camp",
+    "Il devait être rendu à sa famille",
+    "Il devait rester exposé sept jours"
+   ],
+   "bonne": 0,
+   "reference": "Deutéronome 21.23"
+  },
+  {
+   "id": "at-445",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que promet l'Éternel si son peuple s'humilie, prie et cherche sa face ?",
+   "options": [
+    "De pardonner son péché et de guérir son pays",
+    "De lui rendre ses rois",
+    "De rebâtir le temple en un jour",
+    "De chasser toutes les nations"
+   ],
+   "bonne": 0,
+   "reference": "2 Chroniques 7.14"
+  },
+  {
+   "id": "at-446",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "À qui appartient la terre et ce qu'elle renferme, selon le psaume 24 ?",
+   "options": [
+    "À l'Éternel",
+    "Aux justes",
+    "Aux rois de la terre",
+    "À la maison de David"
+   ],
+   "bonne": 0,
+   "reference": "Psaume 24.1"
+  },
+  {
+   "id": "at-447",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que dit le psaume 127 de ceux qui bâtissent sans l'Éternel ?",
+   "options": [
+    "Ils travaillent en vain",
+    "Ils bâtissent sur le sable",
+    "Ils seront dispersés",
+    "Ils perdront leur salaire"
+   ],
+   "bonne": 0,
+   "reference": "Psaume 127.1"
+  },
+  {
+   "id": "at-448",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Comment le psalmiste se dit-il fait, en louant Dieu au psaume 139 ?",
+   "options": [
+    "Une créature merveilleuse",
+    "Un vase de terre",
+    "Une ombre qui passe",
+    "Un souffle emporté"
+   ],
+   "bonne": 0,
+   "reference": "Psaume 139.14"
+  },
+  {
+   "id": "at-449",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que l'Éternel annonce-t-il de créer, selon la fin d'Ésaïe ?",
+   "options": [
+    "De nouveaux cieux et une nouvelle terre",
+    "Un peuple sans nombre",
+    "Un temple sans murailles",
+    "Une mer sans rivage"
+   ],
+   "bonne": 0,
+   "reference": "Ésaïe 65.17"
+  },
+  {
+   "id": "at-450",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Quelle alliance l'Éternel annonce-t-il par Jérémie ?",
+   "options": [
+    "Une alliance nouvelle",
+    "Une alliance de sel",
+    "Une alliance de paix perpétuelle",
+    "Une alliance scellée par le sang"
+   ],
+   "bonne": 0,
+   "reference": "Jérémie 31.31"
+  },
+  {
+   "id": "at-451",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Comment l'Éternel se compare-t-il, dans Ézéchiel, à l'égard de ses brebis ?",
+   "options": [
+    "À un pasteur qui fait la revue de son troupeau",
+    "À un juge assis au portail",
+    "À un vigneron qui taille",
+    "À un potier qui refait le vase"
+   ],
+   "bonne": 0,
+   "reference": "Ézéchiel 34.12"
+  },
+  {
+   "id": "at-452",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Comment Osée résume-t-il la sortie d'Égypte ?",
+   "options": [
+    "J'appelai mon fils hors d'Égypte",
+    "J'ouvris la mer devant lui",
+    "Je le portai sur des ailes d'aigle",
+    "Je le conduisis par la nuée"
+   ],
+   "bonne": 0,
+   "reference": "Osée 11.1"
+  },
+  {
+   "id": "at-453",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Comment Nahum décrit-il l'Éternel au jour de la détresse ?",
+   "options": [
+    "Il est bon, il est un refuge",
+    "Il est un feu dévorant",
+    "Il est un juge sévère",
+    "Il est un rocher inébranlable"
+   ],
+   "bonne": 0,
+   "reference": "Nahum 1.7"
+  },
+  {
+   "id": "at-454",
+   "categorie": "Ancien Testament",
+   "niveau": 3,
+   "question": "Que fera l'Éternel de son peuple, selon Sophonie, dans son amour ?",
+   "options": [
+    "Il gardera le silence et aura des transports de joie",
+    "Il le jugera sans pitié",
+    "Il le dispersera un temps",
+    "Il lui donnera un nouveau nom"
+   ],
+   "bonne": 0,
+   "reference": "Sophonie 3.17"
+  },
+  {
+   "id": "nt-297",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Combien de lépreux Jésus guérit-il, dont un seul revint le remercier ?",
+   "options": [
+    "Dix",
+    "Sept",
+    "Trois",
+    "Douze"
+   ],
+   "bonne": 0,
+   "reference": "Luc 17.12-17"
+  },
+  {
+   "id": "nt-298",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Qui écrivit l'Apocalypse, dans l'île de Patmos ?",
+   "options": [
+    "Jean",
+    "Pierre",
+    "Paul",
+    "Jacques"
+   ],
+   "bonne": 0,
+   "reference": "Apocalypse 1.9"
+  },
+  {
+   "id": "nt-299",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Combien d'hommes Jésus nourrit-il avec sept pains et quelques petits poissons ?",
+   "options": [
+    "Quatre mille",
+    "Cinq mille",
+    "Trois mille",
+    "Deux mille"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 15.38"
+  },
+  {
+   "id": "nt-300",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Quel repas Jésus célébra-t-il avec ses disciples la veille de sa mort ?",
+   "options": [
+    "La Pâque",
+    "La fête des Tabernacles",
+    "La Pentecôte",
+    "Le sabbat de la nouvelle lune"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 26.19"
+  },
+  {
+   "id": "nt-301",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Aux pieds de quel jeune homme les témoins déposèrent-ils leurs vêtements, en lapidant Étienne ?",
+   "options": [
+    "Saul",
+    "Gamaliel",
+    "Caïphe",
+    "Barnabas"
+   ],
+   "bonne": 0,
+   "reference": "Actes 7.58"
+  },
+  {
+   "id": "nt-302",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Quel objet Jésus prit-il pour laver les pieds de ses disciples ?",
+   "options": [
+    "Un linge et un bassin",
+    "Une coupe",
+    "Une amphore de parfum",
+    "Un manteau"
+   ],
+   "bonne": 0,
+   "reference": "Jean 13.4-5"
+  },
+  {
+   "id": "nt-303",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Où Jésus dit-il à Simon d'avancer pour jeter les filets ?",
+   "options": [
+    "En pleine eau",
+    "Près du rivage",
+    "Vers l'embouchure du Jourdain",
+    "Au pied de la colline"
+   ],
+   "bonne": 0,
+   "reference": "Luc 5.4"
+  },
+  {
+   "id": "nt-304",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Que Paul dit-il pouvoir faire par celui qui le fortifie ?",
+   "options": [
+    "Tout",
+    "Rien de plus",
+    "Souffrir seulement",
+    "Prêcher aux nations"
+   ],
+   "bonne": 0,
+   "reference": "Philippiens 4.13"
+  },
+  {
+   "id": "nt-305",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Quel métier exerçait Luc, que Paul appelle « bien-aimé » ?",
+   "options": [
+    "Médecin",
+    "Scribe",
+    "Marin",
+    "Corroyeur"
+   ],
+   "bonne": 0,
+   "reference": "Colossiens 4.14"
+  },
+  {
+   "id": "nt-306",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Que devient celui qui est en Christ, selon Paul ?",
+   "options": [
+    "Une nouvelle créature",
+    "Un serviteur de la loi",
+    "Un juge des anges",
+    "Un héritier du royaume seulement"
+   ],
+   "bonne": 0,
+   "reference": "2 Corinthiens 5.17"
+  },
+  {
+   "id": "nt-307",
+   "categorie": "Nouveau Testament",
+   "niveau": 1,
+   "question": "Quel genre de donateur Dieu aime-t-il ?",
+   "options": [
+    "Celui qui donne avec joie",
+    "Celui qui donne en secret",
+    "Celui qui donne le double",
+    "Celui qui donne le premier"
+   ],
+   "bonne": 0,
+   "reference": "2 Corinthiens 9.7"
+  },
+  {
+   "id": "nt-308",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que fit Jésus avant de guérir l'aveugle-né ?",
+   "options": [
+    "Il fit de la boue avec sa salive",
+    "Il souffla sur ses yeux",
+    "Il pria toute la nuit",
+    "Il l'envoya au Jourdain"
+   ],
+   "bonne": 0,
+   "reference": "Jean 9.6"
+  },
+  {
+   "id": "nt-309",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Où Jésus envoya-t-il se laver l'aveugle dont il avait oint les yeux ?",
+   "options": [
+    "Au réservoir de Siloé",
+    "À la piscine de Béthesda",
+    "Dans le Jourdain",
+    "À la source de Guihon"
+   ],
+   "bonne": 0,
+   "reference": "Jean 9.7"
+  },
+  {
+   "id": "nt-310",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que virent d'abord les yeux de l'aveugle de Bethsaïda, à demi guéri ?",
+   "options": [
+    "Des hommes comme des arbres qui marchent",
+    "Une lumière éblouissante",
+    "Des ombres sans forme",
+    "Le visage de Jésus seul"
+   ],
+   "bonne": 0,
+   "reference": "Marc 8.24"
+  },
+  {
+   "id": "nt-311",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quel jour Jésus guérit-il l'homme à la main sèche, dans la synagogue ?",
+   "options": [
+    "Un jour de sabbat",
+    "Le jour de la Pâque",
+    "Le premier jour de la semaine",
+    "Le jour de la Pentecôte"
+   ],
+   "bonne": 0,
+   "reference": "Marc 3.1-2"
+  },
+  {
+   "id": "nt-312",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que faisaient les disciples, un jour de sabbat, dans les champs de blé ?",
+   "options": [
+    "Ils arrachaient des épis pour manger",
+    "Ils moissonnaient pour les pauvres",
+    "Ils fuyaient les pharisiens",
+    "Ils cherchaient un lieu pour prier"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 12.1"
+  },
+  {
+   "id": "nt-313",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que devinrent ceux qui vinrent arrêter Jésus, quand il dit « C'est moi » ?",
+   "options": [
+    "Ils reculèrent et tombèrent par terre",
+    "Ils prirent la fuite",
+    "Ils se prosternèrent",
+    "Ils lâchèrent leurs armes"
+   ],
+   "bonne": 0,
+   "reference": "Jean 18.6"
+  },
+  {
+   "id": "nt-314",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Combien devait chacun des deux débiteurs de la parabole ?",
+   "options": [
+    "Cinq cents deniers et cinquante",
+    "Cent deniers et dix",
+    "Mille deniers et cent",
+    "Dix mille talents et cent deniers"
+   ],
+   "bonne": 0,
+   "reference": "Luc 7.41"
+  },
+  {
+   "id": "nt-315",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Combien de mesures d'huile devait le premier débiteur de l'économe infidèle ?",
+   "options": [
+    "Cent",
+    "Cinquante",
+    "Quatre-vingts",
+    "Dix"
+   ],
+   "bonne": 0,
+   "reference": "Luc 16.6"
+  },
+  {
+   "id": "nt-316",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Qu'écrivit l'économe infidèle sur le billet du débiteur de cent mesures de blé ?",
+   "options": [
+    "Quatre-vingts",
+    "Cinquante",
+    "Soixante",
+    "Vingt"
+   ],
+   "bonne": 0,
+   "reference": "Luc 16.7"
+  },
+  {
+   "id": "nt-317",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Avec combien d'hommes le roi de la parabole examine-t-il s'il peut affronter vingt mille ?",
+   "options": [
+    "Dix mille",
+    "Cinq mille",
+    "Mille",
+    "Cent"
+   ],
+   "bonne": 0,
+   "reference": "Luc 14.31"
+  },
+  {
+   "id": "nt-318",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quel rendement donna la semence tombée dans la bonne terre ?",
+   "options": [
+    "Cent, soixante et trente",
+    "Dix, vingt et trente",
+    "Sept, quatorze et vingt et un",
+    "Cinquante et cent"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 13.8"
+  },
+  {
+   "id": "nt-319",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Dans combien de mesures de farine la femme mit-elle le levain de la parabole ?",
+   "options": [
+    "Trois",
+    "Deux",
+    "Sept",
+    "Dix"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 13.33"
+  },
+  {
+   "id": "nt-320",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que font les pêcheurs du filet, une fois assis sur le rivage ?",
+   "options": [
+    "Ils gardent ce qui est bon et jettent ce qui est mauvais",
+    "Ils comptent leurs prises",
+    "Ils partagent tout également",
+    "Ils rendent le filet à son maître"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 13.48"
+  },
+  {
+   "id": "nt-321",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que reprocha le roi à l'invité aux noces, dans la parabole ?",
+   "options": [
+    "Il n'avait pas revêtu un habit de noces",
+    "Il était arrivé en retard",
+    "Il n'avait pas apporté de présent",
+    "Il avait pris la première place"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 22.11-12"
+  },
+  {
+   "id": "nt-322",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Combien de temps Paul demeura-t-il à Rome, dans une maison qu'il avait louée ?",
+   "options": [
+    "Deux ans entiers",
+    "Six mois",
+    "Cinq ans",
+    "Un hiver seulement"
+   ],
+   "bonne": 0,
+   "reference": "Actes 28.30"
+  },
+  {
+   "id": "nt-323",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quel salut Jésus adressa-t-il à Marie de Magdala au tombeau, avant qu'elle le reconnaisse ?",
+   "options": [
+    "Il l'appela par son nom : Marie",
+    "Il lui montra ses mains",
+    "Il lui dit la paix soit avec toi",
+    "Il rompit le pain"
+   ],
+   "bonne": 0,
+   "reference": "Jean 20.16"
+  },
+  {
+   "id": "nt-324",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "À qui les Grecs montés pour la fête s'adressèrent-ils pour voir Jésus ?",
+   "options": [
+    "À Philippe, de Bethsaïda",
+    "À Pierre",
+    "À Jean",
+    "À Nicodème"
+   ],
+   "bonne": 0,
+   "reference": "Jean 12.21"
+  },
+  {
+   "id": "nt-325",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que répondit l'eunuque éthiopien à Philippe, sur le prophète qu'il lisait ?",
+   "options": [
+    "Comment le pourrais-je, si quelqu'un ne me guide ?",
+    "Ce livre est trop obscur",
+    "Je le sais par cœur",
+    "Explique-le à mon maître"
+   ],
+   "bonne": 0,
+   "reference": "Actes 8.31"
+  },
+  {
+   "id": "nt-326",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quelles abstentions le concile de Jérusalem imposa-t-il aux païens convertis ?",
+   "options": [
+    "Les viandes sacrifiées aux idoles, le sang, les animaux étouffés et l'impudicité",
+    "La circoncision et le sabbat",
+    "Les jeûnes et les vœux",
+    "Le vin et les fêtes"
+   ],
+   "bonne": 0,
+   "reference": "Actes 15.28-29"
+  },
+  {
+   "id": "nt-327",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que dit Pierre en refusant de manger ce qui descendait du ciel ?",
+   "options": [
+    "Je n'ai jamais rien mangé de souillé ni d'impur",
+    "La loi me le défend depuis Moïse",
+    "Ce n'est pas le temps du repas",
+    "Donne-le plutôt aux pauvres"
+   ],
+   "bonne": 0,
+   "reference": "Actes 10.14"
+  },
+  {
+   "id": "nt-328",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Comment Paul répondit-il à Festus qui le disait fou ?",
+   "options": [
+    "Ce sont des paroles de vérité et de bon sens",
+    "Tu ne peux comprendre les choses de Dieu",
+    "Que le roi Agrippa en juge",
+    "Je suis citoyen romain"
+   ],
+   "bonne": 0,
+   "reference": "Actes 26.25"
+  },
+  {
+   "id": "nt-329",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quel jour Jean fut-il ravi en esprit, entendant une voix comme une trompette ?",
+   "options": [
+    "Le jour du Seigneur",
+    "Le jour de la Pentecôte",
+    "Un jour de sabbat",
+    "Le premier jour du mois"
+   ],
+   "bonne": 0,
+   "reference": "Apocalypse 1.10"
+  },
+  {
+   "id": "nt-330",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quelles œuvres le Seigneur dit-il haïr, comme l'église d'Éphèse ?",
+   "options": [
+    "Celles des Nicolaïtes",
+    "Celles des Pharisiens",
+    "Celles des Samaritains",
+    "Celles des Sadducéens"
+   ],
+   "bonne": 0,
+   "reference": "Apocalypse 2.6"
+  },
+  {
+   "id": "nt-331",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Comment s'appelle celui qui monte le cheval blanc, jugeant avec justice ?",
+   "options": [
+    "Fidèle et Véritable",
+    "Le Lion de Juda",
+    "Le Prince de la paix",
+    "L'Étoile du matin"
+   ],
+   "bonne": 0,
+   "reference": "Apocalypse 19.11"
+  },
+  {
+   "id": "nt-332",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quel signe parut dans le ciel : une femme enveloppée du soleil ?",
+   "options": [
+    "Une couronne de douze étoiles sur sa tête",
+    "Une épée à double tranchant",
+    "Un arc-en-ciel autour du trône",
+    "Un livre scellé de sept sceaux"
+   ],
+   "bonne": 0,
+   "reference": "Apocalypse 12.1"
+  },
+  {
+   "id": "nt-333",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quel est le dernier ennemi qui sera détruit, selon Paul ?",
+   "options": [
+    "La mort",
+    "Le péché",
+    "Satan",
+    "La loi"
+   ],
+   "bonne": 0,
+   "reference": "1 Corinthiens 15.26"
+  },
+  {
+   "id": "nt-334",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que fait le roi, dans la parabole, à ceux qui seront à sa droite ?",
+   "options": [
+    "Il les invite à prendre possession du royaume",
+    "Il leur donne dix villes",
+    "Il les envoie prêcher aux nations",
+    "Il leur remet leur dette"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 25.34"
+  },
+  {
+   "id": "nt-335",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que répondit Jésus aux disciples qui voulaient acheter des pains pour la foule ?",
+   "options": [
+    "Donnez-leur vous-mêmes à manger",
+    "Renvoyez-les dans les villages",
+    "Attendez jusqu'au matin",
+    "Il n'y a pas assez d'argent"
+   ],
+   "bonne": 0,
+   "reference": "Marc 6.37"
+  },
+  {
+   "id": "nt-336",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quelle somme les disciples jugèrent-ils nécessaire pour nourrir la foule ?",
+   "options": [
+    "Deux cents deniers",
+    "Cinquante deniers",
+    "Mille deniers",
+    "Trente sicles"
+   ],
+   "bonne": 0,
+   "reference": "Marc 6.37"
+  },
+  {
+   "id": "nt-337",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que proposa Pierre sur la montagne de la transfiguration ?",
+   "options": [
+    "Dresser trois tentes",
+    "Descendre aussitôt",
+    "Bâtir un autel",
+    "Appeler les autres disciples"
+   ],
+   "bonne": 0,
+   "reference": "Marc 9.5"
+  },
+  {
+   "id": "nt-338",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "À qui Jésus demanda-t-il « Où achèterons-nous des pains ? », pour l'éprouver ?",
+   "options": [
+    "À Philippe",
+    "À André",
+    "À Pierre",
+    "À Judas"
+   ],
+   "bonne": 0,
+   "reference": "Jean 6.5"
+  },
+  {
+   "id": "nt-339",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que répondirent les deux premiers disciples à Jésus qui leur demandait ce qu'ils cherchaient ?",
+   "options": [
+    "Rabbi, où demeures-tu ?",
+    "Es-tu celui qui doit venir ?",
+    "Que devons-nous faire ?",
+    "Montre-nous le Père"
+   ],
+   "bonne": 0,
+   "reference": "Jean 1.38"
+  },
+  {
+   "id": "nt-340",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que déclara le centenier en voyant mourir Jésus, selon Luc ?",
+   "options": [
+    "Certainement, cet homme était juste",
+    "Vraiment il était Fils de Dieu",
+    "Cet homme était un prophète",
+    "Nous avons péché contre le ciel"
+   ],
+   "bonne": 0,
+   "reference": "Luc 23.47"
+  },
+  {
+   "id": "nt-341",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Qui, dans la maison de Corneille, entendit Pierre annoncer l'Évangile ?",
+   "options": [
+    "Ses parents et ses amis intimes",
+    "Les soldats de la garnison seulement",
+    "Les anciens de Césarée",
+    "Les Juifs de la synagogue"
+   ],
+   "bonne": 0,
+   "reference": "Actes 10.24"
+  },
+  {
+   "id": "nt-342",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quel objet Paul demanda-t-il à Timothée d'apporter, avec les livres et les parchemins ?",
+   "options": [
+    "Le manteau laissé à Troas",
+    "Une coupe de bois",
+    "Sa bourse",
+    "Son bâton"
+   ],
+   "bonne": 0,
+   "reference": "2 Timothée 4.13"
+  },
+  {
+   "id": "nt-343",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "De quel métier vivaient Paul, Aquilas et Priscille à Corinthe ?",
+   "options": [
+    "Faiseurs de tentes",
+    "Pêcheurs",
+    "Teinturiers de pourpre",
+    "Charpentiers"
+   ],
+   "bonne": 0,
+   "reference": "Actes 18.3"
+  },
+  {
+   "id": "nt-344",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quel esclave fugitif Paul renvoya-t-il à son maître, devenu un frère bien-aimé ?",
+   "options": [
+    "Onésime",
+    "Épaphras",
+    "Tychique",
+    "Démas"
+   ],
+   "bonne": 0,
+   "reference": "Philémon 10-16"
+  },
+  {
+   "id": "nt-345",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Comment Paul qualifie-t-il l'amour de l'argent ?",
+   "options": [
+    "Une racine de tous les maux",
+    "Un voile sur le cœur",
+    "Une idole muette",
+    "Un joug de servitude"
+   ],
+   "bonne": 0,
+   "reference": "1 Timothée 6.10"
+  },
+  {
+   "id": "nt-346",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Qu'est-ce que la foi, selon l'épître aux Hébreux ?",
+   "options": [
+    "Une ferme assurance des choses qu'on espère",
+    "Un don réservé aux parfaits",
+    "La science des mystères",
+    "L'obéissance à la loi"
+   ],
+   "bonne": 0,
+   "reference": "Hébreux 11.1"
+  },
+  {
+   "id": "nt-347",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Comment Paul résume-t-il son travail et celui d'Apollos à Corinthe ?",
+   "options": [
+    "J'ai planté, Apollos a arrosé, mais Dieu a fait croître",
+    "J'ai bâti, il a orné",
+    "J'ai semé, il a moissonné",
+    "J'ai veillé, il a dormi"
+   ],
+   "bonne": 0,
+   "reference": "1 Corinthiens 3.6"
+  },
+  {
+   "id": "nt-348",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "À quoi Paul compare-t-il la vie chrétienne, en parlant du stade ?",
+   "options": [
+    "À une course où un seul remporte le prix",
+    "À un combat de gladiateurs",
+    "À une lutte contre les bêtes",
+    "À la marche d'une armée"
+   ],
+   "bonne": 0,
+   "reference": "1 Corinthiens 9.24"
+  },
+  {
+   "id": "nt-349",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que se passera-t-il « en un clin d'œil, à la dernière trompette » ?",
+   "options": [
+    "Les morts ressusciteront incorruptibles",
+    "Le ciel sera roulé comme un livre",
+    "Les nations seront jugées",
+    "Le temple sera relevé"
+   ],
+   "bonne": 0,
+   "reference": "1 Corinthiens 15.52"
+  },
+  {
+   "id": "nt-350",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que fut « une écharde dans la chair » donnée à Paul ?",
+   "options": [
+    "Un ange de Satan pour le souffleter",
+    "Une maladie des yeux",
+    "La haine de ses frères",
+    "La pauvreté"
+   ],
+   "bonne": 0,
+   "reference": "2 Corinthiens 12.7"
+  },
+  {
+   "id": "nt-351",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que répondit le Seigneur à Paul, qui le priait trois fois ?",
+   "options": [
+    "Ma grâce te suffit",
+    "Attends encore un peu",
+    "Va, ton frère te guérira",
+    "Je t'ôterai ce fardeau"
+   ],
+   "bonne": 0,
+   "reference": "2 Corinthiens 12.9"
+  },
+  {
+   "id": "nt-352",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que moissonnera un homme, selon l'épître aux Galates ?",
+   "options": [
+    "Ce qu'il aura semé",
+    "Ce que son père aura semé",
+    "Le double de sa peine",
+    "Ce que Dieu lui accordera"
+   ],
+   "bonne": 0,
+   "reference": "Galates 6.7"
+  },
+  {
+   "id": "nt-353",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "De quoi Paul dit-il de se revêtir, contre les ruses du diable ?",
+   "options": [
+    "De toutes les armes de Dieu",
+    "Du manteau d'Élie",
+    "De la robe des noces",
+    "De l'humilité seule"
+   ],
+   "bonne": 0,
+   "reference": "Éphésiens 6.11"
+  },
+  {
+   "id": "nt-354",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Devant quel nom tout genou doit-il fléchir, dit Paul aux Philippiens ?",
+   "options": [
+    "Le nom de Jésus",
+    "Le nom du Père",
+    "Le nom de l'Agneau",
+    "Le nom du Seigneur des armées"
+   ],
+   "bonne": 0,
+   "reference": "Philippiens 2.10"
+  },
+  {
+   "id": "nt-355",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Quelle règle Paul rappelle-t-il aux Thessaloniciens au sujet du travail ?",
+   "options": [
+    "Si quelqu'un ne veut pas travailler, qu'il ne mange pas non plus",
+    "Que chacun travaille six jours",
+    "Que les anciens seuls soient nourris",
+    "Que nul ne reçoive de salaire"
+   ],
+   "bonne": 0,
+   "reference": "2 Thessaloniciens 3.10"
+  },
+  {
+   "id": "nt-356",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que Paul recommande-t-il au jeune Timothée ?",
+   "options": [
+    "D'être un modèle, que nul ne méprise sa jeunesse",
+    "De se taire devant les anciens",
+    "De ne jamais quitter Éphèse",
+    "De ne prêcher que le sabbat"
+   ],
+   "bonne": 0,
+   "reference": "1 Timothée 4.12"
+  },
+  {
+   "id": "nt-357",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "À quoi la parole de Dieu est-elle comparée dans l'épître aux Hébreux ?",
+   "options": [
+    "À une épée à deux tranchants",
+    "À un marteau qui brise le roc",
+    "À une lampe",
+    "À une pluie du printemps"
+   ],
+   "bonne": 0,
+   "reference": "Hébreux 4.12"
+  },
+  {
+   "id": "nt-358",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Qu'ont fait certains, sans le savoir, en exerçant l'hospitalité ?",
+   "options": [
+    "Ils ont logé des anges",
+    "Ils ont nourri des rois",
+    "Ils ont reçu des prophètes",
+    "Ils ont abrité des voleurs"
+   ],
+   "bonne": 0,
+   "reference": "Hébreux 13.2"
+  },
+  {
+   "id": "nt-359",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "D'où descend tout don parfait, selon Jacques ?",
+   "options": [
+    "Du Père des lumières",
+    "Du trône de la grâce",
+    "Des mains des anges",
+    "Du ciel le plus élevé"
+   ],
+   "bonne": 0,
+   "reference": "Jacques 1.17"
+  },
+  {
+   "id": "nt-360",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "À quel animal Pierre compare-t-il le diable, qui rôde ?",
+   "options": [
+    "Un lion rugissant",
+    "Un serpent",
+    "Un loup",
+    "Un aigle"
+   ],
+   "bonne": 0,
+   "reference": "1 Pierre 5.8"
+  },
+  {
+   "id": "nt-361",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Qu'affirme Jean au sujet de Dieu, dans sa première épître ?",
+   "options": [
+    "Dieu est amour",
+    "Dieu est feu",
+    "Dieu est esprit seulement",
+    "Dieu est juge"
+   ],
+   "bonne": 0,
+   "reference": "1 Jean 4.8"
+  },
+  {
+   "id": "nt-362",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que dit l'épître aux Hébreux du sort réservé aux hommes ?",
+   "options": [
+    "Mourir une seule fois, après quoi vient le jugement",
+    "Renaître sept fois",
+    "Dormir jusqu'à la trompette",
+    "Passer par le feu"
+   ],
+   "bonne": 0,
+   "reference": "Hébreux 9.27"
+  },
+  {
+   "id": "nt-363",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que faut-il faire si quelqu'un vous force à faire un mille, selon Jésus ?",
+   "options": [
+    "En faire deux avec lui",
+    "Le laisser aller seul",
+    "Prendre un compagnon",
+    "Se plaindre aux anciens"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 5.41"
+  },
+  {
+   "id": "nt-364",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que devait trouver Pierre dans la bouche du premier poisson pêché ?",
+   "options": [
+    "Un statère",
+    "Une perle",
+    "Un denier",
+    "Un anneau d'or"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 17.27"
+  },
+  {
+   "id": "nt-365",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Que reprochait Jésus aux conducteurs aveugles, en une image ?",
+   "options": [
+    "Ils coulent le moucheron et avalent le chameau",
+    "Ils bâtissent sans compter",
+    "Ils sèment sur la pierre",
+    "Ils pêchent sans filet"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 23.24"
+  },
+  {
+   "id": "nt-366",
+   "categorie": "Nouveau Testament",
+   "niveau": 2,
+   "question": "Comment Jésus guérit-il le sourd-bègue de la Décapole ?",
+   "options": [
+    "Il lui mit les doigts dans les oreilles et lui toucha la langue",
+    "Il l'envoya se laver à Siloé",
+    "Il posa sur lui son manteau",
+    "Il pria trois fois sur lui"
+   ],
+   "bonne": 0,
+   "reference": "Marc 7.33"
+  },
+  {
+   "id": "nt-367",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Combien de jours Jésus demeura-t-il chez les Samaritains, à leur demande ?",
+   "options": [
+    "Deux jours",
+    "Sept jours",
+    "Un jour",
+    "Quarante jours"
+   ],
+   "bonne": 0,
+   "reference": "Jean 4.40"
+  },
+  {
+   "id": "nt-368",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel mot Marie prononça-t-elle en hébreu, reconnaissant Jésus au tombeau ?",
+   "options": [
+    "Rabbouni",
+    "Maranatha",
+    "Hosanna",
+    "Abba"
+   ],
+   "bonne": 0,
+   "reference": "Jean 20.16"
+  },
+  {
+   "id": "nt-369",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel signe Jésus donna-t-il pour désigner le lieu de la Pâque, selon Marc ?",
+   "options": [
+    "Un homme portant une cruche d'eau",
+    "Un âne attaché à la porte",
+    "Une lampe à la fenêtre haute",
+    "Un figuier devant la maison"
+   ],
+   "bonne": 0,
+   "reference": "Marc 14.13"
+  },
+  {
+   "id": "nt-370",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Que fit le jeune homme qui suivait Jésus, saisi par les gardes ?",
+   "options": [
+    "Il lâcha son drap et s'enfuit nu",
+    "Il renia son maître",
+    "Il tira une épée",
+    "Il alla prévenir les disciples"
+   ],
+   "bonne": 0,
+   "reference": "Marc 14.51-52"
+  },
+  {
+   "id": "nt-371",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quelle heure était-il quand les ténèbres couvrirent la terre, selon Marc ?",
+   "options": [
+    "Depuis la sixième jusqu'à la neuvième heure",
+    "De la troisième à la sixième heure",
+    "Depuis l'aube jusqu'à midi",
+    "Toute la nuit du sabbat"
+   ],
+   "bonne": 0,
+   "reference": "Marc 15.33"
+  },
+  {
+   "id": "nt-372",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Qui, avec Marie de Magdala, acheta des aromates pour embaumer Jésus ?",
+   "options": [
+    "Marie mère de Jacques, et Salomé",
+    "Jeanne et Suzanne",
+    "Marthe et Marie de Béthanie",
+    "La mère des fils de Zébédée seule"
+   ],
+   "bonne": 0,
+   "reference": "Marc 16.1"
+  },
+  {
+   "id": "nt-373",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Sur quel ton Jésus reprit-il Marthe, inquiète de beaucoup de choses ?",
+   "options": [
+    "Une seule chose est nécessaire",
+    "Va d'abord servir tes hôtes",
+    "Laisse ta sœur travailler",
+    "Ne juge pas ta sœur"
+   ],
+   "bonne": 0,
+   "reference": "Luc 10.41-42"
+  },
+  {
+   "id": "nt-374",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel officier royal supplia Jésus pour son fils mourant à Capernaüm ?",
+   "options": [
+    "Un officier du roi",
+    "Un centenier romain",
+    "Un chef de synagogue",
+    "Un publicain"
+   ],
+   "bonne": 0,
+   "reference": "Jean 4.46-47"
+  },
+  {
+   "id": "nt-375",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "À quelle heure la fièvre quitta-t-elle le fils de l'officier ?",
+   "options": [
+    "À la septième heure",
+    "À la sixième heure",
+    "À l'aube",
+    "À la neuvième heure"
+   ],
+   "bonne": 0,
+   "reference": "Jean 4.52"
+  },
+  {
+   "id": "nt-376",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Qui remarqua le petit garçon aux cinq pains d'orge et deux poissons ?",
+   "options": [
+    "André, frère de Simon Pierre",
+    "Philippe",
+    "Thomas",
+    "Judas"
+   ],
+   "bonne": 0,
+   "reference": "Jean 6.8-9"
+  },
+  {
+   "id": "nt-377",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quelle fête approchait quand Jésus rassasia les cinq mille, selon Jean ?",
+   "options": [
+    "La Pâque",
+    "La Pentecôte",
+    "Les Tabernacles",
+    "La dédicace"
+   ],
+   "bonne": 0,
+   "reference": "Jean 6.4"
+  },
+  {
+   "id": "nt-378",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quelle parole des Grecs Philippe rapporta-t-il à André ?",
+   "options": [
+    "Nous voudrions voir Jésus",
+    "Où est le roi des Juifs ?",
+    "Que devons-nous faire ?",
+    "Montre-nous le Père"
+   ],
+   "bonne": 0,
+   "reference": "Jean 12.21-22"
+  },
+  {
+   "id": "nt-379",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Sous quel arbre Jésus avait-il vu Nathanaël avant que Philippe ne l'appelle ?",
+   "options": [
+    "Un figuier",
+    "Un olivier",
+    "Un sycomore",
+    "Un palmier"
+   ],
+   "bonne": 0,
+   "reference": "Jean 1.48"
+  },
+  {
+   "id": "nt-380",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quelle heure était-il quand les deux premiers disciples demeurèrent auprès de Jésus ?",
+   "options": [
+    "La dixième heure environ",
+    "La sixième heure",
+    "L'heure du sacrifice du soir",
+    "La troisième heure"
+   ],
+   "bonne": 0,
+   "reference": "Jean 1.39"
+  },
+  {
+   "id": "nt-381",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel poids de parfum Marie versa-t-elle sur les pieds de Jésus, à Béthanie ?",
+   "options": [
+    "Une livre de nard pur",
+    "Un vase entier de myrrhe",
+    "Trois mesures de baume",
+    "Une fiole d'aloès"
+   ],
+   "bonne": 0,
+   "reference": "Jean 12.3"
+  },
+  {
+   "id": "nt-382",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "À combien Judas estima-t-il le parfum répandu à Béthanie ?",
+   "options": [
+    "Trois cents deniers",
+    "Cent deniers",
+    "Trente pièces",
+    "Cinq cents deniers"
+   ],
+   "bonne": 0,
+   "reference": "Jean 12.5"
+  },
+  {
+   "id": "nt-383",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quelle charge Judas avait-il parmi les disciples ?",
+   "options": [
+    "Il tenait la bourse",
+    "Il gardait les vêtements",
+    "Il préparait les repas",
+    "Il portait les rouleaux"
+   ],
+   "bonne": 0,
+   "reference": "Jean 12.6"
+  },
+  {
+   "id": "nt-384",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Que répondit Jésus à Pierre au sujet du disciple qu'il aimait ?",
+   "options": [
+    "Si je veux qu'il demeure jusqu'à ce que je vienne, que t'importe ?",
+    "Il te suivra dans la même voie",
+    "Il gardera le troupeau après toi",
+    "Il écrira ce que tu diras"
+   ],
+   "bonne": 0,
+   "reference": "Jean 21.22"
+  },
+  {
+   "id": "nt-385",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel reproche Jésus adressa-t-il aux disciples d'Emmaüs ?",
+   "options": [
+    "Hommes sans intelligence, et dont le cœur est lent à croire",
+    "Pourquoi doutez-vous encore ?",
+    "Où est votre foi ?",
+    "Vous ne savez ce que vous demandez"
+   ],
+   "bonne": 0,
+   "reference": "Luc 24.25"
+  },
+  {
+   "id": "nt-386",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Comment les disciples d'Emmaüs reconnurent-ils Jésus ?",
+   "options": [
+    "À la fraction du pain",
+    "À sa voix",
+    "Aux marques de ses mains",
+    "À sa manière de prier"
+   ],
+   "bonne": 0,
+   "reference": "Luc 24.30-31"
+  },
+  {
+   "id": "nt-387",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Que demanda Jésus à manger, apparu au milieu des disciples ?",
+   "options": [
+    "Un morceau de poisson rôti",
+    "Du pain et du vin",
+    "Des figues",
+    "Du miel seulement"
+   ],
+   "bonne": 0,
+   "reference": "Luc 24.41-42"
+  },
+  {
+   "id": "nt-388",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quelle femme, dans la généalogie de Matthieu, est mère de Booz ?",
+   "options": [
+    "Rahab",
+    "Ruth",
+    "Thamar",
+    "Bath-Schéba"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 1.5"
+  },
+  {
+   "id": "nt-389",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Que répondit Jésus aux Sadducéens sur la condition des ressuscités ?",
+   "options": [
+    "Ils seront comme les anges de Dieu dans le ciel",
+    "Ils retrouveront leurs familles",
+    "Ils dormiront jusqu'au dernier jour",
+    "Ils ne se souviendront de rien"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 22.30"
+  },
+  {
+   "id": "nt-390",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Sur quel pinacle le diable plaça-t-il Jésus, dans la seconde tentation ?",
+   "options": [
+    "Sur le haut du temple",
+    "Sur une montagne de Judée",
+    "Sur la tour de Siloé",
+    "Sur les murs de Jérusalem"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 4.5"
+  },
+  {
+   "id": "nt-391",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Que dit Jésus de celui qui appelle son frère « raca » ?",
+   "options": [
+    "Il mérite d'être puni par le sanhédrin",
+    "Il sera privé de la synagogue",
+    "Il paiera le double",
+    "Il sera repris par deux témoins"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 5.22"
+  },
+  {
+   "id": "nt-392",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Combien de temps le levain de la parabole agit-il, selon Matthieu ?",
+   "options": [
+    "Jusqu'à ce que la pâte soit toute levée",
+    "Une nuit entière",
+    "Trois jours",
+    "Le temps de la moisson"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 13.33"
+  },
+  {
+   "id": "nt-393",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "À quelle heure le maître de la vigne sortit-il embaucher les derniers ouvriers ?",
+   "options": [
+    "Vers la onzième heure",
+    "Vers la sixième heure",
+    "Vers la troisième heure",
+    "Au coucher du soleil"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 20.6"
+  },
+  {
+   "id": "nt-394",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel salaire fut convenu avec les premiers ouvriers de la vigne ?",
+   "options": [
+    "Un denier par jour",
+    "Deux deniers par jour",
+    "Un demi-denier",
+    "La nourriture seule"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 20.2"
+  },
+  {
+   "id": "nt-395",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Combien de mines le roi remit-il à chacun de ses dix serviteurs ?",
+   "options": [
+    "Une mine chacun",
+    "Dix mines chacun",
+    "Cinq mines chacun",
+    "Un talent chacun"
+   ],
+   "bonne": 0,
+   "reference": "Luc 19.13"
+  },
+  {
+   "id": "nt-396",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel autre nom portait Joseph, proposé avec Matthias ?",
+   "options": [
+    "Barsabbas, surnommé Justus",
+    "Barnabas, fils de consolation",
+    "Silas le prophète",
+    "Jean, surnommé Marc"
+   ],
+   "bonne": 0,
+   "reference": "Actes 1.23"
+  },
+  {
+   "id": "nt-397",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "À quelle porte du temple se tenait le boiteux guéri par Pierre et Jean ?",
+   "options": [
+    "La porte appelée la Belle",
+    "La porte des Brebis",
+    "La porte des Eaux",
+    "La porte de Benjamin"
+   ],
+   "bonne": 0,
+   "reference": "Actes 3.2"
+  },
+  {
+   "id": "nt-398",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel prosélyte d'Antioche figurait parmi les sept ?",
+   "options": [
+    "Nicolas",
+    "Prochore",
+    "Timon",
+    "Parménas"
+   ],
+   "bonne": 0,
+   "reference": "Actes 6.5"
+  },
+  {
+   "id": "nt-399",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quelle reine servait l'eunuque éthiopien rencontré par Philippe ?",
+   "options": [
+    "Candace",
+    "Bérénice",
+    "Drusille",
+    "Hérodias"
+   ],
+   "bonne": 0,
+   "reference": "Actes 8.27"
+  },
+  {
+   "id": "nt-400",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel était l'autre nom de Tabitha, à Joppé ?",
+   "options": [
+    "Dorcas",
+    "Lydie",
+    "Priscille",
+    "Marie"
+   ],
+   "bonne": 0,
+   "reference": "Actes 9.36"
+  },
+  {
+   "id": "nt-401",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "De quelle cohorte Corneille était-il centenier ?",
+   "options": [
+    "La cohorte italienne",
+    "La cohorte augustéenne",
+    "La légion de Syrie",
+    "La garde prétorienne"
+   ],
+   "bonne": 0,
+   "reference": "Actes 10.1"
+  },
+  {
+   "id": "nt-402",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel roi fit mourir Jacques par l'épée, frère de Jean ?",
+   "options": [
+    "Hérode",
+    "Pilate",
+    "Agrippa II",
+    "Félix"
+   ],
+   "bonne": 0,
+   "reference": "Actes 12.1-2"
+  },
+  {
+   "id": "nt-403",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quels noms les gens de Lystre donnèrent-ils à Barnabas et à Paul ?",
+   "options": [
+    "Jupiter et Mercure",
+    "Castor et Pollux",
+    "Apollon et Hermès",
+    "Zeus et Dionysos"
+   ],
+   "bonne": 0,
+   "reference": "Actes 14.12"
+  },
+  {
+   "id": "nt-404",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel désaccord sépara Paul et Barnabas au départ du second voyage ?",
+   "options": [
+    "Faut-il emmener Jean surnommé Marc",
+    "Faut-il circoncire Tite",
+    "Faut-il aller en Macédoine",
+    "Faut-il accepter l'argent des Églises"
+   ],
+   "bonne": 0,
+   "reference": "Actes 15.37-39"
+  },
+  {
+   "id": "nt-405",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quelle vision poussa Paul à passer en Macédoine ?",
+   "options": [
+    "Un Macédonien le suppliant de venir les secourir",
+    "Une nuée montant de la mer",
+    "Un ange à l'épée nue",
+    "Une échelle dressée vers le ciel"
+   ],
+   "bonne": 0,
+   "reference": "Actes 16.9"
+  },
+  {
+   "id": "nt-406",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "À quelle heure de la nuit Paul et Silas chantaient-ils les louanges de Dieu en prison ?",
+   "options": [
+    "Vers le milieu de la nuit",
+    "À la première veille",
+    "Au chant du coq",
+    "Dès le soir"
+   ],
+   "bonne": 0,
+   "reference": "Actes 16.25"
+  },
+  {
+   "id": "nt-407",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Comment les Juifs de Bérée se distinguèrent-ils de ceux de Thessalonique ?",
+   "options": [
+    "Ils examinaient chaque jour les Écritures",
+    "Ils bâtirent une nouvelle synagogue",
+    "Ils envoyèrent des dons à Jérusalem",
+    "Ils refusèrent tout débat public"
+   ],
+   "bonne": 0,
+   "reference": "Actes 17.11"
+  },
+  {
+   "id": "nt-408",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel autel Paul remarqua-t-il en parcourant Athènes ?",
+   "options": [
+    "Un autel avec l'inscription « À un dieu inconnu »",
+    "Un autel de Jupiter Olympien",
+    "Un autel sans nom au pied de la citadelle",
+    "Un autel dédié aux douze dieux"
+   ],
+   "bonne": 0,
+   "reference": "Actes 17.23"
+  },
+  {
+   "id": "nt-409",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quels deux Athéniens crurent après le discours de Paul à l'Aréopage ?",
+   "options": [
+    "Denys et Damaris",
+    "Sergius et Lydie",
+    "Jason et Sopater",
+    "Épicure et Zénon"
+   ],
+   "bonne": 0,
+   "reference": "Actes 17.34"
+  },
+  {
+   "id": "nt-410",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quels objets touchés par Paul guérissaient les malades d'Éphèse ?",
+   "options": [
+    "Des mouchoirs et des linges",
+    "Des vases de terre",
+    "Des rameaux bénis",
+    "Des pièces de monnaie"
+   ],
+   "bonne": 0,
+   "reference": "Actes 19.12"
+  },
+  {
+   "id": "nt-411",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel orfèvre d'Éphèse souleva la ville contre Paul ?",
+   "options": [
+    "Démétrius",
+    "Alexandre",
+    "Élymas",
+    "Sceva"
+   ],
+   "bonne": 0,
+   "reference": "Actes 19.24-25"
+  },
+  {
+   "id": "nt-412",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Que criait la foule d'Éphèse pendant environ deux heures ?",
+   "options": [
+    "Grande est la Diane des Éphésiens !",
+    "À bas les Juifs !",
+    "Vive César seul !",
+    "Que le temple soit purifié !"
+   ],
+   "bonne": 0,
+   "reference": "Actes 19.34"
+  },
+  {
+   "id": "nt-413",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Que fit Agabus de la ceinture de Paul, à Césarée ?",
+   "options": [
+    "Il s'en lia les pieds et les mains",
+    "Il la jeta au feu",
+    "Il la donna aux pauvres",
+    "Il la porta à Jérusalem"
+   ],
+   "bonne": 0,
+   "reference": "Actes 21.11"
+  },
+  {
+   "id": "nt-414",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Comment Paul divisa-t-il le sanhédrin qui le jugeait ?",
+   "options": [
+    "En se disant pharisien, jugé pour l'espérance et la résurrection",
+    "En invoquant sa citoyenneté romaine",
+    "En citant la loi de Moïse",
+    "En accusant le souverain sacrificateur"
+   ],
+   "bonne": 0,
+   "reference": "Actes 23.6"
+  },
+  {
+   "id": "nt-415",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Combien de soldats escortèrent Paul jusqu'à Césarée ?",
+   "options": [
+    "Deux cents soldats, soixante-dix cavaliers et deux cents archers",
+    "Quarante hommes",
+    "Une centaine de cavaliers",
+    "Douze gardes du temple"
+   ],
+   "bonne": 0,
+   "reference": "Actes 23.23"
+  },
+  {
+   "id": "nt-416",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel avocat accusa Paul devant le gouverneur Félix ?",
+   "options": [
+    "Tertulle",
+    "Tertius",
+    "Démétrius",
+    "Alexandre"
+   ],
+   "bonne": 0,
+   "reference": "Actes 24.1-2"
+  },
+  {
+   "id": "nt-417",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quelle épouse de Félix était juive ?",
+   "options": [
+    "Drusille",
+    "Bérénice",
+    "Candace",
+    "Hérodias"
+   ],
+   "bonne": 0,
+   "reference": "Actes 24.24"
+  },
+  {
+   "id": "nt-418",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel vent violent emporta le navire de Paul, après les Beaux Ports ?",
+   "options": [
+    "L'Euraquilon",
+    "Le sirocco",
+    "L'aquilon du nord",
+    "Le vent du midi"
+   ],
+   "bonne": 0,
+   "reference": "Actes 27.14"
+  },
+  {
+   "id": "nt-419",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quelle enseigne portait le navire d'Alexandrie qui emmena Paul de Malte ?",
+   "options": [
+    "Les Dioscures",
+    "L'aigle romaine",
+    "Le trident",
+    "La couronne de Diane"
+   ],
+   "bonne": 0,
+   "reference": "Actes 28.11"
+  },
+  {
+   "id": "nt-420",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel centenier eut la garde de Paul pendant le voyage vers Rome ?",
+   "options": [
+    "Julius, de la cohorte Auguste",
+    "Corneille, de la cohorte italienne",
+    "Claudius Lysias",
+    "Publius de Malte"
+   ],
+   "bonne": 0,
+   "reference": "Actes 27.1"
+  },
+  {
+   "id": "nt-421",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel couple Paul salue-t-il comme ayant exposé leur tête pour lui sauver la vie ?",
+   "options": [
+    "Priscille et Aquilas",
+    "Andronicus et Junias",
+    "Tryphène et Tryphose",
+    "Philologue et Julie"
+   ],
+   "bonne": 0,
+   "reference": "Romains 16.3-4"
+  },
+  {
+   "id": "nt-422",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel don, selon Paul, vaut mieux que tous les autres, sans lequel on n'est rien ?",
+   "options": [
+    "La charité",
+    "La prophétie",
+    "La science",
+    "La foi qui transporte les montagnes"
+   ],
+   "bonne": 0,
+   "reference": "1 Corinthiens 13.2"
+  },
+  {
+   "id": "nt-423",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Qu'entendra-t-on à la descente du Seigneur, selon les Thessaloniciens ?",
+   "options": [
+    "La voix d'un archange et la trompette de Dieu",
+    "Le tonnerre du Sinaï",
+    "Le cri des martyrs",
+    "Le chant des vieillards"
+   ],
+   "bonne": 0,
+   "reference": "1 Thessaloniciens 4.16"
+  },
+  {
+   "id": "nt-424",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Au sujet de quel corps l'archange Michel eut-il un différend avec le diable ?",
+   "options": [
+    "Le corps de Moïse",
+    "Le corps d'Élie",
+    "Le corps d'Aaron",
+    "Le corps de Josué"
+   ],
+   "bonne": 0,
+   "reference": "Jude 9"
+  },
+  {
+   "id": "nt-425",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Comment le Seigneur se nomme-t-il à la fin de l'Apocalypse ?",
+   "options": [
+    "L'alpha et l'oméga, le premier et le dernier",
+    "Le Lion et l'Agneau",
+    "L'Époux et l'Époux à venir",
+    "Le Berger et le Juge"
+   ],
+   "bonne": 0,
+   "reference": "Apocalypse 22.13"
+  },
+  {
+   "id": "nt-426",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Sur quoi les morts furent-ils jugés, devant le grand trône blanc ?",
+   "options": [
+    "Selon leurs œuvres, d'après ce qui était écrit dans les livres",
+    "Selon leur naissance",
+    "Selon le témoignage des anges",
+    "Selon leur nation"
+   ],
+   "bonne": 0,
+   "reference": "Apocalypse 20.12"
+  },
+  {
+   "id": "nt-427",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Comment l'épître aux Hébreux invite-t-elle à courir la carrière ?",
+   "options": [
+    "En rejetant tout fardeau et le péché qui enveloppe",
+    "En marchant deux à deux",
+    "En chantant les psaumes",
+    "En jeûnant chaque semaine"
+   ],
+   "bonne": 0,
+   "reference": "Hébreux 12.1"
+  },
+  {
+   "id": "nt-428",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quelle prophétesse, âgée de quatre-vingt-quatre ans, ne quittait pas le temple ?",
+   "options": [
+    "Anne, fille de Phanuel",
+    "Élisabeth",
+    "Hulda",
+    "Marie, sœur de Moïse"
+   ],
+   "bonne": 0,
+   "reference": "Luc 2.36-37"
+  },
+  {
+   "id": "nt-429",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Que signifie le surnom Barnabas, donné par les apôtres à Joseph ?",
+   "options": [
+    "Fils d'exhortation",
+    "Fils du tonnerre",
+    "Fils de la consolation du peuple",
+    "Fils de la promesse"
+   ],
+   "bonne": 0,
+   "reference": "Actes 4.36"
+  },
+  {
+   "id": "nt-430",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel esprit animait la servante qui procurait un grand profit à ses maîtres ?",
+   "options": [
+    "Un esprit de Python",
+    "Un esprit de mensonge",
+    "Un esprit muet",
+    "Un esprit de jalousie"
+   ],
+   "bonne": 0,
+   "reference": "Actes 16.16"
+  },
+  {
+   "id": "nt-431",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Comment Paul échappa-t-il au gouverneur du roi Arétas, à Damas ?",
+   "options": [
+    "On le descendit dans une corbeille par une fenêtre",
+    "Il sortit déguisé en marchand",
+    "Un ange ouvrit les portes",
+    "Il fut caché dans une citerne"
+   ],
+   "bonne": 0,
+   "reference": "2 Corinthiens 11.32-33"
+  },
+  {
+   "id": "nt-432",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Que les Galates se seraient arraché pour Paul, s'ils l'avaient pu ?",
+   "options": [
+    "Les yeux",
+    "Le cœur",
+    "Les mains",
+    "Les cheveux"
+   ],
+   "bonne": 0,
+   "reference": "Galates 4.15"
+  },
+  {
+   "id": "nt-433",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Que Paul recommande-t-il de ne pas laisser se coucher sur la colère ?",
+   "options": [
+    "Le soleil",
+    "La lune",
+    "Le sabbat",
+    "Le jour du Seigneur"
+   ],
+   "bonne": 0,
+   "reference": "Éphésiens 4.26"
+  },
+  {
+   "id": "nt-434",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "De quelle tribu Paul se dit-il issu, écrivant aux Philippiens ?",
+   "options": [
+    "Benjamin",
+    "Juda",
+    "Lévi",
+    "Éphraïm"
+   ],
+   "bonne": 0,
+   "reference": "Philippiens 3.5"
+  },
+  {
+   "id": "nt-435",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Quel conseil Paul donne-t-il à Timothée au sujet de son estomac ?",
+   "options": [
+    "De faire usage d'un peu de vin",
+    "De jeûner chaque semaine",
+    "De ne manger que du pain",
+    "De boire l'eau des sources"
+   ],
+   "bonne": 0,
+   "reference": "1 Timothée 5.23"
+  },
+  {
+   "id": "nt-436",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Comment un prophète crétois décrivait-il son propre peuple, selon Tite ?",
+   "options": [
+    "Menteurs, méchantes bêtes, ventres paresseux",
+    "Sages entre les sages",
+    "Marins sans peur",
+    "Fils de la mer"
+   ],
+   "bonne": 0,
+   "reference": "Tite 1.12"
+  },
+  {
+   "id": "nt-437",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Que dit Jacques des démons, qui croient en un seul Dieu ?",
+   "options": [
+    "Ils tremblent",
+    "Ils blasphèment",
+    "Ils fuient la lumière",
+    "Ils gardent le silence"
+   ],
+   "bonne": 0,
+   "reference": "Jacques 2.19"
+  },
+  {
+   "id": "nt-438",
+   "categorie": "Nouveau Testament",
+   "niveau": 3,
+   "question": "Comment l'épître aux Hébreux présente-t-elle Melchisédek ?",
+   "options": [
+    "Sans père, sans mère, sans généalogie",
+    "Fils de Sem et roi de Sodome",
+    "Prêtre de la tribu de Lévi",
+    "Frère d'Abraham selon la chair"
+   ],
+   "bonne": 0,
+   "reference": "Hébreux 7.3"
+  },
+  {
+   "id": "dit-376",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Faisons l'homme à notre image, selon notre ressemblance »",
+   "options": [
+    "Dieu",
+    "Adam",
+    "Un ange",
+    "Moïse"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 1.26"
+  },
+  {
+   "id": "dit-377",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Ne crains point; je suis ton bouclier, et ta récompense sera très grande » (à Abram, dans une vision)",
+   "options": [
+    "L'Éternel",
+    "Melchisédek",
+    "Lot",
+    "Un pharaon"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 15.1"
+  },
+  {
+   "id": "dit-378",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Fais-toi une arche de bois de gopher » (à Noé)",
+   "options": [
+    "Dieu",
+    "Un ange",
+    "Mathusalem",
+    "Lémec"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 6.14"
+  },
+  {
+   "id": "dit-379",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Mon royaume n'est pas de ce monde » (à Pilate)",
+   "options": [
+    "Jésus",
+    "Pilate",
+    "Pierre",
+    "Jean-Baptiste"
+   ],
+   "bonne": 0,
+   "reference": "Jean 18.36"
+  },
+  {
+   "id": "dit-380",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Donnez-leur vous-mêmes à manger » (devant la foule affamée)",
+   "options": [
+    "Jésus",
+    "Pierre",
+    "Philippe",
+    "Judas"
+   ],
+   "bonne": 0,
+   "reference": "Marc 6.37"
+  },
+  {
+   "id": "dit-381",
+   "categorie": "Qui a dit ?",
+   "niveau": 1,
+   "question": "« Ne crains point, Zacharie; car ta prière a été exaucée »",
+   "options": [
+    "L'ange Gabriel",
+    "Élisabeth",
+    "Le grand prêtre",
+    "Siméon"
+   ],
+   "bonne": 0,
+   "reference": "Luc 1.13"
+  },
+  {
+   "id": "dit-382",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« N'est-ce pas pour Rachel que j'ai servi chez toi? Pourquoi m'as-tu trompé? » (à Laban)",
+   "options": [
+    "Jacob",
+    "Ésaü",
+    "Isaac",
+    "Ruben"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 29.25"
+  },
+  {
+   "id": "dit-383",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Que l'Éternel soit avec vous! » (à ses moissonneurs)",
+   "options": [
+    "Boaz",
+    "Ruth",
+    "Naomi",
+    "Isaï"
+   ],
+   "bonne": 0,
+   "reference": "Ruth 2.4"
+  },
+  {
+   "id": "dit-384",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Lève-toi, car voici le jour où l'Éternel livre Sisera entre tes mains » (à Barak)",
+   "options": [
+    "Débora",
+    "Jaël",
+    "Gédéon",
+    "Samson"
+   ],
+   "bonne": 0,
+   "reference": "Juges 4.14"
+  },
+  {
+   "id": "dit-385",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« L'Éternel déchire aujourd'hui de dessus toi la royauté d'Israël » (à Saül)",
+   "options": [
+    "Samuel",
+    "Nathan",
+    "David",
+    "Jonathan"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 15.28"
+  },
+  {
+   "id": "dit-386",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Où étais-tu quand je fondais la terre? » (à Job, du milieu de la tempête)",
+   "options": [
+    "L'Éternel",
+    "Éliphaz",
+    "Satan",
+    "Élihu"
+   ],
+   "bonne": 0,
+   "reference": "Job 38.4"
+  },
+  {
+   "id": "dit-387",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Venez, vous qui êtes bénis de mon Père; prenez possession du royaume »",
+   "options": [
+    "Le Roi, au jugement dernier",
+    "Abraham accueillant Lazare",
+    "L'ange à la trompette",
+    "Le père du fils prodigue"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 25.34"
+  },
+  {
+   "id": "dit-388",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Il vous est avantageux que je m'en aille » (aux disciples, avant la croix)",
+   "options": [
+    "Jésus",
+    "Paul",
+    "Élie",
+    "Moïse"
+   ],
+   "bonne": 0,
+   "reference": "Jean 16.7"
+  },
+  {
+   "id": "dit-389",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Rabbouni! » (au matin de Pâques, devant le tombeau)",
+   "options": [
+    "Marie de Magdala",
+    "Thomas",
+    "Pierre",
+    "Marthe"
+   ],
+   "bonne": 0,
+   "reference": "Jean 20.16"
+  },
+  {
+   "id": "dit-390",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Non, Seigneur, car je n'ai jamais rien mangé de souillé ni d'impur »",
+   "options": [
+    "Pierre",
+    "Paul",
+    "Corneille",
+    "Barnabas"
+   ],
+   "bonne": 0,
+   "reference": "Actes 10.14"
+  },
+  {
+   "id": "dit-391",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Comprends-tu ce que tu lis? » (à l'eunuque éthiopien)",
+   "options": [
+    "Philippe",
+    "Pierre",
+    "Paul",
+    "Étienne"
+   ],
+   "bonne": 0,
+   "reference": "Actes 8.30"
+  },
+  {
+   "id": "dit-392",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Comment le pourrais-je, si quelqu'un ne me guide? »",
+   "options": [
+    "L'eunuque éthiopien",
+    "Le geôlier de Philippes",
+    "Corneille",
+    "Simon le magicien"
+   ],
+   "bonne": 0,
+   "reference": "Actes 8.31"
+  },
+  {
+   "id": "dit-393",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Avance en pleine eau, et jetez vos filets pour pêcher » (à Simon)",
+   "options": [
+    "Jésus",
+    "Jean-Baptiste",
+    "André",
+    "Jonas"
+   ],
+   "bonne": 0,
+   "reference": "Luc 5.4"
+  },
+  {
+   "id": "dit-394",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Où est votre foi? » (après la tempête apaisée)",
+   "options": [
+    "Jésus",
+    "Pierre",
+    "Un ange",
+    "Le pilote de la barque"
+   ],
+   "bonne": 0,
+   "reference": "Luc 8.25"
+  },
+  {
+   "id": "dit-395",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Laissez-la. Pourquoi lui faites-vous de la peine? » (défendant la femme au parfum)",
+   "options": [
+    "Jésus",
+    "Simon le lépreux",
+    "Judas",
+    "Pierre"
+   ],
+   "bonne": 0,
+   "reference": "Marc 14.6"
+  },
+  {
+   "id": "dit-396",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Et vous… qui dites-vous que je suis? » (à ses disciples, près de Césarée de Philippe)",
+   "options": [
+    "Jésus",
+    "Jean-Baptiste",
+    "Pierre",
+    "Le grand prêtre"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 16.15"
+  },
+  {
+   "id": "dit-397",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Les trois sarments sont trois jours » (expliquant un songe en prison)",
+   "options": [
+    "Joseph",
+    "Le grand échanson",
+    "Le chef des panetiers",
+    "Pharaon"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 40.12"
+  },
+  {
+   "id": "dit-398",
+   "categorie": "Qui a dit ?",
+   "niveau": 2,
+   "question": "« Vous ne donnerez pas vos filles à leurs fils » (aux Juifs qui avaient épousé des étrangères)",
+   "options": [
+    "Néhémie",
+    "Esdras",
+    "Zorobabel",
+    "Le sacrificateur Éliaschib"
+   ],
+   "bonne": 0,
+   "reference": "Néhémie 13.25"
+  },
+  {
+   "id": "dit-399",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« J'aperçois les hommes, mais j'en vois comme des arbres, et qui marchent »",
+   "options": [
+    "L'aveugle de Bethsaïda",
+    "Bartimée",
+    "L'aveugle-né de Jérusalem",
+    "Saul de Tarse"
+   ],
+   "bonne": 0,
+   "reference": "Marc 8.24"
+  },
+  {
+   "id": "dit-400",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Que je ne voie pas mourir mon enfant! » (dans le désert de Beer-Schéba)",
+   "options": [
+    "Agar",
+    "Sara",
+    "Rebecca",
+    "Anne"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 21.16"
+  },
+  {
+   "id": "dit-401",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Quel honneur aujourd'hui pour le roi d'Israël de s'être découvert aux yeux des servantes de ses serviteurs » (à David)",
+   "options": [
+    "Mical",
+    "Bath-Schéba",
+    "Abigaïl",
+    "Abischag"
+   ],
+   "bonne": 0,
+   "reference": "2 Samuel 6.20"
+  },
+  {
+   "id": "dit-402",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Dans l'homme, c'est l'esprit, le souffle du Tout-Puissant, qui donne l'intelligence »",
+   "options": [
+    "Élihu",
+    "Éliphaz",
+    "Bildad",
+    "Tsophar"
+   ],
+   "bonne": 0,
+   "reference": "Job 32.8"
+  },
+  {
+   "id": "dit-403",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Fais-tu bien de t'irriter? » (à Jonas)",
+   "options": [
+    "L'Éternel",
+    "Le roi de Ninive",
+    "Le capitaine du navire",
+    "Un matelot"
+   ],
+   "bonne": 0,
+   "reference": "Jonas 4.4"
+  },
+  {
+   "id": "dit-404",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« N'y a-t-il plus ici aucun prophète de l'Éternel, par qui nous puissions le consulter? »",
+   "options": [
+    "Josaphat",
+    "Achab",
+    "Michée",
+    "Élie"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 22.7"
+  },
+  {
+   "id": "dit-405",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Conspiration! conspiration! » (en voyant le jeune roi couronné)",
+   "options": [
+    "Athalie",
+    "Jézabel",
+    "Joas",
+    "Le sacrificateur Jehojada"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 11.14"
+  },
+  {
+   "id": "dit-406",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Nabal est son nom, et il y a chez lui de la folie » (à David)",
+   "options": [
+    "Abigaïl",
+    "Mical",
+    "La femme de Thekoa",
+    "Anne"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 25.25"
+  },
+  {
+   "id": "dit-407",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Voici, je vous enverrai Élie, le prophète » (par la bouche de Malachie)",
+   "options": [
+    "L'Éternel",
+    "Jean-Baptiste",
+    "Élisée",
+    "Zacharie"
+   ],
+   "bonne": 0,
+   "reference": "Malachie 4.5"
+  },
+  {
+   "id": "dit-408",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Seigneur, nous voudrions voir Jésus » (à Philippe)",
+   "options": [
+    "Des Grecs montés pour la fête",
+    "Des pharisiens",
+    "Des soldats romains",
+    "Des bergers"
+   ],
+   "bonne": 0,
+   "reference": "Jean 12.21"
+  },
+  {
+   "id": "dit-409",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Je ne suis point fou, très excellent Festus »",
+   "options": [
+    "Paul",
+    "Pierre",
+    "Agrippa",
+    "Silas"
+   ],
+   "bonne": 0,
+   "reference": "Actes 26.25"
+  },
+  {
+   "id": "dit-410",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Voici le tabernacle de Dieu avec les hommes! »",
+   "options": [
+    "Une forte voix venue du trône",
+    "Un des vingt-quatre vieillards",
+    "L'ange aux sept coupes",
+    "Jean lui-même"
+   ],
+   "bonne": 0,
+   "reference": "Apocalypse 21.3"
+  },
+  {
+   "id": "dit-411",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Où achèterons-nous des pains, pour que ces gens aient à manger? » (éprouvant Philippe)",
+   "options": [
+    "Jésus",
+    "André",
+    "Philippe",
+    "Judas"
+   ],
+   "bonne": 0,
+   "reference": "Jean 6.5"
+  },
+  {
+   "id": "dit-412",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Que cherchez-vous? » (aux deux premiers disciples qui le suivaient)",
+   "options": [
+    "Jésus",
+    "Jean-Baptiste",
+    "André",
+    "Nathanaël"
+   ],
+   "bonne": 0,
+   "reference": "Jean 1.38"
+  },
+  {
+   "id": "dit-413",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Qu'est-ce que mon seigneur dit à son serviteur? » (devant l'homme à l'épée nue, près de Jéricho)",
+   "options": [
+    "Josué",
+    "Caleb",
+    "Moïse",
+    "Gédéon"
+   ],
+   "bonne": 0,
+   "reference": "Josué 5.14"
+  },
+  {
+   "id": "dit-414",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Venez, réfugiez-vous sous mon ombrage » (dans la fable de Jotham)",
+   "options": [
+    "Le buisson d'épines",
+    "L'olivier",
+    "Le figuier",
+    "La vigne"
+   ],
+   "bonne": 0,
+   "reference": "Juges 9.15"
+  },
+  {
+   "id": "dit-415",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Te portes-tu bien, mon frère? » (à Amasa, l'épée cachée à la main)",
+   "options": [
+    "Joab",
+    "Abner",
+    "Absalom",
+    "Schimeï"
+   ],
+   "bonne": 0,
+   "reference": "2 Samuel 20.9"
+  },
+  {
+   "id": "dit-416",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Flatte-le, pour savoir d'où lui vient sa grande force » (à Delila)",
+   "options": [
+    "Les princes des Philistins",
+    "Les anciens de Juda",
+    "Les frères de Samson",
+    "Les gens de Gaza"
+   ],
+   "bonne": 0,
+   "reference": "Juges 16.5"
+  },
+  {
+   "id": "dit-417",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Saül est-il aussi parmi les prophètes? »",
+   "options": [
+    "Les gens du peuple, étonnés",
+    "Samuel",
+    "Les prophètes de Rama",
+    "Kis, son père"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 10.11"
+  },
+  {
+   "id": "dit-418",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Le train est comme celui de Jéhu, fils de Nimschi, car il conduit d'une manière insensée » (du haut de la tour de Jizreel)",
+   "options": [
+    "La sentinelle",
+    "Le roi Joram",
+    "Bidkar, son officier",
+    "Élisée"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 9.20"
+  },
+  {
+   "id": "dit-419",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Mon petit doigt est plus gros que les reins de mon père »",
+   "options": [
+    "Les jeunes conseillers de Roboam",
+    "Les vieillards",
+    "Jéroboam",
+    "Le peuple assemblé"
+   ],
+   "bonne": 0,
+   "reference": "1 Rois 12.10"
+  },
+  {
+   "id": "dit-420",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Épée pour l'Éternel et pour Gédéon! »",
+   "options": [
+    "Les trois cents hommes de Gédéon",
+    "Les Madianites",
+    "Les gens de Sichem",
+    "L'armée de Saül"
+   ],
+   "bonne": 0,
+   "reference": "Juges 7.20"
+  },
+  {
+   "id": "dit-421",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Tu n'as rien pour puiser, et le puits est profond » (à Jésus)",
+   "options": [
+    "La femme samaritaine",
+    "Marthe",
+    "La Cananéenne",
+    "Les disciples"
+   ],
+   "bonne": 0,
+   "reference": "Jean 4.11"
+  },
+  {
+   "id": "dit-422",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Que faut-il faire pour un homme que le roi veut honorer? » (à Haman)",
+   "options": [
+    "Le roi Assuérus",
+    "Haman",
+    "Mardochée",
+    "Esther"
+   ],
+   "bonne": 0,
+   "reference": "Esther 6.6"
+  },
+  {
+   "id": "dit-423",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Mais la sagesse, où se trouve-t-elle? »",
+   "options": [
+    "Job",
+    "Salomon",
+    "Élihu",
+    "Agur"
+   ],
+   "bonne": 0,
+   "reference": "Job 28.12"
+  },
+  {
+   "id": "dit-424",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Fils de l'homme, nourris ton ventre et remplis tes entrailles de ce rouleau » (à Ézéchiel)",
+   "options": [
+    "L'Éternel",
+    "Un séraphin",
+    "Le prophète Jérémie",
+    "Un ancien de Juda"
+   ],
+   "bonne": 0,
+   "reference": "Ézéchiel 3.3"
+  },
+  {
+   "id": "dit-425",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Si tu me bénis et que tu étendes mes limites »",
+   "options": [
+    "Jaebets",
+    "Caleb",
+    "Othniel",
+    "Boaz"
+   ],
+   "bonne": 0,
+   "reference": "1 Chroniques 4.10"
+  },
+  {
+   "id": "dit-426",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Mes pensées ne sont pas vos pensées »",
+   "options": [
+    "L'Éternel",
+    "Salomon",
+    "Job",
+    "Le prophète Michée"
+   ],
+   "bonne": 0,
+   "reference": "Ésaïe 55.8"
+  },
+  {
+   "id": "dit-427",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Le juste vivra par sa foi »",
+   "options": [
+    "L'Éternel, par Habacuc",
+    "L'apôtre Paul le premier",
+    "Le prophète Osée",
+    "Le roi David"
+   ],
+   "bonne": 0,
+   "reference": "Habacuc 2.4"
+  },
+  {
+   "id": "dit-428",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Va, détache le sac de tes reins et ôte tes souliers de tes pieds » (à Ésaïe)",
+   "options": [
+    "L'Éternel",
+    "Le roi Ézéchias",
+    "Le prophète Michée",
+    "Un séraphin"
+   ],
+   "bonne": 0,
+   "reference": "Ésaïe 20.2"
+  },
+  {
+   "id": "dit-429",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Je donnerai ma fille Acsa pour femme à celui qui battra Kirjath-Sépher »",
+   "options": [
+    "Caleb",
+    "Josué",
+    "Othniel",
+    "Kenaz"
+   ],
+   "bonne": 0,
+   "reference": "Josué 15.16"
+  },
+  {
+   "id": "dit-430",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Éprouve tes serviteurs pendant dix jours » (à l'intendant)",
+   "options": [
+    "Daniel",
+    "Le chef des eunuques",
+    "Nebucadnetsar",
+    "Schadrac"
+   ],
+   "bonne": 0,
+   "reference": "Daniel 1.12"
+  },
+  {
+   "id": "dit-431",
+   "categorie": "Qui a dit ?",
+   "niveau": 3,
+   "question": "« Jérémie fit une complainte sur Josias »",
+   "options": [
+    "Le chroniqueur, rapportant le deuil du roi",
+    "Le prophète Ésaïe",
+    "Le sacrificateur Hilkija",
+    "Le scribe Schaphan"
+   ],
+   "bonne": 0,
+   "reference": "2 Chroniques 35.25"
+  },
+  {
+   "id": "lieu-214",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "En combien de bras se divisait le fleuve qui sortait d'Éden ?",
+   "options": [
+    "Quatre",
+    "Deux",
+    "Trois",
+    "Sept"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 2.10"
+  },
+  {
+   "id": "lieu-215",
+   "categorie": "Lieux et géographie",
+   "niveau": 1,
+   "question": "Dans quel pays Jésus et ses disciples abordèrent-ils, après avoir traversé la mer ?",
+   "options": [
+    "Le pays de Génésareth",
+    "Le pays des Gadaréniens",
+    "La Décapole",
+    "La Judée"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 14.34"
+  },
+  {
+   "id": "lieu-216",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Quelles deux villes-magasins les Hébreux bâtirent-ils pour Pharaon ?",
+   "options": [
+    "Pithom et Ramsès",
+    "On et Memphis",
+    "Succoth et Étham",
+    "Tanis et Thèbes"
+   ],
+   "bonne": 0,
+   "reference": "Exode 1.11"
+  },
+  {
+   "id": "lieu-217",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quelle vallée les rois se rassemblèrent-ils, celle qui est la mer Salée ?",
+   "options": [
+    "La vallée de Siddim",
+    "La vallée d'Escol",
+    "La vallée de Josaphat",
+    "La vallée du Guérar"
+   ],
+   "bonne": 0,
+   "reference": "Genèse 14.3"
+  },
+  {
+   "id": "lieu-218",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quelle ville philistine Samson descendit-il pour y voir une femme ?",
+   "options": [
+    "Thimna",
+    "Gaza",
+    "Askalon",
+    "Gath"
+   ],
+   "bonne": 0,
+   "reference": "Juges 14.1"
+  },
+  {
+   "id": "lieu-219",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "À quel bourg, près de la montagne des oliviers, Jésus envoya-t-il deux disciples chercher un ânon ?",
+   "options": [
+    "Bethphagé",
+    "Béthanie",
+    "Emmaüs",
+    "Béthel"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 21.1"
+  },
+  {
+   "id": "lieu-220",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quelle ville de Chypre Paul et Barnabas annoncèrent-ils d'abord la parole ?",
+   "options": [
+    "Salamine",
+    "Paphos",
+    "Antioche",
+    "Séleucie"
+   ],
+   "bonne": 0,
+   "reference": "Actes 13.5"
+  },
+  {
+   "id": "lieu-221",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Par quelles villes Paul et Silas passèrent-ils avant d'arriver à Thessalonique ?",
+   "options": [
+    "Amphipolis et Apollonie",
+    "Bérée et Athènes",
+    "Troas et Assos",
+    "Philippes et Néapolis"
+   ],
+   "bonne": 0,
+   "reference": "Actes 17.1"
+  },
+  {
+   "id": "lieu-222",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Où l'arche du Dieu d'Israël fut-elle transportée après Asdod, sur l'ordre des princes philistins ?",
+   "options": [
+    "À Gath",
+    "À Ékron",
+    "À Gaza",
+    "À Askalon"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 5.8"
+  },
+  {
+   "id": "lieu-223",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Vers quelle ville les vaches emportèrent-elles l'arche, sans se détourner ni à droite ni à gauche ?",
+   "options": [
+    "Beth-Schémesch",
+    "Kirjath-Jearim",
+    "Silo",
+    "Guibea"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 6.12"
+  },
+  {
+   "id": "lieu-224",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quelle contrée Jésus se rendit-il en barque après avoir renvoyé la foule rassasiée ?",
+   "options": [
+    "Magadan",
+    "Gadara",
+    "Décapole",
+    "Bethsaïda"
+   ],
+   "bonne": 0,
+   "reference": "Matthieu 15.39"
+  },
+  {
+   "id": "lieu-225",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Comment s'appelle, en hébreu, le lieu appelé le Pavé, où Pilate s'assit sur son tribunal ?",
+   "options": [
+    "Gabbatha",
+    "Golgotha",
+    "Béthesda",
+    "Siloé"
+   ],
+   "bonne": 0,
+   "reference": "Jean 19.13"
+  },
+  {
+   "id": "lieu-226",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "De quelle ville de Lycie le centenier fit-il embarquer Paul sur un navire d'Alexandrie ?",
+   "options": [
+    "Myra",
+    "Cnide",
+    "Milet",
+    "Patara"
+   ],
+   "bonne": 0,
+   "reference": "Actes 27.5"
+  },
+  {
+   "id": "lieu-227",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quel port de Crète le navire de Paul relâcha-t-il, près de la ville de Lasée ?",
+   "options": [
+    "Beaux Ports",
+    "Phénix",
+    "Cauda",
+    "Salmoné"
+   ],
+   "bonne": 0,
+   "reference": "Actes 27.8"
+  },
+  {
+   "id": "lieu-228",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Dans quel port d'Italie Paul débarqua-t-il enfin, après Reggio ?",
+   "options": [
+    "Pouzzoles",
+    "Ostie",
+    "Syracuse",
+    "Brindes"
+   ],
+   "bonne": 0,
+   "reference": "Actes 28.13"
+  },
+  {
+   "id": "lieu-229",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Où Élisée jeta-t-il de la farine pour ôter le mal du potage empoisonné ?",
+   "options": [
+    "À Guilgal",
+    "À Béthel",
+    "À Jéricho",
+    "Au mont Carmel"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 4.38-41"
+  },
+  {
+   "id": "lieu-230",
+   "categorie": "Lieux et géographie",
+   "niveau": 2,
+   "question": "Où le bouc pour Azazel devait-il être conduit ?",
+   "options": [
+    "Dans une terre désolée",
+    "Au sommet du Sinaï",
+    "Au-delà de la mer Salée",
+    "Dans la vallée de Hinnom"
+   ],
+   "bonne": 0,
+   "reference": "Lévitique 16.22"
+  },
+  {
+   "id": "lieu-231",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Comment fut nommé le lieu où l'on enterra le peuple que la convoitise avait saisi ?",
+   "options": [
+    "Kibroth-Hattaava",
+    "Thabéera",
+    "Mériba",
+    "Massa"
+   ],
+   "bonne": 0,
+   "reference": "Nombres 11.34"
+  },
+  {
+   "id": "lieu-232",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Quelle ville Nobach prit-il et appela-t-il de son propre nom ?",
+   "options": [
+    "Kenath",
+    "Jaïr",
+    "Hesbon",
+    "Nobach-Galaad"
+   ],
+   "bonne": 0,
+   "reference": "Nombres 32.42"
+  },
+  {
+   "id": "lieu-233",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Que demanda Acsa à son père Caleb, en plus de la terre du midi ?",
+   "options": [
+    "Des sources d'eau",
+    "Un troupeau",
+    "Une ville forte",
+    "Des serviteurs"
+   ],
+   "bonne": 0,
+   "reference": "Juges 1.15"
+  },
+  {
+   "id": "lieu-234",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Comment appela-t-on le lieu où Samson jeta la mâchoire d'âne ?",
+   "options": [
+    "Ramath-Léchi",
+    "Léchi-Dan",
+    "En-Hakkoré",
+    "Étam"
+   ],
+   "bonne": 0,
+   "reference": "Juges 15.17"
+  },
+  {
+   "id": "lieu-235",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Quel nom David donna-t-il au lieu où l'Éternel dispersa ses ennemis « comme des eaux qui s'écoulent » ?",
+   "options": [
+    "Baal-Peratsim",
+    "Perets-Uzza",
+    "Ében-Ézer",
+    "Baal-Thamar"
+   ],
+   "bonne": 0,
+   "reference": "2 Samuel 5.20"
+  },
+  {
+   "id": "lieu-236",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle capitale de la province de Médie retrouva-t-on le rouleau de l'édit de Cyrus ?",
+   "options": [
+    "Achmetha",
+    "Suse",
+    "Babylone",
+    "Persépolis"
+   ],
+   "bonne": 0,
+   "reference": "Esdras 6.2"
+  },
+  {
+   "id": "lieu-237",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle vallée l'Éternel annonce-t-il, par Joël, qu'il rassemblera toutes les nations en jugement ?",
+   "options": [
+    "La vallée de Josaphat",
+    "La vallée de Hinnom",
+    "La vallée d'Achor",
+    "La vallée de Sittim"
+   ],
+   "bonne": 0,
+   "reference": "Joël 3.2"
+  },
+  {
+   "id": "lieu-238",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Vers quelle ville Paul partit-il le lendemain de sa lapidation à Lystre ?",
+   "options": [
+    "Derbe",
+    "Iconium",
+    "Antioche",
+    "Tarse"
+   ],
+   "bonne": 0,
+   "reference": "Actes 14.20"
+  },
+  {
+   "id": "lieu-239",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle ville Paul rejoignit-il ses compagnons après avoir fait la route à pied ?",
+   "options": [
+    "Assos",
+    "Mytilène",
+    "Troas",
+    "Milet"
+   ],
+   "bonne": 0,
+   "reference": "Actes 20.13-14"
+  },
+  {
+   "id": "lieu-240",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Quelle plaine, avec Lydde, se convertit au Seigneur après la guérison d'Énée ?",
+   "options": [
+    "Le Saron",
+    "La Séphéla",
+    "La plaine de Jizreel",
+    "La plaine de Génésareth"
+   ],
+   "bonne": 0,
+   "reference": "Actes 9.35"
+  },
+  {
+   "id": "lieu-241",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Jusqu'à quelle ville les soldats conduisirent-ils Paul pendant la nuit, loin du guet-apens ?",
+   "options": [
+    "Antipatris",
+    "Césarée",
+    "Joppé",
+    "Lydde"
+   ],
+   "bonne": 0,
+   "reference": "Actes 23.31"
+  },
+  {
+   "id": "lieu-242",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Vers quel fleuve Jérémie dut-il aller cacher sa ceinture de lin ?",
+   "options": [
+    "L'Euphrate",
+    "Le Jourdain",
+    "Le Kebar",
+    "L'Arnon"
+   ],
+   "bonne": 0,
+   "reference": "Jérémie 13.4-7"
+  },
+  {
+   "id": "lieu-243",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Devant quel édifice l'Éternel fit-il voir à Jérémie deux paniers de figues ?",
+   "options": [
+    "Le temple de l'Éternel",
+    "La porte de Benjamin",
+    "La maison du roi",
+    "La tour de Hananeel"
+   ],
+   "bonne": 0,
+   "reference": "Jérémie 24.1"
+  },
+  {
+   "id": "lieu-244",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Jusqu'où l'eau montait-elle, au quatrième millier de coudées mesuré par l'ange, dans la vision d'Ézéchiel ?",
+   "options": [
+    "C'était un torrent qu'il fallait traverser à la nage",
+    "Jusqu'aux chevilles",
+    "Jusqu'aux genoux",
+    "Jusqu'aux reins"
+   ],
+   "bonne": 0,
+   "reference": "Ézéchiel 47.5"
+  },
+  {
+   "id": "lieu-245",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelles villes le roi d'Assyrie fit-il habiter Israël, après la prise de Samarie ?",
+   "options": [
+    "Chalach, sur le Chabor, et les villes des Mèdes",
+    "Ninive et Calach",
+    "Babylone et Suse",
+    "Hamath et Sepharvaïm"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 17.6"
+  },
+  {
+   "id": "lieu-246",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "À Mitspa, qui Ismaël fils de Nethania vint-il frapper mortellement ?",
+   "options": [
+    "Guedalia",
+    "Nebuzaradan",
+    "Sédécias",
+    "Jérémie"
+   ],
+   "bonne": 0,
+   "reference": "2 Rois 25.25"
+  },
+  {
+   "id": "lieu-247",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Où Israël campa-t-il quand l'eau amère devint douce grâce à un bois jeté par Moïse ?",
+   "options": [
+    "À Mara",
+    "À Élim",
+    "À Rephidim",
+    "À Kadès"
+   ],
+   "bonne": 0,
+   "reference": "Exode 15.23-25"
+  },
+  {
+   "id": "lieu-248",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle vallée les explorateurs coupèrent-ils une grappe de raisin portée à deux ?",
+   "options": [
+    "La vallée d'Eschcol",
+    "La vallée de Siddim",
+    "La vallée de Sorek",
+    "La vallée de Bakas"
+   ],
+   "bonne": 0,
+   "reference": "Nombres 13.23"
+  },
+  {
+   "id": "lieu-249",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle caverne les cinq rois coalisés se cachèrent-ils devant Josué ?",
+   "options": [
+    "Une caverne à Makkéda",
+    "La caverne d'Adullam",
+    "La caverne de Macpéla",
+    "Une caverne du mont Carmel"
+   ],
+   "bonne": 0,
+   "reference": "Josué 10.16-17"
+  },
+  {
+   "id": "lieu-250",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Où Samuel fut-il reconnu prophète, « depuis Dan jusqu'à Beer-Schéba » ?",
+   "options": [
+    "Dans tout Israël",
+    "En Juda seulement",
+    "À Silo seulement",
+    "Dans les villes lévitiques"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 3.20"
+  },
+  {
+   "id": "lieu-251",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "De quelle montagne Barak descendit-il avec dix mille hommes ?",
+   "options": [
+    "Le mont Thabor",
+    "Le mont Guilboa",
+    "Le mont Carmel",
+    "Le mont Hermon"
+   ],
+   "bonne": 0,
+   "reference": "Juges 4.14"
+  },
+  {
+   "id": "lieu-252",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "De quelle montagne Gédéon renvoya-t-il ceux qui avaient peur ?",
+   "options": [
+    "La montagne de Galaad",
+    "La montagne de Guilboa",
+    "Le mont Thabor",
+    "La montagne de Séir"
+   ],
+   "bonne": 0,
+   "reference": "Juges 7.3"
+  },
+  {
+   "id": "lieu-253",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle ville Saül et ses trois fils tombèrent-ils, sur la montagne ?",
+   "options": [
+    "Sur la montagne de Guilboa",
+    "À Aphek",
+    "À Jizreel",
+    "À Beth-Schan"
+   ],
+   "bonne": 0,
+   "reference": "1 Samuel 31.1-2"
+  },
+  {
+   "id": "lieu-254",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Combien de temps David régna-t-il à Hébron avant de régner à Jérusalem ?",
+   "options": [
+    "Sept ans et six mois",
+    "Deux ans",
+    "Dix ans",
+    "Un an"
+   ],
+   "bonne": 0,
+   "reference": "2 Samuel 5.5"
+  },
+  {
+   "id": "lieu-255",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Où les Juifs revenus d'exil dressèrent-ils d'abord l'autel du Dieu d'Israël ?",
+   "options": [
+    "Sur ses anciens fondements",
+    "À Mitspa",
+    "Au mont Garizim",
+    "À Béthel"
+   ],
+   "bonne": 0,
+   "reference": "Esdras 3.2-3"
+  },
+  {
+   "id": "lieu-256",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "De quelle ville venait Trophime, que l'on croyait entré dans le temple avec Paul ?",
+   "options": [
+    "Éphèse",
+    "Milet",
+    "Troas",
+    "Colosses"
+   ],
+   "bonne": 0,
+   "reference": "Actes 21.29"
+  },
+  {
+   "id": "lieu-257",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans la ville sainte de la vision de Jean, que ne vit-il point ?",
+   "options": [
+    "De temple",
+    "De murailles",
+    "De portes",
+    "De trône"
+   ],
+   "bonne": 0,
+   "reference": "Apocalypse 21.22"
+  },
+  {
+   "id": "lieu-258",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Où le champ acheté par Jérémie à son cousin se trouvait-il ?",
+   "options": [
+    "À Anathoth",
+    "À Thékoa",
+    "À Guibea",
+    "À Mitspa"
+   ],
+   "bonne": 0,
+   "reference": "Jérémie 32.9"
+  },
+  {
+   "id": "lieu-259",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "De quelle ville était Amos, avant de prophétiser sur Israël ?",
+   "options": [
+    "Tekoa, en Juda",
+    "Samarie",
+    "Béthel",
+    "Guilgal"
+   ],
+   "bonne": 0,
+   "reference": "Amos 1.1"
+  },
+  {
+   "id": "lieu-260",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Dans quelle ville d'Égypte arrivèrent ceux qui désobéirent à l'Éternel, avec Jérémie ?",
+   "options": [
+    "Tachpanès",
+    "Pathros",
+    "Migdol",
+    "Noph"
+   ],
+   "bonne": 0,
+   "reference": "Jérémie 43.7"
+  },
+  {
+   "id": "lieu-261",
+   "categorie": "Lieux et géographie",
+   "niveau": 3,
+   "question": "Près de quelle ville Jean baptisait-il, à Énon ?",
+   "options": [
+    "Salim",
+    "Béthanie",
+    "Sichem",
+    "Césarée"
+   ],
+   "bonne": 0,
+   "reference": "Jean 3.23"
   }
  ]
 }
