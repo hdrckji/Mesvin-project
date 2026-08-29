@@ -1184,8 +1184,8 @@ function db_migrate(PDO $pdo): void {
     }
 
     /* ---- Étape 10 — un lecteur peut signaler ce qui cloche --------------------
-       Deux besoins se rejoignent ici. Le nôtre : 600 questions relues deux fois
-       restent 600 questions écrites par des humains, et c'est le lecteur devant
+       Deux besoins se rejoignent ici. Le nôtre : 2 500 questions relues deux fois
+       restent 2 500 questions écrites par des humains, et c'est le lecteur devant
        sa Bible qui verra le reste. Celui de Google Play : toute appli qui laisse
        publier du texte (les annonces d'église) doit offrir un moyen de signaler
        un contenu, sans quoi la fiche est refusée.

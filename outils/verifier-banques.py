@@ -53,7 +53,7 @@ for i in items:
         print(f"✗ po {i['id']} : la réponse « {i['reponse']} » n'est pas dans accepte"); souci += 1
 print(f"De qui parle-t-on ?   {len(items):3d} items")
 
-# --- Le Défi : 600 questions -----------------------------------------------
+# --- Le Défi : toute la banque, quel qu'en soit le nombre --------------------
 # Longtemps la seule banque à n'être JAMAIS confrontée au texte. Un lecteur y a
 # trouvé une question de « Complète le verset » écrite d'après Martin/Darby
 # alors que l'appli suit la Segond 1910 : la citation ET la réponse venaient
