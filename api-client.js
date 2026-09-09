@@ -250,12 +250,18 @@
     /* ---- signaler ce qui cloche ----
        Volontairement hors de toute exigence de compte : `call` joint le token
        s'il existe, et le serveur s'en contente sans jamais l'exiger. */
-    async signaler(genre, cible, contexte, motif) {
-      return call('POST', '/api/signalement', { genre, cible, contexte, motif });
+    // `extra` : { raison, groupe } — le motif choisi dans la liste, et le code
+    // de l'église d'où vient le contenu (pour le retirer depuis la pile).
+    async signaler(genre, cible, contexte, motif, extra) {
+      return call('POST', '/api/signalement', Object.assign({ genre, cible, contexte, motif }, extra || {}));
     },
     async adminSignalements() { return call('GET', '/api/admin/signalements'); },
     async adminSignalementClasser(id, statut) {
       return call('POST', '/api/admin/signalements/' + id, { statut: statut || 'traite' });
+    },
+    // Retirer le contenu d'église visé par un signalement, d'un geste, depuis la pile.
+    async adminSignalementRetirer(id) {
+      return call('POST', '/api/admin/signalements/' + id + '/retirer');
     },
 
     /* ---- veillées en direct ---- */

@@ -220,6 +220,23 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Le geste que Google Play exige : signaler un contenu depuis l'appli. On
+# vérifie que la porte répond SANS rien déposer — un genre inconnu est refusé
+# en 400 avant toute écriture — et que le plafond horaire est bien devant
+# elle (une vraie rafale rendrait ce réseau muet une heure : on ne la joue
+# pas ici ; run-tests.sh la joue en local).
+say "Signalement — la porte répond, derrière son plafond"
+SIG_CODE="$(curl -sS --max-time 20 -o "$TMP/sig.json" -w '%{http_code}' -X POST "$BASE/api/signalement" \
+  -H 'Content-Type: application/json' -d '{"genre":"sonde","cible":"sonde"}')"
+if [ "$SIG_CODE" = 400 ] && jq -e '.error' "$TMP/sig.json" > /dev/null 2>&1; then
+  ok "POST /api/signalement répond (genre inconnu → 400, rien de déposé)"
+elif [ "$SIG_CODE" = 429 ]; then
+  ok "POST /api/signalement répond — plafond horaire atteint depuis ce réseau (429), la porte tient"
+else
+  bad "POST /api/signalement → $SIG_CODE" "attendu 400 (genre inconnu) : le bouton Signaler de l'appli ne mène nulle part"
+fi
+
+# ---------------------------------------------------------------------------
 say "Référencement"
 for f in robots.txt sitemap.xml og-image.png; do
   existe "/$f" && ok "$f répond" || bad "$f absent"

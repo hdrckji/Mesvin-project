@@ -87,7 +87,7 @@ Voici ce que l'application collecte **vraiment**, lu dans le schéma.
 
 ---
 
-## Contenu généré par les utilisateurs — À TRAITER AVANT DE PUBLIER
+## Contenu généré par les utilisateurs
 
 Les églises publient des **annonces**, des **rendez-vous** et des **séries de
 questions**, visibles par leurs membres. Google considère cela comme du contenu
@@ -96,10 +96,20 @@ généré par les utilisateurs, et exige alors **deux choses** :
 1. un moyen de **signaler** un contenu **depuis l'application** ;
 2. une **modération**.
 
-La modération existe (retrait sur signalement, jamais a priori). **Le bouton de
-signalement, lui, n'existe pas encore** : un membre doit écrire à l'adresse de
-contact. Il faut l'ajouter avant de soumettre — répondre « oui, il y a du
-contenu d'utilisateurs » sans mécanisme de signalement expose à un refus.
+Les deux sont en place. Partout où un contenu d'église se voit — chaque
+annonce et chaque rendez-vous de la page de l'église, la série choisie dans
+une épreuve — un membre a un bouton **Signaler** (drapeau), qui ne paraît pas
+à l'animateur : il a déjà Modifier et Supprimer. Un petit formulaire demande
+un motif (contenu inapproprié, spam, erreur, autre) et un commentaire
+facultatif ; il fonctionne **sans compte**. Le signalement part vers
+`/api/signalement` (plafond horaire par réseau, aucune IP conservée), un
+courrier prévient `contact@biblehorizon.fr`, et l'administration le traite
+dans l'onglet *Activité* : **Retirer le contenu** ou **Classer sans suite**.
+La modération se fait sur signalement, jamais a priori.
+
+Dans le questionnaire, répondre donc **oui** à « contenu généré par les
+utilisateurs », et cocher que l'application propose un signalement intégré
+et une modération.
 
 ---
 

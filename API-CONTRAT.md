@@ -779,20 +779,30 @@ un contenu, sans quoi la fiche est refusée.
 
 ### POST /api/signalement
 Public (le token est joint s'il existe, jamais exigé). Corps :
-`{ "genre": "question"|"annonce"|"serie"|"rdv", "cible", "contexte"?, "motif"? }`
+`{ "genre": "question"|"annonce"|"serie"|"rdv", "cible", "contexte"?, "motif"?, "raison"?, "groupe"? }`
 - `cible` — l'identifiant dans ce genre, ex. `"question:lieu-80"`. 120 car. max.
 - `contexte` — ce que le lecteur avait sous les yeux, **figé à l'envoi** :
   une question corrigée demain ne doit pas effacer la trace de ce qui a été
   signalé aujourd'hui. Tronqué à 2000 car.
-- `motif` — facultatif, tronqué à 500 car.
+- `motif` — le commentaire libre, facultatif, tronqué à 500 car.
+- `raison` — le motif choisi dans la liste : `inapproprie` | `spam` | `erreur`
+  | `autre`. Facultatif (le Défi n'en propose pas : un tap suffit) ; toute
+  autre valeur → 400.
+- `groupe` — le code de l'église d'où vient le contenu (`GRP-XXXXX`), pour
+  pouvoir le retirer depuis la pile. Seule la forme est vérifiée. Facultatif.
 
 → `{ "ok": true }`. Ni identifiant ni compteur en retour : le lecteur n'a rien
-à consulter ensuite. 400 si le genre est inconnu ou la cible vide, 429 au
-plafond.
+à consulter ensuite. 400 si le genre est inconnu, la cible vide, la raison
+hors liste ou le code de groupe mal formé ; 429 au plafond.
+
+Un courrier part à chaque signalement vers `SIGNALEMENT_EMAIL` (sinon
+`contact@biblehorizon.fr`), après l'écriture en base : son sort n'entre pas
+dans la réponse, et un envoi raté se lit dans l'onglet Système.
 
 ### GET /api/admin/signalements
 Admin. → `{ "signalements": [ { "id", "genre", "cible", "contexte", "motif",
-"statut": "nouveau"|"traite", "auteur": "pseudo"|null, "created_at", "traite_at" } ],
+"raison": "inapproprie"|"spam"|"erreur"|"autre"|null, "groupe": "GRP-XXXXX"|null,
+"statut": "nouveau"|"traite"|"retire", "auteur": "pseudo"|null, "created_at", "traite_at" } ],
 "nouveaux": 2 }` — les `nouveaux` d'abord, puis du plus récent au plus ancien,
 200 au maximum. `auteur` est **le pseudo, jamais l'e-mail** : une adresse n'a
 rien à faire dans un écran qu'on ouvre pour lire une remarque sur un verset.
@@ -802,6 +812,17 @@ Admin. Corps : `{ "statut": "traite"|"nouveau" }` (défaut `traite`).
 → `{ "ok": true, "statut": "traite" }`. 404 si l'id n'existe pas.
 On ne **supprime** jamais : une trace classée dit qu'on a regardé, et se
 rouvre si la correction s'avère fausse. L'action est tracée au journal admin.
+
+### POST /api/admin/signalements/{id}/retirer
+Admin. L'autre issue : **retirer le contenu d'église visé** (annonce,
+rendez-vous ou série — une série emporte ses questions), par la même porte que
+l'onglet Églises (`DELETE /api/admin/groupes/{code}/contenu/…`), donc le même
+journal. La trace passe en statut `retire`.
+→ `{ "ok": true, "statut": "retire", "retire": true|false }` — `retire` vaut
+false si le contenu n'existait plus (l'église l'a supprimé entre-temps) ; la
+trace se ferme quand même. 404 si l'id n'existe pas, 400 si le genre n'est pas
+un contenu d'église ou si le signalement ne porte pas de `groupe`, 409 s'il a
+déjà été retiré.
 
 ## Administration
 

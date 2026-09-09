@@ -234,6 +234,7 @@
 <div class="wrap" id="app"></div>
 <script src="../icons.js"></script>
 <script src="../api-client.js"></script>
+<script src="../signaler.js"></script>
 <!-- Banque d'église (?eglise=GRP-XXXXX) ajoutée À LA MAIN dans les trois
      pages : le gabarit gen-epreuve.py, absent du dépôt, ne la connaît pas —
      à reporter dedans si la page est réengendrée un jour. -->
@@ -248,6 +249,7 @@ const NB_INDICES = 5;
 
 /* ---------- Aides ---------- */
 const el = document.getElementById('app');
+if (window.BHSignaler) BHSignaler.brancher(el); // « Signaler » : un écouteur délégué, posé une fois
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function shuffle(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; }
 /* Correspondance tolérante — la MÊME règle que le serveur (portrait_norm). */
@@ -869,13 +871,13 @@ function choixBanqueHTML() {
   const pastille = (id, nom, jouee) =>
     `<button class="pill ${serieChoisie === id ? 'on' : ''}" data-serie="${id === null ? '' : id}">`
     + `${esc(nom)}${jouee ? ' ✓' : ''}</button>`;
-  // Un contenu d'église se signale là où on le voit. Un simple courrier
-  // pré-rempli suffit : pas de machinerie, mais un chemin qui existe.
+  // Un contenu d'église se signale là où on le voit : le bouton et le petit
+  // formulaire (motif, commentaire facultatif) viennent de signaler.js,
+  // partagé avec la page de l'église — sans compte, comme partout.
   const choisie = SERIES.find(x => x.id === serieChoisie);
-  const signaler = choisie
-    ? `<p style="margin:8px 0 0"><a class="muted" style="font-size:.78rem"
-         href="mailto:contact@biblehorizon.fr?subject=${encodeURIComponent('Signalement — série ' + choisie.id + ' (' + TITRE + ')')}&body=${encodeURIComponent('Série : ' + choisie.nom + '\nÉglise : ' + EGLISE + '\n\nCe qui pose problème :\n')}"
-         >Signaler un contenu de cette série</a></p>`
+  const signaler = choisie && window.BHSignaler
+    ? `<p style="margin:8px 0 0;font-size:.82rem" data-sighote="1">${BHSignaler.bouton('serie', 'serie:' + choisie.id,
+         TITRE + ' — série « ' + choisie.nom + ' »', EGLISE)}</p>`
     : '';
   return `<div style="margin:-4px 0 16px">
     <div class="muted" style="font-size:.82rem;margin-bottom:6px">Avec quelles questions ?${

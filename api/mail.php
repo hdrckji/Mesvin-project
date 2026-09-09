@@ -105,6 +105,75 @@ function mail_send_eglise_ouverte(string $email, string $nom, string $code): boo
         : mail_send_smtp($email, $subject, $text);
 }
 
+/* ---- Un signalement vient d'arriver -------------------------------------------
+   La pile de l'administration existe, mais personne ne l'ouvre tous les jours.
+   Un lecteur qui signale une annonce déplacée attend que quelqu'un la voie —
+   d'où ce courrier, envoyé À CHAQUE signalement vers l'adresse de contact.
+   Il porte l'essentiel en clair (quoi, pourquoi, où) pour qu'on puisse juger
+   depuis le téléphone, et le lien vers la pile pour agir. Il ne porte jamais
+   l'adresse e-mail de l'auteur : son pseudo suffit, comme dans la pile. */
+
+/** Adresse qui reçoit les signalements (SIGNALEMENT_EMAIL, sinon le contact). */
+function mail_signalement_destinataire(): string {
+    $env = trim((string) getenv('SIGNALEMENT_EMAIL'));
+    return $env !== '' ? $env : 'contact@biblehorizon.fr';
+}
+
+const SIGNALEMENT_RAISONS_LIBELLES = [
+    'inapproprie' => 'Contenu inapproprié',
+    'spam'        => 'Spam ou publicité',
+    'erreur'      => 'Erreur dans le contenu',
+    'autre'       => 'Autre',
+];
+
+/** Le corps du courrier — fonction pure, pour être relisible par un test. */
+function mail_texte_signalement(array $s): string {
+    $genres = ['question' => 'une question du Défi', 'annonce' => "une annonce d'église",
+               'serie' => "une série de questions d'église", 'rdv' => "un rendez-vous d'église"];
+    $genre  = $genres[$s['genre']] ?? $s['genre'];
+    $raison = SIGNALEMENT_RAISONS_LIBELLES[$s['raison'] ?? ''] ?? 'Non précisée';
+    $texte  = "Bonjour,\n\n"
+        . "Un lecteur vient de signaler $genre sur Bible Horizon.\n\n"
+        . "Motif : $raison\n"
+        . "Cible : " . $s['cible'] . "\n";
+    if (!empty($s['groupe_code'])) {
+        $texte .= "Église : " . $s['groupe_code'] . "\n";
+    }
+    $texte .= "Signalé par : " . (!empty($s['auteur']) ? $s['auteur'] : 'un lecteur sans compte') . "\n\n";
+    if (!empty($s['motif'])) {
+        $texte .= "Ce qu'il en dit :\n« " . $s['motif'] . " »\n\n";
+    }
+    if (!empty($s['contexte'])) {
+        $texte .= "Ce qu'il avait sous les yeux :\n" . $s['contexte'] . "\n\n";
+    }
+    $texte .= "Pour agir (retirer le contenu, ou classer sans suite) :\n"
+        . MAIL_SITE . "/admin/\n\n"
+        . "Bible Horizon";
+    return $texte;
+}
+
+/**
+ * Envoie le courrier du signalement. Ne lève jamais : un courrier qui ne
+ * part pas ne doit pas faire échouer le geste du lecteur — la trace est déjà
+ * en base, et la pile de l'administration la montrera de toute façon.
+ */
+function mail_send_signalement(array $s): bool {
+    $mode = mail_mode();
+    if ($mode === 'dev') {
+        return true;
+    }
+    $subject = 'Signalement — ' . (SIGNALEMENT_RAISONS_LIBELLES[$s['raison'] ?? ''] ?? 'à regarder') . ' — Bible Horizon';
+    $text = mail_texte_signalement($s);
+    try {
+        return $mode === 'brevo'
+            ? mail_send_brevo(mail_signalement_destinataire(), $subject, $text)
+            : mail_send_smtp(mail_signalement_destinataire(), $subject, $text);
+    } catch (Throwable $e) {
+        mail_remember_error('signalement : ' . $e->getMessage());
+        return false;
+    }
+}
+
 /* --------------------------------------------------------------------------
    Option 1 : API HTTP de Brevo (https://developers.brevo.com)
    -------------------------------------------------------------------------- */

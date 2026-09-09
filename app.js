@@ -32,6 +32,8 @@ const SCRAMBLE_MAX = 12;      // au-delà, on passe aux mots à trous
 
 /* ---------- Aides ---------- */
 const el = document.getElementById('app');
+// « Signaler » : un seul écouteur délégué, posé une fois — il survit à tous les rendus.
+if (window.BHSignaler) BHSignaler.brancher(el);
 const todayNum = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return Math.round(d.getTime() / 86400000); };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
@@ -2758,7 +2760,7 @@ async function doPropDelete(id, nom) {
   render();
 }
 
-/* Signaler une annonce d'église.
+/* Signaler un contenu d'église.
 
    C'est la brique que Google Play exige de toute appli où quelqu'un peut
    publier du texte lu par d'autres : sans un moyen de signaler un contenu,
@@ -2766,28 +2768,15 @@ async function doPropDelete(id, nom) {
    assemblée est un lieu où l'on se parle, et il faut une porte quand un mot
    dérape, sans obliger qui que ce soit à interpeller son responsable en face.
 
+   Le bouton et le formulaire (motif en liste, commentaire facultatif) vivent
+   dans signaler.js, partagé avec les épreuves. Ici, on ne fait que le poser.
    Le bouton ne paraît PAS à l'animateur : il a déjà Modifier et Supprimer,
    et se signaler à soi-même n'aurait aucun sens. */
-async function doSignaler(b) {
-  if (b.disabled) return;
-  const cible = b.dataset.signaler;
-  const contexte = b.dataset.contexte || '';
-  const motif = window.prompt(
-    'Qu\'est-ce qui te pose problème dans cette annonce ? (facultatif)', '');
-
-  b.disabled = true;
-  const avant = b.textContent;
-  b.textContent = 'Envoi…';
-  try {
-    await GraineAPI.signaler('annonce', cible, contexte, motif || '');
-    b.textContent = 'Signalé, merci ✓';
-  } catch (err) {
-    b.disabled = false;
-    b.textContent = avant;
-    alert(err && err.offline
-      ? 'Pas de connexion — réessaie une fois revenu en ligne.'
-      : ((err && err.message) || 'Le signalement n\'est pas parti. Réessaie plus tard.'));
-  }
+function sigBouton(genre, cible, contexte, g) {
+  // Cache mélangé pendant une mise à jour : sans le module, pas de bouton
+  // plutôt qu'un bouton qui ne fait rien.
+  if (!window.BHSignaler) return '';
+  return BHSignaler.bouton(genre, cible, contexte, g && g.code);
 }
 
 function egliseAnnonces(g, p, anime) {
@@ -2796,11 +2785,11 @@ function egliseAnnonces(g, p, anime) {
     ? p.annonces.map(a => `<div class="egl-annonce fade ${a.epingle ? 'epingle' : ''}">
         <div class="ea-titre">${a.epingle ? '<span class="ea-pin" title="Épinglée">📌</span> ' : ''}<b>${esc(a.titre)}</b></div>
         <p class="ea-texte">${multiligne(a.texte)}</p>
-        <div class="ea-meta muted">${dateAnnonceFr(a.date)}${anime ? ` ·
+        <div class="ea-meta muted" data-sighote="1">${dateAnnonceFr(a.date)}${anime ? ` ·
           <button class="linkbtn" data-pageedit="annonce" data-id="${a.id}">Modifier</button>
           <button class="linkbtn" data-pagepin="${a.id}">${a.epingle ? 'Désépingler' : 'Épingler'}</button>
           <button class="linkbtn danger" data-pagedel="annonce" data-id="${a.id}" data-nom="${esc(a.titre)}">Supprimer</button>` : `
-          · <button class="linkbtn" data-signaler="annonce:${a.id}" data-contexte="${esc(a.titre + ' — ' + a.texte)}">Signaler</button>`}</div>
+          · ${sigBouton('annonce', 'annonce:' + a.id, a.titre + ' — ' + a.texte, g)}`}</div>
       </div>`).join('')
     : `<p class="muted fr-empty">${anime ? 'Aucune annonce — la première nouvelle de l\'assemblée se pose ici.' : 'Pas d\'annonce pour l\'instant.'}</p>`;
   return `<div class="section-title">${icon('cloche')} Annonces</div>
@@ -2816,7 +2805,9 @@ function egliseRdv(g, p, anime) {
         <span class="er-quoi">${esc(r.libelle)}${r.lieu ? `<br><span class="muted">${esc(r.lieu)}</span>` : ''}</span>
         ${anime ? `<span class="er-actions">
           <button class="linkbtn" data-pageedit="rdv" data-id="${r.id}">Modifier</button>
-          <button class="linkbtn danger" data-pagedel="rdv" data-id="${r.id}" data-nom="${esc(r.libelle)}">Supprimer</button></span>` : ''}
+          <button class="linkbtn danger" data-pagedel="rdv" data-id="${r.id}" data-nom="${esc(r.libelle)}">Supprimer</button></span>`
+        : `<span class="er-actions" data-sighote="1">${sigBouton('rdv', 'rdv:' + r.id,
+            (JOURS_SEMAINE[r.jour] || '?') + ' ' + r.heure + ' — ' + r.libelle + (r.lieu ? ' (' + r.lieu + ')' : ''), g)}</span>`}
       </div>`).join('')
     : `<p class="muted fr-empty">${anime ? 'Aucun rendez-vous — pose le culte, la prière, l\'étude…' : 'Pas encore de rendez-vous réguliers.'}</p>`;
   return `<div class="section-title">${icon('assiduite')} La semaine de l'assemblée</div>
@@ -4026,7 +4017,6 @@ function wire() {
   el.querySelectorAll('[data-pageedit]').forEach(b => b.addEventListener('click', () => pageOuvrirForm(b.dataset.pageedit, b.dataset.id ? +b.dataset.id : null)));
   el.querySelectorAll('[data-pagedel]').forEach(b => b.addEventListener('click', () => doPageDelete(b.dataset.pagedel, +b.dataset.id, b.dataset.nom)));
   el.querySelectorAll('[data-pagepin]').forEach(b => b.addEventListener('click', () => doPagePin(+b.dataset.pagepin)));
-  el.querySelectorAll('[data-signaler]').forEach(b => b.addEventListener('click', () => doSignaler(b)));
   el.querySelectorAll('[data-svcmain]').forEach(b => b.addEventListener('click', () => doServiceMain(+b.dataset.svcmain, b.dataset.inscrit === '1')));
   el.querySelectorAll('[data-passation]').forEach(b => b.addEventListener('click', () => doGroupePassation(b.dataset.passation)));
   el.querySelectorAll('[data-corespon]').forEach(b => b.addEventListener('click', () => doCoresponsable(b.dataset.corespon, true)));
