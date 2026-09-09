@@ -2952,6 +2952,80 @@ check "et elle y est"                    $((SIG_AVANT + 2)) "$(api GET /api/admi
 check "classer un signalement inconnu → 404" 404 \
   "$(api POST "/api/admin/signalements/999999" "$TOKEN1B" '{"statut":"traite"}')"
 
+# --- Le motif en liste, l'église d'origine, et les deux issues de la pile ---
+# Ce que Google Play exige, c'est un signalement DEPUIS l'appli et une
+# modération derrière. Le motif choisi et le code de l'église sont ce qui
+# permet à l'administration d'agir d'un geste : retirer le contenu, ou
+# classer sans suite. Le retrait passe par la même porte que l'onglet Églises.
+check "raison hors liste → 400"          400 \
+  "$(api POST /api/signalement '' '{"genre":"annonce","cible":"annonce:1","raison":"potin"}')"
+check "code de groupe mal formé → 400"   400 \
+  "$(api POST /api/signalement '' '{"genre":"annonce","cible":"annonce:1","groupe":"nimporte"}')"
+
+# Une église fraîche pour ce bloc (celles d'avant ont été supprimées en
+# chemin) : Alice la porte, Chloé la rejoint.
+api POST /api/groupes/demande "$TOKEN1B" '{"nom":"Assemblée du Signal","adresse":"3 rue du Phare, Mons"}' > /dev/null
+api GET /api/admin/eglises "$TOKEN1B" > /dev/null
+SGDEM="$(jq -r '[.demandes[] | select(.nom == "Assemblée du Signal")] | last | .id' "$TMP/body.json")"
+api POST "/api/admin/eglises/demandes/$SGDEM/accepter" "$TOKEN1B" > /dev/null
+SGCODE="$(jval .code)"
+check "une église pour le bloc"          GRP- "$(printf '%s' "$SGCODE" | cut -c1-4)"
+check "Chloé la rejoint → 200"           200 "$(api POST /api/groupes/rejoindre "$TOKEN3" "{\"code\":\"$SGCODE\"}")"
+api POST "/api/groupes/$SGCODE/annonces" "$TOKEN1B" '{"titre":"Vente de gâteaux","texte":"Lien vers un site marchand."}' > /dev/null
+ANSIG="$(jval .annonce.id)"
+check "Chloé signale l annonce, motif spam, église connue → 200" 200 \
+  "$(api POST /api/signalement "$TOKEN3" "{\"genre\":\"annonce\",\"cible\":\"annonce:$ANSIG\",\"contexte\":\"Vente de gâteaux\",\"motif\":\"Pub déguisée.\",\"raison\":\"spam\",\"groupe\":\"$SGCODE\"}")"
+check "la raison est en base"            spam "$(sqlval "SELECT raison FROM signalements WHERE cible = 'annonce:$ANSIG'")"
+check "et l église d origine aussi"      "$SGCODE" "$(sqlval "SELECT groupe_code FROM signalements WHERE cible = 'annonce:$ANSIG'")"
+api GET /api/admin/signalements "$TOKEN1B" > /dev/null
+check "la pile les rend"                 "spam $SGCODE" \
+  "$(jq -r "[.signalements[] | select(.cible == \"annonce:$ANSIG\")][0] | \"\(.raison) \(.groupe)\"" "$TMP/body.json")"
+SIGR="$(jq -r "[.signalements[] | select(.cible == \"annonce:$ANSIG\")][0].id" "$TMP/body.json")"
+
+check "retirer, pour un membre ordinaire → 403" 403 "$(api POST "/api/admin/signalements/$SIGR/retirer" "$TOKEN3")"
+check "retirer le contenu → 200"         200 "$(api POST "/api/admin/signalements/$SIGR/retirer" "$TOKEN1B")"
+check "le contenu existait, il est parti" true "$(jval .retire)"
+api GET "/api/groupes/$SGCODE/page" "$TOKEN3" > /dev/null
+check "l annonce n est plus sur la page" 0 "$(jq "[.annonces[] | select(.id == $ANSIG)] | length" "$TMP/body.json")"
+check "la trace passe en « retire »"     retire "$(sqlval "SELECT statut FROM signalements WHERE id = $SIGR")"
+check "retirer deux fois → 409"          409 "$(api POST "/api/admin/signalements/$SIGR/retirer" "$TOKEN1B")"
+check "le journal admin porte le retrait" 1 \
+  "$(sqlval "SELECT COUNT(*) FROM admin_log WHERE action = 'retrait-annonce' AND cible = '$SGCODE / $ANSIG'")"
+
+# Un rendez-vous suit le même chemin — c'est le genre qui manquait à l'admin.
+api POST "/api/groupes/$SGCODE/rdv" "$TOKEN1B" '{"libelle":"Réunion privée","jour":2,"heure":"18:00"}' > /dev/null
+RDVSIG="$(jval .rdv.id)"
+check "un rendez-vous se signale aussi → 200" 200 \
+  "$(api POST /api/signalement '' "{\"genre\":\"rdv\",\"cible\":\"rdv:$RDVSIG\",\"contexte\":\"mardi 18:00 — Réunion privée\",\"raison\":\"inapproprie\",\"groupe\":\"$SGCODE\"}")"
+api GET /api/admin/signalements "$TOKEN1B" > /dev/null
+SIGRDV="$(jq -r "[.signalements[] | select(.cible == \"rdv:$RDVSIG\")][0].id" "$TMP/body.json")"
+check "retirer le rendez-vous → 200"     200 "$(api POST "/api/admin/signalements/$SIGRDV/retirer" "$TOKEN1B")"
+api GET "/api/groupes/$SGCODE/page" "$TOKEN3" > /dev/null
+check "il n est plus sur la page"        0 "$(jq "[.rdv[] | select(.id == $RDVSIG)] | length" "$TMP/body.json")"
+
+# Ce qui ne se retire PAS d'ici : une question du Défi (elle se corrige dans
+# la banque), et un signalement qui ne dit pas de quelle église il vient.
+check "une question du Défi ne se retire pas d ici → 400" 400 \
+  "$(api POST "/api/admin/signalements/$SIGID/retirer" "$TOKEN1B")"
+api GET /api/admin/signalements "$TOKEN1B" > /dev/null
+SIGSANS="$(jq -r '[.signalements[] | select(.cible == "annonce:zz-suite")][0].id' "$TMP/body.json")"
+check "sans église connue, rien à retirer → 400" 400 \
+  "$(api POST "/api/admin/signalements/$SIGSANS/retirer" "$TOKEN1B")"
+
+# --- Le plafond horaire, devant la porte ---
+# 20 par réseau et par heure : large pour une salle, étroit pour un robot.
+# On tape jusqu'au 429 puis on lève le plafond, pour ne pas rendre muette la
+# suite de la passe.
+LAST=""
+for i in $(seq 1 25); do
+  LAST="$(api POST /api/signalement '' '{"genre":"question","cible":"question:rafale"}')"
+  [ "$LAST" = 429 ] && break
+done
+check "la rafale finit par un 429"       429 "$LAST"
+sqlexec "DELETE FROM throttle WHERE bucket LIKE 'signalement|%'"
+check "le plafond levé, la porte rouvre" 200 \
+  "$(api POST /api/signalement '' '{"genre":"question","cible":"question:rafale-fin"}')"
+
 # Aucune IP conservée : le plafond horaire (table throttle) suffit comme
 # garde-fou, et lui ne garde qu'un compteur haché à l'heure.
 check "la table ne garde aucune adresse IP" 0 \

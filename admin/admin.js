@@ -630,6 +630,13 @@ function htmlChezBrevo() {
 const SIGNAL_GENRES = {
   question: 'Question', annonce: 'Annonce', serie: 'Série', rdv: 'Rendez-vous',
 };
+const SIGNAL_RAISONS = {
+  inapproprie: 'Contenu inapproprié', spam: 'Spam ou publicité', erreur: 'Erreur dans le contenu', autre: 'Autre',
+};
+// Ce qui appartient à une église se retire d'ici ; une question du Défi se
+// corrige dans la banque, pas depuis la pile.
+const SIGNAL_RETIRABLES = { annonce: true, serie: true, rdv: true };
+const SIGNAL_STATUTS = { nouveau: 'À regarder', traite: 'Classé sans suite', retire: 'Contenu retiré' };
 
 function signalResume() {
   if (actSignalErreur) return 'chargement impossible';
@@ -646,21 +653,50 @@ function htmlSignalements() {
     return `<div class="card"><p class="muted" style="margin:0">Rien n'a été signalé.
       C'est bon signe — et le lien reste à portée du lecteur en cas de besoin.</p></div>`;
   }
-  const lignes = liste.map(s => `
+  const lignes = liste.map(s => {
+    // Deux issues pour un signalement nouveau : retirer le contenu (s'il
+    // vient d'une église connue), ou classer sans suite. Un signalement
+    // classé se rouvre ; un contenu retiré ne revient pas.
+    const retirable = s.statut === 'nouveau' && SIGNAL_RETIRABLES[s.genre] && s.groupe;
+    const actions = s.statut === 'nouveau'
+      ? `${retirable ? `<button class="btn btn-soft danger" data-sigretirer="${s.id}">Retirer le contenu</button> ` : ''}
+         <button class="btn btn-soft" data-sigclasser="${s.id}" data-statut="traite">Classer sans suite</button>`
+      : s.statut === 'traite'
+        ? `<button class="btn btn-soft" data-sigclasser="${s.id}" data-statut="nouveau">Rouvrir</button>`
+        : '';
+    return `
     <div class="sig-ligne ${s.statut === 'nouveau' ? 'sig-neuf' : 'sig-classe'}">
       <div class="sig-tete">
         <b>${esc(SIGNAL_GENRES[s.genre] || s.genre)}</b>
         <code class="sys-var">${esc(s.cible)}</code>
+        ${s.groupe ? `<code class="sys-var">${esc(s.groupe)}</code>` : ''}
         <span class="muted">${esc(heureLocale(s.created_at))}</span>
         <span class="muted">· ${s.auteur ? esc(s.auteur) : 'signalé sans compte'}</span>
+        ${s.statut !== 'nouveau' ? `<span class="muted">· ${esc(SIGNAL_STATUTS[s.statut] || s.statut)}</span>` : ''}
       </div>
+      ${s.raison ? `<p class="sig-raison"><b>${esc(SIGNAL_RAISONS[s.raison] || s.raison)}</b></p>` : ''}
       ${s.contexte ? `<p class="sig-contexte">${esc(s.contexte)}</p>` : ''}
-      ${s.motif ? `<p class="sig-motif">« ${esc(s.motif)} »</p>` : `<p class="muted sig-motif">Aucun motif précisé.</p>`}
-      <button class="btn btn-soft" data-sigclasser="${s.id}" data-statut="${s.statut === 'nouveau' ? 'traite' : 'nouveau'}">
-        ${s.statut === 'nouveau' ? 'Classer' : 'Rouvrir'}
-      </button>
-    </div>`).join('');
-  return `<div class="card" style="padding:8px 10px">${lignes}</div>`;
+      ${s.motif ? `<p class="sig-motif">« ${esc(s.motif)} »</p>` : `<p class="muted sig-motif">Aucun commentaire.</p>`}
+      ${actions}
+    </div>`;
+  }).join('');
+  return `<div class="card" style="padding:8px 10px">
+    ${actSignalErreur ? `<p class="field-error" style="margin:6px 2px">${esc(actSignalErreur)}</p>` : ''}
+    ${lignes}</div>`;
+}
+
+/* Retirer le contenu visé : définitif pour le contenu (journalisé côté
+   serveur), et la trace du signalement passe en « retiré ». */
+async function doSignalRetirer(id) {
+  if (!confirm('Retirer définitivement ce contenu de son église ? Le geste est journalisé.')) return;
+  actSignalErreur = null;
+  try {
+    await GraineAPI.adminSignalementRetirer(id);
+    actSignal = await GraineAPI.adminSignalements();
+  } catch (e) {
+    actSignalErreur = messageDoux(e);
+  }
+  render();
 }
 
 /* Classer ne supprime rien : la trace demeure, et se rouvre si la correction
@@ -690,6 +726,9 @@ function brancherActivite() {
   if (b) b.onclick = chargerActivite;
   document.querySelectorAll('[data-sigclasser]').forEach(b => {
     b.addEventListener('click', () => doSignalClasser(+b.dataset.sigclasser, b.dataset.statut));
+  });
+  document.querySelectorAll('[data-sigretirer]').forEach(b => {
+    b.addEventListener('click', () => doSignalRetirer(+b.dataset.sigretirer));
   });
   // Mémorise l'état déplié/replié : « Actualiser » re-rend tout l'écran, et
   // une section ouverte doit le rester après le re-rendu.

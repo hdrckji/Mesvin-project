@@ -26,6 +26,7 @@ const ADMIN_CONTENU = [
     'question'    => ['table' => 'groupe_questions',     'cle' => 'id',      'entier' => false],
     'item'        => ['table' => 'groupe_banque_items',  'cle' => 'item_id', 'entier' => false],
     'serie'       => ['table' => 'groupe_series',        'cle' => 'id',      'entier' => true],
+    'rdv'         => ['table' => 'groupe_rdv',           'cle' => 'id',      'entier' => true],
     'proposition' => ['table' => 'groupe_propositions',  'cle' => 'id',      'entier' => true],
 ];
 
@@ -118,6 +119,22 @@ function handle_admin_groupe_retirer(PDO $pdo, string $rawCode, string $type, st
         json_error('Type de contenu inconnu : ' . $type, 404);
     }
     $groupe = groupe_load($pdo, $rawCode);
+    if (!admin_retirer_contenu($pdo, $admin, $groupe, $type, $id)) {
+        json_error('Contenu introuvable dans cette église.', 404);
+    }
+    json_out(['retire' => true]);
+}
+
+/**
+ * Le retrait lui-même — partagé entre l'onglet Églises et la pile des
+ * signalements, pour qu'il n'y ait qu'un chemin et qu'un journal.
+ * Retourne false si le contenu n'existait plus (l'église l'a pu supprimer
+ * elle-même entre-temps) ; l'appelant décide si c'est une erreur.
+ */
+function admin_retirer_contenu(PDO $pdo, array $admin, array $groupe, string $type, string $id): bool {
+    if (!isset(ADMIN_CONTENU[$type])) {
+        json_error('Type de contenu inconnu : ' . $type, 404);
+    }
     $groupeId = (int) $groupe['id'];
     $spec = ADMIN_CONTENU[$type];
     $valeur = $spec['entier'] ? (int) $id : $id;
@@ -137,8 +154,8 @@ function handle_admin_groupe_retirer(PDO $pdo, string $rawCode, string $type, st
     );
     $st->execute([$groupeId, $valeur]);
     if ($st->rowCount() === 0) {
-        json_error('Contenu introuvable dans cette église.', 404);
+        return false;
     }
     admin_log($pdo, $admin, 'retrait-' . $type, $groupe['code'] . ' / ' . $id);
-    json_out(['retire' => true]);
+    return true;
 }

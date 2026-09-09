@@ -314,6 +314,9 @@ if ($path === '/api/admin/signalements' && $method === 'GET') handle_admin_signa
 if (preg_match('#^/api/admin/signalements/([0-9]+)$#', $path, $m) && $method === 'POST') {
     handle_admin_signalement_classer($pdo, (int) $m[1]);
 }
+if (preg_match('#^/api/admin/signalements/([0-9]+)/retirer$#', $path, $m) && $method === 'POST') {
+    handle_admin_signalement_retirer($pdo, (int) $m[1]);
+}
 // Voir et retirer ce qu'une église a publié — sur signalement, jamais a priori.
 if ($path === '/api/admin/groupes' && $method === 'GET') handle_admin_groupes($pdo);
 if (preg_match('#^/api/admin/groupes/([^/]+)$#', $path, $m) && $method === 'GET') {

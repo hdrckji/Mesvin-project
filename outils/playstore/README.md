@@ -96,10 +96,16 @@ généré par les utilisateurs, et exige alors **deux choses** :
 1. un moyen de **signaler** un contenu **depuis l'application** ;
 2. une **modération**.
 
-Les deux sont en place. Sous chaque annonce d'église, un membre a un bouton
-**Signaler** (il ne paraît pas à l'animateur, qui a déjà Modifier et Supprimer) ;
-le signalement part vers `/api/signalement`, et l'administration les voit dans
-l'onglet *Activité*. La modération se fait sur signalement, jamais a priori.
+Les deux sont en place. Partout où un contenu d'église se voit — chaque
+annonce et chaque rendez-vous de la page de l'église, la série choisie dans
+une épreuve — un membre a un bouton **Signaler** (drapeau), qui ne paraît pas
+à l'animateur : il a déjà Modifier et Supprimer. Un petit formulaire demande
+un motif (contenu inapproprié, spam, erreur, autre) et un commentaire
+facultatif ; il fonctionne **sans compte**. Le signalement part vers
+`/api/signalement` (plafond horaire par réseau, aucune IP conservée), un
+courrier prévient `contact@biblehorizon.fr`, et l'administration le traite
+dans l'onglet *Activité* : **Retirer le contenu** ou **Classer sans suite**.
+La modération se fait sur signalement, jamais a priori.
 
 Dans le questionnaire, répondre donc **oui** à « contenu généré par les
 utilisateurs », et cocher que l'application propose un signalement intégré

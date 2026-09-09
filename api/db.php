@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 15;
+const DB_MIGRATION_DERNIERE = 16;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1344,13 +1344,28 @@ function db_migrate(PDO $pdo): void {
            "INSERT OR IGNORE INTO cron_passages (id, dernier, en_place_depuis)
             VALUES (1, NULL, datetime('now'))"];
 
+    /* ---- Étape 16 — un signalement dit POURQUOI, et d'OÙ ------------------------
+       Jusqu'ici un signalement ne portait qu'un texte libre. Deux colonnes de
+       plus, et l'administration peut agir sans enquêter :
+       - raison : un motif choisi dans une liste courte (inapproprie, spam,
+         erreur, autre). Le texte libre reste dans « motif », facultatif.
+       - groupe_code : l'église d'où vient le contenu signalé (annonce,
+         rendez-vous, série). C'est ce qui permet de RETIRER le contenu depuis
+         la pile, d'un geste, au lieu d'aller le chercher église par église.
+         NULL pour une question du Défi, qui n'appartient à personne. */
+    $etape16 = db_driver($pdo) === 'mysql'
+        ? ['ALTER TABLE signalements ADD COLUMN raison VARCHAR(20) NULL',
+           'ALTER TABLE signalements ADD COLUMN groupe_code VARCHAR(10) NULL']
+        : ['ALTER TABLE signalements ADD COLUMN raison TEXT NULL',
+           'ALTER TABLE signalements ADD COLUMN groupe_code TEXT NULL'];
+
     /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
     foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4, 5 => $etape5,
               6 => $etape6, 7 => $etape7, 8 => $etape8,
               9 => $etape9, 10 => $etape10, 11 => $etape11, 12 => $etape12,
-              13 => $etape13, 14 => $etape14, 15 => $etape15] as $version => $liste) {
+              13 => $etape13, 14 => $etape14, 15 => $etape15, 16 => $etape16] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }
