@@ -1,6 +1,6 @@
 {
- "version": 1,
- "note": "Affirmations écrit/pas écrit — relues : les paraphrases que la Segond 1910 dit en d'autres mots ont été retirées (le « pas écrit » y serait un piège). À relire contre une Segond 1910 imprimée avant diffusion large.",
+ "version": 2,
+ "note": "Affirmations écrit/pas écrit — chaque « écrit » est recopié du texte Segond 1910 embarqué dans lire/data/ et vérifié à sa référence ; chaque « pas écrit » est cherché dans les 66 livres avant d'entrer ici. Les paraphrases que la Segond dit en d'autres mots sont écartées : le « pas écrit » y serait un piège. Contrôle : python3 outils/verifier-banques.py",
  "items": [
   {
    "id": "eo-001",
@@ -862,6 +862,944 @@
    "ecrit": false,
    "reference": null,
    "precision": "Adage juridique latin passé en français."
+  },
+  {
+   "id": "eo-130",
+   "phrase": "L'Eternel ouvrit la bouche de l'ânesse, et elle dit à Balaam",
+   "ecrit": true,
+   "reference": "Nombres 22.28",
+   "precision": "Oui : une ânesse parle, et c'est elle qui voit l'ange que le prophète Balaam n'a pas vu."
+  },
+  {
+   "id": "eo-131",
+   "phrase": "Aux innocents les mains pleines.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français ; la Bible ne promet nulle part la chance aux naïfs."
+  },
+  {
+   "id": "eo-132",
+   "phrase": "Alors deux ours sortirent de la forêt, et déchirèrent quarante-deux de ces enfants.",
+   "ecrit": true,
+   "reference": "2 Rois 2.24",
+   "precision": "La suite du « Monte, chauve! » lancé à Elisée. Un des passages les plus rudes de l'Ancien Testament."
+  },
+  {
+   "id": "eo-133",
+   "phrase": "Chacun pour soi et Dieu pour tous.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Dicton français attesté dès le Moyen Âge, à rebours de tout le Nouveau Testament."
+  },
+  {
+   "id": "eo-134",
+   "phrase": "Ne sois pas juste à l'excès, et ne te montre pas trop sage: pourquoi te détruirais-tu?",
+   "ecrit": true,
+   "reference": "Ecclésiaste 7.16",
+   "precision": "L'Ecclésiaste se méfie autant de l'excès de vertu affichée que du vice."
+  },
+  {
+   "id": "eo-135",
+   "phrase": "Tout vient à point à qui sait attendre.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français du XVIe siècle, souvent prêté à l'Ecclésiaste."
+  },
+  {
+   "id": "eo-136",
+   "phrase": "La sangsue a deux filles: Donne! donne!",
+   "ecrit": true,
+   "reference": "Proverbes 30.15",
+   "precision": "Image des Proverbes pour l'avidité qui ne dit jamais « assez »."
+  },
+  {
+   "id": "eo-137",
+   "phrase": "Le mieux est l'ennemi du bien.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Formule de Voltaire, reprise d'un proverbe italien."
+  },
+  {
+   "id": "eo-138",
+   "phrase": "Mieux vaut de l'herbe pour nourriture, là où règne l'amour, Qu'un boeuf engraissé, si la haine est là.",
+   "ecrit": true,
+   "reference": "Proverbes 15.17",
+   "precision": "Un plat de légumes en paix vaut mieux qu'un festin dans la rancune."
+  },
+  {
+   "id": "eo-139",
+   "phrase": "Rien ne sert de courir, il faut partir à point.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "La Fontaine, Le Lièvre et la Tortue."
+  },
+  {
+   "id": "eo-140",
+   "phrase": "Un peu de sommeil, un peu d'assoupissement, Un peu croiser les mains pour dormir!",
+   "ecrit": true,
+   "reference": "Proverbes 6.10",
+   "precision": "La suite du portrait du paresseux envoyé à l'école de la fourmi."
+  },
+  {
+   "id": "eo-141",
+   "phrase": "Argent ne fait pas le bonheur.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français. La Bible parle de l'amour de l'argent (1 Timothée 6.10), jamais en ces termes."
+  },
+  {
+   "id": "eo-142",
+   "phrase": "Si tu trouves du miel, n'en mange que ce qui te suffit, De peur que tu n'en sois rassasié et que tu ne le vomisses.",
+   "ecrit": true,
+   "reference": "Proverbes 25.16",
+   "precision": "Même le bon se gâte quand on en abuse — la sagesse des Proverbes est très concrète."
+  },
+  {
+   "id": "eo-143",
+   "phrase": "Tel père, tel fils.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français. Le plus proche est Ézéchiel 16.44 : « Telle mère, telle fille! »"
+  },
+  {
+   "id": "eo-144",
+   "phrase": "Qui peut trouver une femme vertueuse? Elle a bien plus de valeur que les perles.",
+   "ecrit": true,
+   "reference": "Proverbes 31.10",
+   "precision": "L'ouverture du poème qui clôt les Proverbes, souvent lu aux mariages."
+  },
+  {
+   "id": "eo-145",
+   "phrase": "Petit à petit, l'oiseau fait son nid.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français du XIIIe siècle."
+  },
+  {
+   "id": "eo-146",
+   "phrase": "L'insensé dit en son coeur: Il n'y a point de Dieu!",
+   "ecrit": true,
+   "reference": "Psaumes 14.1",
+   "precision": "Le psaume ne discute pas de l'existence de Dieu : il regarde ce que devient une vie qui s'en passe."
+  },
+  {
+   "id": "eo-147",
+   "phrase": "Mieux vaut prévenir que guérir.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Adage médical, popularisé par Érasme."
+  },
+  {
+   "id": "eo-148",
+   "phrase": "je ne suis pas venu apporter la paix, mais l'épée",
+   "ecrit": true,
+   "reference": "Matthieu 10.34",
+   "precision": "Une parole de Jésus qui surprend : il annonce les divisions que son nom provoquera, jusque dans les familles."
+  },
+  {
+   "id": "eo-149",
+   "phrase": "Chose promise, chose due.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français ; la Bible parle des vœux en d'autres termes (Ecclésiaste 5.4)."
+  },
+  {
+   "id": "eo-150",
+   "phrase": "Si quelqu'un vient à moi, et s'il ne hait pas son père, sa mère, sa femme, ses enfants, ses frères, et ses soeurs, et même sa propre vie, il ne peut être mon disciple.",
+   "ecrit": true,
+   "reference": "Luc 14.26",
+   "precision": "Une tournure sémitique de comparaison : « aimer moins que ». Le mot, lui, est bien celui-là."
+  },
+  {
+   "id": "eo-151",
+   "phrase": "Les absents ont toujours tort.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français tiré d'une comédie du XVIIe siècle."
+  },
+  {
+   "id": "eo-152",
+   "phrase": "La nature elle-même ne vous enseigne-t-elle pas que c'est une honte pour l'homme de porter de longs cheveux",
+   "ecrit": true,
+   "reference": "1 Corinthiens 11.14",
+   "precision": "Paul argumente sur la tenue dans les assemblées de Corinthe. Le verset est bien là, mot pour mot."
+  },
+  {
+   "id": "eo-153",
+   "phrase": "Tout ce qui brille n'est pas or.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Formule que Shakespeare a rendue célèbre dans Le Marchand de Venise."
+  },
+  {
+   "id": "eo-154",
+   "phrase": "Tu auras parmi ton bagage un instrument, dont tu te serviras pour faire un creux et recouvrir tes excréments",
+   "ecrit": true,
+   "reference": "Deutéronome 23.13",
+   "precision": "La loi règle jusqu'à l'hygiène du camp. Rien de trop humble pour y figurer."
+  },
+  {
+   "id": "eo-155",
+   "phrase": "A bon entendeur, salut.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Formule française d'avertissement, sans aucun équivalent biblique."
+  },
+  {
+   "id": "eo-156",
+   "phrase": "tu es poussière, et tu retourneras dans la poussière",
+   "ecrit": true,
+   "reference": "Genèse 3.19",
+   "precision": "La phrase reprise à chaque mercredi des Cendres vient bien de la Genèse."
+  },
+  {
+   "id": "eo-157",
+   "phrase": "L'erreur est humaine.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Sénèque, puis saint Jérôme : « Errare humanum est »."
+  },
+  {
+   "id": "eo-158",
+   "phrase": "tu ne porteras pas un vêtement tissé de deux espèces de fils",
+   "ecrit": true,
+   "reference": "Lévitique 19.19",
+   "precision": "Dans le même chapitre que « Tu aimeras ton prochain comme toi-même » (Lévitique 19.18)."
+  },
+  {
+   "id": "eo-159",
+   "phrase": "Il faut tourner sept fois sa langue dans sa bouche avant de parler.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français. Jacques 1.19 dit « lent à parler », ce qui n'est pas la même phrase."
+  },
+  {
+   "id": "eo-160",
+   "phrase": "Une femme ne portera point un habillement d'homme, et un homme ne mettra point des vêtements de femme",
+   "ecrit": true,
+   "reference": "Deutéronome 22.5",
+   "precision": "Une prescription du Deutéronome que peu de lecteurs situent avec certitude."
+  },
+  {
+   "id": "eo-161",
+   "phrase": "Vouloir, c'est pouvoir.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Maxime de volonté du XIXe siècle."
+  },
+  {
+   "id": "eo-162",
+   "phrase": "Le coeur est tortueux par-dessus tout, et il est méchant: Qui peut le connaître?",
+   "ecrit": true,
+   "reference": "Jérémie 17.9",
+   "precision": "Jérémie ne flatte personne, à commencer par lui-même."
+  },
+  {
+   "id": "eo-163",
+   "phrase": "L'occasion fait le larron.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français du XIIIe siècle."
+  },
+  {
+   "id": "eo-164",
+   "phrase": "Si quelqu'un te frappe sur la joue droite, présente-lui aussi l'autre.",
+   "ecrit": true,
+   "reference": "Matthieu 5.39",
+   "precision": "L'expression « tendre l'autre joue » vient exactement de là."
+  },
+  {
+   "id": "eo-165",
+   "phrase": "Il n'y a pas de fumée sans feu.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français, aucun rapport avec les colonnes de fumée de l'Exode."
+  },
+  {
+   "id": "eo-166",
+   "phrase": "que ta main gauche ne sache pas ce que fait ta droite",
+   "ecrit": true,
+   "reference": "Matthieu 6.3",
+   "precision": "Sur l'aumône discrète, dans le sermon sur la montagne."
+  },
+  {
+   "id": "eo-167",
+   "phrase": "Mieux vaut tard que jamais.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe repris de Tite-Live."
+  },
+  {
+   "id": "eo-168",
+   "phrase": "ne jetez pas vos perles devant les pourceaux",
+   "ecrit": true,
+   "reference": "Matthieu 7.6",
+   "precision": "L'expression proverbiale est une citation littérale de Jésus."
+  },
+  {
+   "id": "eo-169",
+   "phrase": "Tout est bien qui finit bien.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Titre d'une pièce de Shakespeare, passé en proverbe."
+  },
+  {
+   "id": "eo-170",
+   "phrase": "là où deux ou trois sont assemblés en mon nom, je suis au milieu d'eux",
+   "ecrit": true,
+   "reference": "Matthieu 18.20",
+   "precision": "Le verset le plus cité à l'ouverture des petites réunions de prière."
+  },
+  {
+   "id": "eo-171",
+   "phrase": "On n'est jamais si bien servi que par soi-même.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Vers d'une comédie française de 1804."
+  },
+  {
+   "id": "eo-172",
+   "phrase": "Ce que vous voulez que les hommes fassent pour vous, faites-le de même pour eux.",
+   "ecrit": true,
+   "reference": "Luc 6.31",
+   "precision": "La « règle d'or », sous sa forme positive : faire, et pas seulement s'abstenir."
+  },
+  {
+   "id": "eo-173",
+   "phrase": "Les paroles s'envolent, les écrits restent.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Adage latin : « Verba volant, scripta manent »."
+  },
+  {
+   "id": "eo-174",
+   "phrase": "Car Dieu a tant aimé le monde qu'il a donné son Fils unique",
+   "ecrit": true,
+   "reference": "Jean 3.16",
+   "precision": "Sans doute le verset le plus affiché au monde — et il est bien là, mot pour mot."
+  },
+  {
+   "id": "eo-175",
+   "phrase": "La fortune sourit aux audacieux.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Virgile, dans l'Énéide."
+  },
+  {
+   "id": "eo-176",
+   "phrase": "Je suis le chemin, la vérité, et la vie.",
+   "ecrit": true,
+   "reference": "Jean 14.6",
+   "precision": "Réponse de Jésus à Thomas, qui venait de dire qu'il ne savait pas où il allait."
+  },
+  {
+   "id": "eo-177",
+   "phrase": "Rira bien qui rira le dernier.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français, encore une fable de La Fontaine."
+  },
+  {
+   "id": "eo-178",
+   "phrase": "Il n'y a pas de plus grand amour que de donner sa vie pour ses amis.",
+   "ecrit": true,
+   "reference": "Jean 15.13",
+   "precision": "Gravé sur d'innombrables monuments aux morts — et d'abord dans l'évangile de Jean."
+  },
+  {
+   "id": "eo-179",
+   "phrase": "A vaincre sans péril, on triomphe sans gloire.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Corneille, Le Cid."
+  },
+  {
+   "id": "eo-180",
+   "phrase": "Car le salaire du péché, c'est la mort",
+   "ecrit": true,
+   "reference": "Romains 6.23",
+   "precision": "La suite renverse la phrase : « mais le don gratuit de Dieu, c'est la vie éternelle »."
+  },
+  {
+   "id": "eo-181",
+   "phrase": "La patience est la mère de toutes les vertus.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Adage de sagesse populaire ; la Bible loue la patience sans jamais la couronner ainsi."
+  },
+  {
+   "id": "eo-182",
+   "phrase": "ces trois choses demeurent: la foi, l'espérance, la charité; mais la plus grande de ces choses, c'est la charité",
+   "ecrit": true,
+   "reference": "1 Corinthiens 13.13",
+   "precision": "La fin de l'hymne à l'amour. La Segond dit « charité » là où d'autres versions disent « amour »."
+  },
+  {
+   "id": "eo-183",
+   "phrase": "Il ne faut pas mettre la charrue avant les boeufs.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français. La charrue biblique sert à autre chose : « Quiconque met la main à la charrue » (Luc 9.62)."
+  },
+  {
+   "id": "eo-184",
+   "phrase": "que le soleil ne se couche pas sur votre colère",
+   "ecrit": true,
+   "reference": "Éphésiens 4.26",
+   "precision": "Le conseil de ne pas laisser dormir une brouille est bien un verset, pas un dicton."
+  },
+  {
+   "id": "eo-185",
+   "phrase": "L'argent n'a pas d'odeur.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Mot prêté à l'empereur Vespasien, qui taxait les urinoirs de Rome."
+  },
+  {
+   "id": "eo-186",
+   "phrase": "Si quelqu'un ne veut pas travailler, qu'il ne mange pas non plus.",
+   "ecrit": true,
+   "reference": "2 Thessaloniciens 3.10",
+   "precision": "Souvent prise pour une devise politique du XXe siècle : elle est de Paul, aux Thessaloniciens."
+  },
+  {
+   "id": "eo-187",
+   "phrase": "L'union fait la force.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Devise nationale belge. Le plus proche est la corde à trois fils d'Ecclésiaste 4.12."
+  },
+  {
+   "id": "eo-188",
+   "phrase": "la foi est une ferme assurance des choses qu'on espère, une démonstration de celles qu'on ne voit pas",
+   "ecrit": true,
+   "reference": "Hébreux 11.1",
+   "precision": "La seule définition de la foi que la Bible donne elle-même."
+  },
+  {
+   "id": "eo-189",
+   "phrase": "Le monde appartient à ceux qui se lèvent tôt.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français ; aucun verset ne bénit l'heure du réveil."
+  },
+  {
+   "id": "eo-190",
+   "phrase": "Il en est ainsi de la foi: si elle n'a pas les oeuvres, elle est morte en elle-même.",
+   "ecrit": true,
+   "reference": "Jacques 2.17",
+   "precision": "Le cœur de la lettre de Jacques, et de bien des discussions depuis."
+  },
+  {
+   "id": "eo-191",
+   "phrase": "Les bons comptes font les bons amis.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français du XVIe siècle."
+  },
+  {
+   "id": "eo-192",
+   "phrase": "Votre adversaire, le diable, rôde comme un lion rugissant, cherchant qui il dévorera.",
+   "ecrit": true,
+   "reference": "1 Pierre 5.8",
+   "precision": "L'image du lion rugissant vient de Pierre, pas d'un bestiaire médiéval."
+  },
+  {
+   "id": "eo-193",
+   "phrase": "La nuit porte conseil.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français, attesté dans plusieurs langues d'Europe."
+  },
+  {
+   "id": "eo-194",
+   "phrase": "Celui qui n'aime pas n'a pas connu Dieu, car Dieu est amour.",
+   "ecrit": true,
+   "reference": "1 Jean 4.8",
+   "precision": "« Dieu est amour » n'est pas un résumé de prédicateur : c'est la phrase même de Jean."
+  },
+  {
+   "id": "eo-195",
+   "phrase": "Ventre affamé n'a point d'oreilles.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "La Fontaine, Le Milan et le Rossignol."
+  },
+  {
+   "id": "eo-196",
+   "phrase": "c'est un nombre d'homme, et son nombre est six cent soixante-six",
+   "ecrit": true,
+   "reference": "Apocalypse 13.18",
+   "precision": "Le fameux 666, écrit en toutes lettres dans la Segond."
+  },
+  {
+   "id": "eo-197",
+   "phrase": "Une hirondelle ne fait pas le printemps.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe grec repris par Aristote."
+  },
+  {
+   "id": "eo-198",
+   "phrase": "Les géants étaient sur la terre en ces temps-là",
+   "ecrit": true,
+   "reference": "Genèse 6.4",
+   "precision": "Deux versets énigmatiques, juste avant le récit du déluge."
+  },
+  {
+   "id": "eo-199",
+   "phrase": "Qui se ressemble s'assemble.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français. 1 Corinthiens 15.33 dit autre chose : les mauvaises compagnies corrompent les bonnes mœurs."
+  },
+  {
+   "id": "eo-200",
+   "phrase": "La femme de Lot regarda en arrière, et elle devint une statue de sel.",
+   "ecrit": true,
+   "reference": "Genèse 19.26",
+   "precision": "Le texte ne lui donne pas de nom : elle est « la femme de Lot »."
+  },
+  {
+   "id": "eo-201",
+   "phrase": "Pierre qui roule n'amasse pas mousse.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français ; le jeu de mots avec l'apôtre Pierre n'y est pour rien."
+  },
+  {
+   "id": "eo-202",
+   "phrase": "Avec une mâchoire d'âne, j'ai tué mille hommes.",
+   "ecrit": true,
+   "reference": "Juges 15.16",
+   "precision": "Le chant de victoire de Samson, en toutes lettres dans le livre des Juges."
+  },
+  {
+   "id": "eo-203",
+   "phrase": "Il ne faut pas vendre la peau de l'ours avant de l'avoir tué.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "La Fontaine, L'Ours et les Deux Compagnons."
+  },
+  {
+   "id": "eo-204",
+   "phrase": "un jeune homme nommé Eutychus, qui était assis sur la fenêtre, s'endormit profondément pendant le long discours de Paul",
+   "ecrit": true,
+   "reference": "Actes 20.9",
+   "precision": "Il tombe du troisième étage. Paul descend, le relève vivant… puis reprend son discours jusqu'au jour."
+  },
+  {
+   "id": "eo-205",
+   "phrase": "Comme on fait son lit, on se couche.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français du XVIe siècle."
+  },
+  {
+   "id": "eo-206",
+   "phrase": "J'aperçois les hommes, mais j'en vois comme des arbres, et qui marchent.",
+   "ecrit": true,
+   "reference": "Marc 8.24",
+   "precision": "La seule guérison de l'évangile qui se fait en deux temps : l'aveugle voit d'abord flou."
+  },
+  {
+   "id": "eo-207",
+   "phrase": "Les cordonniers sont les plus mal chaussés.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français ; Paul était fabricant de tentes, et le texte n'en tire aucune morale."
+  },
+  {
+   "id": "eo-208",
+   "phrase": "je ne pense pas que le monde même pût contenir les livres qu'on écrirait",
+   "ecrit": true,
+   "reference": "Jean 21.25",
+   "precision": "La dernière phrase de l'évangile de Jean, et son plus bel aveu d'incomplétude."
+  },
+  {
+   "id": "eo-209",
+   "phrase": "Qui trop embrasse mal étreint.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe français médiéval."
+  },
+  {
+   "id": "eo-210",
+   "phrase": "Ainsi les derniers seront les premiers, et les premiers seront les derniers.",
+   "ecrit": true,
+   "reference": "Matthieu 20.16",
+   "precision": "La morale de la parabole des ouvriers de la onzième heure."
+  },
+  {
+   "id": "eo-211",
+   "phrase": "C'est en forgeant qu'on devient forgeron.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Adage latin passé en français."
+  },
+  {
+   "id": "eo-212",
+   "phrase": "il y a beaucoup d'appelés, mais peu d'élus",
+   "ecrit": true,
+   "reference": "Matthieu 22.14",
+   "precision": "La formule passée en proverbe conclut la parabole des invités aux noces."
+  },
+  {
+   "id": "eo-213",
+   "phrase": "Le coeur a ses raisons que la raison ne connaît point.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Pascal, Pensées — un croyant, mais ce n'est pas un verset."
+  },
+  {
+   "id": "eo-214",
+   "phrase": "Aimez-vous les uns les autres; comme je vous ai aimés, vous aussi, aimez-vous les uns les autres.",
+   "ecrit": true,
+   "reference": "Jean 13.34",
+   "precision": "Le « commandement nouveau », donné le soir de la Cène."
+  },
+  {
+   "id": "eo-215",
+   "phrase": "L'enfer, c'est les autres.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Sartre, Huis clos."
+  },
+  {
+   "id": "eo-216",
+   "phrase": "si ton ennemi a faim, donne-lui à manger; s'il a soif, donne-lui à boire; car en agissant ainsi, ce sont des charbons ardents que tu amasseras sur sa tête",
+   "ecrit": true,
+   "reference": "Romains 12.20",
+   "precision": "Paul cite Proverbes 25.21-22. Les « charbons ardents » sont bien dans le texte."
+  },
+  {
+   "id": "eo-217",
+   "phrase": "Donne un poisson à un homme, il mangera un jour; apprends-lui à pêcher, il mangera toute sa vie.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Maxime moderne très souvent prêtée à la Bible ou à Confucius ; elle n'est ni de l'une ni de l'autre."
+  },
+  {
+   "id": "eo-218",
+   "phrase": "votre corps est le temple du Saint-Esprit qui est en vous",
+   "ecrit": true,
+   "reference": "1 Corinthiens 6.19",
+   "precision": "Souvent cité de mémoire sous une forme approchante ; la voici mot pour mot."
+  },
+  {
+   "id": "eo-219",
+   "phrase": "Un voyage de mille lieues commence par un premier pas.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Lao Tseu, Tao Te King."
+  },
+  {
+   "id": "eo-220",
+   "phrase": "Lorsque le peuple entendit le son de la trompette, il poussa de grands cris, et la muraille s'écroula",
+   "ecrit": true,
+   "reference": "Josué 6.20",
+   "precision": "Les murailles de Jéricho tombent bien au son des trompettes, après sept tours de ville."
+  },
+  {
+   "id": "eo-221",
+   "phrase": "Ce qui ne me tue pas me rend plus fort.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Nietzsche, Le Crépuscule des idoles."
+  },
+  {
+   "id": "eo-222",
+   "phrase": "Deux valent mieux qu'un, parce qu'ils retirent un bon salaire de leur travail.",
+   "ecrit": true,
+   "reference": "Ecclésiaste 4.9",
+   "precision": "Le passage se termine par la corde à trois fils, qui ne se rompt pas facilement."
+  },
+  {
+   "id": "eo-223",
+   "phrase": "Aime, et fais ce que tu veux.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Saint Augustin, dans un sermon sur la première lettre de Jean."
+  },
+  {
+   "id": "eo-224",
+   "phrase": "Telle voie paraît droite à un homme, Mais son issue, c'est la voie de la mort.",
+   "ecrit": true,
+   "reference": "Proverbes 14.12",
+   "precision": "Le verset revient deux fois dans les Proverbes, à l'identique (14.12 et 16.25)."
+  },
+  {
+   "id": "eo-225",
+   "phrase": "Hors de l'Eglise, point de salut.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Formule de Cyprien de Carthage, au IIIe siècle."
+  },
+  {
+   "id": "eo-226",
+   "phrase": "Où étais-tu quand je fondais la terre? Dis-le, si tu as de l'intelligence.",
+   "ecrit": true,
+   "reference": "Job 38.4",
+   "precision": "Dieu répond enfin à Job — non par des explications, mais par une longue suite de questions, dont celle-ci est la première."
+  },
+  {
+   "id": "eo-227",
+   "phrase": "Prie et travaille.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Devise des bénédictins : « Ora et labora »."
+  },
+  {
+   "id": "eo-228",
+   "phrase": "Si vos péchés sont comme le cramoisi, ils deviendront blancs comme la neige",
+   "ecrit": true,
+   "reference": "Ésaïe 1.18",
+   "precision": "Ésaïe ouvre son livre par un procès, et cette invitation : « Venez et plaidons! »"
+  },
+  {
+   "id": "eo-229",
+   "phrase": "Le sang des martyrs est une semence de chrétiens.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Tertullien, à la fin du IIe siècle."
+  },
+  {
+   "id": "eo-230",
+   "phrase": "qu'il est agréable, qu'il est doux Pour des frères de demeurer ensemble!",
+   "ecrit": true,
+   "reference": "Psaumes 133.1",
+   "precision": "Trois versets, pas un de plus : l'un des plus courts psaumes du psautier."
+  },
+  {
+   "id": "eo-231",
+   "phrase": "Il vaut mieux allumer une bougie que maudire les ténèbres.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Proverbe chinois popularisé au XXe siècle."
+  },
+  {
+   "id": "eo-232",
+   "phrase": "Sur les bords des fleuves de Babylone, Nous étions assis et nous pleurions, en nous souvenant de Sion.",
+   "ecrit": true,
+   "reference": "Psaumes 137.1",
+   "precision": "Le psaume de l'exil, repris en chanson bien au-delà des Églises."
+  },
+  {
+   "id": "eo-233",
+   "phrase": "Dieu reconnaîtra les siens.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Mot prêté à un légat du pape lors de la croisade des Albigeois, en 1209."
+  },
+  {
+   "id": "eo-234",
+   "phrase": "Criez à haute voix, puisqu'il est dieu; il pense à quelque chose, ou il est occupé, ou il est en voyage; peut-être qu'il dort",
+   "ecrit": true,
+   "reference": "1 Rois 18.27",
+   "precision": "Elie se moque des prophètes de Baal. L'ironie est bien dans le texte biblique."
+  },
+  {
+   "id": "eo-235",
+   "phrase": "Il n'y a de dieu que Dieu.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Première moitié de la profession de foi musulmane."
+  },
+  {
+   "id": "eo-236",
+   "phrase": "David dansait de toute sa force devant l'Eternel",
+   "ecrit": true,
+   "reference": "2 Samuel 6.14",
+   "precision": "Sa femme Mical le méprisera pour cela — la scène est racontée juste après."
+  },
+  {
+   "id": "eo-237",
+   "phrase": "Marie-Madeleine était une prostituée.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Luc 8.2 dit qu'elle fut délivrée de sept démons — rien de plus. La confusion vient d'une homélie du VIe siècle."
+  },
+  {
+   "id": "eo-238",
+   "phrase": "Crétois toujours menteurs, méchantes bêtes, ventres paresseux.",
+   "ecrit": true,
+   "reference": "Tite 1.12",
+   "precision": "Paul cite un poète crétois pour parler des Crétois. Le paradoxe amuse les logiciens depuis."
+  },
+  {
+   "id": "eo-239",
+   "phrase": "Satan, l'ange déchu, se nomme Lucifer.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Le nom « Lucifer » n'apparaît pas dans la Segond : Ésaïe 14.12 dit « Astre brillant, fils de l'aurore »."
+  },
+  {
+   "id": "eo-240",
+   "phrase": "celui qui emprunte est l'esclave de celui qui prête",
+   "ecrit": true,
+   "reference": "Proverbes 22.7",
+   "precision": "Une phrase des Proverbes que l'on croirait tirée d'un manuel d'économie."
+  },
+  {
+   "id": "eo-241",
+   "phrase": "Dieu créa le monde en sept jours.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Six jours de création, et le repos le septième (Genèse 2.2)."
+  },
+  {
+   "id": "eo-242",
+   "phrase": "Le méchant prend la fuite sans qu'on le poursuive",
+   "ecrit": true,
+   "reference": "Proverbes 28.1",
+   "precision": "La suite : « Le juste a de l'assurance comme un jeune lion. »"
+  },
+  {
+   "id": "eo-243",
+   "phrase": "Jésus avait trente-trois ans quand il mourut.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Le texte ne donne pas son âge : Luc 3.23 dit « environ trente ans » au début de son ministère."
+  },
+  {
+   "id": "eo-244",
+   "phrase": "Le coeur du sage est à sa droite, et le coeur de l'insensé à sa gauche.",
+   "ecrit": true,
+   "reference": "Ecclésiaste 10.2",
+   "precision": "Une image ancienne d'orientation, bien antérieure à toute droite et gauche politiques."
+  },
+  {
+   "id": "eo-245",
+   "phrase": "La pomme d'Adam lui resta dans la gorge.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Légende médiévale née du nom donné au cartilage du cou ; la Genèse ne nomme même pas le fruit."
+  },
+  {
+   "id": "eo-246",
+   "phrase": "Pères, n'irritez pas vos enfants, de peur qu'ils ne se découragent.",
+   "ecrit": true,
+   "reference": "Colossiens 3.21",
+   "precision": "Le même chapitre qui parle d'obéissance parle aussi de ne pas décourager les enfants."
+  },
+  {
+   "id": "eo-247",
+   "phrase": "Salomé dansa devant Hérode et demanda la tête de Jean-Baptiste.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Les évangiles disent « la fille d'Hérodias », sans la nommer. Le nom de Salomé vient de l'historien Flavius Josèphe."
+  },
+  {
+   "id": "eo-248",
+   "phrase": "si donc nous avons la nourriture et le vêtement, cela nous suffira",
+   "ecrit": true,
+   "reference": "1 Timothée 6.8",
+   "precision": "Deux versets avant le célèbre « l'amour de l'argent est une racine de tous les maux »."
+  },
+  {
+   "id": "eo-249",
+   "phrase": "Le roi David composa les cent cinquante psaumes.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Les psaumes portent plusieurs signatures : Asaph, les fils de Koré, Salomon, Moïse — et beaucoup sont anonymes."
+  },
+  {
+   "id": "eo-250",
+   "phrase": "Voici l'écriture qui a été tracée: Compté, compté, pesé, et divisé.",
+   "ecrit": true,
+   "reference": "Daniel 5.25",
+   "precision": "La Segond traduit les mots que d'autres laissent en araméen : Mené, Mené, Thekel, Upharsin."
+  },
+  {
+   "id": "eo-251",
+   "phrase": "Les douze apôtres étaient tous pêcheurs.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Matthieu était collecteur d'impôts (Matthieu 9.9) ; le métier des autres n'est même pas indiqué."
+  },
+  {
+   "id": "eo-252",
+   "phrase": "l'Eternel envoya contre le peuple des serpents brûlants",
+   "ecrit": true,
+   "reference": "Nombres 21.6",
+   "precision": "L'épisode du serpent d'airain, que Jésus reprendra en Jean 3.14."
+  },
+  {
+   "id": "eo-253",
+   "phrase": "Dieu changea le nom de Saul en Paul sur le chemin de Damas.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Actes 13.9 dit simplement « Saul, appelé aussi Paul » — un second nom, longtemps après Damas."
+  },
+  {
+   "id": "eo-254",
+   "phrase": "en lui nous avons la vie, le mouvement, et l'être",
+   "ecrit": true,
+   "reference": "Actes 17.28",
+   "precision": "Paul cite un poète grec devant l'Aréopage d'Athènes, et s'en sert pour parler de Dieu."
+  },
+  {
+   "id": "eo-255",
+   "phrase": "Dieu créa l'homme le sixième jour et la femme le septième.",
+   "ecrit": false,
+   "reference": null,
+   "precision": "Genèse 1.27 : l'homme et la femme sont créés le même jour, le sixième."
+  },
+  {
+   "id": "eo-256",
+   "phrase": "Le juste prend soin de son bétail",
+   "ecrit": true,
+   "reference": "Proverbes 12.10",
+   "precision": "Le premier verset que citent, depuis toujours, ceux qui parlent du soin dû aux bêtes."
+  },
+  {
+   "id": "eo-257",
+   "phrase": "examinez toutes choses; retenez ce qui est bon",
+   "ecrit": true,
+   "reference": "1 Thessaloniciens 5.21",
+   "precision": "La Segond dit « examinez » là où l'on cite souvent « éprouvez »."
+  },
+  {
+   "id": "eo-258",
+   "phrase": "Tu ne tueras point.",
+   "ecrit": true,
+   "reference": "Exode 20.13",
+   "precision": "Quatre mots : le sixième commandement du Décalogue."
+  },
+  {
+   "id": "eo-259",
+   "phrase": "Elle l'emmaillota, et le coucha dans une crèche, parce qu'il n'y avait pas de place pour eux dans l'hôtellerie.",
+   "ecrit": true,
+   "reference": "Luc 2.7",
+   "precision": "La crèche y est. Ni l'étable, ni le bœuf, ni l'âne n'y sont."
+  },
+  {
+   "id": "eo-260",
+   "phrase": "avec une fronde et une pierre, David fut plus fort que le Philistin",
+   "ecrit": true,
+   "reference": "1 Samuel 17.50",
+   "precision": "Le texte insiste : « sans avoir d'épée à la main »."
+  },
+  {
+   "id": "eo-261",
+   "phrase": "on l'appela du nom de Babel, car c'est là que l'Eternel confondit le langage de toute la terre",
+   "ecrit": true,
+   "reference": "Genèse 11.9",
+   "precision": "Le récit de la tour tient en neuf versets."
+  },
+  {
+   "id": "eo-262",
+   "phrase": "Tu aimeras ton prochain comme toi-même.",
+   "ecrit": true,
+   "reference": "Matthieu 22.39",
+   "precision": "Jésus cite Lévitique 19.18 et en fait le second commandement, semblable au premier."
+  },
+  {
+   "id": "eo-263",
+   "phrase": "chacun portera son propre fardeau",
+   "ecrit": true,
+   "reference": "Galates 6.5",
+   "precision": "Trois versets plus haut, Paul écrivait « Portez les fardeaux les uns des autres ». Les deux sont écrits."
   }
  ]
 }
