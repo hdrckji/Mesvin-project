@@ -23,6 +23,32 @@ et **surtout pas** celle du *certificat de la clé d'importation*.
 Avec la mauvaise, tout se construit, tout s'installe — et l'application s'ouvre
 avec **une barre d'adresse en haut**, sans que rien n'explique pourquoi.
 
+### Le second piège, vécu en septembre 2026
+
+La Play Console affichait **trois** empreintes (clé de signature classique,
+clé post-quantique, clé d'importation). Toutes les trois étaient dans le
+fichier, Google confirmait la liaison pour chacune… et la barre restait.
+L'appli livrée aux testeurs était signée avec une **quatrième** clé, que rien
+dans la console ne montre.
+
+La seule façon de le voir : lire l'empreinte **sur un téléphone où l'appli
+est installée depuis le Play Store**, avec le débogage USB activé :
+
+```bash
+adb shell pm get-app-links fr.biblehorizon.app
+```
+
+La ligne `Signatures:` donne l'empreinte réelle ; `Domain verification state`
+dit `verified` quand tout va bien, et un code (`1024`, `legacy_failure`) sinon.
+Coller l'empreinte manquante dans `assetlinks.json`, déployer, puis
+**désinstaller et réinstaller** l'appli : la vérification d'Android ne se
+refait qu'à l'installation (`pm verify-app-links --re-verify` est ignoré sur
+les Samsung), celle de Chrome à chaque ouverture.
+
+Garder **toutes** les empreintes dans le tableau ne coûte rien et couvre
+chaque voie d'installation. À refaire si Google change de clé à la mise en
+production.
+
 Une fois l'empreinte en main, elle se colle dans le tableau vide :
 
 ```json
