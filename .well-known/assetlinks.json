@@ -4,7 +4,11 @@
     "target": {
       "namespace": "android_app",
       "package_name": "fr.biblehorizon.app",
-      "sha256_cert_fingerprints": ["34:77:A6:1A:66:4A:EF:7B:27:4B:DE:B4:C4:62:27:19:D2:AF:40:A9:DF:84:6E:97:3C:7D:F1:8F:39:F8:37:23"]
+      "sha256_cert_fingerprints": [
+        "34:77:A6:1A:66:4A:EF:7B:27:4B:DE:B4:C4:62:27:19:D2:AF:40:A9:DF:84:6E:97:3C:7D:F1:8F:39:F8:37:23",
+        "C1:46:98:C7:82:9D:67:98:41:40:4C:86:A3:CF:8B:66:9A:F3:B7:C0:54:1F:0D:97:B2:D0:0E:F3:2E:F6:26:20",
+        "F9:5F:4B:51:93:68:8B:9B:85:1E:71:86:6D:52:F8:61:95:85:E9:76:AC:69:19:80:AD:3A:60:1D:0A:DF:16:DE"
+      ]
     }
   }
 ]
