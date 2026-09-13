@@ -1,0 +1,115 @@
+# ============================================================================
+# La suite, à chaque poussée — dans LES DEUX DIALECTES.
+#
+# Pourquoi les deux à chaque fois, et pas MySQL seulement sur la branche
+# principale : `db_migrate()` porte deux blocs DDL qui divergent réellement
+# (ENUM contre CHECK, sémantique de `rowCount()`, types de dates). Le README de
+# l'API le dit — « avant tout déploiement qui touche à la base, jouer les
+# deux » — mais c'est une consigne qui reposait entièrement sur la mémoire de
+# quelqu'un, au moment précis où il est pressé de déployer. Ici, elle ne repose
+# plus sur personne.
+#
+# Playwright n'est pas une dépendance du dépôt : on l'installe HORS de l'arbre
+# de travail, et on le désigne par BH_PLAYWRIGHT. Le dépôt reste sans
+# dépendance, y compris ici.
+# ============================================================================
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  suite:
+    name: SQLite puis MySQL, navigateur compris
+    # Version FIGÉE, et pas « latest » : c'est elle qui garantit que php8.3 —
+    # celui de la production — reste disponible dans l'archive de la
+    # distribution. Le jour où l'on passe à une Ubuntu plus récente, il faudra
+    # vérifier que le PHP de production s'y installe encore ; l'étape
+    # « Vérifier l'outillage » ci-dessous le dira sans détour.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: bh_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -ptest"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # PHP est demandé par sa version EXACTE, celle que le Dockerfile envoie en
+      # production — pas le « php-cli » générique de la distribution. La nuance
+      # n'est pas cosmétique : la table des plages réservées de
+      # FILTER_FLAG_NO_RES_RANGE a changé entre 8.3 et 8.4, et client_ip() s'y
+      # appuie pour décider quelle adresse porte les plafonds anti-abus. Tester
+      # sur une autre version, c'est tester un autre logiciel.
+      - name: Outils
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            php8.3-cli php8.3-mbstring php8.3-curl php8.3-sqlite3 php8.3-mysql \
+            jq default-mysql-client
+          sudo update-alternatives --set php /usr/bin/php8.3
+
+      # Mieux vaut échouer ici, en trois lignes lisibles, qu'au milieu de la
+      # suite sur une erreur de driver PDO — ou pire, sur une divergence de
+      # version qu'on mettrait une heure à comprendre.
+      - name: Vérifier l'outillage
+        run: |
+          php -v | head -1
+          ATTENDUE=$(grep -oE 'frankenphp:[0-9]+-php[0-9]+\.[0-9]+' Dockerfile | grep -oE '[0-9]+\.[0-9]+$')
+          OBTENUE=$(php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;')
+          if [ "$ATTENDUE" != "$OBTENUE" ]; then
+            echo "::error::PHP $OBTENUE ici, mais le Dockerfile déploie PHP $ATTENDUE."
+            echo "::error::Aligner ce workflow sur le Dockerfile — sinon la CI valide un autre logiciel que celui qui part en ligne."
+            exit 1
+          fi
+          echo "  php $OBTENUE — la version que le Dockerfile déploie"
+          # La liste vient du code, pas d'une habitude : mb_* dans les
+          # validations de pseudo, curl_* pour les envois sortants, openssl_*
+          # pour la crypto Web Push, et les deux PDO pour les deux dialectes.
+          # Les nommer ici plutôt que de compter sur ce que l'image du runner
+          # embarque : le jour où elle en retire une, l'échec est lisible en
+          # une ligne au lieu de se disperser en dizaines d'assertions fausses.
+          for ext in mbstring curl openssl pdo_sqlite pdo_mysql json; do
+            php -m | grep -qix "$ext" || { echo "::error::extension PHP manquante : $ext"; exit 1; }
+            echo "  php: $ext ok"
+          done
+          jq --version && node --version
+
+      # La suite VIDE la base à chaque passe ; la seconde, suffixée « _mig »,
+      # sert au contrôle de migration.
+      - name: La seconde base, pour le contrôle de migration
+        run: mysql -h 127.0.0.1 -P 3306 -uroot -ptest -e "CREATE DATABASE IF NOT EXISTS bh_test_mig;"
+
+      # Hors de l'arbre de travail, pour que le dépôt reste sans dépendance.
+      # La version installée décide elle-même du Chromium qui lui correspond :
+      # rien à épingler, donc rien à faire vieillir.
+      - name: Playwright et son Chromium
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw"
+          cd "$RUNNER_TEMP/pw"
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund playwright
+          npx playwright install --with-deps chromium
+
+      - name: Les deux dialectes
+        env:
+          BH_PLAYWRIGHT: ${{ runner.temp }}/pw/node_modules
+          BH_TEST_MYSQL_URL: mysql://root:test@127.0.0.1:3306/bh_test
+        run: bash api/tests/run-tests-dialectes.sh

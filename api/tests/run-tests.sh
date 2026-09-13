@@ -38,6 +38,9 @@ api() {
   curl "${args[@]}"
 }
 jval() { jq -r "$1" "$TMP/body.json"; }
+sqlval()  { php -r '$p = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
+sqlexec() { php -r '$p = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null); $p->exec($argv[2]);' "$ROOT/api/data/dev.sqlite" "$1"; }
+
 
 # ---------------------------------------------------------------------------
 say "Analyse syntaxique (php -l) de chaque fichier PHP"
@@ -46,6 +49,23 @@ for f in "$ROOT"/api/*.php "$ROOT"/api/tests/router.php "$ROOT"/api/tests/push-c
   if ! php -l "$f" > /dev/null 2>&1; then LINT_OK=non; php -l "$f"; fi
 done
 check "php -l sans erreur" oui "$LINT_OK"
+
+# ---------------------------------------------------------------------------
+# Ce que la PRODUCTION servira vraiment. Le Dockerfile copie fichier par
+# fichier ; `php -S`, lui, sert TOUT le dépôt. Un fichier ajouté à la racine et
+# oublié dans le Dockerfile laisse donc cette suite verte de bout en bout et
+# manque en ligne — où la coquille du service worker, posée par un addAll()
+# ATOMIQUE, échoue alors en bloc : plus aucun hors-ligne, sans un mot à l'écran.
+say "Parité dépôt / image de production (le Dockerfile copie fichier par fichier)"
+if command -v node > /dev/null 2>&1; then
+  if node "$ROOT/api/tests/parite-image.mjs" > "$TMP/parite.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/parite.log") — coquille, Bible, icônes, références des pages"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL parité dépôt / image\n'; sed 's/^/        /' "$TMP/parite.log"
+  fi
+else
+  printf '   --   node absent : parité dépôt / image non vérifiée\n'
+fi
 
 # ---------------------------------------------------------------------------
 say "Crypto Web Push : vecteur RFC 8291 (annexe A) et JWT VAPID"
@@ -125,8 +145,9 @@ fi
 # 1910 : la citation ET la réponse venaient d'ailleurs. Deux lectures y veillent
 # désormais, écrites AUTREMENT l'une de l'autre — la première compare des
 # chaînes, la seconde des suites de mots, et vérifie en plus qu'aucune autre
-# proposition ne conviendrait. Elles portent sur les 600 questions du Défi, les
-# trois banques d'épreuves et les 100 versets de la bibliothèque.
+# proposition ne conviendrait. Elles portent sur TOUTES les questions du Défi
+# (2 500 désormais), les trois banques d'épreuves et les 100 versets de la
+# bibliothèque.
 say "Contenu biblique : chaque citation se lit-elle dans le texte de l'appli ?"
 if command -v python3 > /dev/null 2>&1; then
   for LECTURE in verifier-banques verifier-citations; do
@@ -181,6 +202,12 @@ $pdo->exec("ALTER TABLE epreuve_duels DROP COLUMN p1_user");
 $pdo->exec("ALTER TABLE epreuve_duels DROP COLUMN p2_user");
 $pdo->exec("ALTER TABLE frise_duels DROP COLUMN p1_user");
 $pdo->exec("ALTER TABLE frise_duels DROP COLUMN p2_user");
+// Étape 13 : les réponses et l horodatage du résultat, sur les deux tables.
+foreach (["epreuve_duels", "frise_duels"] as $t) {
+    $pdo->exec("ALTER TABLE $t DROP COLUMN p1_answers");
+    $pdo->exec("ALTER TABLE $t DROP COLUMN p2_answers");
+    $pdo->exec("ALTER TABLE $t DROP COLUMN finished_at");
+}
 // Étape 9 : les colonnes du mode auto des veillées.
 foreach (["epreuve_participants", "frise_participants", "portrait_participants"] as $t) {
     $pdo->exec("ALTER TABLE $t DROP COLUMN last_seen");
@@ -258,6 +285,13 @@ say "Santé (anonyme : réponse minimale, le détail est réservé aux admins)"
 check "GET /api/health → 200"           200     "$(api GET /api/health)"
 check "health : ok"                     true    "$(jval .ok)"
 check "health anonyme : pas de détail"  null    "$(jval .db)"
+# Seule exception au minimalisme anonyme : le battement de cœur du cron —
+# health_cron() dans push.php dit pourquoi. Base neuve : jamais passé encore,
+# mais la date de pose existe déjà (c'est elle qui transforme « jamais » en
+# verdict quand elle vieillit).
+check "health anonyme : cœur pas encore battu (cron.dernier null)" null \
+  "$(jval .cron.dernier)"
+check "mais la date de pose est là"     true "$(jval '.cron.enPlaceDepuis != null')"
 
 say "Statique toujours servi à l'identique"
 check "GET / → 200"                     200 "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/")"
@@ -392,6 +426,28 @@ check "u2 : myScore = $SCORE2"          "$SCORE2" "$(jval '.duels[0].myScore')"
 check "u2 : theirScore = $SCORE1"       "$SCORE1" "$(jval '.duels[0].theirScore')"
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Le terrain d'un duel : catégorie en LISTE BLANCHE, niveau borné, tirage
+# conforme — et refus propre quand le choix ne laisse pas dix questions.
+say "Duels — le choix du terrain (catégorie, niveau), tenu par le serveur"
+check "catégorie inconnue → 400"        400 "$(api POST /api/duels "$TOKEN1" "{\"opponentCode\":\"$FCODE2\",\"categorie\":\"Licornes\"}")"
+check "catégorie non-chaîne → 400"      400 "$(api POST /api/duels "$TOKEN1" "{\"opponentCode\":\"$FCODE2\",\"categorie\":7}")"
+check "niveau hors bornes → 400"        400 "$(api POST /api/duels "$TOKEN1" "{\"opponentCode\":\"$FCODE2\",\"niveau\":7}")"
+api GET /api/questions > /dev/null
+DCAT="$(jq -r '[.questions[] | .categorie] | group_by(.) | map({c: .[0], k: length}) | max_by(.k) | .c' "$TMP/body.json")"
+SPARSE="$(jq -r '[.questions[] | {c: .categorie, n: .niveau}] | group_by([.c, .n]) | map({c: .[0].c, n: .[0].n, k: length}) | map(select(.k < 10)) | first | if . == null then "" else (.c + "|" + (.n | tostring)) end' "$TMP/body.json")"
+check "création filtrée (catégorie la plus fournie) → 201" 201 "$(api POST /api/duels "$TOKEN1" "{\"opponentCode\":\"$FCODE2\",\"categorie\":\"$DCAT\"}")"
+QIDS_JSON="$(jq -c '[.duel.questions[].id]' "$TMP/body.json")"
+api GET /api/questions > /dev/null
+check "les 10 questions tirées respectent la catégorie" 10 \
+  "$(jq --argjson ids "$QIDS_JSON" --arg c "$DCAT" '[.questions[] | select((.id as $i | $ids | index($i)) and .categorie == $c)] | length' "$TMP/body.json")"
+if [ -n "$SPARSE" ]; then
+  check "choix trop étroit → 400 (pas assez de questions)" 400 \
+    "$(api POST /api/duels "$TOKEN1" "{\"opponentCode\":\"$FCODE2\",\"categorie\":\"${SPARSE%|*}\",\"niveau\":${SPARSE#*|}}")"
+else
+  ok "toutes les combinaisons de la banque ont ≥ 10 questions — pas de cas « trop étroit » à jouer"
+fi
+
 say "Config publique & connexion Google (non configurée en test)"
 check "GET /api/config → 200"           200  "$(api GET /api/config)"
 check "→ googleClientId null"           null "$(jval .googleClientId)"
@@ -687,7 +743,7 @@ check "catégorie inconnue → 400" 400 \
   "$(api POST /api/veillees "$TOKEN1" '{"nb":5,"categorie":"Recettes de cuisine"}')"
 check "niveau hors bornes → 400" 400 \
   "$(api POST /api/veillees "$TOKEN1" '{"nb":5,"niveau":9}')"
-# Le filtre doit vraiment MORDRE. La banque compte 600 questions réparties en
+# Le filtre doit vraiment MORDRE. La banque compte 2 500 questions réparties en
 # six catégories : si le tirage puisait dans le tas entier, vingt questions
 # tirées « Nouveau Testament » en contiendraient forcément d'autres. On tire
 # donc le maximum et on vérifie que les vingt portent la bonne étiquette.
@@ -897,18 +953,22 @@ api GET "/api/epreuve/duel/$EDCODE" > /dev/null
 check "le duel porte le pseudo du compte" Alice "$(jval .p1.pseudo)"
 check "et nomme l'invité"               Benoît "$(jval .invite)"
 
-say "Défis d'épreuve entre amis — l'invité les retrouve (GET /api/epreuve/defis)"
+say "Défis d'épreuve entre amis — livré à l'invité UNE FOIS l'épreuve du lanceur passée"
 check "sans session → 401"              401 "$(api GET /api/epreuve/defis)"
 check "u2 les liste → 200"              200 "$(api GET /api/epreuve/defis "$TOKEN2")"
-check "un défi l'attend"                1 "$(jval '.defis | length')"
+# Alice n'a pas encore joué : son défi ne doit PAS être livré — un duel
+# abandonné à la création devenait un « fantôme », fini avec un score « – ».
+check "Alice n'a pas joué : rien chez u2"  0 "$(jval '.defis | length')"
+check "u1 pose son score (clé) → 200"   200 "$(api POST "/api/epreuve/duel/$EDCODE/score" '' "{\"score\":2,\"cle\":\"$EDCLE\"}")"
+check "u2 les liste → 200"              200 "$(api GET /api/epreuve/defis "$TOKEN2")"
+check "un défi l'attend désormais"      1 "$(jval '.defis | length')"
 check "→ le bon code"                   "$EDCODE" "$(jval '.defis[0].code')"
 check "→ lancé par Alice"               Alice "$(jval '.defis[0].de')"
 check "→ le bon mode"                   "Qui a dit ça ?" "$(jval '.defis[0].mode')"
 check "u1 (créateur), lui, n'a rien"    0 "$(api GET /api/epreuve/defis "$TOKEN1" > /dev/null; jval '.defis | length')"
 check "u3 non plus"                     0 "$(api GET /api/epreuve/defis "$TOKEN3" > /dev/null; jval '.defis | length')"
 
-say "Défis d'épreuve entre amis — les deux jouent, le défi quitte la liste"
-check "u1 pose son score (clé) → 200"   200 "$(api POST "/api/epreuve/duel/$EDCODE/score" '' "{\"score\":2,\"cle\":\"$EDCLE\"}")"
+say "Défis d'épreuve entre amis — l'invité joue, le défi quitte la liste"
 check "u2 pose le sien (pseudo) → 200"  200 "$(api POST "/api/epreuve/duel/$EDCODE/score" '' '{"score":3,"pseudo":"Benoît"}')"
 check "les deux scores sont là"         3 "$(jval .p2.score)"
 check "la liste de u2 est vide"         0 "$(api GET /api/epreuve/defis "$TOKEN2" > /dev/null; jval '.defis | length')"
@@ -917,7 +977,8 @@ say "Défis d'épreuve — annuler un défi jamais relevé"
 check "u1 lance un défi visé sur u2 → 200" 200 "$(api POST /api/epreuve/duel "$TOKEN1" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"$FCODE2\"}")"
 ANCODE="$(jval .code)"
 ANCLE="$(jval .cle)"
-check "il attend bien u2"               1 "$(api GET /api/epreuve/defis "$TOKEN2" > /dev/null; jval '.defis | length')"
+api POST "/api/epreuve/duel/$ANCODE/score" '' "{\"score\":1,\"cle\":\"$ANCLE\"}" > /dev/null
+check "joué par u1, il attend bien u2"  1 "$(api GET /api/epreuve/defis "$TOKEN2" > /dev/null; jval '.defis | length')"
 check "annuler sans la clé → 403"       403 "$(api POST "/api/epreuve/duel/$ANCODE/annuler" '' '{"cle":"mauvaise"}')"
 check "annuler avec la clé → 200"       200 "$(api POST "/api/epreuve/duel/$ANCODE/annuler" '' "{\"cle\":\"$ANCLE\"}")"
 check "le code n'existe plus → 404"     404 "$(api GET "/api/epreuve/duel/$ANCODE")"
@@ -929,7 +990,9 @@ say "Défis d'épreuve entre amis — la Frise aussi (FD-), et le défi par code
 FDECK='[{"t":"Création","r":null,"o":1},{"t":"Déluge","r":null,"o":2},{"t":"Abraham","r":null,"o":3},{"t":"Moïse","r":null,"o":4}]'
 check "u2 défie u1 sur la Frise → 200"  200 "$(api POST /api/frise/duel "$TOKEN2" "{\"mode\":\"Livres · toute la Bible\",\"deck\":$FDECK,\"opponentCode\":\"$FCODE1\"}")"
 FDCODE="$(jval .code)"
-check "u1 le retrouve dans ses défis"   "$FDCODE" "$(api GET /api/epreuve/defis "$TOKEN1" > /dev/null; jval '.defis[0].code')"
+FDCLE="$(jval .cle)"
+api POST "/api/frise/duel/$FDCODE/score" '' "{\"score\":2,\"cle\":\"$FDCLE\"}" > /dev/null
+check "u2 a joué : u1 le retrouve dans ses défis" "$FDCODE" "$(api GET /api/epreuve/defis "$TOKEN1" > /dev/null; jval '.defis[0].code')"
 api POST /api/epreuve/duel '' "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"pseudo\":\"Zoé\"}" > /dev/null
 ANONCODE="$(jval .code)"
 check "duel par code : invite null"     null "$(api GET "/api/epreuve/duel/$ANONCODE" > /dev/null; jval .invite)"
@@ -958,6 +1021,83 @@ check "u2 voit son duel FD- lancé, en attente" "createur/attente" "$(jq -r '[.d
 check "un duel par code créé CONNECTÉ suit son créateur" 200 "$(api POST /api/epreuve/duel "$TOKEN3" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"pseudo\":\"Chloé\"}")"
 CCODE="$(jval .code)"
 check "→ u3 le retrouve dans SES duels" "createur/attente" "$(api GET /api/epreuve/defis "$TOKEN3" > /dev/null; jq -r '[.duels[] | select(.code == "'"$CCODE"'")][0] | "\(.role)/\(.status)"' "$TMP/body.json")"
+
+# ---------------------------------------------------------------------------
+# Le REJEU : les réponses font foi. Le serveur recalcule les scores carte par
+# carte — le score annoncé n'est jamais cru — et garde les réponses pour la
+# revue. Les clients d'avant (score seul) restent acceptés (éprouvé partout
+# ailleurs dans cette suite).
+say "Défis d'épreuve — le serveur REJOUE les réponses (le score annoncé n'est plus cru)"
+api POST /api/epreuve/duel "$TOKEN1" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"$FCODE2\"}" > /dev/null
+RJCODE="$(jval .code)"
+RJCLE="$(jval .cle)"
+check "réponses mal formées (longueur) → 400" 400 "$(api POST "/api/epreuve/duel/$RJCODE/score" '' "{\"cle\":\"$RJCLE\",\"answers\":[0,1]}")"
+check "réponses mal formées (index) → 400"    400 "$(api POST "/api/epreuve/duel/$RJCODE/score" '' "{\"cle\":\"$RJCLE\",\"answers\":[0,1,9]}")"
+check "p1 envoie ses réponses, sans score → 200" 200 "$(api POST "/api/epreuve/duel/$RJCODE/score" '' "{\"cle\":\"$RJCLE\",\"answers\":[0,1,0]}")"
+check "→ score REJOUÉ : 3"              3 "$(jval .p1.score)"
+check "→ les réponses voyagent (revue)" "[0,1,0]" "$(jq -c .p1Answers "$TMP/body.json")"
+check "p2 ANNONCE 3 mais répond faux : les réponses tranchent → 200" 200 "$(api POST "/api/epreuve/duel/$RJCODE/score" '' '{"pseudo":"Benoît","score":3,"answers":[1,2,1]}')"
+check "→ score de p2 rejoué : 0"        0 "$(jval .p2.score)"
+check "→ finished_at posé au résultat"  1 "$(sqlval "SELECT COUNT(*) FROM epreuve_duels WHERE code = '$RJCODE' AND finished_at IS NOT NULL")"
+
+say "Défis d'épreuve — la frise et le portrait se rejouent aussi"
+check "frise : création (u2 → u1) → 200" 200 "$(api POST /api/frise/duel "$TOKEN2" "{\"mode\":\"La frise\",\"deck\":$FDECK,\"opponentCode\":\"$FCODE1\"}")"
+RJF="$(jval .code)"
+RJFCLE="$(jval .cle)"
+check "frise : p1 place [1,0,3] → 200"  200 "$(api POST "/api/frise/duel/$RJF/score" '' "{\"cle\":\"$RJFCLE\",\"answers\":[1,0,3]}")"
+check "→ plateau rejoué : 2 bien placées" 2 "$(jval .p1.score)"
+check "frise : emplacement hors plateau → 400" 400 "$(api POST "/api/frise/duel/$RJF/score" '' '{"pseudo":"X","answers":[5,0,0]}')"
+PDECK2='[{"reponse":"Moïse","accepte":[],"indices":["a","b","c","d","e"]},{"reponse":"David","accepte":[],"indices":["a","b","c","d","e"]},{"reponse":"Ruth","accepte":[],"indices":["a","b","c","d","e"]}]'
+api POST /api/portrait/duel '' "{\"pseudo\":\"Zoé\",\"deck\":$PDECK2}" > /dev/null
+RJP="$(jval .code)"
+RJPCLE="$(jval .cle)"
+check "portrait : « Moise » toléré au 2e indice → 200" 200 "$(api POST "/api/portrait/duel/$RJP/score" '' "{\"cle\":\"$RJPCLE\",\"answers\":[{\"t\":\"Moise\",\"k\":2},{\"t\":\"xxx\",\"k\":1},{\"t\":\"Rut\",\"k\":5}]}")"
+check "→ 4 points rejoués (dégressif ; nom court exigé exact)" 4 "$(jval .p1.score)"
+
+say "Défis d'épreuve — le balayage se compte depuis le RÉSULTAT"
+sqlexec "UPDATE epreuve_duels SET created_at = '2026-01-01 00:00:00' WHERE code = '$RJCODE'"
+api GET /api/epreuve/defis "$TOKEN1" > /dev/null
+check "fini récemment, créé il y a longtemps : il reste" 200 "$(api GET "/api/epreuve/duel/$RJCODE")"
+sqlexec "UPDATE epreuve_duels SET finished_at = '2026-01-01 00:00:00' WHERE code = '$RJCODE'"
+api GET /api/epreuve/defis "$TOKEN1" > /dev/null
+check "résultat vieux de 7 jours : balayé → 404" 404 "$(api GET "/api/epreuve/duel/$RJCODE")"
+
+say "Le fil de l'amitié — le duel passe, le fil reste"
+api GET /api/friends "$TOKEN1" > /dev/null
+check "u1-u2 : 3 duels finis jusqu'ici (quiz compris)" 3 "$(jq -r '[.friends[] | select(.friendCode == "'"$FCODE2"'")][0].duels.joues' "$TMP/body.json")"
+check "→ victoires + égalités = joués"  3 "$(jq -r '[.friends[] | select(.friendCode == "'"$FCODE2"'")][0].duels | (.toi + .lui + .egalites)' "$TMP/body.json")"
+FCODE3="$(api GET /api/me "$TOKEN3" > /dev/null; jval .user.friendCode)"
+api POST /api/friends/add "$TOKEN3" "{\"code\":\"$FCODE1\"}" > /dev/null
+api POST /api/epreuve/duel "$TOKEN1" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"$FCODE3\"}" > /dev/null
+BLCODE="$(jval .code)"
+BLCLE="$(jval .cle)"
+api POST "/api/epreuve/duel/$BLCODE/score" '' "{\"cle\":\"$BLCLE\",\"answers\":[0,1,0]}" > /dev/null
+api POST "/api/epreuve/duel/$BLCODE/score" '' '{"pseudo":"Chloé","answers":[1,2,1]}' > /dev/null
+api GET /api/friends "$TOKEN1" > /dev/null
+check "paire neuve u1-u3 : 1 duel, 1-0 pour u1" "1/1/0/0" "$(jq -r '[.friends[] | select(.friendCode == "'"$FCODE3"'")][0].duels | "\(.joues)/\(.toi)/\(.lui)/\(.egalites)"' "$TMP/body.json")"
+api GET /api/friends "$TOKEN3" > /dev/null
+check "vu de u3, en miroir : 1-0 pour u1" "1/0/1/0" "$(jq -r '[.friends[] | select(.friendCode == "'"$FCODE1"'")][0].duels | "\(.joues)/\(.toi)/\(.lui)/\(.egalites)"' "$TMP/body.json")"
+# L'amitié d'essai se referme (le bilan, lui, reste en base — c'est le but) ;
+# la suite compte plus bas les amis de u1, qui doivent revenir à leur état.
+api DELETE "/api/friends/$FCODE3" "$TOKEN1" > /dev/null
+
+# ---------------------------------------------------------------------------
+# Le duel fantôme, réparé de bout en bout : un défi lancé puis jamais joué
+# n'est pas livré ; s'il est joué quand même (par code), le fil n'avance pas
+# sur un score absent ; et le créateur CONNECTÉ pose son score après coup,
+# sans la clé — son compte suffit — ce qui termine vraiment le duel.
+say "Défis d'épreuve — plus de duel fantôme : le créateur rattrape son score sans clé"
+api POST /api/epreuve/duel "$TOKEN1" "{\"mode\":\"Qui a dit ça ?\",\"deck\":$EDECK,\"opponentCode\":\"$FCODE2\"}" > /dev/null
+GHCODE="$(jval .code)"
+AVANT="$(api GET /api/friends "$TOKEN1" > /dev/null; jq -r '[.friends[] | select(.friendCode == "'"$FCODE2"'")][0].duels.joues' "$TMP/body.json")"
+check "pas joué par u1 : invisible pour u2" 0 "$(api GET /api/epreuve/defis "$TOKEN2" > /dev/null; jq -r '[.defis[] | select(.code == "'"$GHCODE"'")] | length' "$TMP/body.json")"
+check "u2, connecté mais pas créateur, joue par code : case 2 → 200" 200 "$(api POST "/api/epreuve/duel/$GHCODE/score" "$TOKEN2" '{"score":1,"pseudo":"Benoît"}')"
+check "→ bien posé côté invité"         Benoît "$(jval .p2.pseudo)"
+check "le fil n'a PAS avancé (pas de défaite sur un score absent)" "$AVANT" "$(api GET /api/friends "$TOKEN1" > /dev/null; jq -r '[.friends[] | select(.friendCode == "'"$FCODE2"'")][0].duels.joues' "$TMP/body.json")"
+check "u1 pose son score sans clé (son compte suffit) → 200" 200 "$(api POST "/api/epreuve/duel/$GHCODE/score" "$TOKEN1" '{"answers":[0,1,0]}')"
+check "→ posé côté créateur, rejoué : 3" 3 "$(jval .p1.score)"
+check "→ le fil avance MAINTENANT, d'un seul cran" "$((AVANT + 1))" "$(api GET /api/friends "$TOKEN1" > /dev/null; jq -r '[.friends[] | select(.friendCode == "'"$FCODE2"'")][0].duels.joues' "$TMP/body.json")"
+check "u1 re-pose (case déjà écrite) → 409" 409 "$(api POST "/api/epreuve/duel/$GHCODE/score" "$TOKEN1" '{"score":1}')"
 
 say "Groupes d'église — la création directe est fermée (le message oriente)"
 check "POST /api/groupes sans compte → 401" 401 "$(api POST /api/groupes '' '{"nom":"Béthel"}')"
@@ -1466,8 +1606,6 @@ check "la veillée liée survit, sans église" false "$(api GET "/api/veillees/$
 # La page de l'église (fondations serveur — aucune interface encore).
 # Toujours aucun appel request-code : TOKEN1/TOKEN2/TOKEN3 suffisent.
 # Regards directs dans la base SQLite (aussi utilisés plus bas, Notifications).
-sqlval()  { php -r '$p = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null); echo $p->query($argv[2])->fetchColumn();' "$ROOT/api/data/dev.sqlite" "$1"; }
-sqlexec() { php -r '$p = new PDO(getenv("BH_DSN"), getenv("BH_USER") ?: null, getenv("BH_PASS") ?: null); $p->exec($argv[2]);' "$ROOT/api/data/dev.sqlite" "$1"; }
 
 say "La page de l'église — vide au départ, réservée aux membres"
 PGCODE="$(groupe_via_demande "$TOKEN1" "Assemblée du Chemin")"
@@ -1903,6 +2041,10 @@ check "l'échec est compté (echecs = 1)"  1 "$(sqlval 'SELECT echecs FROM push_
 check "last_sent_day posé AVANT l'envoi (idempotence)" 1 "$(sqlval 'SELECT COUNT(*) FROM push_abonnements WHERE last_sent_day IS NOT NULL')"
 api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
 check "2e cron du même jour : rien ne repart (echecs reste 1)" 1 "$(sqlval 'SELECT echecs FROM push_abonnements')"
+# Le battement de cœur : posé par le passage COMPLET, et la santé anonyme le
+# montre — c'est lui qui permet à la sonde de dire « le cron vit » sans jeton.
+check "le battement de cœur est posé"    1 "$(sqlval 'SELECT COUNT(*) FROM cron_passages WHERE id = 1 AND dernier IS NOT NULL')"
+check "et la santé anonyme le montre"    true "$(api GET /api/health > /dev/null; jval '.cron.dernier != null')"
 
 # L'annonce d'une nouvelle série. Groupée : un responsable qui publie trois
 # séries d'affilée ne réveille son assemblée qu'une fois. Le drapeau est posé
@@ -1947,6 +2089,30 @@ check "le défi relevé est marqué (une seule chance)" 1 \
   "$(sqlval "SELECT COUNT(*) FROM push_epreuve_resultats WHERE code = '$NCODE'")"
 api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
 check "cron rejoué : pas de relance (resultats = 0)" 0 "$(jval .resultats)"
+
+# Le résultat d'un duel du QUIZ, au joueur qui a fini en PREMIER. Le duel est
+# symétrique — n'importe lequel des deux peut finir d'abord — donc c'est la
+# FIN du duel qui nomme le destinataire (handle_duels_result), et le cron qui
+# porte l'annonce. Ici u2 joue avant u1 : le destinataire doit être u2, le
+# cas que le modèle des épreuves (lanceur toujours premier) ne couvre pas.
+say "Notifications — le résultat d'un duel du quiz s'annonce une fois, au premier fini"
+U2ID="$(sqlval "SELECT id FROM users WHERE email = 'benoit@example.org'")"
+api POST /api/duels "$TOKEN1" "{\"opponentCode\":\"$FCODE2\"}" > /dev/null
+NDUEL="$(jval .duel.id)"
+check "duel créé : rien en file"        0 "$(sqlval "SELECT COUNT(*) FROM push_duels_resultats WHERE duel_id = $NDUEL")"
+api POST "/api/duels/$NDUEL/result" "$TOKEN2" '{"answers":[0,0,0,0,0,0,0,0,0,0]}' > /dev/null
+check "un seul a joué : toujours rien"  0 "$(sqlval "SELECT COUNT(*) FROM push_duels_resultats WHERE duel_id = $NDUEL")"
+api POST "/api/duels/$NDUEL/result" "$TOKEN1" '{"answers":[0,0,0,0,0,0,0,0,0,0]}' > /dev/null
+check "fini : la ligne nomme u2, premier à avoir joué" "$U2ID" \
+  "$(sqlval "SELECT destinataire FROM push_duels_resultats WHERE duel_id = $NDUEL")"
+check "et attend le cron (notified_at vide)" 1 \
+  "$(sqlval "SELECT COUNT(*) FROM push_duels_resultats WHERE duel_id = $NDUEL AND notified_at IS NULL")"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "le cron rend un compte de duels finis" true "$(jval 'has("duels_finis")')"
+check "marquée envoyée (une seule chance, même si l'envoi rate)" 1 \
+  "$(sqlval "SELECT COUNT(*) FROM push_duels_resultats WHERE duel_id = $NDUEL AND notified_at IS NOT NULL")"
+api GET "/api/cron/notify?key=$CRONKEY" > /dev/null
+check "cron rejoué : pas de relance (duels_finis = 0)" 0 "$(jval .duels_finis)"
 
 say "Notifications — l'abonnement mort est retiré au 5e échec"
 sqlexec "UPDATE push_abonnements SET echecs = 4, last_sent_day = NULL"
@@ -2065,11 +2231,63 @@ else
   printf '   --   Playwright absent : veillées au navigateur non jouées\n'
 fi
 
+# Les duels entre amis, mêmes armes : les PARCOURS (liste d'amis → duel →
+# revue → cartes de l'accueil) et leurs CONTRE-épreuves (score forgé, clé
+# forgée, non-ami, anonyme) — parce qu'un écran peut mentir alors que
+# chaque endpoint dit vrai.
+say "Duels entre amis dans un vrai navigateur — épreuves et contre-épreuves"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/duels.mjs" "$BASE" > "$TMP/duels.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/duels.log") — revues, cartes de l'accueil, tricheries refusées"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL duels au navigateur\n'; sed 's/^/        /' "$TMP/duels.log"
+  fi
+else
+  printf '   --   Playwright absent : duels au navigateur non joués\n'
+fi
+
+# ---------------------------------------------------------------------------
+# La mise à jour de l'appli, en conditions réelles : c'est la classe de bugs
+# qui a le plus mordu en production (numéro de cache oublié, vieilles pages
+# avec un nouveau client d'API) et qu'aucun test d'endpoint ne peut voir.
+# Le scénario copie le site dans un dossier temporaire, y VIT un déploiement
+# (bump du cache + fichier modifié) avec son propre serveur — il ne touche ni
+# au vrai arbre ni à la base des autres tests.
+say "Mise à jour du service worker dans un vrai navigateur (un déploiement vécu)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/mise-a-jour.mjs" "$ROOT" 8189 > "$TMP/maj.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/maj.log") — installation, invitation, bascule, hors-ligne"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL mise à jour au navigateur\n'; sed 's/^/        /' "$TMP/maj.log"
+  fi
+else
+  printf '   --   Playwright absent : mise à jour au navigateur non jouée\n'
+fi
+
+# ---------------------------------------------------------------------------
+# La connexion par le VRAI écran. Les autres tests navigateur posent une
+# session toute faite dans localStorage — le bon outil pour tester les duels,
+# pas la porte d'entrée. Ici on la passe au doigt : e-mail, code (faux puis
+# juste), pseudo, bienvenue, et la session qui survit au rechargement.
+say "Connexion par le vrai écran dans un vrai navigateur (e-mail, code, pseudo)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/connexion.mjs" "$BASE" > "$TMP/conn.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/conn.log") — du premier e-mail au retour d'habituée"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL connexion au navigateur\n'; sed 's/^/        /' "$TMP/conn.log"
+  fi
+else
+  printf '   --   Playwright absent : connexion au navigateur non jouée\n'
+fi
+
 # ---------------------------------------------------------------------------
 # Signaler, dans un vrai navigateur. L'API sait dire qu'une route accepte un
 # signalement ; elle ne peut rien dire du GESTE, et c'est le geste qui décide
 # de tout. Un lien qu'on ne voit pas, un envoi qui ne remercie pas, et plus
-# personne ne signale rien — on croit alors que les 600 questions sont
+# personne ne signale rien — on croit alors que les 2 500 questions sont
 # parfaites parce que la boîte est vide.
 say "Signaler dans un vrai navigateur (le lecteur sans compte, puis l'administration)"
 if node -e "import('playwright')" > /dev/null 2>&1 \
@@ -2100,6 +2318,76 @@ if node -e "import('playwright')" > /dev/null 2>&1 \
   done
 else
   printf '   --   Playwright absent : mode automatique au navigateur non joué\n'
+fi
+
+# ---------------------------------------------------------------------------
+# LE TIRAGE. Des lecteurs signalaient que les questions revenaient trop vite.
+# Leur NOMBRE est arithmétique (200 questions, 10 par partie : 20 parties), mais
+# leur ESPACEMENT se corrige : l'ancien tirage effaçait toute la mémoire dès
+# qu'il restait moins de dix fraîches, puis repiochait dans le tas entier — une
+# question vue la veille pouvait revenir le lendemain. On éprouve donc ici
+# l'invariant : le tour complet du vivier précède la moindre redite.
+say "Tirage sans remise dans un vrai navigateur (le tour complet avant toute redite)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/tirage.mjs" "$BASE" > "$TMP/tirage.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/tirage.log") — écart maximal garanti, mémoire bornée"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL tirage au navigateur\n'; sed 's/^/        /' "$TMP/tirage.log"
+  fi
+else
+  printf '   --   Playwright absent : tirage au navigateur non joué\n'
+fi
+
+# ---------------------------------------------------------------------------
+# BIBLIOPHILE : le niveau 3 joué SANS les propositions. Ce qui compte ici n'est
+# pas l'affichage mais la RÈGLE de saisie — une faute de frappe pardonnée,
+# jamais une confusion — la même que portrait_correspond() côté serveur. Trop
+# sévère, elle décourage ; trop laxiste, elle valide une réponse fausse.
+say "Bibliophile dans un vrai navigateur (le niveau 3 sans les propositions)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/bibliophile.mjs" "$BASE" > "$TMP/biblio.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/biblio.log") — faute pardonnée, confusion refusée, QCM intact ailleurs"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL bibliophile au navigateur\n'; sed 's/^/        /' "$TMP/biblio.log"
+  fi
+else
+  printf '   --   Playwright absent : bibliophile au navigateur non joué\n'
+fi
+
+# ---------------------------------------------------------------------------
+# MÉMORISER est le module racine, et sa planification ne parle à AUCUNE route :
+# elle vit entièrement dans app.js. Cette suite pouvait donc rester verte de
+# bout en bout pendant que la répétition espacée — le cœur du produit — dérivait
+# sans que rien ne le dise. Le scénario appelle le VRAI schedule() depuis la
+# page, et non une copie recollée qui ne prouverait que sa propre cohérence.
+say "Mémorisation dans un vrai navigateur (la répétition espacée, sur le vrai app.js)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/memorisation.mjs" "$BASE" > "$TMP/memo.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/memo.log") — oubli adouci, courbe intacte, jardin cohérent"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL mémorisation au navigateur\n'; sed 's/^/        /' "$TMP/memo.log"
+  fi
+else
+  printf '   --   Playwright absent : mémorisation au navigateur non jouée\n'
+fi
+
+# ---------------------------------------------------------------------------
+# Les pages que les six parcours ci-dessus ne traversent jamais : référencement
+# et pages légales. Une page cassée là ne gêne aucun utilisateur connecté —
+# personne ne s'en aperçoit, et c'est pourtant la vitrine publique.
+say "Toutes les pages du site dans un vrai navigateur (vitrine et pages légales)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/pages.mjs" "$BASE" > "$TMP/pages.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/pages.log") — chaque page peinte, sans exception ni requête morte"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL pages au navigateur\n'; sed 's/^/        /' "$TMP/pages.log"
+  fi
+else
+  printf '   --   Playwright absent : parcours des pages non joué\n'
 fi
 
 # ---------------------------------------------------------------------------
@@ -2189,8 +2477,17 @@ check "1 relais : « 1.2.3.4, 5.6.7.8 » → 5.6.7.8" 5.6.7.8 \
   "$(retenue $PORT_RELAIS '1.2.3.4, 5.6.7.8')"
 check "on lit À DROITE, quelle que soit la longueur" 9.9.9.9 \
   "$(retenue $PORT_RELAIS '1.2.3.4, 5.6.7.8, 9.9.9.9')"
-check "1 relais : IPv6 acceptée"            2001:db8::1 \
-  "$(retenue $PORT_RELAIS '1.2.3.4, 2001:db8::1')"
+# SURTOUT PAS 2001:db8::1 ici. C'est le préfixe de DOCUMENTATION (RFC 3849) :
+# par définition ce n'est pas une adresse publique, et ip_interne() a donc
+# raison de la ranger parmi les internes — ce que PHP 8.3 fait et PHP 8.4 ne
+# fait plus. L'assertion passait donc sur une machine en 8.4 et tombait sur la
+# version de la PRODUCTION (Dockerfile : frankenphp:1-php8.3).
+# L'adresse ci-dessous est une vraie adresse d'abonné, publique sur les deux
+# versions, et c'est bien ce que la ligne veut éprouver : l'IPv6 d'un visiteur
+# est retenue. Ne pas ajouter d'assertion sur le sort d'une adresse de
+# documentation : il dépend de la version de PHP, et aucun visiteur n'en a.
+check "1 relais : IPv6 publique acceptée"   2a01:e0a:1de:3cf0::1 \
+  "$(retenue $PORT_RELAIS '1.2.3.4, 2a01:e0a:1de:3cf0::1')"
 check "valeur non-IP → repli sur REMOTE_ADDR" 127.0.0.1 \
   "$(retenue $PORT_RELAIS '1.2.3.4, pas-une-ip')"
 check "en-tête malformé (virgule en trop) → repli" 127.0.0.1 \
@@ -2595,9 +2892,9 @@ check "les deux dossiers sont copiés dans l'image" oui "$DOCKER_OK"
 # ---------------------------------------------------------------------------
 # Signaler ce qui cloche. Deux exigences se croisent ici, et les tests les
 # gardent toutes les deux : celle de Google Play (un contenu publié doit
-# pouvoir être signalé) et la nôtre (600 questions relues deux fois restent
+# pouvoir être signalé) et la nôtre (2 500 questions relues deux fois restent
 # écrites par des humains — c'est le lecteur, sa Bible ouverte, qui verra la
-# 601e coquille). D'où le point le plus important de ce bloc : signaler NE
+# 2 501e coquille). D'où le point le plus important de ce bloc : signaler NE
 # DEMANDE PAS DE COMPTE. Si ce test tombe un jour, on n'aura plus de retours.
 say "Signaler — le geste du lecteur, et la pile de l'administration"
 
@@ -2654,6 +2951,80 @@ check "rouvrir la remet dans la pile"    200 "$(api POST "/api/admin/signalement
 check "et elle y est"                    $((SIG_AVANT + 2)) "$(api GET /api/admin/signalements "$TOKEN1B" > /dev/null; jval .nouveaux)"
 check "classer un signalement inconnu → 404" 404 \
   "$(api POST "/api/admin/signalements/999999" "$TOKEN1B" '{"statut":"traite"}')"
+
+# --- Le motif en liste, l'église d'origine, et les deux issues de la pile ---
+# Ce que Google Play exige, c'est un signalement DEPUIS l'appli et une
+# modération derrière. Le motif choisi et le code de l'église sont ce qui
+# permet à l'administration d'agir d'un geste : retirer le contenu, ou
+# classer sans suite. Le retrait passe par la même porte que l'onglet Églises.
+check "raison hors liste → 400"          400 \
+  "$(api POST /api/signalement '' '{"genre":"annonce","cible":"annonce:1","raison":"potin"}')"
+check "code de groupe mal formé → 400"   400 \
+  "$(api POST /api/signalement '' '{"genre":"annonce","cible":"annonce:1","groupe":"nimporte"}')"
+
+# Une église fraîche pour ce bloc (celles d'avant ont été supprimées en
+# chemin) : Alice la porte, Chloé la rejoint.
+api POST /api/groupes/demande "$TOKEN1B" '{"nom":"Assemblée du Signal","adresse":"3 rue du Phare, Mons"}' > /dev/null
+api GET /api/admin/eglises "$TOKEN1B" > /dev/null
+SGDEM="$(jq -r '[.demandes[] | select(.nom == "Assemblée du Signal")] | last | .id' "$TMP/body.json")"
+api POST "/api/admin/eglises/demandes/$SGDEM/accepter" "$TOKEN1B" > /dev/null
+SGCODE="$(jval .code)"
+check "une église pour le bloc"          GRP- "$(printf '%s' "$SGCODE" | cut -c1-4)"
+check "Chloé la rejoint → 200"           200 "$(api POST /api/groupes/rejoindre "$TOKEN3" "{\"code\":\"$SGCODE\"}")"
+api POST "/api/groupes/$SGCODE/annonces" "$TOKEN1B" '{"titre":"Vente de gâteaux","texte":"Lien vers un site marchand."}' > /dev/null
+ANSIG="$(jval .annonce.id)"
+check "Chloé signale l annonce, motif spam, église connue → 200" 200 \
+  "$(api POST /api/signalement "$TOKEN3" "{\"genre\":\"annonce\",\"cible\":\"annonce:$ANSIG\",\"contexte\":\"Vente de gâteaux\",\"motif\":\"Pub déguisée.\",\"raison\":\"spam\",\"groupe\":\"$SGCODE\"}")"
+check "la raison est en base"            spam "$(sqlval "SELECT raison FROM signalements WHERE cible = 'annonce:$ANSIG'")"
+check "et l église d origine aussi"      "$SGCODE" "$(sqlval "SELECT groupe_code FROM signalements WHERE cible = 'annonce:$ANSIG'")"
+api GET /api/admin/signalements "$TOKEN1B" > /dev/null
+check "la pile les rend"                 "spam $SGCODE" \
+  "$(jq -r "[.signalements[] | select(.cible == \"annonce:$ANSIG\")][0] | \"\(.raison) \(.groupe)\"" "$TMP/body.json")"
+SIGR="$(jq -r "[.signalements[] | select(.cible == \"annonce:$ANSIG\")][0].id" "$TMP/body.json")"
+
+check "retirer, pour un membre ordinaire → 403" 403 "$(api POST "/api/admin/signalements/$SIGR/retirer" "$TOKEN3")"
+check "retirer le contenu → 200"         200 "$(api POST "/api/admin/signalements/$SIGR/retirer" "$TOKEN1B")"
+check "le contenu existait, il est parti" true "$(jval .retire)"
+api GET "/api/groupes/$SGCODE/page" "$TOKEN3" > /dev/null
+check "l annonce n est plus sur la page" 0 "$(jq "[.annonces[] | select(.id == $ANSIG)] | length" "$TMP/body.json")"
+check "la trace passe en « retire »"     retire "$(sqlval "SELECT statut FROM signalements WHERE id = $SIGR")"
+check "retirer deux fois → 409"          409 "$(api POST "/api/admin/signalements/$SIGR/retirer" "$TOKEN1B")"
+check "le journal admin porte le retrait" 1 \
+  "$(sqlval "SELECT COUNT(*) FROM admin_log WHERE action = 'retrait-annonce' AND cible = '$SGCODE / $ANSIG'")"
+
+# Un rendez-vous suit le même chemin — c'est le genre qui manquait à l'admin.
+api POST "/api/groupes/$SGCODE/rdv" "$TOKEN1B" '{"libelle":"Réunion privée","jour":2,"heure":"18:00"}' > /dev/null
+RDVSIG="$(jval .rdv.id)"
+check "un rendez-vous se signale aussi → 200" 200 \
+  "$(api POST /api/signalement '' "{\"genre\":\"rdv\",\"cible\":\"rdv:$RDVSIG\",\"contexte\":\"mardi 18:00 — Réunion privée\",\"raison\":\"inapproprie\",\"groupe\":\"$SGCODE\"}")"
+api GET /api/admin/signalements "$TOKEN1B" > /dev/null
+SIGRDV="$(jq -r "[.signalements[] | select(.cible == \"rdv:$RDVSIG\")][0].id" "$TMP/body.json")"
+check "retirer le rendez-vous → 200"     200 "$(api POST "/api/admin/signalements/$SIGRDV/retirer" "$TOKEN1B")"
+api GET "/api/groupes/$SGCODE/page" "$TOKEN3" > /dev/null
+check "il n est plus sur la page"        0 "$(jq "[.rdv[] | select(.id == $RDVSIG)] | length" "$TMP/body.json")"
+
+# Ce qui ne se retire PAS d'ici : une question du Défi (elle se corrige dans
+# la banque), et un signalement qui ne dit pas de quelle église il vient.
+check "une question du Défi ne se retire pas d ici → 400" 400 \
+  "$(api POST "/api/admin/signalements/$SIGID/retirer" "$TOKEN1B")"
+api GET /api/admin/signalements "$TOKEN1B" > /dev/null
+SIGSANS="$(jq -r '[.signalements[] | select(.cible == "annonce:zz-suite")][0].id' "$TMP/body.json")"
+check "sans église connue, rien à retirer → 400" 400 \
+  "$(api POST "/api/admin/signalements/$SIGSANS/retirer" "$TOKEN1B")"
+
+# --- Le plafond horaire, devant la porte ---
+# 20 par réseau et par heure : large pour une salle, étroit pour un robot.
+# On tape jusqu'au 429 puis on lève le plafond, pour ne pas rendre muette la
+# suite de la passe.
+LAST=""
+for i in $(seq 1 25); do
+  LAST="$(api POST /api/signalement '' '{"genre":"question","cible":"question:rafale"}')"
+  [ "$LAST" = 429 ] && break
+done
+check "la rafale finit par un 429"       429 "$LAST"
+sqlexec "DELETE FROM throttle WHERE bucket LIKE 'signalement|%'"
+check "le plafond levé, la porte rouvre" 200 \
+  "$(api POST /api/signalement '' '{"genre":"question","cible":"question:rafale-fin"}')"
 
 # Aucune IP conservée : le plafond horaire (table throttle) suffit comme
 # garde-fou, et lui ne garde qu'un compteur haché à l'heure.

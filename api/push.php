@@ -601,15 +601,46 @@ function handle_cron_notify(PDO $pdo): never {
     $epreuves = push_epreuve_defis_en_attente($pdo, $cfg);
     // Et le RÉSULTAT au lanceur, dès que l'ami a relevé.
     $resultats = push_epreuve_resultats($pdo, $cfg);
+    // Le résultat d'un duel du QUIZ, au joueur qui a fini en premier.
+    $duelsFinis = push_duels_resultats($pdo, $cfg);
     // Les services d'église de demain : UN rappel, la veille au soir, à ceux
     // qui ont levé la main ET activé les notifications de l'appli.
     $services = push_rappels_services($pdo, $cfg);
     // Les séries qu'une église vient de publier : UNE annonce par église et
     // par passage, jamais une par série.
     $series = push_series_publiees($pdo, $cfg);
+    // Le battement de cœur : posé en FIN de course seulement — un passage qui
+    // casse en route ne compte pas comme un passage. C'est lui que
+    // /api/health et la sonde de production lisent pour dire « le cœur bat »
+    // ou « le cron ne passe plus » (voir health_cron ci-dessous).
+    $pdo->prepare('UPDATE cron_passages SET dernier = ? WHERE id = 1')->execute([now_sql()]);
     json_out(['ok' => true, 'envoyes' => $envoyes, 'supprimes' => $supprimes,
               'defis' => $defis, 'epreuves' => $epreuves, 'resultats' => $resultats,
+              'duels_finis' => $duelsFinis,
               'services' => $services, 'series' => $series]);
+}
+
+/* ---- Le battement de cœur, pour /api/health ---------------------------------
+   ANONYME compris, et c'est voulu : ce champ ne dévoile ni clé ni donnée —
+   juste « le cœur bat / ne bat plus » — alors que sans lui, un cron mort ne se
+   voit que muni d'un jeton d'admin. Or c'est une sonde SANS secret (celle que
+   la CI lance après chaque mise en ligne) qui doit pouvoir donner l'alerte :
+   un défaut silencieux qui exige un jeton pour être vu reste un défaut
+   silencieux. Le reste de la santé anonyme demeure minimal — la comparaison
+   s'arrête là. */
+function health_cron(PDO $pdo): ?array {
+    try {
+        $r = $pdo->query('SELECT dernier, en_place_depuis FROM cron_passages WHERE id = 1')->fetch();
+    } catch (Throwable $e) {
+        return null; // table pas encore migrée : la santé ne casse pas pour ça
+    }
+    if ($r === false) {
+        return null;
+    }
+    return [
+        'dernier'       => sql_to_iso($r['dernier']),
+        'enPlaceDepuis' => sql_to_iso($r['en_place_depuis']),
+    ];
 }
 
 /* ---- Les défis d'ÉPREUVE qui attendent -------------------------------------
@@ -693,6 +724,74 @@ function push_epreuve_resultats(PDO $pdo, array $cfg): int {
                     $pdo->prepare('DELETE FROM push_abonnements WHERE id = ?')->execute([$abo['id']]);
                 }
             }
+        }
+    }
+    return $envoyes;
+}
+
+/* ---- Le résultat d'un duel du QUIZ, annoncé au premier des deux -------------
+   Le trou que ce code bouche : celui qui finissait le duel en SECOND voyait le
+   score sur-le-champ, celui qui avait fini en PREMIER n'apprenait jamais que
+   c'était terminé — il devait retourner fouiller l'écran des duels.
+
+   Différence avec push_epreuve_resultats : un duel du quiz est symétrique,
+   n'importe lequel des deux joueurs peut finir d'abord, et la table duels ne
+   garde pas qui c'était. Le destinataire est donc nommé PAR handle_duels_result
+   (api/duels.php) à l'instant précis où le duel se termine — seul cet instant
+   le sait — et rangé dans push_duels_resultats avec notified_at NULL. Ici, on
+   envoie ce qui attend, marqué AVANT l'envoi, une seule annonce, jamais de
+   relance. Sans délai de politesse : un résultat n'exige rien de personne. */
+function push_duels_resultats(PDO $pdo, array $cfg): int {
+    // Un duel disparu (compte supprimé) emporte sa ligne en attente : il n'y a
+    // plus rien à annoncer, et rien ne doit rester à balayer chaque heure.
+    $pdo->exec('DELETE FROM push_duels_resultats
+                WHERE notified_at IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM duels d WHERE d.id = duel_id)');
+
+    $envoyes = 0;
+    $st = $pdo->query(
+        'SELECT r.duel_id, r.destinataire, d.challenger_id,
+                d.challenger_score, d.opponent_score,
+                uc.pseudo AS challenger_pseudo, uo.pseudo AS opponent_pseudo
+         FROM push_duels_resultats r
+         JOIN duels d ON d.id = r.duel_id
+         JOIN users uc ON uc.id = d.challenger_id
+         JOIN users uo ON uo.id = d.opponent_id
+         WHERE r.notified_at IS NULL'
+    );
+    foreach ($st->fetchAll() as $r) {
+        // Marqué AVANT tout envoi — même précédent que partout ailleurs :
+        // rater une notification vaut mieux que harceler.
+        $pdo->prepare('UPDATE push_duels_resultats SET notified_at = ? WHERE duel_id = ?')
+            ->execute([now_sql(), $r['duel_id']]);
+
+        // Le destinataire a fini en premier ; « l'autre » vient de jouer.
+        $jaiLance = (int) $r['destinataire'] === (int) $r['challenger_id'];
+        $autre    = $jaiLance ? $r['opponent_pseudo'] : $r['challenger_pseudo'];
+        $sonScore = (int) ($jaiLance ? $r['opponent_score'] : $r['challenger_score']);
+        $monScore = (int) ($jaiLance ? $r['challenger_score'] : $r['opponent_score']);
+
+        // « a joué à son tour » : juste dans les deux sens — qu'on ait lancé
+        // le défi ou qu'on l'ait relevé en premier, l'autre vient de finir.
+        $payload = (string) json_encode([
+            'title' => '🌱 Défi relevé !',
+            'body'  => $autre . ' a joué à son tour : ' . $sonScore . ' / ' . DUEL_QUESTION_COUNT
+                     . ' — toi, ' . $monScore . '.',
+            'url'   => '/defi/',
+            'tag'   => 'duel-resultat',
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        $abos = $pdo->prepare('SELECT * FROM push_abonnements WHERE user_id = ?');
+        $abos->execute([$r['destinataire']]);
+        foreach ($abos->fetchAll() as $abo) {
+            $res = push_send($abo, $payload, $cfg);
+            if ($res['ok']) {
+                $envoyes++;
+            } elseif ($res['gone']) {
+                $pdo->prepare('DELETE FROM push_abonnements WHERE id = ?')->execute([$abo['id']]);
+            }
+            // échec passager : tant pis pour cette fois — le compteur
+            // d'échecs de l'abonnement vit dans la boucle quotidienne.
         }
     }
     return $envoyes;

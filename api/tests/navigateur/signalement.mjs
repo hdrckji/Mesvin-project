@@ -4,7 +4,7 @@
    L'API sait dire qu'une route accepte un signalement. Elle ne peut rien dire
    du geste lui-même, et c'est le geste qui décide de tout : un lien qu'on ne
    voit pas, un formulaire qui décourage, un envoi qui ne dit pas merci, et
-   plus personne ne signale rien — on croit alors que les 600 questions sont
+   plus personne ne signale rien — on croit alors que les 2 500 questions sont
    parfaites parce que la boîte est vide.
 
    Ce scénario joue donc les deux bouts de la chaîne :
@@ -97,7 +97,14 @@ async function lecteurSignale(b) {
   await attendre(1500);
 
   const enQuestion = await attendreTexte(p, /Question\s*1|\/\s*\d/i);
-  dire(/\?|\./.test(enQuestion), 'une question est posée');
+  // On prouve la présence de la question par son ÉLÉMENT, pas par sa
+  // ponctuation : « Complète le verset » se termine par « ___ » et non par un
+  // point. L'ancienne assertion tenait au hasard du tirage.
+  const texteQuestion = await p.evaluate(() => {
+    const e = document.querySelector('.defi-question');
+    return e ? (e.innerText || '').trim() : '';
+  });
+  dire(texteQuestion.length > 10, 'une question est posée', enQuestion);
 
   /* Avant de répondre, RIEN à signaler — et un lien visible ici serait un
      indice de plus sur l'écran. */

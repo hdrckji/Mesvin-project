@@ -76,6 +76,8 @@
     lune: '<path d="M15.8 12.9A6.6 6.6 0 1 1 7.1 4.2a5.3 5.3 0 0 0 8.7 8.7Z"/>',
     colombe: '<path d="M3 8.2c2.1 2.3 4.9 2.3 7 0 2.1 2.3 4.9 2.3 7 0"/><path d="M3 12.8c2.1 2.3 4.9 2.3 7 0 2.1 2.3 4.9 2.3 7 0"/>',
     eglise: '<path d="M10 3v3M8.5 4.5h3"/><path d="M4 17V9.5L10 5l6 4.5V17"/><path d="M8 17v-4h4v4"/>',
+    // Le drapeau du signalement (signaler.js) : une porte de service, discrète.
+    drapeau: '<path d="M5 17V3.5"/><path d="M5 4h9.5l-2 3.2 2 3.3H5"/>',
   };
 
   function icon(name, size) {

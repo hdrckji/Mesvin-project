@@ -68,7 +68,9 @@ if ($path === '/api/health' && $method === 'GET') {
     }
     $user = optional_user($pdo);
     if ($user === null || !is_admin($user)) {
-        json_out(['ok' => true]);
+        // Seul détail public : le battement de cœur du cron — voir
+        // health_cron() dans push.php pour le POURQUOI de cette exception.
+        json_out(['ok' => true, 'cron' => health_cron($pdo)]);
     }
     // Notifications push : la clé du cron est générée ici au premier regard
     // d'un admin (avec les clés VAPID), et l'URL à copier dans le service de
@@ -106,6 +108,9 @@ if ($path === '/api/health' && $method === 'GET') {
             'proxyHops'     => proxy_hops(),
             'ipRetenue'     => client_ip(),
         ],
+        // Le battement de cœur du cron (aussi dans la réponse anonyme) : la
+        // première chose à regarder quand « je ne reçois plus rien ».
+        'cron' => health_cron($pdo),
         'push' => [
             'abonnements' => (int) $pdo->query('SELECT COUNT(*) FROM push_abonnements')->fetchColumn(),
             'cronKey'     => $pushCfg === null ? null : $pushCfg['cron_key'],
@@ -308,6 +313,9 @@ if ($path === '/api/admin/eglises' && $method === 'GET') handle_admin_eglises($p
 if ($path === '/api/admin/signalements' && $method === 'GET') handle_admin_signalements($pdo);
 if (preg_match('#^/api/admin/signalements/([0-9]+)$#', $path, $m) && $method === 'POST') {
     handle_admin_signalement_classer($pdo, (int) $m[1]);
+}
+if (preg_match('#^/api/admin/signalements/([0-9]+)/retirer$#', $path, $m) && $method === 'POST') {
+    handle_admin_signalement_retirer($pdo, (int) $m[1]);
 }
 // Voir et retirer ce qu'une église a publié — sur signalement, jamais a priori.
 if ($path === '/api/admin/groupes' && $method === 'GET') handle_admin_groupes($pdo);

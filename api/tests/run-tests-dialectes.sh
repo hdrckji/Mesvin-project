@@ -14,6 +14,23 @@
 # La base MySQL indiquée est VIDÉE à chaque passe : ne jamais pointer une base
 # qui contient quoi que ce soit d'utile. Une seconde base, suffixée « _mig »,
 # sert au contrôle de migration et doit être accessible au même compte.
+#
+# Pas de MySQL sous la main ? Un serveur jetable se monte en deux minutes
+# (Ubuntu : apt-get install mysql-server-8.0), sans systemd ni config :
+#
+#   D=/tmp/bh-mysql && mkdir -p $D/data $D/run
+#   mysqld --no-defaults --initialize-insecure --user=root --datadir=$D/data
+#   mysqld --no-defaults --user=root --datadir=$D/data --port=3307 \
+#     --bind-address=127.0.0.1 --mysqlx=OFF \
+#     --socket=$D/run/mysqld.sock --pid-file=$D/run/mysqld.pid &
+#   mysql --no-defaults -h 127.0.0.1 -P 3307 -u root -e "
+#     CREATE DATABASE bh_test; CREATE DATABASE bh_test_mig;
+#     CREATE USER 'bh'@'%' IDENTIFIED BY 'test';
+#     GRANT ALL ON bh_test.* TO 'bh'@'%'; GRANT ALL ON bh_test_mig.* TO 'bh'@'%';"
+#   BH_TEST_MYSQL_URL=mysql://bh:test@127.0.0.1:3307/bh_test ./run-tests-dialectes.sh
+#
+# (--mysqlx=OFF parce que le plugin X squatte 33060 ; --no-defaults pour
+# ignorer tout my.cnf de la machine.)
 # ===========================================================================
 set -u
 ICI="$(cd "$(dirname "$0")" && pwd)"

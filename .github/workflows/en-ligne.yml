@@ -1,0 +1,130 @@
+# ============================================================================
+# « Est-ce que c'est en ligne ? » — répondu tout seul, après chaque fusion.
+#
+# POURQUOI ce fichier existe.
+#
+# Railway construit l'image et la met en ligne quand `main` bouge. Personne ne
+# le lui demande : il regarde le dépôt. Résultat, entre la fusion et la mise en
+# ligne il y a un trou de quelques minutes pendant lequel la seule façon de
+# savoir où l'on en est, c'est d'ouvrir le tableau de bord Railway et de
+# scruter. Et si le déploiement ne part JAMAIS — service en pause, lien GitHub
+# rompu, branche surveillée changée — rien ne le dit. On l'apprend en
+# s'apercevant, des heures plus tard, que le correctif n'a atteint personne.
+#
+# Ce workflow surveille à notre place. Il attend que la version en ligne
+# rattrape celle du dépôt, puis interroge la production pour de bon. La pastille
+# verte sur le commit veut donc dire « c'est déployé ET ça répond bien » — pas
+# « ça compile ».
+#
+# Le rouge est INFORMATIF, pas une casse du dépôt : il ne bloque aucune fusion
+# (la suite Tests reste seule juge du code). Il dit qu'entre le dépôt et le
+# domaine, quelque chose ne suit pas.
+#
+# STRICTEMENT EN LECTURE : la sonde ne fait que des GET et des HEAD. Aucune
+# écriture, aucune authentification, aucun compte créé, aucun e-mail déclenché.
+# C'est ce que fait n'importe quel visiteur.
+# ============================================================================
+name: En ligne
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      base:
+        description: "Adresse à sonder"
+        default: "https://biblehorizon.fr"
+
+# Une fusion qui en suit une autre de près annule la surveillance précédente :
+# c'est la DERNIÈRE version qui doit atterrir, attendre l'avant-dernière n'a
+# aucun sens.
+concurrency:
+  group: en-ligne
+  cancel-in-progress: true
+
+jobs:
+  atterrissage:
+    name: Le déploiement a-t-il atterri ?
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Outils
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq jq curl
+
+      # ---------------------------------------------------------------------
+      # On attend que le sw.js SERVI porte le numéro de coquille du dépôt.
+      #
+      # Ce numéro est le seul témoin de version que la production expose déjà,
+      # sans rien ajouter au code. La convention du dépôt veut qu'on l'incrémente
+      # dès qu'on touche à la coquille — donc pour tout changement visible par un
+      # lecteur, ce test a du sens.
+      #
+      # Quand la coquille n'a PAS changé (une retouche d'API, un test, un README),
+      # les deux numéros sont égaux dès la première seconde. On le dit alors
+      # franchement au lieu de crier victoire : ce tour-là prouve que le site
+      # répond, pas qu'un déploiement vient de passer.
+      - name: Attendre que la version du dépôt soit servie
+        id: attente
+        env:
+          BASE: ${{ github.event.inputs.base || 'https://biblehorizon.fr' }}
+        run: |
+          set -u
+          BASE="${BASE%/}"
+          version_en_ligne() {
+            curl -sS --max-time 20 "$BASE/sw.js" 2>/dev/null \
+              | grep -oE "const CACHE *= *'[^']+'" | grep -oE "'[^']+'" | tr -d "'"
+          }
+          LOCALE=$(grep -oE "const CACHE *= *'[^']+'" sw.js | grep -oE "'[^']+'" | tr -d "'")
+          [ -n "$LOCALE" ] || { echo "::error::sw.js du dépôt : numéro de coquille illisible"; exit 1; }
+          DEPART=$(version_en_ligne)
+          echo "dépôt   : $LOCALE"
+          echo "en ligne: ${DEPART:-<injoignable>}"
+
+          if [ "$DEPART" = "$LOCALE" ]; then
+            echo "inchangee=oui" >> "$GITHUB_OUTPUT"
+            echo "::notice::La coquille était déjà en $LOCALE : ce commit ne l'a pas fait bouger. La sonde ci-dessous vérifie que le site répond ; elle ne peut pas prouver qu'un déploiement vient de passer."
+            exit 0
+          fi
+
+          # Railway : quelques minutes de construction, puis la bascule. Vingt
+          # minutes de patience couvrent très largement une image de cette
+          # taille ; au-delà, ce n'est plus de la lenteur, c'est que ça ne part pas.
+          # Le délai n'est écrit qu'ICI : les messages en dérivent, pour qu'ils ne
+          # puissent pas se mettre à mentir le jour où on le change.
+          PATIENCE=1200
+          echo "attente de $LOCALE (au plus $((PATIENCE / 60)) min)…"
+          DEBUT=$(date +%s)
+          while [ $(( $(date +%s) - DEBUT )) -lt "$PATIENCE" ]; do
+            sleep 20
+            SERVIE=$(version_en_ligne)
+            ECOULE=$(( $(date +%s) - DEBUT ))
+            if [ "$SERVIE" = "$LOCALE" ]; then
+              echo "inchangee=non" >> "$GITHUB_OUTPUT"
+              echo "::notice::Déployé : ${DEPART:-?} → $LOCALE en ${ECOULE}s."
+              exit 0
+            fi
+            printf '   %4ds — servie : %s\n' "$ECOULE" "${SERVIE:-<injoignable>}"
+          done
+
+          echo "::error::$((PATIENCE / 60)) minutes après la fusion, $BASE sert encore « ${DEPART:-<injoignable>} » au lieu de « $LOCALE ». Le déploiement n'est pas parti. À vérifier sur Railway : le service est-il en pause, surveille-t-il bien hdrckji/Mesvin-project sur la branche main, et le lien GitHub est-il toujours valide ?"
+          exit 1
+
+      # ---------------------------------------------------------------------
+      # La version est en ligne : reste à savoir si elle SERT correctement.
+      # En-têtes de sécurité, redirections, les 38 entrées de la coquille, les
+      # 66 livres, les icônes du manifeste, assetlinks.json. Rien de tout cela
+      # n'existe dans la suite locale, qui passe par `php -S`.
+      #
+      # `always()` : même quand l'attente a expiré, on veut SAVOIR ce que le
+      # domaine sert. Un rapport « le site répond bien, mais en v88 » ne dit pas
+      # la même chose qu'un rapport « le site ne répond plus du tout », et c'est
+      # précisément la distinction qui oriente la recherche. L'étape ratée garde
+      # le job au rouge de toute façon.
+      - name: La production, telle qu'elle répond vraiment
+        if: always()
+        env:
+          BASE: ${{ github.event.inputs.base || 'https://biblehorizon.fr' }}
+        run: bash api/tests/sonde-production.sh "$BASE"

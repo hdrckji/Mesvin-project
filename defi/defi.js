@@ -26,6 +26,13 @@ const STORE_KEY = 'graine.defi.v1';
 const NB_QUESTIONS = 10;
 
 const NIVEAUX = { 1: 'Découverte', 2: 'Habitué', 3: 'Connaisseur' };
+// Bibliophile n'est PAS un quatrième niveau de questions : c'est le niveau 3
+// joué SANS les propositions. Quatre options soufflent la réponse — les
+// retirer fait passer de « reconnaître » à « se souvenir », et c'est le plus
+// grand saut de difficulté possible sans écrire une seule question nouvelle.
+// Le modèle de données reste donc intact : `niveau` vaut toujours 1 à 3, en
+// base, dans l'API et dans l'éditeur d'administration.
+const NIVEAU_BIBLIOPHILE = 3;
 
 /* ---------- Aides ---------- */
 const el = document.getElementById('app');
@@ -63,6 +70,53 @@ function rngSeme(seedTxt) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+/* ---------- Saisie libre (Bibliophile) ----------------------------------
+   MÊME RÈGLE que portrait_correspond() dans api/portrait.php : une faute de
+   frappe est tolérée, JAMAIS une confusion. Toute retouche ici doit y être
+   reportée à l'identique, et réciproquement.
+
+   La normalisation ne laisse que [a-z0-9 ] : accents, majuscules, traits
+   d'union et ponctuation disparaissent. « Belschatsar », « belschatsar » et
+   « Belschatsar. » sont donc la même saisie. */
+const saisieNorm = s => String(s)
+  .toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9 ]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+/* Distance de Levenshtein, bornée à 2 : au-delà, la réponse est refusée de
+   toute façon, inutile de remplir toute la matrice. */
+function distance(a, b) {
+  if (a === b) return 0;
+  if (Math.abs(a.length - b.length) > 1) return 2;
+  let ligne = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let prec = ligne[0];
+    ligne[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const tmp = ligne[j];
+      ligne[j] = Math.min(ligne[j] + 1, ligne[j - 1] + 1, prec + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prec = tmp;
+    }
+  }
+  return ligne[b.length];
+}
+
+/* La saisie vaut-elle la bonne réponse ? `autres` sont les mauvaises options :
+   si la saisie est aussi proche de l'une d'elles, on REFUSE — on ne devine
+   jamais à la place du lecteur. */
+function saisieCorrespond(texte, bonne, autres) {
+  const n = saisieNorm(texte);
+  if (n === '') return false;
+  const b = saisieNorm(bonne);
+  if (n === b) return true;
+  // Les cibles courtes (Paul, Saül, Élie, Sara…) restent en correspondance
+  // exacte : à quatre lettres, une faute change le mot au lieu de l'abîmer.
+  if (b.length < 5 || distance(n, b) > 1) return false;
+  return !autres.some(a => { const x = saisieNorm(a); return x !== b && distance(n, x) <= 1; });
+}
+
 function melange(arr, rnd) {
   const r = arr.slice();
   for (let i = r.length - 1; i > 0; i--) {
@@ -119,7 +173,7 @@ async function telechargerBanque() {
 }
 async function chargerBanque() {
   // La copie mémorisée sur l'appareil d'abord : le module s'ouvre sans
-  // attendre le re-téléchargement des 600 questions (~150 Ko à chaque
+  // attendre le re-téléchargement des 2 500 questions (~786 Ko à chaque
   // visite, sinon). Le serveur est consulté en arrière-plan et sa version
   // remplace la copie pour la PROCHAINE ouverture — jamais en pleine partie,
   // le tirage du jour ne doit pas changer sous les pieds du joueur.
@@ -155,12 +209,28 @@ function habille(q, rnd) {
    vit dans le localStorage de l'appareil (store.vues) — une fois la case
    épuisée, elle se réinitialise et le cycle recommence. */
 function tirageSansRemise(caseKey, pool, n, rnd) {
-  const vues = new Set(store.vues[caseKey] || []);
-  let frais = pool.filter(q => !vues.has(q.id));
-  if (frais.length < n) { vues.clear(); frais = pool; }
-  const tirees = melange(frais, rnd).slice(0, n);
-  tirees.forEach(q => vues.add(q.id));
-  store.vues[caseKey] = [...vues];
+  const parId = new Map(pool.map(q => [q.id, q]));
+  // La FILE des questions déjà servies, de la plus ancienne à la plus récente.
+  // On oublie au passage celles qui ont quitté le vivier (banque retouchée).
+  const file = (store.vues[caseKey] || []).filter(id => parId.has(id));
+  const vues = new Set(file);
+  const frais = melange(pool.filter(q => !vues.has(q.id)), rnd);
+
+  let tirees = frais.slice(0, n);
+  if (tirees.length < n) {
+    // Vivier épuisé. On reprend alors par les PLUS ANCIENNES, jamais au
+    // hasard : c'est ce qui garantit un tour complet du vivier avant qu'une
+    // seule question ne revienne. L'ancienne version effaçait toute la
+    // mémoire et repartait du tas entier — une question vue la veille pouvait
+    // donc revenir le lendemain, et c'est ce que les lecteurs signalaient.
+    const reprises = file.slice(0, n - tirees.length).map(id => parId.get(id));
+    tirees = melange(tirees.concat(reprises), rnd);
+  }
+
+  // Les questions servies repartent en FIN de file : elles ne reviendront
+  // qu'après toutes les autres.
+  const servies = new Set(tirees.map(q => q.id));
+  store.vues[caseKey] = file.filter(id => !servies.has(id)).concat(tirees.map(q => q.id));
   saveStore();
   return tirees;
 }
@@ -173,7 +243,7 @@ function tirage(mode, filtres) {
     // SANS REDITE : la banque entière est mélangée une fois par « période »
     // de floor(N/10) jours, et chaque jour prend sa tranche de 10 questions.
     // Une question ne peut donc pas revenir avant la fin de la période
-    // (~30 jours avec 300 questions). Tout dérive de la date : même défi
+    // (~250 jours avec 2 500 questions). Tout dérive de la date : même défi
     // pour tout le monde, sans serveur ni mémoire locale.
     const jour = Math.floor(Date.parse(dateISO() + 'T00:00:00Z') / 86400000);
     const parPeriode = Math.max(1, Math.floor(BANQUE.length / NB_QUESTIONS));
@@ -228,7 +298,8 @@ function tirageCoop(filtres, n) {
 
 /* ---------- État de l'écran ---------- */
 let vue = { ecran: 'accueil' };
-let filtresLibre = { categorie: null, niveau: null };
+let filtresLibre = { categorie: null, niveau: null, bibliophile: false };
+let filtresDuel = { categorie: null, niveau: null };   // le terrain des duels
 
 function demarrer(mode) {
   const items = tirage(mode, filtresLibre);
@@ -240,7 +311,12 @@ function demarrer(mode) {
     index: 0,
     score: 0,
     repondu: null,     // position choisie pour la question en cours (null = pas encore)
-    ratees: []         // questions manquées, pour le récapitulatif
+    ratees: [],        // questions manquées, pour le récapitulatif
+    // Bibliophile ne vaut que pour le défi libre : le défi du jour est le même
+    // pour tout le monde, on ne le durcit pas dans le dos des autres.
+    bibliophile: mode === 'libre' && filtresLibre.bibliophile,
+    saisie: '',        // ce que le lecteur a écrit, pour le lui remontrer
+    indice: false      // propositions révélées (Bibliophile) : la question vaut ½
   };
   render();
 }
@@ -248,10 +324,58 @@ function demarrer(mode) {
 function repondre(pos) {
   if (vue.repondu !== null) return;
   const item = vue.items[vue.index];
-  const ok = pos === item.bonnePos;
   vue.repondu = pos;
+  // En Bibliophile, on ne touche une option qu'après avoir révélé les
+  // propositions : la question ne vaut alors plus que la moitié.
+  compter(pos === item.bonnePos, item, vue.bibliophile && vue.indice);
+}
+
+/* Bibliophile : « Voir les propositions — ½ point ». Le prix est annoncé SUR
+   le bouton, jamais après coup. Porte à sens unique : une fois révélées, on
+   répond en touchant — même si la mémoire revient entre-temps, la question
+   reste à ½. Sans ça, l'indice serait gratuit pour qui sait se raviser. */
+function voirPropositions() {
+  if (vue.repondu !== null || vue.indice) return;
+  vue.indice = true;
+  vue.saisie = '';
+  render();
+}
+
+/* Bibliophile : la réponse est ÉCRITE, pas choisie. On note « -1 » plutôt
+   qu'une position, pour que l'écran n'accuse aucune option que le lecteur n'a
+   jamais touchée : il verra la bonne réponse mise en avant, et la sienne à
+   côté. */
+function repondreTexte() {
+  if (vue.repondu !== null || vue.indice) return; // propositions révélées : on répond en touchant
+  const item = vue.items[vue.index], q = item.q;
+  const champ = document.getElementById('saisie');
+  const texte = champ ? champ.value : '';
+  // Valider à vide, c'est un doigt qui a glissé : on ne compte pas d'échec.
+  if (saisieNorm(texte) === '') { if (champ) champ.focus(); return; }
+  vue.saisie = texte.trim();
+  const ok = saisieCorrespond(texte, q.options[q.bonne], q.options.filter((_, i) => i !== q.bonne));
+  vue.repondu = ok ? item.bonnePos : -1;
+  compter(ok, item);
+}
+
+/* « Je ne trouve pas » : la question compte comme manquée, sans détour — on
+   ne fait pas deviner quelqu'un qui a déjà renoncé. */
+function donnerSaLangue() {
+  if (vue.repondu !== null) return;
+  vue.saisie = '';
+  vue.repondu = -1;
+  compter(false, vue.items[vue.index]);
+}
+
+/* Le décompte, commun à toutes les façons de répondre. `demi` : réponse
+   trouvée APRÈS avoir révélé les propositions (Bibliophile) — elle vaut ½
+   point, et c'est le SEUL prix. La série continue et la catégorie compte un
+   succès : le lecteur a bien trouvé, il a déjà payé en points. Multiplier les
+   pénalités cachées rendrait la règle illisible ; une seule, annoncée sur le
+   bouton, suffit. */
+function compter(ok, item, demi) {
   if (ok) {
-    vue.score++;
+    vue.score += demi ? 0.5 : 1;
     store.serie++;
     if (store.serie > store.meilleureSerie) store.meilleureSerie = store.serie;
   } else {
@@ -268,10 +392,18 @@ function suivante() {
   if (vue.index + 1 < vue.items.length) {
     vue.index++;
     vue.repondu = null;
+    vue.saisie = '';
+    vue.indice = false; // chaque question repart en saisie libre, à 1 point
     render();
   } else {
     terminer();
   }
+}
+
+/* « 7,5 » et pas « 7.5 » : le score peut porter des demi-points (Bibliophile
+   avec propositions révélées), et on écrit les décimales à la française. */
+function fmtScore(n) {
+  return String(n).replace('.', ',');
 }
 
 function terminer() {
@@ -534,8 +666,8 @@ let duelsConnus = null; // dernière liste reçue (pour le badge de l'accueil)
 
 function statutDuel(d) {
   if (d.status === 'waiting_me') return { txt: 'À toi de relever l’épreuve', cls: 'moi' };
-  if (d.status === 'waiting_them') return { txt: `En attente de ${d.opponent.pseudo}`, cls: 'eux' };
-  return { txt: 'Terminé', cls: 'fini' };
+  if (d.status === 'waiting_them') return { txt: 'En attente', cls: 'eux' };
+  return { txt: '', cls: 'fini' };
 }
 
 /* Formulation bienveillante du résultat final, quelle que soit l'issue. */
@@ -573,17 +705,76 @@ async function chargerDuels() {
   render();
 }
 
+/* ---------- Le terrain du duel : catégorie et niveau, comme le défi libre ----
+   Un écran LÉGER entre l'ami et le tirage — « Toutes / Tous » par défaut, un
+   seul geste de plus. Le serveur revalide tout : catégorie en liste blanche,
+   niveau borné, et refus si le choix ne laisse pas dix questions. */
+function ouvrirDuelPrep(code, pseudo) {
+  vue = { ecran: 'duelPrep', code: code, pseudo: pseudo, erreur: null };
+  if (!CATEGORIES.length) {
+    chargerBanque().then(() => { if (vue.ecran === 'duelPrep') render(); }).catch(() => {});
+  }
+  render();
+}
+
 /* ---------- Créer un duel puis relever sa part tout de suite ---------- */
-async function nouveauDuel(code) {
+async function nouveauDuel(code, pseudo) {
   vue = { ecran: 'duels', chargement: true, amis: null, duels: null, erreur: null };
   render();
   try {
-    const duel = await GraineAPI.createDuel(code);
+    const duel = await GraineAPI.createDuel(code, filtresDuel);
     demarrerDuelDistant(duel, null);
   } catch (e) {
-    vue = { ecran: 'duels', chargement: false, amis: null, duels: null, erreur: messageDoux(e) };
+    if (e && e.status === 400) {
+      // Choix trop étroit ou refusé : retour au terrain, message à l'appui.
+      vue = { ecran: 'duelPrep', code: code, pseudo: pseudo, erreur: messageDoux(e) };
+    } else {
+      vue = { ecran: 'duels', chargement: false, amis: null, duels: null, erreur: messageDoux(e) };
+    }
     render();
   }
+}
+
+function renderDuelPrep() {
+  el.innerHTML = `
+  <div class="fade">
+    <button class="back-link" id="btn-retour-duels">‹ Défier un ami</button>
+    <div class="topbar">
+      <div class="brand">
+        <h1 class="app-title">Défier ${esc(vue.pseudo || 'un ami')} <span class="seed">•</span> <span class="muted">mêmes questions pour vous deux</span></h1>
+      </div>
+    </div>
+    <div class="card">
+      <p class="defi-lead">Choisis le terrain — ou laisse tout ouvert, le tirage reste équilibré.</p>
+      <div class="defi-filters">
+        <label class="lbl">Catégorie</label>
+        <div class="pill-row" id="pills-dcat">
+          <button class="pill ${filtresDuel.categorie === null ? 'on' : ''}" data-cat="">Toutes</button>
+          ${CATEGORIES.length
+            ? CATEGORIES.map(c => `<button class="pill ${filtresDuel.categorie === c ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('')
+            : '<span class="muted" style="font-size:.82rem">Un instant…</span>'}
+        </div>
+        <label class="lbl">Niveau</label>
+        <div class="pill-row" id="pills-dniv">
+          <button class="pill ${filtresDuel.niveau === null ? 'on' : ''}" data-niv="">Tous</button>
+          ${[1, 2, 3].map(n => `<button class="pill ${filtresDuel.niveau === n ? 'on' : ''}" data-niv="${n}">${NIVEAUX[n]}</button>`).join('')}
+        </div>
+      </div>
+      ${vue.erreur ? `<p class="defi-lead" style="font-weight:650;margin-top:10px">${esc(vue.erreur)}</p>` : ''}
+      <div class="defi-actions">
+        <button class="btn btn-primary btn-block" id="btn-duel-partir">C'est parti — dix questions</button>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('btn-retour-duels').onclick = ouvrirDuels;
+  document.querySelectorAll('#pills-dcat .pill').forEach(b => {
+    b.onclick = () => { filtresDuel.categorie = b.dataset.cat || null; renderDuelPrep(); };
+  });
+  document.querySelectorAll('#pills-dniv .pill').forEach(b => {
+    b.onclick = () => { filtresDuel.niveau = b.dataset.niv ? Number(b.dataset.niv) : null; renderDuelPrep(); };
+  });
+  document.getElementById('btn-duel-partir').onclick = () => nouveauDuel(vue.code, vue.pseudo);
 }
 
 /* ---------- Ouvrir un duel existant (relever ma part, ou voir le résultat) ---------- */
@@ -709,8 +900,8 @@ async function revanche(opponent) {
 /* ============================================================================
    Signaler ce qui cloche
 
-   600 questions ont été relues deux fois devant le texte. Elles restent
-   écrites par des humains : la personne qui verra la 601e coquille, c'est le
+   2 500 questions ont été relues deux fois devant le texte. Elles restent
+   écrites par des humains : la personne qui verra la 2 501e coquille, c'est le
    lecteur, sa Bible ouverte à côté du téléphone. Sans un geste à sa portée,
    ce qu'il voit meurt avec sa soirée.
 
@@ -788,6 +979,7 @@ function render() {
   if (vue.ecran === 'mfin') return m.mode === 'compet' ? renderFinCompet() : renderFinCoop();
   if (vue.ecran === 'duelCompte') return renderDuelCompte();
   if (vue.ecran === 'duels') return renderDuels();
+  if (vue.ecran === 'duelPrep') return renderDuelPrep();
   if (vue.ecran === 'duelQuestion') return vue.recap ? renderDuelEnvoi() : renderDuelQuestion();
   if (vue.ecran === 'duelReview') return renderDuelReview();
   if (vue.ecran === 'veillee') return renderVeillee();
@@ -822,7 +1014,7 @@ function renderAccueil() {
       <span class="hub-ic">${icon('sablier', 26)}</span>
       <span class="hub-txt">
         <span class="hub-title">Avant ou après ?</span>
-        <span class="hub-sub">Replace les livres et les grands événements dans l'ordre — la frise se construit sous tes yeux.<span id="attente-avantapres"></span></span>
+        <span class="hub-sub">Replace les livres et les grands événements dans l'ordre — la ligne du temps se construit sous tes yeux.<span id="attente-avantapres"></span></span>
       </span>
       <span class="chev">›</span>
     </button>
@@ -997,9 +1189,13 @@ function renderSolo() {
         </div>
         <label class="lbl">Niveau</label>
         <div class="pill-row" id="pills-niv">
-          <button class="pill ${filtresLibre.niveau === null ? 'on' : ''}" data-niv="">Tous</button>
-          ${[1, 2, 3].map(n => `<button class="pill ${filtresLibre.niveau === n ? 'on' : ''}" data-niv="${n}">${NIVEAUX[n]}</button>`).join('')}
+          <button class="pill ${!filtresLibre.bibliophile && filtresLibre.niveau === null ? 'on' : ''}" data-niv="">Tous</button>
+          ${[1, 2, 3].map(n => `<button class="pill ${!filtresLibre.bibliophile && filtresLibre.niveau === n ? 'on' : ''}" data-niv="${n}">${NIVEAUX[n]}</button>`).join('')}
+          <button class="pill ${filtresLibre.bibliophile ? 'on' : ''}" data-niv="bibliophile">Bibliophile</button>
         </div>
+        ${filtresLibre.bibliophile
+          ? `<p class="defi-lead" style="margin:6px 0 0">Les questions les plus exigeantes, <b>sans les propositions</b> : tu écris la réponse. Une faute de frappe est pardonnée.</p>`
+          : ''}
       </div>
       <div class="defi-actions">
         <button class="btn btn-grow btn-block" id="btn-libre">Relever un défi libre</button>
@@ -1024,7 +1220,14 @@ function renderSolo() {
     b.onclick = () => { filtresLibre.categorie = b.dataset.cat || null; renderSolo(); };
   });
   document.querySelectorAll('#pills-niv .pill').forEach(b => {
-    b.onclick = () => { filtresLibre.niveau = b.dataset.niv ? Number(b.dataset.niv) : null; renderSolo(); };
+    b.onclick = () => {
+      // Bibliophile occupe la place d'un niveau dans la rangée — il en choisit
+      // donc un (le plus exigeant) et allume la saisie libre.
+      const v = b.dataset.niv;
+      filtresLibre.bibliophile = v === 'bibliophile';
+      filtresLibre.niveau = v === 'bibliophile' ? NIVEAU_BIBLIOPHILE : (v ? Number(v) : null);
+      renderSolo();
+    };
   });
 }
 
@@ -1041,12 +1244,21 @@ function renderQuestion() {
     <button class="back-link" id="btn-quitter">‹ Quitter le défi</button>
     <div class="defi-meta">
       <span>Question ${num}/${total}</span>
-      <span>${esc(q.categorie)} · ${NIVEAUX[q.niveau] || ''}</span>
+      <span>${esc(q.categorie)} · ${vue.bibliophile ? 'Bibliophile' : (NIVEAUX[q.niveau] || '')}</span>
     </div>
     <div class="defi-progress"><i style="width:${Math.round(((num - (repondu ? 0 : 1)) / total) * 100)}%"></i></div>
 
     <div class="card">
       <p class="defi-question">${esc(q.question)}</p>
+      ${vue.bibliophile && !repondu && !vue.indice ? `
+        <input id="saisie" class="saisie-libre" type="text" placeholder="Écris ta réponse"
+               autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+        <button class="btn btn-primary btn-block" id="btn-valider">Valider</button>
+        <button class="btn btn-ghost btn-block" id="btn-indice" style="margin-top:8px">Voir les propositions — ½ point</button>
+        <button class="btn btn-ghost btn-block" id="btn-langue" style="margin-top:8px">Je ne trouve pas</button>
+      ` : `
+      ${vue.bibliophile && vue.indice && !repondu
+        ? '<p class="defi-saisie-rappel">Propositions révélées — cette question vaut ½ point.</p>' : ''}
       <div id="options">
         ${item.ordre.map((idxOpt, pos) => {
           let cls = 'defi-option';
@@ -1057,7 +1269,19 @@ function renderQuestion() {
           }
           return `<button class="${cls}" data-pos="${pos}" ${repondu ? 'disabled' : ''}>${esc(q.options[idxOpt])}</button>`;
         }).join('')}
-      </div>
+      </div>`}
+      ${repondu && vue.bibliophile ? `<p class="defi-saisie-rappel">${
+        vue.indice
+          ? (vue.repondu === item.bonnePos
+              ? 'Trouvée avec les propositions : ½ point.'
+              : 'Répondu avec les propositions.')
+        : !vue.saisie ? 'Tu as passé la question.'
+        : saisieNorm(vue.saisie) === saisieNorm(q.options[q.bonne])
+          ? `Tu avais écrit <b>${esc(vue.saisie)}</b>.`
+          : vue.repondu === item.bonnePos
+            ? `Tu avais écrit <b>${esc(vue.saisie)}</b> — la faute de frappe est pardonnée.`
+            : `Tu avais écrit <b>${esc(vue.saisie)}</b>.`
+      }</p>` : ''}
       ${repondu ? `
         <p class="defi-ref-line"><span class="arrow">→</span>${esc(q.reference)} <span class="muted">· à retrouver dans ta Bible</span>${htmlSignaler('question:' + q.id, q.question + ' — ' + q.reference)}</p>
         <button class="btn btn-primary" id="btn-suivante">${derniere ? 'Voir le résultat' : 'Question suivante'}</button>
@@ -1066,7 +1290,15 @@ function renderQuestion() {
   </div>`;
 
   document.getElementById('btn-quitter').onclick = () => { vue = { ecran: 'solo' }; render(); };
-  if (!repondu) {
+  if (!repondu && vue.bibliophile && !vue.indice) {
+    const champ = document.getElementById('saisie');
+    document.getElementById('btn-valider').onclick = repondreTexte;
+    document.getElementById('btn-indice').onclick = voirPropositions;
+    document.getElementById('btn-langue').onclick = donnerSaLangue;
+    // Entrée valide : sur un téléphone, c'est la touche qu'on a sous le pouce.
+    champ.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); repondreTexte(); } };
+    champ.focus();
+  } else if (!repondu) {
     document.querySelectorAll('#options .defi-option').forEach(b => {
       b.onclick = () => repondre(Number(b.dataset.pos));
     });
@@ -1081,7 +1313,7 @@ function renderFin() {
   <div class="fade">
     <div class="card hero done-screen">
       <div class="seal">🌾</div>
-      <div class="defi-score">${vue.score}<span class="of">/${total}</span></div>
+      <div class="defi-score">${fmtScore(vue.score)}<span class="of">/${total}</span></div>
       <p class="defi-word">${esc(motDeFin(vue.score, total))}</p>
       ${vue.mode === 'jour' ? `<p style="margin:10px 0 0"><button class="linkbtn" id="btn-partager-score">Partager mon score</button></p>` : ''}
     </div>
@@ -1417,6 +1649,17 @@ function renderDuelCompte() {
   document.getElementById('btn-retour-defi').onclick = () => { vue = { ecran: 'quiz' }; render(); };
 }
 
+/* Le fil de l'amitié d'un ami, en un souffle : « 3 duels · 2-1 pour toi ».
+   Nourri par TOUS les duels finis de la paire — quiz et épreuves confondus. */
+function bilanAmiHTML(a) {
+  const b = a.duels;
+  if (!b || !b.joues) return '';
+  const t = b.toi > b.lui ? `${b.toi}-${b.lui} pour toi`
+    : b.lui > b.toi ? `${b.lui}-${b.toi} pour ${esc(a.pseudo)}`
+    : b.toi === 0 ? 'à égalité' : `égalité ${b.toi}-${b.lui}`;
+  return ` <span class="muted" style="font-weight:400;font-size:.78rem">· ${b.joues} duel${b.joues > 1 ? 's' : ''} · ${t}</span>`;
+}
+
 /* ---------- Écran des duels (connecté) ---------- */
 function renderDuels() {
   const entete = `
@@ -1458,8 +1701,9 @@ function renderDuels() {
   const ligneDuel = (d) => {
     const s = statutDuel(d);
     const brouillon = d.status === 'waiting_me' && brouillonDe(d.id);
+    // Qui a quoi, sans ambiguïté : « Toi 8 — Ceylia 6 », jamais « 8 / 6 ».
     const scores = d.status === 'finished'
-      ? `${d.myScore ?? '–'} / ${d.theirScore ?? '–'}`
+      ? `Toi ${d.myScore ?? '–'} — ${esc(d.opponent.pseudo)} ${d.theirScore ?? '–'}`
       : (d.myScore != null ? `Toi : ${d.myScore}` : '');
     return `
       <button class="duel-row" data-id="${d.id}">
@@ -1480,7 +1724,7 @@ function renderDuels() {
         <p class="defi-lead" style="margin-bottom:6px">Choisis l'ami à défier — vous recevrez les mêmes dix questions.</p>
         ${amis.map(a => `
           <button class="duel-row ami" data-code="${esc(a.friendCode)}">
-            <span class="duel-qui">${esc(a.pseudo)}</span>
+            <span class="duel-qui">${esc(a.pseudo)}${bilanAmiHTML(a)}</span>
             <span class="duel-etat moi">Défier</span>
           </button>`).join('')}
       ` : `
@@ -1508,7 +1752,10 @@ function renderDuels() {
   const ip = document.getElementById('btn-inviter-proche');
   if (ip) ip.onclick = () => partager(texteInvitationDuel());
   document.querySelectorAll('.duel-row.ami').forEach(b => {
-    b.onclick = () => nouveauDuel(b.dataset.code);
+    b.onclick = () => {
+      const a = amis.find(x => x.friendCode === b.dataset.code);
+      ouvrirDuelPrep(b.dataset.code, a ? a.pseudo : '');
+    };
   });
   document.querySelectorAll('.duel-row[data-id]').forEach(b => {
     b.onclick = () => {

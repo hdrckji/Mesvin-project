@@ -468,6 +468,9 @@ function config_checklist(): array {
         // ce qui est le cas de Railway. On l'affiche quand même pour qu'on
         // sache qu'elle existe et qu'on puisse la corriger sans lire le code.
         ['variable' => 'PROXY_HOPS',       'libelle' => 'Relais de confiance',      'definie' => $definie('PROXY_HOPS')],
+        // Facultative aussi : sans elle, les signalements partent à
+        // contact@biblehorizon.fr. Affichée pour qu'on sache qu'on peut la changer.
+        ['variable' => 'SIGNALEMENT_EMAIL', 'libelle' => 'Destinataire des signalements', 'definie' => $definie('SIGNALEMENT_EMAIL')],
     ];
     // La voie SMTP est une ALTERNATIVE à Brevo : on ne l'affiche que si elle
     // est entamée (SMTP_HOST posée), pour ne pas semer des « manquante ✗ »

@@ -73,7 +73,9 @@ function epreuve_deck_propre(mixed $deck): array {
 
 /** Balaie les parties finies d'être utiles (défis 7 j, veillées 24 h). */
 function epreuve_menage(PDO $pdo): void {
-    $pdo->prepare('DELETE FROM epreuve_duels WHERE created_at < ?')->execute([now_sql_plus(-7 * 86400)]);
+    // Sept jours depuis le RÉSULTAT (finished_at) — un duel encore ouvert
+    // vit sept jours depuis sa création, comme avant.
+    $pdo->prepare('DELETE FROM epreuve_duels WHERE COALESCE(finished_at, created_at) < ?')->execute([now_sql_plus(-7 * 86400)]);
     $st = $pdo->prepare('SELECT code FROM epreuve_veillees WHERE created_at < ?');
     $st->execute([now_sql_plus(-86400)]);
     foreach ($st->fetchAll() as $row) {
@@ -145,9 +147,14 @@ function epreuve_mes_defis(PDO $pdo): never {
     frise_menage($pdo);
     $defis = [];
     foreach (['epreuve_duels', 'frise_duels'] as $table) {
+        // p1_score exigé : un défi n'est présenté à l'ami qu'une fois
+        // l'épreuve du lanceur passée. Avant, un duel créé puis abandonné
+        // (appli fermée, envoi perdu) arrivait quand même chez l'invité —
+        // qui le jouait et le figeait en « terminé » avec un score « – »
+        // définitif pour le lanceur.
         $st = $pdo->prepare(
             "SELECT code, mode, total, p1_pseudo, created_at FROM $table
-             WHERE p2_user = ? AND p2_pseudo IS NULL"
+             WHERE p2_user = ? AND p2_pseudo IS NULL AND p1_score IS NOT NULL"
         );
         $st->execute([$user['id']]);
         foreach ($st->fetchAll() as $row) {
@@ -301,32 +308,173 @@ function epreuve_duel_get(PDO $pdo, string $code): never {
         // L'ami invité (pseudo, ou null pour un défi par code) : l'écran du
         // créateur peut dire « en attente de X » plutôt que montrer un code.
         'invite' => epreuve_duel_invite($pdo, $duel),
+        // Les réponses de chacun (null pour un vieux duel joué sans revue) :
+        // l'écran de résultat rejoue la partie question par question.
+        'p1Answers' => isset($duel['p1_answers']) && $duel['p1_answers'] !== null ? json_decode((string) $duel['p1_answers'], true) : null,
+        'p2Answers' => isset($duel['p2_answers']) && $duel['p2_answers'] !== null ? json_decode((string) $duel['p2_answers'], true) : null,
     ]);
 }
 
-/** Même règle que la Frise : la clé → case 1 ; sans clé → case 2, une fois. */
+/* ---- Le REJEU : les réponses font foi, jamais le score annoncé --------------
+   Un client qui envoie `answers` voit son score RECALCULÉ ici, carte par
+   carte, selon les règles du jeu — impossible d'annoncer 10/10 sans avoir
+   joué, et l'écran de résultat peut montrer la revue. Un client d'avant
+   (score seul) reste accepté : rien ne casse, il n'a simplement pas de
+   revue. Chaque forme est validée strictement (400 sinon). */
+
+/** Dispatch selon le code : FD- rejoue la frise, PD- le portrait, ED- les choix.
+ *  Retourne [score, réponses normalisées prêtes à stocker]. */
+function epreuve_rejoue(string $code, array $deck, mixed $answers): array {
+    if (!is_array($answers)) {
+        json_error('Réponses invalides (tableau attendu).', 400);
+    }
+    if (str_starts_with($code, 'FD-')) {
+        return epreuve_rejoue_frise($deck, $answers);
+    }
+    if (str_starts_with($code, 'PD-')) {
+        return epreuve_rejoue_portrait($deck, $answers);
+    }
+    return epreuve_rejoue_choix($deck, $answers);
+}
+
+/** Choix (« Qui a dit ça ? », « Écrit… ou pas ? ») : un index d'option par
+ *  carte (-1 = pas répondu) ; un point par bonne réponse. */
+function epreuve_rejoue_choix(array $deck, array $answers): array {
+    if (count($answers) !== count($deck)) {
+        json_error('Réponses invalides (une par question attendue).', 400);
+    }
+    $score = 0;
+    $norm = [];
+    foreach (array_values($answers) as $i => $a) {
+        if (!is_int($a) || $a < -1 || $a >= count($deck[$i]['options'])) {
+            json_error('Réponses invalides (index d\'option hors bornes).', 400);
+        }
+        if ($a === (int) $deck[$i]['bonne']) {
+            $score++;
+        }
+        $norm[] = $a;
+    }
+    return [$score, $norm];
+}
+
+/** Portrait : {t: texte proposé, k: indice où l'on a osé} par carte ;
+ *  correspondance tolérante (portrait_correspond) et points dégressifs. */
+function epreuve_rejoue_portrait(array $deck, array $answers): array {
+    if (count($answers) !== count($deck)) {
+        json_error('Réponses invalides (une par portrait attendue).', 400);
+    }
+    $score = 0;
+    $norm = [];
+    foreach (array_values($answers) as $i => $a) {
+        $t = is_array($a) && isset($a['t']) && is_string($a['t']) ? trim($a['t']) : null;
+        $k = is_array($a) ? ($a['k'] ?? null) : null;
+        if ($t === null || mb_strlen($t) > 60 || !is_int($k) || $k < 1 || $k > PORTRAIT_INDICES) {
+            json_error('Réponses invalides (texte et indice attendus).', 400);
+        }
+        $bon = $t !== '' && portrait_correspond($t, $deck, $i);
+        if ($bon) {
+            $score += PORTRAIT_INDICES + 1 - $k;
+        }
+        $norm[] = ['t' => $t, 'k' => $k, 'bon' => $bon];
+    }
+    return [$score, $norm];
+}
+
+/** Frise : l'emplacement touché pour chaque carte piochée (la 1re amorce la
+ *  frise). Le plateau se rejoue à l'identique : une carte mal placée rejoint
+ *  toujours sa vraie place, comme à l'écran. */
+function epreuve_rejoue_frise(array $deck, array $answers): array {
+    if (count($answers) !== count($deck) - 1) {
+        json_error('Réponses invalides (une par carte piochée attendue).', 400);
+    }
+    $places = [$deck[0]];
+    $score = 0;
+    $norm = [];
+    foreach (array_values($answers) as $i => $k) {
+        $c = $deck[$i + 1];
+        if (!is_int($k) || $k < 0 || $k > count($places)) {
+            json_error('Réponses invalides (emplacement hors du plateau).', 400);
+        }
+        $avantOk = $k === 0 || $places[$k - 1]['o'] < $c['o'];
+        $apresOk = $k === count($places) || $c['o'] < $places[$k]['o'];
+        if ($avantOk && $apresOk) {
+            $score++;
+        }
+        $vraie = count($places);
+        foreach ($places as $j => $p) {
+            if ($p['o'] > $c['o']) { $vraie = $j; break; }
+        }
+        array_splice($places, $vraie, 0, [$c]);
+        $norm[] = $k;
+    }
+    return [$score, $norm];
+}
+
+/** Le créateur est-il reconnu ? La clé d'abord ; sinon, pour un duel relié à
+ *  un compte (p1_user), le compte connecté suffit. La clé ne vit que dans le
+ *  localStorage de l'appareil de création : perdue ou restée sur un autre
+ *  appareil, le duel devenait injouable pour son propre lanceur. */
+function duel_est_createur(PDO $pdo, array $duel, string $cle): bool {
+    if ($cle !== '' && hash_equals((string) $duel['cle'], $cle)) {
+        return true;
+    }
+    if (!isset($duel['p1_user']) || $duel['p1_user'] === null) {
+        return false;
+    }
+    $u = optional_user($pdo);
+    return $u !== null && (int) $u['id'] === (int) $duel['p1_user'];
+}
+
+/** Même règle que la Frise : le créateur (clé ou compte) → case 1 ; sinon →
+ *  case 2, une fois. Avec `answers`, le score est REJOUÉ ici (jamais cru) ;
+ *  la case 2 posée marque finished_at. Le fil de l'amitié n'avance que
+ *  lorsque les DEUX scores sont là — quel que soit leur ordre d'arrivée. */
 function epreuve_duel_score(PDO $pdo, string $code): never {
-    throttle_or_429($pdo, 'epreuve-score', 60);
+    // 300 et non 60 : toute une assemblée (ou un réseau mobile partagé) sort
+    // par la même adresse IP — même raison que « epreuve-rejoindre ». Refuser
+    // un score joué honnêtement, c'est le perdre pour toujours.
+    throttle_or_429($pdo, 'epreuve-score', 300);
     $duel = epreuve_duel_row($pdo, $code);
     $body = read_json_body();
-    $score = $body['score'] ?? null;
-    if (!is_int($score) || $score < 0 || $score > (int) $duel['total']) {
-        json_error('Score invalide.', 400);
+    $answersJson = null;
+    if (isset($body['answers'])) {
+        [$score, $norm] = epreuve_rejoue($code, json_decode((string) $duel['deck'], true), $body['answers']);
+        $answersJson = json_encode($norm, JSON_UNESCAPED_UNICODE);
+    } else {
+        $score = $body['score'] ?? null;
+        if (!is_int($score) || $score < 0 || $score > (int) $duel['total']) {
+            json_error('Score invalide.', 400);
+        }
     }
     $cle = is_string($body['cle'] ?? null) ? $body['cle'] : '';
 
-    if ($cle !== '' && hash_equals((string) $duel['cle'], $cle)) {
+    if (duel_est_createur($pdo, $duel, $cle)) {
         if ($duel['p1_score'] !== null) {
             json_error('Ton score est déjà posé.', 409);
         }
-        $pdo->prepare('UPDATE epreuve_duels SET p1_score = ? WHERE code = ? AND p1_score IS NULL')->execute([$score, $code]);
+        $pdo->prepare('UPDATE epreuve_duels SET p1_score = ?, p1_answers = ? WHERE code = ? AND p1_score IS NULL')
+            ->execute([$score, $answersJson, $code]);
+        // L'ami avait déjà joué (duel resté « – » côté lanceur) : ce score-ci
+        // termine vraiment le duel — le fil de l'amitié avance maintenant.
+        if ($duel['p2_score'] !== null && $duel['p1_user'] !== null && $duel['p2_user'] !== null) {
+            duel_bilan_maj($pdo, (int) $duel['p1_user'], (int) $duel['p2_user'],
+                $score, (int) $duel['p2_score']);
+        }
     } else {
         if ($duel['p2_pseudo'] !== null) {
             json_error('Ce défi a déjà trouvé son adversaire.', 409);
         }
         $pseudo = frise_prenom($body['pseudo'] ?? null);
-        $pdo->prepare('UPDATE epreuve_duels SET p2_pseudo = ?, p2_score = ? WHERE code = ? AND p2_pseudo IS NULL')
-            ->execute([$pseudo, $score, $code]);
+        $pdo->prepare('UPDATE epreuve_duels SET p2_pseudo = ?, p2_score = ?, p2_answers = ?, finished_at = ? WHERE code = ? AND p2_pseudo IS NULL')
+            ->execute([$pseudo, $score, $answersJson, now_sql(), $code]);
+        // Le duel se termine ici : la paire d'amis avance d'un cran (les
+        // défis par code, anonymes, ne comptent pas — on ignore qui joue).
+        // Jamais avec un score fantôme : si le lanceur n'a pas encore joué,
+        // rien n'est compté — son score, arrivé plus tard, comptera (ci-dessus).
+        if ($duel['p1_user'] !== null && $duel['p2_user'] !== null && $duel['p1_score'] !== null) {
+            duel_bilan_maj($pdo, (int) $duel['p1_user'], (int) $duel['p2_user'],
+                (int) $duel['p1_score'], (int) $score);
+        }
     }
     epreuve_duel_get($pdo, $code);
 }

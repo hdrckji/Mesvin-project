@@ -108,7 +108,14 @@
     async removeFriend(code) { return call('DELETE', '/api/friends/' + encodeURIComponent(code)); },
 
     /* ---- duels ---- */
-    async createDuel(opponentCode) { return (await call('POST', '/api/duels', { opponentCode })).duel; },
+    // filtres facultatifs { categorie, niveau } : le serveur les valide (liste
+    // blanche) et tire les mêmes dix questions pour les deux joueurs.
+    async createDuel(opponentCode, filtres) {
+      const corps = { opponentCode };
+      if (filtres && filtres.categorie) corps.categorie = filtres.categorie;
+      if (filtres && filtres.niveau) corps.niveau = filtres.niveau;
+      return (await call('POST', '/api/duels', corps)).duel;
+    },
     // Les défis d'ÉPREUVE (quiadit, ecritoupas, portrait, frise) : `defis` =
     // lancés par un ami et qui m'attendent, `duels` = les miens (lancés ou
     // relevés, en attente ou finis). Toutes épreuves confondues — chaque page
@@ -243,12 +250,18 @@
     /* ---- signaler ce qui cloche ----
        Volontairement hors de toute exigence de compte : `call` joint le token
        s'il existe, et le serveur s'en contente sans jamais l'exiger. */
-    async signaler(genre, cible, contexte, motif) {
-      return call('POST', '/api/signalement', { genre, cible, contexte, motif });
+    // `extra` : { raison, groupe } — le motif choisi dans la liste, et le code
+    // de l'église d'où vient le contenu (pour le retirer depuis la pile).
+    async signaler(genre, cible, contexte, motif, extra) {
+      return call('POST', '/api/signalement', Object.assign({ genre, cible, contexte, motif }, extra || {}));
     },
     async adminSignalements() { return call('GET', '/api/admin/signalements'); },
     async adminSignalementClasser(id, statut) {
       return call('POST', '/api/admin/signalements/' + id, { statut: statut || 'traite' });
+    },
+    // Retirer le contenu d'église visé par un signalement, d'un geste, depuis la pile.
+    async adminSignalementRetirer(id) {
+      return call('POST', '/api/admin/signalements/' + id + '/retirer');
     },
 
     /* ---- veillées en direct ---- */

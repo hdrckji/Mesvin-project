@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 12;
+const DB_MIGRATION_DERNIERE = 16;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1184,8 +1184,8 @@ function db_migrate(PDO $pdo): void {
     }
 
     /* ---- Étape 10 — un lecteur peut signaler ce qui cloche --------------------
-       Deux besoins se rejoignent ici. Le nôtre : 600 questions relues deux fois
-       restent 600 questions écrites par des humains, et c'est le lecteur devant
+       Deux besoins se rejoignent ici. Le nôtre : 2 500 questions relues deux fois
+       restent 2 500 questions écrites par des humains, et c'est le lecteur devant
        sa Bible qui verra le reste. Celui de Google Play : toute appli qui laisse
        publier du texte (les annonces d'église) doit offrir un moyen de signaler
        un contenu, sans quoi la fiche est refusée.
@@ -1257,12 +1257,115 @@ function db_migrate(PDO $pdo): void {
                 notified_at TEXT NOT NULL
             )"];
 
+    /* ---- Étape 13 — les réponses font foi, et le fil de l'amitié ----------------
+       Trois choses que les duels d'épreuve ne savaient pas retenir :
+       - p1_answers / p2_answers : les réponses de chacun — le serveur REJOUE
+         le duel et recalcule le score (le score annoncé n'est plus cru), et
+         l'écran de résultat peut montrer la revue question par question ;
+       - finished_at : posé quand l'invité relève — le balayage des 7 jours
+         se compte depuis le RÉSULTAT, plus depuis la création ;
+       - duel_bilans : la trace durable, un gramme par paire d'amis (joués,
+         victoires, égalités, dernier duel) — le duel passe, le fil reste. */
+    $reponses = db_driver($pdo) === 'mysql' ? 'MEDIUMTEXT NULL' : 'TEXT NULL';
+    $finiTs = db_driver($pdo) === 'mysql' ? 'DATETIME NULL' : 'TEXT NULL';
+    $etape13 = [];
+    foreach (['epreuve_duels', 'frise_duels'] as $t) {
+        $etape13[] = "ALTER TABLE $t ADD COLUMN p1_answers $reponses";
+        $etape13[] = "ALTER TABLE $t ADD COLUMN p2_answers $reponses";
+        $etape13[] = "ALTER TABLE $t ADD COLUMN finished_at $finiTs";
+    }
+    $etape13[] = db_driver($pdo) === 'mysql'
+        ? "CREATE TABLE IF NOT EXISTS duel_bilans (
+                user_a INT UNSIGNED NOT NULL,
+                user_b INT UNSIGNED NOT NULL,
+                joues INT NOT NULL DEFAULT 0,
+                victoires_a INT NOT NULL DEFAULT 0,
+                victoires_b INT NOT NULL DEFAULT 0,
+                egalites INT NOT NULL DEFAULT 0,
+                dernier DATETIME NOT NULL,
+                PRIMARY KEY (user_a, user_b)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        : "CREATE TABLE IF NOT EXISTS duel_bilans (
+                user_a INTEGER NOT NULL,
+                user_b INTEGER NOT NULL,
+                joues INTEGER NOT NULL DEFAULT 0,
+                victoires_a INTEGER NOT NULL DEFAULT 0,
+                victoires_b INTEGER NOT NULL DEFAULT 0,
+                egalites INTEGER NOT NULL DEFAULT 0,
+                dernier TEXT NOT NULL,
+                PRIMARY KEY (user_a, user_b)
+            )";
+
+    /* ---- Étape 14 — le résultat d'un duel du quiz annoncé au premier fini -------
+       Le pendant de push_epreuve_resultats (étape 12), pour les duels du
+       quiz. Différence de fond : un duel du quiz est SYMÉTRIQUE — n'importe
+       lequel des deux joueurs peut finir en premier, et la table duels ne
+       garde pas qui c'était. C'est donc handle_duels_result() qui pose la
+       ligne À L'INSTANT où le duel se termine, en nommant le destinataire
+       (celui qui attendait) ; le cron n'a plus qu'à envoyer, une fois.
+       notified_at NULL = en attente d'envoi ; posé = annoncé, jamais de
+       relance. */
+    $etape14 = db_driver($pdo) === 'mysql'
+        ? ["CREATE TABLE IF NOT EXISTS push_duels_resultats (
+                duel_id INT UNSIGNED NOT NULL PRIMARY KEY,
+                destinataire INT UNSIGNED NOT NULL,
+                notified_at DATETIME NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"]
+        : ["CREATE TABLE IF NOT EXISTS push_duels_resultats (
+                duel_id INTEGER NOT NULL PRIMARY KEY,
+                destinataire INTEGER NOT NULL,
+                notified_at TEXT NULL
+            )"];
+
+    /* ---- Étape 15 — le battement de cœur du cron --------------------------------
+       « Plus de notifications depuis quelques jours… je crois » : avant cette
+       table, RIEN nulle part ne permettait de trancher entre un cron mort et
+       un simple creux (pas de défi à annoncer ces jours-là). Une seule ligne :
+       - dernier : l'heure du dernier passage COMPLET de /api/cron/notify,
+         posée en FIN de course — un passage qui casse en route ne compte pas ;
+       - en_place_depuis : la naissance de la ligne, pour que « jamais passé »
+         ait un âge et devienne un verdict (« pas branché ») au lieu d'un
+         haussement d'épaules.
+       Lu par /api/health (réponse anonyme comprise) et par la sonde de
+       production, qui vire au rouge quand le cœur ne bat plus. */
+    $etape15 = db_driver($pdo) === 'mysql'
+        ? ["CREATE TABLE IF NOT EXISTS cron_passages (
+                id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+                dernier DATETIME NULL,
+                en_place_depuis DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+           "INSERT IGNORE INTO cron_passages (id, dernier, en_place_depuis)
+            VALUES (1, NULL, UTC_TIMESTAMP())"]
+        : ["CREATE TABLE IF NOT EXISTS cron_passages (
+                id INTEGER NOT NULL PRIMARY KEY,
+                dernier TEXT NULL,
+                en_place_depuis TEXT NOT NULL
+            )",
+           "INSERT OR IGNORE INTO cron_passages (id, dernier, en_place_depuis)
+            VALUES (1, NULL, datetime('now'))"];
+
+    /* ---- Étape 16 — un signalement dit POURQUOI, et d'OÙ ------------------------
+       Jusqu'ici un signalement ne portait qu'un texte libre. Deux colonnes de
+       plus, et l'administration peut agir sans enquêter :
+       - raison : un motif choisi dans une liste courte (inapproprie, spam,
+         erreur, autre). Le texte libre reste dans « motif », facultatif.
+       - groupe_code : l'église d'où vient le contenu signalé (annonce,
+         rendez-vous, série). C'est ce qui permet de RETIRER le contenu depuis
+         la pile, d'un geste, au lieu d'aller le chercher église par église.
+         NULL pour une question du Défi, qui n'appartient à personne. */
+    $etape16 = db_driver($pdo) === 'mysql'
+        ? ['ALTER TABLE signalements ADD COLUMN raison VARCHAR(20) NULL',
+           'ALTER TABLE signalements ADD COLUMN groupe_code VARCHAR(10) NULL']
+        : ['ALTER TABLE signalements ADD COLUMN raison TEXT NULL',
+           'ALTER TABLE signalements ADD COLUMN groupe_code TEXT NULL'];
+
     /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
     foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4, 5 => $etape5,
               6 => $etape6, 7 => $etape7, 8 => $etape8,
-              9 => $etape9, 10 => $etape10, 11 => $etape11, 12 => $etape12] as $version => $liste) {
+              9 => $etape9, 10 => $etape10, 11 => $etape11, 12 => $etape12,
+              13 => $etape13, 14 => $etape14, 15 => $etape15, 16 => $etape16] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }

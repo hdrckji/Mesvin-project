@@ -141,6 +141,30 @@ un cron trop zélé ne spamme personne. Clé fausse → 403. La réponse
 `{ "ok": true, "envoyes": n, "supprimes": m }` compte les versets offerts et
 les abonnements morts retirés (404/410 du service push, ou 5 échecs de suite).
 
+Le même passage horaire porte aussi les **autres annonces**, chacune une seule
+fois et marquée avant l'envoi (le détail vit en tête de chaque fonction dans
+`push.php`) : le défi qui attend depuis plus d'une heure (`defis`, `epreuves`),
+le résultat d'un défi d'épreuve à son lanceur (`resultats`), le résultat d'un
+duel du quiz au joueur qui a fini en premier (`duels_finis`), le rappel d'un
+service d'église la veille au soir (`services`) et les séries publiées
+(`series`). **Si ce cron n'est pas branché, aucune de ces notifications ne
+part jamais** — c'est le premier point à vérifier quand « je n'ai rien reçu ».
+
+**Le battement de cœur.** Chaque passage complet laisse son heure en base, et
+`GET /api/health` la montre — réponse **anonyme** comprise :
+
+```json
+{ "ok": true, "cron": { "dernier": "2026-08-24T21:00:12Z", "enPlaceDepuis": "…" } }
+```
+
+`dernier` à plus de trois heures (deux passages manqués d'affilée), ou resté
+`null` trois heures après `enPlaceDepuis` : le cron ne tourne pas. La **sonde
+de production** fait ce calcul toute seule — et comme le workflow « En ligne »
+la lance après chaque fusion, **un cron mort met la pastille au rouge** au lieu
+d'attendre qu'un lecteur remarque le silence. Un pinger arrêté, une clé qui a
+changé après une re-création de la base : les deux se voyaient jusqu'ici en ne
+recevant plus rien pendant des jours.
+
 ### 6. Vérifier que tout marche
 
 Ouvrir `https://<mon-domaine>/api/health` :
@@ -284,6 +308,85 @@ base contenant quoi que ce soit d'utile. Une seconde base suffixée `_mig` (ici
 `bh_test_mig`) sert au contrôle de migration et doit être accessible au même
 compte.
 
+### Ce que la production servira vraiment
+
+`api/tests/parite-image.mjs` reconstitue `/app/public` à partir des seules
+directives `COPY` du Dockerfile, puis vérifie que tout ce que le code **réclame**
+s'y trouve : la coquille du service worker, les livres bibliques, les icônes du
+manifeste, et chaque ressource référencée par chaque page. Un filet inverse
+ferme la boucle — ce que les tests servent et que l'image n'a pas.
+
+C'est le seul garde-fou contre le piège que le Dockerfile signale lui-même : la
+copie y est **explicite**, alors que `php -S` sert tout le dépôt. Un fichier
+ajouté à la racine et oublié dans le `COPY` laisse donc la suite verte de bout
+en bout et manque en ligne — où `addAll()`, qui est **atomique**, échoue alors
+en bloc : plus aucun hors-ligne, sans un mot à l'écran.
+
+Ni serveur ni navigateur : quelques millisecondes de lecture de fichiers. Il
+tourne à chaque passe.
+
+### Et après la mise en ligne : la sonde de production
+
+```bash
+bash api/tests/sonde-production.sh            # https://biblehorizon.fr
+bash api/tests/sonde-production.sh https://…  # ou une autre adresse
+```
+
+`parite-image.mjs` raisonne sur un **modèle** du Dockerfile ; cette sonde-ci
+interroge l'image **telle qu'elle tourne**. C'est la différence entre « d'après
+mes calculs le fichier devrait y être » et « je viens de le demander, il y est ».
+
+Elle couvre surtout ce qu'aucun autre test ne peut voir, parce que ça n'existe
+que dans le Caddyfile : les **en-têtes de sécurité** (CSP, HSTS, X-Frame-Options,
+Referrer-Policy, Permissions-Policy), les **14 redirections 301**, et le
+`Cache-Control: no-store` sur `/api/*`. Le serveur de test, lui, n'en pose aucun.
+Puis elle demande les 38 entrées de la coquille et les 66 livres **un par un sur
+le domaine**, contrôle le manifeste et ses icônes, `assetlinks.json`, et vérifie
+que `/api/db.php` n'est toujours pas servi tel quel.
+
+Enfin elle répond à la question qu'on se pose vraiment après un `git push` :
+**ma version est-elle en ligne ?** — en comparant le numéro de cache du `sw.js`
+servi à celui du dépôt.
+
+**Strictement en lecture** : que des `GET` et des `HEAD`. Aucune écriture, aucune
+authentification, aucun compte créé, aucun e-mail déclenché. On peut la lancer
+sur la production en pleine journée sans rien déranger — c'est ce que fait
+n'importe quel visiteur.
+
+Elle n'a **pas** sa place dans la suite de tests, qui n'a aucune raison d'aller
+taper le domaine à chaque poussée sur une branche de travail. Mais elle n'a plus
+besoin d'être lancée à la main pour autant — voir juste en dessous.
+
+### « Est-ce que c'est en ligne ? », répondu tout seul
+
+`.github/workflows/en-ligne.yml` se déclenche à **chaque fusion sur `main`**.
+Il attend que le `sw.js` servi par le domaine porte le numéro de coquille du
+dépôt — jusqu'à vingt minutes, le temps que Railway construise l'image et
+bascule — puis lance la sonde ci-dessus.
+
+La pastille sur le commit veut donc dire **« c'est déployé ET ça répond bien »**,
+et non « ça compile ». C'est le seul contrôle du dépôt qui parle de la
+production ; tous les autres parlent du code.
+
+Le rouge est **informatif** : ce workflow ne garde aucune fusion. Il dit qu'entre
+le dépôt et le domaine, quelque chose ne suit pas — et le message nomme les
+suspects habituels : service Railway en pause, branche surveillée changée, lien
+GitHub rompu.
+
+Deux limites, dites franchement. Quand un commit ne touche pas à la coquille, les
+deux numéros sont égaux dès la première seconde : ce tour-là prouve que le site
+répond, **pas** qu'un déploiement vient de passer — et le workflow l'écrit noir
+sur blanc au lieu de crier victoire. Et le numéro de coquille n'est un témoin de
+version que parce que la convention du dépôt veut qu'on l'incrémente dès qu'on
+touche à la coquille : c'est la même discipline qui fait apparaître la bannière
+« Une mise à jour est prête ». Elle se tient d'elle-même, les deux dépendent l'une
+de l'autre.
+
+Et surtout : **ne jamais pointer `run-tests.sh` sur la production.** La suite
+vide la base à chaque passe, tourne en mode dev (où le code de connexion est
+renvoyé dans la réponse) et envoie de vrais e-mails. La sonde est la seule
+chose de ce dossier qui puisse regarder le domaine en ligne.
+
 ### Les veillées dans un vrai navigateur
 
 Une veillée se joue sur **trois écrans à la fois** : le téléphone de
@@ -306,3 +409,30 @@ BH_PLAYWRIGHT=/chemin/vers/node_modules bash api/tests/run-tests.sh
 
 Le scénario ouvre sa propre session d'animateur (mode dev) et donne à chaque
 participant son propre contexte de navigateur — c'est-à-dire son téléphone.
+
+### Mémoriser, et la vitrine
+
+Deux scénarios plus récents comblent des angles morts de longue date.
+
+`navigateur/memorisation.mjs` — **Mémoriser est le module racine, et sa
+planification ne parle à aucune route** : elle vit entièrement dans `app.js`.
+La suite d'endpoints pouvait donc rester verte pendant que la répétition
+espacée, c'est-à-dire le cœur du produit, dérivait sans que rien ne le dise.
+Le scénario appelle le vrai `schedule()` depuis la page — pas une copie
+recollée, qui ne prouverait que sa propre cohérence. Il fige des valeurs
+(3 jours, ×2,5, plafond à 365) : le jour où l'on retouche **délibérément** la
+courbe, il passe au rouge et les valeurs sont à reprendre. C'est voulu — on
+veut être prévenu quand on change la courbe.
+
+`navigateur/pages.mjs` — les six autres scénarios éprouvent des *parcours* et
+visitent surtout les écrans de l'appli. Restaient les pages qu'aucun test ne
+touchait : référencement et pages légales, la vitrine publique. Une page cassée
+là ne gêne aucun utilisateur connecté ; personne ne s'en aperçoit. La liste
+n'est pas écrite en dur — les pages sont découvertes sur le disque, pour qu'une
+page ajoutée demain soit couverte sans que personne y pense.
+
+Les erreurs de console y sont **rapportées, jamais fatales** : un avertissement
+de navigateur rendrait le test rouge sans qu'aucun défaut existe, et un test qui
+crie pour rien finit par ne plus être lu. Ce qui échoue, ce sont les faits durs —
+la page ne répond pas, ne se peint pas, lève une exception, ou réclame un
+fichier qui n'existe pas.

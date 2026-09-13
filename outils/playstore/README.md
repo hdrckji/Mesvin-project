@@ -23,6 +23,32 @@ et **surtout pas** celle du *certificat de la clé d'importation*.
 Avec la mauvaise, tout se construit, tout s'installe — et l'application s'ouvre
 avec **une barre d'adresse en haut**, sans que rien n'explique pourquoi.
 
+### Le second piège, vécu en septembre 2026
+
+La Play Console affichait **trois** empreintes (clé de signature classique,
+clé post-quantique, clé d'importation). Toutes les trois étaient dans le
+fichier, Google confirmait la liaison pour chacune… et la barre restait.
+L'appli livrée aux testeurs était signée avec une **quatrième** clé, que rien
+dans la console ne montre.
+
+La seule façon de le voir : lire l'empreinte **sur un téléphone où l'appli
+est installée depuis le Play Store**, avec le débogage USB activé :
+
+```bash
+adb shell pm get-app-links fr.biblehorizon.app
+```
+
+La ligne `Signatures:` donne l'empreinte réelle ; `Domain verification state`
+dit `verified` quand tout va bien, et un code (`1024`, `legacy_failure`) sinon.
+Coller l'empreinte manquante dans `assetlinks.json`, déployer, puis
+**désinstaller et réinstaller** l'appli : la vérification d'Android ne se
+refait qu'à l'installation (`pm verify-app-links --re-verify` est ignoré sur
+les Samsung), celle de Chrome à chaque ouverture.
+
+Garder **toutes** les empreintes dans le tableau ne coûte rien et couvre
+chaque voie d'installation. À refaire si Google change de clé à la mise en
+production.
+
 Une fois l'empreinte en main, elle se colle dans le tableau vide :
 
 ```json
@@ -87,7 +113,7 @@ Voici ce que l'application collecte **vraiment**, lu dans le schéma.
 
 ---
 
-## Contenu généré par les utilisateurs — À TRAITER AVANT DE PUBLIER
+## Contenu généré par les utilisateurs
 
 Les églises publient des **annonces**, des **rendez-vous** et des **séries de
 questions**, visibles par leurs membres. Google considère cela comme du contenu
@@ -96,10 +122,20 @@ généré par les utilisateurs, et exige alors **deux choses** :
 1. un moyen de **signaler** un contenu **depuis l'application** ;
 2. une **modération**.
 
-La modération existe (retrait sur signalement, jamais a priori). **Le bouton de
-signalement, lui, n'existe pas encore** : un membre doit écrire à l'adresse de
-contact. Il faut l'ajouter avant de soumettre — répondre « oui, il y a du
-contenu d'utilisateurs » sans mécanisme de signalement expose à un refus.
+Les deux sont en place. Partout où un contenu d'église se voit — chaque
+annonce et chaque rendez-vous de la page de l'église, la série choisie dans
+une épreuve — un membre a un bouton **Signaler** (drapeau), qui ne paraît pas
+à l'animateur : il a déjà Modifier et Supprimer. Un petit formulaire demande
+un motif (contenu inapproprié, spam, erreur, autre) et un commentaire
+facultatif ; il fonctionne **sans compte**. Le signalement part vers
+`/api/signalement` (plafond horaire par réseau, aucune IP conservée), un
+courrier prévient `contact@biblehorizon.fr`, et l'administration le traite
+dans l'onglet *Activité* : **Retirer le contenu** ou **Classer sans suite**.
+La modération se fait sur signalement, jamais a priori.
+
+Dans le questionnaire, répondre donc **oui** à « contenu généré par les
+utilisateurs », et cocher que l'application propose un signalement intégré
+et une modération.
 
 ---
 

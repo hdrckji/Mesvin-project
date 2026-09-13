@@ -32,6 +32,8 @@ const SCRAMBLE_MAX = 12;      // au-delà, on passe aux mots à trous
 
 /* ---------- Aides ---------- */
 const el = document.getElementById('app');
+// « Signaler » : un seul écouteur délégué, posé une fois — il survit à tous les rendus.
+if (window.BHSignaler) BHSignaler.brancher(el);
 const todayNum = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return Math.round(d.getTime() / 86400000); };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
@@ -376,7 +378,14 @@ const isMastered = c => c.validations >= MASTERY;
 function schedule(card, quality) {
   // quality: 'fail' | 'ok' | 'clean'
   const t = todayNum();
-  if (quality === 'fail') { card.ease = Math.max(EASE_MIN, card.ease - 0.2); card.interval = 1; }
+  if (quality === 'fail') {
+    card.ease = Math.max(EASE_MIN, card.ease - 0.2);
+    // Un oubli ne repart plus de zéro : le verset redescend d'un cran
+    // (intervalle divisé par deux) au lieu de retomber à 1 jour. Le plafond
+    // d'apprentissage ci-dessous borne ensuite le retour à 3 jours — c'est
+    // voulu : un verset qu'on vient de rater a besoin de contacts rapprochés.
+    card.interval = Math.max(1, Math.round((card.interval || 0) / 2));
+  }
   else {
     const step = card.validations; // déjà incrémenté avant l'appel
     if (step <= 1) card.interval = 1;
@@ -388,6 +397,7 @@ function schedule(card, quality) {
   if (!isMastered(card)) card.interval = Math.min(card.interval, 3);
   card.interval = Math.min(card.interval, 365);
   card.due = t + card.interval;
+  card.revisedAt = t; // jour de la dernière révision — départage la fusion (voir mergeMemo)
 }
 function stageOf(card) {
   if (card.interval <= 3) return { iconName: 'germe', label: 'Germe' };
@@ -556,9 +566,25 @@ const go = (name, param) => {
   route = { name, param: param || null }; render(); window.scrollTo(0, 0);
 };
 
-function render() {
+// Le dernier écran RÉELLEMENT posé, tel qu'on l'a fabriqué. On garde la chaîne
+// générée plutôt que de relire el.innerHTML : le navigateur re-sérialise le DOM
+// à la lecture (« <img src="x" /> » ressort « <img src="x"> », les attributs se
+// normalisent), donc la comparaison échouerait TOUJOURS — et sans rien dire.
+let dernierRendu = '';
+function render(siRien) {
   const v = { home: viewHome, memo: viewMemo, study: viewStudy, session: viewSession, moi: viewMoi, garden: viewGarden, verse: () => viewVerse(route.param), about: viewAbout, collections: viewCollections, account: viewAccount, eglise: viewEglise, banques: viewEgliseBanques, rejoindre: viewRejoindre }[route.name] || viewHome;
-  el.innerHTML = v() + tabbar();
+  const html = v() + tabbar();
+  // siRien n'est posé QUE par renderIfIdle() : une réponse réseau qui n'apporte
+  // rien de neuf ne doit pas démolir l'écran. `el.innerHTML =` détruit et
+  // rebâtit tout — barre du haut, contenu, onglets — et le fondu d'entrée de
+  // .fade se rejoue alors depuis le transparent. C'était le second clignotement
+  // du lancement : /api/config répondait 250 ms après le premier rendu et
+  // reconstruisait un écran STRICTEMENT identique.
+  // Les 131 autres appels passent render() sans argument : rien ne change pour
+  // eux, et surtout pas pour un rendu qui suit un geste de l'utilisateur.
+  if (siRien && html === dernierRendu) return;
+  dernierRendu = html;
+  el.innerHTML = html;
   wire();
 }
 function topbar(withAccount) {
@@ -745,23 +771,30 @@ function carteResultats() {
   const ecartes = ecartesLus();
   const nouveaux = duelsResultats.filter(d => !ecartes.includes(d.code));
   if (!nouveaux.length) return '';
-  const d = nouveaux[0];
-  const lien = nouveaux.length === 1 ? pageDuDefi(d.code, d.mode) : 'defi/';
-  const titre = nouveaux.length === 1
-    ? `${esc(d.avec || 'Ton défi')} a relevé ton défi !`
-    : `${nouveaux.length} défis relevés — les scores t'attendent`;
-  const sous = nouveaux.length === 1
-    ? `${esc(d.mode)} · Toi ${d.monScore == null ? '–' : d.monScore} — ${esc(d.avec || 'l\'autre')} ${d.sonScore == null ? '–' : d.sonScore}`
-    : nouveaux.map(x => esc(x.avec || x.code)).slice(0, 3).join(', ') + (nouveaux.length > 3 ? '…' : '');
-  return `<div class="card attente fade">
-      <a class="attente-corps" href="${lien}">
-        <span class="hub-ic">${icon('epees', 24)}</span>
-        <span class="hub-txt"><span class="hub-title">${titre}</span>
-          <span class="hub-sub">${sous}</span></span>
+  // Chaque résultat a SA carte — scores en main, un clic ouvre la feuille de
+  // score de CE duel (et l'ouvrir la marque comme vue). Au-delà de trois, le
+  // reste se regroupe vers le module Défi, badges à l'appui.
+  const carte = d => `<div class="card attente fade">
+      <a class="attente-corps" href="${pageDuDefi(d.code, d.mode)}?duel=${d.code}">
+        <span class="hub-ic">${icon('defi', 24)}</span>
+        <span class="hub-txt"><span class="hub-title">${esc(d.avec || 'Ton défi')} a relevé ton défi !</span>
+          <span class="hub-sub">${esc(d.mode)} · Toi ${d.monScore == null ? '–' : d.monScore} — ${esc(d.avec || 'l\'autre')} ${d.sonScore == null ? '–' : d.sonScore} · voir le détail</span></span>
       </a>
-      <button class="attente-x" data-attente-x="${nouveaux.map(x => x.code).join(',')}"
-              aria-label="Écarter">×</button>
+      <button class="attente-x" data-attente-x="${esc(d.code)}" aria-label="Écarter">×</button>
     </div>`;
+  const cartes = nouveaux.slice(0, 3).map(carte);
+  const reste = nouveaux.slice(3);
+  if (reste.length) {
+    cartes.push(`<div class="card attente fade">
+      <a class="attente-corps" href="defi/">
+        <span class="hub-ic">${icon('defi', 24)}</span>
+        <span class="hub-txt"><span class="hub-title">${reste.length} autre${reste.length > 1 ? 's' : ''} défi${reste.length > 1 ? 's' : ''} relevé${reste.length > 1 ? 's' : ''}</span>
+          <span class="hub-sub">${reste.map(x => esc(x.avec || x.code)).slice(0, 3).join(', ')}${reste.length > 3 ? '…' : ''} — dans le module Défi.</span></span>
+      </a>
+      <button class="attente-x" data-attente-x="${reste.map(x => x.code).join(',')}" aria-label="Écarter">×</button>
+    </div>`);
+  }
+  return cartes.join('');
 }
 
 function carteAttente() {
@@ -1389,9 +1422,15 @@ function minN(a, b) { if (!isNum(a)) return isNum(b) ? b : undefined; if (!isNum
 const setIf = (obj, key, v) => { if (v !== undefined) obj[key] = v; };
 
 // memo (graine.v3) — union des cards ; par card commune : max(validations),
-// max(attempts), min(due) (le plus prudent : elle revient plus tôt),
-// max(lapses/ease/interval) ; streak/bestStreak/activeDays = max ;
-// union des collections complétées ; objectif local prioritaire.
+// max(attempts/lapses) ; le bloc de planification (due/interval/ease) vient
+// ENTIER du côté révisé le plus récemment (revisedAt), car ces trois champs
+// se calculent ensemble — et surtout, min(due) seul empêchait la date
+// d'avancer : le pull précédant toujours le push, chaque synchro ressuscitait
+// la date d'avant-session et les versets restaient dus pour toujours.
+// Sans revisedAt d'aucun côté (anciennes données), ou à égalité, on garde la
+// règle prudente historique : min(due), max(ease/interval).
+// streak/bestStreak/activeDays = max ; union des collections complétées ;
+// objectif local prioritaire.
 function mergeMemo(local, server) {
   if (!server || typeof server !== 'object') return deepCopy(local);
   if (!local || typeof local !== 'object') return deepCopy(server);
@@ -1403,11 +1442,23 @@ function mergeMemo(local, server) {
     if (!lc || typeof lc !== 'object') { out.cards[id] = sc; continue; }
     lc.validations = maxN(lc.validations, sc.validations) || 0;
     lc.attempts = maxN(lc.attempts, sc.attempts) || 0;
-    setIf(lc, 'due', minN(lc.due, sc.due));
     setIf(lc, 'lapses', maxN(lc.lapses, sc.lapses));
-    setIf(lc, 'ease', maxN(lc.ease, sc.ease));
-    setIf(lc, 'interval', maxN(lc.interval, sc.interval));
     setIf(lc, 'addedDay', minN(lc.addedDay, sc.addedDay));
+    // Planification : le côté révisé le plus récemment gagne due/interval/ease
+    // d'un bloc. Un côté sans revisedAt n'a pas révisé depuis ce correctif :
+    // il est forcément moins récent qu'un côté qui l'a.
+    const lr = isNum(lc.revisedAt) ? lc.revisedAt : -1;
+    const sr = isNum(sc.revisedAt) ? sc.revisedAt : -1;
+    if (sr > lr) {
+      setIf(lc, 'due', sc.due);
+      setIf(lc, 'interval', sc.interval);
+      setIf(lc, 'ease', sc.ease);
+      lc.revisedAt = sr;
+    } else if (lr === sr) {
+      setIf(lc, 'due', minN(lc.due, sc.due));
+      setIf(lc, 'ease', maxN(lc.ease, sc.ease));
+      setIf(lc, 'interval', maxN(lc.interval, sc.interval));
+    } // lr > sr : le local, plus récent, garde son bloc tel quel
   }
   const ls = out.streak && typeof out.streak === 'object' ? out.streak : {};
   const ss = srv.streak && typeof srv.streak === 'object' ? srv.streak : {};
@@ -1635,7 +1686,7 @@ function renderIfIdle() {
   if (route.name === 'session') return;
   const a = document.activeElement;
   if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return;
-  render();
+  render(true); // « seulement si ça change » — voir render()
 }
 // Fonctions de fusion exposées, pures et testables.
 window.GraineSync = { mergeMemo, mergeLire, mergeDefi, syncNow, scheduleSync, status: () => Object.assign({}, syncUi) };
@@ -2709,7 +2760,7 @@ async function doPropDelete(id, nom) {
   render();
 }
 
-/* Signaler une annonce d'église.
+/* Signaler un contenu d'église.
 
    C'est la brique que Google Play exige de toute appli où quelqu'un peut
    publier du texte lu par d'autres : sans un moyen de signaler un contenu,
@@ -2717,28 +2768,15 @@ async function doPropDelete(id, nom) {
    assemblée est un lieu où l'on se parle, et il faut une porte quand un mot
    dérape, sans obliger qui que ce soit à interpeller son responsable en face.
 
+   Le bouton et le formulaire (motif en liste, commentaire facultatif) vivent
+   dans signaler.js, partagé avec les épreuves. Ici, on ne fait que le poser.
    Le bouton ne paraît PAS à l'animateur : il a déjà Modifier et Supprimer,
    et se signaler à soi-même n'aurait aucun sens. */
-async function doSignaler(b) {
-  if (b.disabled) return;
-  const cible = b.dataset.signaler;
-  const contexte = b.dataset.contexte || '';
-  const motif = window.prompt(
-    'Qu\'est-ce qui te pose problème dans cette annonce ? (facultatif)', '');
-
-  b.disabled = true;
-  const avant = b.textContent;
-  b.textContent = 'Envoi…';
-  try {
-    await GraineAPI.signaler('annonce', cible, contexte, motif || '');
-    b.textContent = 'Signalé, merci ✓';
-  } catch (err) {
-    b.disabled = false;
-    b.textContent = avant;
-    alert(err && err.offline
-      ? 'Pas de connexion — réessaie une fois revenu en ligne.'
-      : ((err && err.message) || 'Le signalement n\'est pas parti. Réessaie plus tard.'));
-  }
+function sigBouton(genre, cible, contexte, g) {
+  // Cache mélangé pendant une mise à jour : sans le module, pas de bouton
+  // plutôt qu'un bouton qui ne fait rien.
+  if (!window.BHSignaler) return '';
+  return BHSignaler.bouton(genre, cible, contexte, g && g.code);
 }
 
 function egliseAnnonces(g, p, anime) {
@@ -2747,11 +2785,11 @@ function egliseAnnonces(g, p, anime) {
     ? p.annonces.map(a => `<div class="egl-annonce fade ${a.epingle ? 'epingle' : ''}">
         <div class="ea-titre">${a.epingle ? '<span class="ea-pin" title="Épinglée">📌</span> ' : ''}<b>${esc(a.titre)}</b></div>
         <p class="ea-texte">${multiligne(a.texte)}</p>
-        <div class="ea-meta muted">${dateAnnonceFr(a.date)}${anime ? ` ·
+        <div class="ea-meta muted" data-sighote="1">${dateAnnonceFr(a.date)}${anime ? ` ·
           <button class="linkbtn" data-pageedit="annonce" data-id="${a.id}">Modifier</button>
           <button class="linkbtn" data-pagepin="${a.id}">${a.epingle ? 'Désépingler' : 'Épingler'}</button>
           <button class="linkbtn danger" data-pagedel="annonce" data-id="${a.id}" data-nom="${esc(a.titre)}">Supprimer</button>` : `
-          · <button class="linkbtn" data-signaler="annonce:${a.id}" data-contexte="${esc(a.titre + ' — ' + a.texte)}">Signaler</button>`}</div>
+          · ${sigBouton('annonce', 'annonce:' + a.id, a.titre + ' — ' + a.texte, g)}`}</div>
       </div>`).join('')
     : `<p class="muted fr-empty">${anime ? 'Aucune annonce — la première nouvelle de l\'assemblée se pose ici.' : 'Pas d\'annonce pour l\'instant.'}</p>`;
   return `<div class="section-title">${icon('cloche')} Annonces</div>
@@ -2767,7 +2805,9 @@ function egliseRdv(g, p, anime) {
         <span class="er-quoi">${esc(r.libelle)}${r.lieu ? `<br><span class="muted">${esc(r.lieu)}</span>` : ''}</span>
         ${anime ? `<span class="er-actions">
           <button class="linkbtn" data-pageedit="rdv" data-id="${r.id}">Modifier</button>
-          <button class="linkbtn danger" data-pagedel="rdv" data-id="${r.id}" data-nom="${esc(r.libelle)}">Supprimer</button></span>` : ''}
+          <button class="linkbtn danger" data-pagedel="rdv" data-id="${r.id}" data-nom="${esc(r.libelle)}">Supprimer</button></span>`
+        : `<span class="er-actions" data-sighote="1">${sigBouton('rdv', 'rdv:' + r.id,
+            (JOURS_SEMAINE[r.jour] || '?') + ' ' + r.heure + ' — ' + r.libelle + (r.lieu ? ' (' + r.lieu + ')' : ''), g)}</span>`}
       </div>`).join('')
     : `<p class="muted fr-empty">${anime ? 'Aucun rendez-vous — pose le culte, la prière, l\'étude…' : 'Pas encore de rendez-vous réguliers.'}</p>`;
   return `<div class="section-title">${icon('assiduite')} La semaine de l'assemblée</div>
@@ -3977,7 +4017,6 @@ function wire() {
   el.querySelectorAll('[data-pageedit]').forEach(b => b.addEventListener('click', () => pageOuvrirForm(b.dataset.pageedit, b.dataset.id ? +b.dataset.id : null)));
   el.querySelectorAll('[data-pagedel]').forEach(b => b.addEventListener('click', () => doPageDelete(b.dataset.pagedel, +b.dataset.id, b.dataset.nom)));
   el.querySelectorAll('[data-pagepin]').forEach(b => b.addEventListener('click', () => doPagePin(+b.dataset.pagepin)));
-  el.querySelectorAll('[data-signaler]').forEach(b => b.addEventListener('click', () => doSignaler(b)));
   el.querySelectorAll('[data-svcmain]').forEach(b => b.addEventListener('click', () => doServiceMain(+b.dataset.svcmain, b.dataset.inscrit === '1')));
   el.querySelectorAll('[data-passation]').forEach(b => b.addEventListener('click', () => doGroupePassation(b.dataset.passation)));
   el.querySelectorAll('[data-corespon]').forEach(b => b.addEventListener('click', () => doCoresponsable(b.dataset.corespon, true)));

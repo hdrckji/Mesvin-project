@@ -41,7 +41,8 @@
   d'église**, où toute l'assemblée sort par un seul wifi, donc par une seule
   adresse : ouvrir une salle d'épreuve ou de frise **40/heure**, y entrer
   **300/heure** (quarante participants par salle, plusieurs salles dans la
-  soirée), remettre un score **60/heure**, demander un groupe **30/heure**.
+  soirée), remettre un score **300/heure** (même logique — refuser un score
+  joué honnêtement, c'est le perdre), demander un groupe **30/heure**.
   Les veillées du Défi n'ont, elles, aucun plafond. Le seul endroit où l'abus
   coûte vraiment — l'envoi d'e-mails — reste tenu à 30/heure.
   L'adresse vient de `client_ip()`, qui lit la `PROXY_HOPS`-ième valeur de
@@ -78,7 +79,10 @@ Plafond 10 créations/heure/IP (fichier `api/frise.php`).
   `invite` = pseudo de l'ami invité, ou null pour un défi par code.
 - `POST /api/frise/duel/{code}/score` `{score, cle}` (créateur) ou
   `{score, pseudo}` (case p2, premier arrivé) → l'état du duel ; chaque case
-  ne s'écrit qu'une fois (409 sinon).
+  ne s'écrit qu'une fois (409 sinon). Un créateur CONNECTÉ dont le duel est
+  relié à son compte (p1_user) est reconnu SANS la clé : son score va en
+  case p1 — la clé ne vit que sur l'appareil de création, sa perte ne rend
+  plus le duel injouable pour son propre lanceur.
 - `POST /api/frise/veillee` `{mode, deck}` → `{code, cle}` (clé = animateur).
 - `POST /api/frise/veillee/{code}/rejoindre` `{prenom}` → `{jeton}` (40 max).
 - `POST /api/frise/veillee/{code}/avancer` `{cle}` — attente → placement
@@ -139,7 +143,10 @@ et `GET …/duel/{code}` rend `invite`.
   confondues (préfixes ED-/PD-/FD- ; chaque page filtre sur son préfixe et
   son mode). `defis` = `[{code, mode, total, de, createdAt}]`, les défis
   lancés PAR UN AMI qui m'attendent (un défi joué, annulé ou balayé à
-  7 jours disparaît). `duels` = `[{code, mode, total, role: createur|invite,
+  7 jours disparaît). Un défi n'y apparaît qu'une fois l'épreuve du LANCEUR
+  passée (p1_score posé) : un duel créé puis abandonné n'est jamais livré —
+  fini les duels « fantômes » terminés avec un score « – » définitif.
+  `duels` = `[{code, mode, total, role: createur|invite,
   avec, monScore, sonScore, status: attente|fini, createdAt}]`, MES duels —
   lancés (même par code : le créateur connecté est retenu) ou relevés —
   pour l'écran « Tes duels » des épreuves ; même durée de vie de 7 jours.
@@ -152,6 +159,25 @@ et `GET …/duel/{code}` rend `invite`.
   (p1_user) et rejoint « Tes duels » sur tous ses appareils. Idempotent ;
   l'invité n'est jamais touché. Les pages le font automatiquement au
   chargement pour le dernier défi lancé retenu sur l'appareil.
+- `POST …/duel/{code}/score` accepte désormais `answers` à la place de
+  `score` : le serveur REJOUE la partie (choix : index d'option par carte ;
+  portrait : `{t, k}` par carte, correspondance tolérante et points
+  dégressifs ; frise : l'emplacement touché par carte, plateau rejoué) et
+  recalcule le score — le score annoncé n'est jamais cru. Un client
+  d'avant (`score` seul) reste accepté, sans revue. La case p2 posée
+  marque `finished_at` : le balayage des 7 jours se compte depuis le
+  RÉSULTAT (un duel ouvert vit 7 jours depuis sa création, comme avant).
+  Le créateur connecté est reconnu sans la clé (voir la Frise ci-dessus) et
+  peut poser son score APRÈS l'invité — un duel resté « – » se rattrape.
+  Le fil de l'amitié n'avance que lorsque les DEUX scores sont là, quel que
+  soit leur ordre d'arrivée : jamais de victoire sur un score absent.
+- `GET …/duel/{code}` rend aussi `p1Answers`/`p2Answers` (null sans revue) —
+  l'écran de résultat rejoue la partie question par question.
+- Le fil de l'amitié : chaque duel FINI entre comptes (épreuves et duels du
+  quiz) avance `duel_bilans` (paire d'amis : joués, victoires, égalités,
+  dernier). `GET /api/friends` rend pour chaque ami `duels: {joues, toi,
+  lui, egalites, dernier}` (ou null). Rien d'autre n'est archivé : le duel
+  passe, le fil reste.
 
 ## « De qui parle-t-on ? » (/portrait/) — le portrait à indices
 
@@ -238,6 +264,9 @@ par le client n'est jamais cru).
 Corps : `{ "opponentCode": "GRN-XXXX" }` (doit être un ami)
 → `{ "duel": { "id": 12, "opponent": { "pseudo": "..." }, "questions": [ { "id": "...", "question": "...", "options": [ ... ] } ] } }`
 (l'ordre des options est fixé par le serveur ; la bonne réponse n'est PAS envoyée)
+`categorie` et `niveau` (1..3) sont facultatifs : la catégorie est vérifiée
+en liste blanche contre la banque, le tirage reste fait PAR le serveur, et
+un choix qui ne laisse pas dix questions est refusé (400).
 
 ### GET /api/duels
 → `{ "duels": [ { "id": 12, "opponent": { "pseudo": "..." }, "iChallenged": true,
@@ -750,20 +779,30 @@ un contenu, sans quoi la fiche est refusée.
 
 ### POST /api/signalement
 Public (le token est joint s'il existe, jamais exigé). Corps :
-`{ "genre": "question"|"annonce"|"serie"|"rdv", "cible", "contexte"?, "motif"? }`
+`{ "genre": "question"|"annonce"|"serie"|"rdv", "cible", "contexte"?, "motif"?, "raison"?, "groupe"? }`
 - `cible` — l'identifiant dans ce genre, ex. `"question:lieu-80"`. 120 car. max.
 - `contexte` — ce que le lecteur avait sous les yeux, **figé à l'envoi** :
   une question corrigée demain ne doit pas effacer la trace de ce qui a été
   signalé aujourd'hui. Tronqué à 2000 car.
-- `motif` — facultatif, tronqué à 500 car.
+- `motif` — le commentaire libre, facultatif, tronqué à 500 car.
+- `raison` — le motif choisi dans la liste : `inapproprie` | `spam` | `erreur`
+  | `autre`. Facultatif (le Défi n'en propose pas : un tap suffit) ; toute
+  autre valeur → 400.
+- `groupe` — le code de l'église d'où vient le contenu (`GRP-XXXXX`), pour
+  pouvoir le retirer depuis la pile. Seule la forme est vérifiée. Facultatif.
 
 → `{ "ok": true }`. Ni identifiant ni compteur en retour : le lecteur n'a rien
-à consulter ensuite. 400 si le genre est inconnu ou la cible vide, 429 au
-plafond.
+à consulter ensuite. 400 si le genre est inconnu, la cible vide, la raison
+hors liste ou le code de groupe mal formé ; 429 au plafond.
+
+Un courrier part à chaque signalement vers `SIGNALEMENT_EMAIL` (sinon
+`contact@biblehorizon.fr`), après l'écriture en base : son sort n'entre pas
+dans la réponse, et un envoi raté se lit dans l'onglet Système.
 
 ### GET /api/admin/signalements
 Admin. → `{ "signalements": [ { "id", "genre", "cible", "contexte", "motif",
-"statut": "nouveau"|"traite", "auteur": "pseudo"|null, "created_at", "traite_at" } ],
+"raison": "inapproprie"|"spam"|"erreur"|"autre"|null, "groupe": "GRP-XXXXX"|null,
+"statut": "nouveau"|"traite"|"retire", "auteur": "pseudo"|null, "created_at", "traite_at" } ],
 "nouveaux": 2 }` — les `nouveaux` d'abord, puis du plus récent au plus ancien,
 200 au maximum. `auteur` est **le pseudo, jamais l'e-mail** : une adresse n'a
 rien à faire dans un écran qu'on ouvre pour lire une remarque sur un verset.
@@ -773,6 +812,17 @@ Admin. Corps : `{ "statut": "traite"|"nouveau" }` (défaut `traite`).
 → `{ "ok": true, "statut": "traite" }`. 404 si l'id n'existe pas.
 On ne **supprime** jamais : une trace classée dit qu'on a regardé, et se
 rouvre si la correction s'avère fausse. L'action est tracée au journal admin.
+
+### POST /api/admin/signalements/{id}/retirer
+Admin. L'autre issue : **retirer le contenu d'église visé** (annonce,
+rendez-vous ou série — une série emporte ses questions), par la même porte que
+l'onglet Églises (`DELETE /api/admin/groupes/{code}/contenu/…`), donc le même
+journal. La trace passe en statut `retire`.
+→ `{ "ok": true, "statut": "retire", "retire": true|false }` — `retire` vaut
+false si le contenu n'existait plus (l'église l'a supprimé entre-temps) ; la
+trace se ferme quand même. 404 si l'id n'existe pas, 400 si le genre n'est pas
+un contenu d'église ou si le signalement ne porte pas de `groupe`, 409 s'il a
+déjà été retiré.
 
 ## Administration
 
