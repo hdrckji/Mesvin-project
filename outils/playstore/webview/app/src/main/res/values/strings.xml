@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Bible Horizon</string>
+  <string name="raccourci_lire">Lire la Bible</string>
+  <string name="raccourci_lire_court">Lire</string>
+  <string name="raccourci_defi">Défi du jour</string>
+  <string name="raccourci_defi_court">Défi</string>
+</resources>

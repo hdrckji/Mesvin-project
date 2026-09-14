@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bible Horizon</title>
+<style>
+  /* La page d'attente locale : mêmes couleurs que l'appli, aucune ressource
+     distante — elle doit s'afficher précisément quand le réseau manque. */
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    padding: 0 32px; box-sizing: border-box;
+    background: #f7f3ea; color: #233047;
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #12151b; color: #f4efe4; }
+  }
+  .soleil { margin-bottom: 28px; }
+  h1 { font-size: 1.35rem; font-weight: 600; margin: 0 0 10px; }
+  p  { margin: 0; opacity: .75; line-height: 1.55; max-width: 26rem; }
+  button {
+    margin-top: 30px; padding: 12px 28px; border: 0; border-radius: 999px;
+    background: #b98a2e; color: #fff; font-size: 1rem; font-weight: 600;
+    font-family: system-ui, sans-serif; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+  <svg class="soleil" xmlns="http://www.w3.org/2000/svg" viewBox="90 100 332 190" width="120">
+    <circle cx="256" cy="252" r="46" fill="#b98a2e"/>
+    <g stroke="#b98a2e" stroke-width="13" stroke-linecap="round">
+      <path d="M256 158v-30"/><path d="M180 192l-21-21"/><path d="M332 192l21-21"/>
+      <path d="M162 252h-30"/><path d="M350 252h30"/>
+    </g>
+  </svg>
+  <h1>Pas de réseau pour l'instant</h1>
+  <p>Bible Horizon a besoin d'une connexion pour la première ouverture.
+     Dès que le réseau revient, tout reprend là où vous en étiez.</p>
+  <button onclick="location.href='https://biblehorizon.fr/'">Réessayer</button>
+</body>
+</html>

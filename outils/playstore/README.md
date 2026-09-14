@@ -1,10 +1,18 @@
 # Publier Bible Horizon sur Google Play
 
+> **Septembre 2026 — la coquille a changé.** La TWA (dossier historique
+> ci-dessous) est remplacée par la **WebView** de `webview/` : l'activité
+> des testeurs y est visible pour Google (les TWA se faisaient refuser
+> l'accès production pour « testeurs pas engagés »), et le casse-tête
+> assetlinks disparaît. Voir `webview/README.md` pour construire l'AAB
+> (versionCode 2). Les sections TWA restent comme mémoire du chemin.
+
 L'application du Play Store n'est qu'une **coquille Android autour de
-`biblehorizon.fr`** (un *TWA* : Trusted Web Activity). Les déploiements Railway
-continuent d'arriver instantanément chez les utilisateurs, sans passer par
-Google. Seule la coquille demande une mise à jour, environ une fois par an,
-quand Google relève le niveau d'API ciblé. **Rien n'est figé par la publication.**
+`biblehorizon.fr`** (historiquement un *TWA* : Trusted Web Activity). Les
+déploiements Railway continuent d'arriver instantanément chez les
+utilisateurs, sans passer par Google. Seule la coquille demande une mise à
+jour, environ une fois par an, quand Google relève le niveau d'API ciblé.
+**Rien n'est figé par la publication.**
 
 ---
 

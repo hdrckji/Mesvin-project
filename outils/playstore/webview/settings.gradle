@@ -1,0 +1,17 @@
+// La coquille WebView de Bible Horizon — voir README.md à côté.
+pluginManagement {
+  repositories {
+    google()
+    mavenCentral()
+    gradlePluginPortal()
+  }
+}
+dependencyResolutionManagement {
+  repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+  repositories {
+    google()
+    mavenCentral()
+  }
+}
+rootProject.name = 'biblehorizon'
+include ':app'

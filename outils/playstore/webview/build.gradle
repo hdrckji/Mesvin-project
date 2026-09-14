@@ -1,0 +1,4 @@
+// Racine du projet : rien d'autre que la version du plugin Android.
+plugins {
+  id 'com.android.application' version '8.5.2' apply false
+}

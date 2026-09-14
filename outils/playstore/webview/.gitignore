@@ -1,0 +1,10 @@
+# Produits de build et fichiers propres à la machine — jamais versionnés.
+.gradle/
+build/
+local.properties
+*.keystore
+.idea/
+*.iml
+gradle/
+gradlew
+gradlew.bat

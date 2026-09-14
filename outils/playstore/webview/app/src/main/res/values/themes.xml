@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Le parchemin de l'appli, décliné clair ici et nuit dans values-night/. -->
+<resources>
+  <style name="Theme.BibleHorizon" parent="android:Theme.Material.Light.NoActionBar">
+    <item name="android:windowBackground">#f7f3ea</item>
+    <item name="android:statusBarColor">#f7f3ea</item>
+    <item name="android:navigationBarColor">#f7f3ea</item>
+    <item name="android:windowLightStatusBar">true</item>
+  </style>
+</resources>

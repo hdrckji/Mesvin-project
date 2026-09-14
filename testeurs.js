@@ -31,6 +31,9 @@
   if (!/Android/i.test(navigator.userAgent)) return;
 
   // Ouvert depuis l'application du Play Store : mission accomplie, silence.
+  // La coquille WebView se signale dans l'agent utilisateur ; l'ancienne
+  // coquille TWA, par son référent android-app://.
+  if (/BibleHorizonApp/.test(navigator.userAgent)) return;
   try {
     if (document.referrer.indexOf('android-app://') === 0) {
       localStorage.setItem(CLE, 'twa');

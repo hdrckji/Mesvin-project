@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Les deux mêmes raccourcis que la coquille TWA : Lire, et le Défi. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+  <shortcut
+      android:shortcutId="lire"
+      android:enabled="true"
+      android:icon="@mipmap/ic_launcher"
+      android:shortcutShortLabel="@string/raccourci_lire_court"
+      android:shortcutLongLabel="@string/raccourci_lire">
+    <intent
+        android:action="android.intent.action.VIEW"
+        android:targetPackage="fr.biblehorizon.app"
+        android:targetClass="fr.biblehorizon.app.MainActivity"
+        android:data="https://biblehorizon.fr/lire/" />
+  </shortcut>
+  <shortcut
+      android:shortcutId="defi"
+      android:enabled="true"
+      android:icon="@mipmap/ic_launcher"
+      android:shortcutShortLabel="@string/raccourci_defi_court"
+      android:shortcutLongLabel="@string/raccourci_defi">
+    <intent
+        android:action="android.intent.action.VIEW"
+        android:targetPackage="fr.biblehorizon.app"
+        android:targetClass="fr.biblehorizon.app.MainActivity"
+        android:data="https://biblehorizon.fr/defi/" />
+  </shortcut>
+</shortcuts>

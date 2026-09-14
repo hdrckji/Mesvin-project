@@ -1,0 +1,54 @@
+plugins {
+  id 'com.android.application'
+}
+
+/* La signature : le MÊME keystore d'importation que la coquille TWA
+   (android.keystore, alias « biblehorizon », créé avec bubblewrap — Play
+   resigne ensuite avec sa propre clé). Les secrets ne vivent jamais ici :
+   on les passe en propriétés Gradle ou variables d'environnement :
+
+     BH_KEYSTORE      chemin du fichier android.keystore
+     BH_KEYSTORE_MDP  mot de passe du keystore
+     BH_CLE_MDP       mot de passe de la clé (souvent identique)
+
+   Sans elles, `bundleRelease` produit un AAB non signé — utile pour
+   vérifier que tout compile avant de brancher la vraie clé. */
+def cheminKeystore = System.getenv('BH_KEYSTORE') ?: project.findProperty('BH_KEYSTORE')
+
+android {
+  namespace 'fr.biblehorizon.app'
+  compileSdk 35
+
+  defaultConfig {
+    applicationId 'fr.biblehorizon.app'
+    minSdk 23
+    targetSdk 35
+    versionCode 2
+    versionName '1.1.0'
+  }
+
+  if (cheminKeystore) {
+    signingConfigs {
+      release {
+        storeFile file(cheminKeystore)
+        storePassword System.getenv('BH_KEYSTORE_MDP') ?: project.findProperty('BH_KEYSTORE_MDP')
+        keyAlias 'biblehorizon'
+        keyPassword System.getenv('BH_CLE_MDP') ?: project.findProperty('BH_CLE_MDP')
+      }
+    }
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+      if (cheminKeystore) signingConfig signingConfigs.release
+    }
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+}
+
+/* Aucune dépendance : la WebView est fournie par le système. */

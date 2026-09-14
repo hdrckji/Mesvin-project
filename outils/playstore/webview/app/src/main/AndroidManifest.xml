@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- La coquille WebView : une seule activité, une seule permission. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <uses-permission android:name="android.permission.INTERNET" />
+
+  <application
+      android:label="@string/app_name"
+      android:icon="@mipmap/ic_launcher"
+      android:theme="@style/Theme.BibleHorizon"
+      android:supportsRtl="true"
+      android:allowBackup="true">
+
+    <activity
+        android:name=".MainActivity"
+        android:launchMode="singleTask"
+        android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+        android:exported="true">
+
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+
+      <!-- Les liens biblehorizon.fr s'ouvrent dans l'appli. assetlinks.json
+           est déjà servi par le site ; si la vérification échoue, Android
+           propose simplement le choix — rien ne casse. -->
+      <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="https" android:host="biblehorizon.fr" />
+      </intent-filter>
+
+      <meta-data android:name="android.app.shortcuts"
+                 android:resource="@xml/shortcuts" />
+    </activity>
+  </application>
+</manifest>
