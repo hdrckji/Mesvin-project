@@ -1,0 +1,72 @@
+# ============================================================================
+# L'AAB de la coquille WebView (outils/playstore/webview), NON signé.
+#
+# Pourquoi ici et pas sur un poste : compiler demande le SDK Android et les
+# dépôts Maven de Google, que tout le monde n'a pas sous la main. Le runner
+# GitHub les a. En revanche la signature ne se fait PAS ici : le keystore
+# d'importation et ses mots de passe restent sur le poste de Jim — aucun
+# secret sur GitHub. L'AAB produit est signé ensuite localement avec jarsigner
+# (voir le README du dossier), puis téléversé en Play Console.
+#
+# Déclenchement : à la main (workflow_dispatch) ou à chaque poussée qui touche
+# le dossier de la coquille.
+# ============================================================================
+name: AAB WebView
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'outils/playstore/webview/**'
+      - '.github/workflows/aab-webview.yml'
+
+jobs:
+  aab:
+    name: Compiler l'AAB non signé
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: outils/playstore/webview
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: SDK Android
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-35 build-tools;35.0.0'
+
+      - name: Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      # Le wrapper n'est pas versionné (README) : on le génère, comme sur un
+      # poste, pour construire exactement comme le README le décrit.
+      - name: Générer le wrapper
+        run: gradle wrapper --gradle-version 8.7
+
+      - name: bundleRelease (sans signature)
+        run: ./gradlew --no-daemon bundleRelease
+
+      - name: Vérifier l'AAB
+        run: |
+          set -e
+          AAB=app/build/outputs/bundle/release/app-release.aab
+          ls -l "$AAB"
+          # versionCode 2 attendu : on le lit dans le manifeste du bundle.
+          unzip -l "$AAB" | grep -q 'base/manifest/AndroidManifest.xml'
+
+      - name: Publier l'AAB en artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bible-horizon-webview-aab-non-signe
+          path: outils/playstore/webview/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 14
