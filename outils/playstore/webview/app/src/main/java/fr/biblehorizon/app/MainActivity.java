@@ -49,10 +49,7 @@ public class MainActivity extends Activity {
       @Override
       public boolean shouldOverrideUrlLoading(WebView vue, WebResourceRequest demande) {
         Uri url = demande.getUrl();
-        String hote = url.getHost() == null ? "" : url.getHost();
-        boolean chezNous = "https".equals(url.getScheme())
-            && (hote.equals("biblehorizon.fr") || hote.endsWith(".biblehorizon.fr"));
-        if (chezNous) return false; // la WebView s'en charge
+        if (estChezNous(url)) return false; // la WebView s'en charge
         try {
           startActivity(new Intent(Intent.ACTION_VIEW, url));
         } catch (Exception e) { /* aucune appli pour ce lien : on l'ignore */ }
@@ -77,11 +74,22 @@ public class MainActivity extends Activity {
     }
   }
 
+  /* Le seul juge de ce qui se charge dans la WebView : https, et l'hôte est
+     biblehorizon.fr ou l'un de ses sous-domaines. Une comparaison de PRÉFIXE
+     ne suffit pas — « https://biblehorizon.fr.pirate.example » commencerait
+     par la bonne chaîne : c'est exactement la faille de cross-app scripting
+     que Google a signalée (un intent peut venir de n'importe quelle appli). */
+  private static boolean estChezNous(Uri url) {
+    if (url == null || !"https".equals(url.getScheme())) return false;
+    String hote = url.getHost();
+    if (hote == null) return false;
+    return hote.equals("biblehorizon.fr") || hote.endsWith(".biblehorizon.fr");
+  }
+
   /* Raccourci, lien profond, ou simple lancement : quelle page ouvrir ? */
   private String urlDemandee(Intent intent) {
-    if (intent != null && intent.getData() != null) {
-      String u = intent.getDataString();
-      if (u != null && u.startsWith("https://biblehorizon.fr")) return u;
+    if (intent != null && estChezNous(intent.getData())) {
+      return intent.getData().toString();
     }
     return ACCUEIL;
   }
@@ -89,7 +97,9 @@ public class MainActivity extends Activity {
   @Override
   protected void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
-    if (intent.getData() != null) web.loadUrl(urlDemandee(intent));
+    // On ne navigue que vers une URL vérifiée du site : un intent hostile
+    // ne peut au pire que ramener à l'accueil.
+    if (estChezNous(intent.getData())) web.loadUrl(intent.getData().toString());
   }
 
   @Override
