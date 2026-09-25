@@ -320,6 +320,28 @@ function handle_admin_journal(PDO $pdo): never {
 /* ---- GET /api/admin/brevo — les derniers événements chez Brevo ------------------ */
 
 /**
+ * Le domaine d'où part le courrier de Bible Horizon, lu dans MAIL_FROM.
+ *
+ * Il sert à trier ce que Brevo renvoie. La clé API vaut pour le COMPTE
+ * ENTIER, et /smtp/statistics/events ne sait pas filtrer par expéditeur :
+ * si un autre site partage le même compte Brevo, ses envois arrivent ici.
+ * Sans ce tri, l'écran d'administration de Bible Horizon montrerait le
+ * courrier du voisin — adresses des destinataires comprises.
+ */
+function brevo_notre_domaine(): string {
+    return brevo_domaine(mail_from());
+}
+
+/** Le domaine d'une adresse, écrite nue ou en « Nom <a@b.c> ». */
+function brevo_domaine(string $adresse): string {
+    if (preg_match('/<([^>]*)>/', $adresse, $m)) {
+        $adresse = $m[1];
+    }
+    $at = strrpos($adresse, '@');
+    return $at === false ? '' : strtolower(trim(substr($adresse, $at + 1)));
+}
+
+/**
  * Remonte les derniers événements e-mail vus par Brevo (délivré, ouvert,
  * rejeté…), pour croiser avec le journal serveur sans quitter l'écran.
  *
@@ -331,6 +353,11 @@ function handle_admin_journal(PDO $pdo): never {
  * "messageId": "…", "from": "…" } ] } — le parsing reste DÉFENSIF (chaque
  * champ avec repli) : les docs n'étant pas toujours joignables depuis ici,
  * un champ absent ou renommé ne casse rien.
+ *
+ * Le champ « from » est GARDÉ, et pas seulement lu : il sert à écarter les
+ * envois d'un autre expéditeur du même compte (voir brevo_notre_domaine)
+ * et à afficher la colonne « De », pour qu'aucun doute ne subsiste sur
+ * l'origine d'une ligne.
  *
  * Robustesse : clé absente ou Brevo injoignable → 200 avec events vide et
  * une note lisible — l'admin voit l'état, rien ne casse. La clé API ne sort
@@ -366,9 +393,19 @@ function handle_admin_brevo(PDO $pdo): never {
     }
 
     $data = json_decode((string) $response, true);
+    $notre = brevo_notre_domaine();
     $events = [];
+    $ecartes = 0;
     foreach (is_array($data['events'] ?? null) ? $data['events'] : [] as $e) {
         if (!is_array($e)) {
+            continue;
+        }
+        $de = is_string($e['from'] ?? null) ? $e['from'] : null;
+        /* Ce qui part d'un autre domaine ne regarde pas cet écran. Champ
+           absent — ou renommé par Brevo — on garde : mieux vaut une ligne
+           de trop que cacher son propre courrier. */
+        if ($de !== null && $notre !== '' && brevo_domaine($de) !== $notre) {
+            $ecartes++;
             continue;
         }
         $events[] = [
@@ -376,7 +413,17 @@ function handle_admin_brevo(PDO $pdo): never {
             'email'   => is_string($e['email'] ?? null) ? $e['email'] : null,
             'event'   => is_string($e['event'] ?? null) ? $e['event'] : 'inconnu',
             'subject' => is_string($e['subject'] ?? null) ? $e['subject'] : null,
+            'from'    => $de,
         ];
     }
-    json_out(['events' => $events]);
+
+    $out = ['events' => $events];
+    if ($ecartes > 0) {
+        // Dit à voix haute ce qui a été retiré : un compte Brevo partagé
+        // s'oublie vite, et un tableau qui rétrécit sans explication inquiète.
+        $out['note'] = $ecartes === 1
+            ? "1 événement d'un autre expéditeur du même compte Brevo a été écarté (ici, seul $notre est montré)."
+            : "$ecartes événements d'un autre expéditeur du même compte Brevo ont été écartés (ici, seul $notre est montré).";
+    }
+    json_out($out);
 }

@@ -600,11 +600,15 @@ function htmlChezBrevo() {
   const note = actBrevo.note ? `<p class="muted" style="margin:2px 2px 10px">${esc(actBrevo.note)}</p>` : '';
   const lignes = (actBrevo.events || []).map(e => {
     const sujet = e.subject ? (e.subject.length > 42 ? e.subject.slice(0, 41) + '…' : e.subject) : '—';
+    /* La colonne « De » n'est pas décorative : la clé Brevo vaut pour tout le
+       compte, et si un autre site le partage, elle dit d'un coup d'œil d'où
+       vient une ligne. Le serveur écarte déjà ce qui ne part pas de chez nous. */
     return `
     <tr>
       <td class="act-heure">${esc(heureLocale(e.ts))}</td>
       <td>${actBadge(ACT_BREVO, e.event)}</td>
       <td>${esc(e.email || '—')}</td>
+      <td class="act-detail">${esc(e.from || '—')}</td>
       <td class="act-detail">${esc(sujet)}</td>
     </tr>`;
   }).join('');
@@ -613,8 +617,8 @@ function htmlChezBrevo() {
       ${note}
       <div class="adm-table-wrap">
         <table class="adm-table">
-          <thead><tr><th>Quand</th><th>Événement</th><th>E-mail</th><th>Sujet</th></tr></thead>
-          <tbody>${lignes || (actBrevo.note ? '' : `<tr><td colspan="4" class="muted">Aucun événement récent chez Brevo.</td></tr>`)}</tbody>
+          <thead><tr><th>Quand</th><th>Événement</th><th>E-mail</th><th>De</th><th>Sujet</th></tr></thead>
+          <tbody>${lignes || (actBrevo.note ? '' : `<tr><td colspan="5" class="muted">Aucun événement récent chez Brevo.</td></tr>`)}</tbody>
         </table>
       </div>
     </div>`;
