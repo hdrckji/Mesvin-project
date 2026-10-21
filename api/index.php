@@ -140,6 +140,7 @@ $pdo = db();
 if ($path === '/api/auth/request-code' && $method === 'POST') handle_auth_request_code($pdo);
 if ($path === '/api/auth/verify'       && $method === 'POST') handle_auth_verify($pdo);
 if ($path === '/api/auth/google'       && $method === 'POST') handle_auth_google($pdo);
+if ($path === '/api/auth/google/redirect' && $method === 'POST') handle_auth_google_redirect();
 if ($path === '/api/auth/logout'       && $method === 'POST') handle_auth_logout($pdo);
 if ($path === '/api/me'                && $method === 'GET')  handle_me_get($pdo);
 if ($path === '/api/me/pseudo'         && $method === 'POST') handle_me_pseudo($pdo);

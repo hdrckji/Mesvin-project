@@ -11,6 +11,9 @@
                                    actif seulement si GOOGLE_CLIENT_ID est
                                    configurée). Même compte que par e-mail :
                                    c'est l'adresse qui fait foi.
+   - POST /api/auth/google/redirect : retour Google en mode redirection
+                                   (appli installée) → renvoie le jeton à
+                                   l'appli dans l'ancre #google=….
    - GET  /api/config            : configuration publique (client ID Google).
    - GET  /api/me                : utilisateur connecté.
    - POST /api/me/pseudo         : changer de pseudo.
@@ -286,6 +289,33 @@ function handle_auth_google(PDO $pdo): never {
 
     journal_log($pdo, 'connexion_google', $email);
     json_out(['token' => open_session($pdo, $user), 'user' => user_payload($user)]);
+}
+
+/* ---- POST /api/auth/google/redirect ---------------------------------------- */
+
+/**
+ * Retour de la connexion Google en mode « redirection », utilisé par l'appli
+ * installée (Play Store / écran d'accueil). Là, le mode « popup » ne marche
+ * pas : la fenêtre Google s'ouvre à part, perd le lien avec l'appli, et reste
+ * blanche après le choix du compte. En redirection, Google POSTe le jeton
+ * d'identité ici ; on le renvoie à l'appli dans l'ancre (#google=…, jamais
+ * envoyée à un serveur), qui le soumet à POST /api/auth/google comme avant.
+ * Rien n'est ouvert ici : la vérification et la session restent au même
+ * endroit, et l'appli contrôle le nonce avant d'accepter le jeton.
+ */
+function handle_auth_google_redirect(): never {
+    $credential = (string) ($_POST['credential'] ?? '');
+    $ok = google_client_id() !== null
+        && $credential !== '' && strlen($credential) <= 4096
+        && preg_match('/^[A-Za-z0-9_\-.]+$/', $credential) === 1;
+    // Double envoi du jeton anti-CSRF de Google : cookie posé par la page,
+    // copie dans le formulaire. Vérifié quand le navigateur a gardé le cookie.
+    $cookie = $_COOKIE['g_csrf_token'] ?? null;
+    if ($cookie !== null && ($_POST['g_csrf_token'] ?? null) !== $cookie) {
+        $ok = false;
+    }
+    header('Location: /' . ($ok ? '#google=' . $credential : '#google-erreur'), true, 303);
+    exit;
 }
 
 /* ---- GET /api/me ---------------------------------------------------------- */

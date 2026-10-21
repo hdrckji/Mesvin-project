@@ -217,6 +217,15 @@ si rien ne convient → 422 `{ "needPseudo": true }` (renvoyer le même
 `credential` avec un `pseudo`).
 → `{ "token": "...", "user": { … } }`
 
+### POST /api/auth/google/redirect
+Retour de la connexion Google en **mode redirection** (appli installée, où la
+popup Google reste blanche). Formulaire posté par Google
+(`credential`, `g_csrf_token`). Ne crée aucune session : répond **303** vers
+`/#google=<jeton>` (ou `/#google-erreur`). L'appli n'accepte le jeton que si
+son `nonce` est celui qu'elle a tiré avant de partir chez Google, puis
+l'envoie à `POST /api/auth/google` comme d'habitude. L'adresse doit figurer
+dans les « Authorized redirect URIs » du client OAuth.
+
 ### GET /api/config
 Configuration **publique** (aucune authentification) :
 → `{ "googleClientId": "…" | null, "vapidPublicKey": "…" | null }`

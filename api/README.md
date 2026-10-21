@@ -79,8 +79,13 @@ Sans elle, tout marche déjà par code e-mail. Pour proposer en plus le bouton
    Create credentials → OAuth client ID** → type **Web application**.
 2. Dans **Authorized JavaScript origins**, ajouter l'adresse du site
    (ex. `https://mon-domaine.up.railway.app`) — et `http://localhost:8080`
-   pour tester en local. Pas de redirect URI à déclarer.
-3. Copier le **Client ID** (se termine par `.apps.googleusercontent.com`)
+   pour tester en local.
+3. Dans **Authorized redirect URIs**, ajouter
+   `https://<ton-domaine>/api/auth/google/redirect` (ex.
+   `https://biblehorizon.fr/api/auth/google/redirect`). Indispensable pour
+   l'appli installée (Play Store) : là, la fenêtre popup de Google reste
+   blanche, et l'appli passe par une redirection vers cette adresse.
+4. Copier le **Client ID** (se termine par `.apps.googleusercontent.com`)
    dans une variable Railway :
 
 | Variable | Exemple | Rôle |

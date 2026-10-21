@@ -1734,16 +1734,51 @@ function mountGoogleButton() {
   ensureGsi().then(() => {
     const slot = document.getElementById('google-btn'); // re-vérifié après l'attente
     if (!slot || slot.childElementCount) return;
-    google.accounts.id.initialize({
+    const options = {
       client_id: publicConfig.googleClientId,
       callback: resp => onGoogleCredential(resp && resp.credential),
       ux_mode: 'popup'
-    });
+    };
+    // Appli installée (Play Store, écran d'accueil) : la fenêtre « popup » de
+    // Google s'y ouvre à part, perd le lien avec l'appli et reste blanche
+    // après le choix du compte. On passe alors par une redirection : Google
+    // renvoie le jeton au serveur, qui le rend à l'appli (#google=…).
+    if (appInstallee()) {
+      const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+      try { localStorage.setItem(GOOGLE_NONCE_KEY, nonce); } catch (e) { /* sans stockage : pas de redirection */ }
+      Object.assign(options, { ux_mode: 'redirect', login_uri: location.origin + '/api/auth/google/redirect', nonce });
+    }
+    google.accounts.id.initialize(options);
     google.accounts.id.renderButton(slot, {
       type: 'standard', theme: 'outline', size: 'large', shape: 'pill',
       text: 'continue_with', locale: 'fr', width: 280
     });
   }).catch(() => { /* hors-ligne : pas de bouton, le parcours e-mail reste là */ });
+}
+const GOOGLE_NONCE_KEY = 'graine.googleNonce';
+function appInstallee() {
+  return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true
+    || document.referrer.startsWith('android-app://');
+}
+/**
+ * Retour de la redirection Google (appli installée) : le jeton arrive dans
+ * l'ancre. Il n'est accepté que s'il porte le nonce choisi par CET appareil
+ * avant de partir chez Google — un lien forgé ne peut pas connecter
+ * quelqu'un à un autre compte. Lu UNE fois au démarrage, ancre aussitôt effacée.
+ */
+function googleDepuisURL() {
+  const m = (location.hash || '').match(/^#google(?:=([A-Za-z0-9_\-.]+)|-erreur)$/);
+  if (!m) return null;
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* sans gravité */ }
+  let attendu = null;
+  try { attendu = localStorage.getItem(GOOGLE_NONCE_KEY); localStorage.removeItem(GOOGLE_NONCE_KEY); } catch (e) {}
+  auth = { step: 'email', email: '', code: '', pseudo: '', devCode: null, google: null, error: null, notice: null, busy: false };
+  route = { name: 'account', param: null };
+  let nonce = null;
+  try { nonce = JSON.parse(atob(m[1].split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).nonce; } catch (e) {}
+  if (m[1] && attendu && nonce === attendu) return m[1];
+  auth.error = 'La connexion Google n\'a pas abouti — réessaie.';
+  return null;
 }
 async function onGoogleCredential(credential) {
   if (!auth || auth.busy || !credential) return;
@@ -4220,6 +4255,8 @@ function removeVerse(id) {
     syncCompletedCollections();
     // Une invitation dans l'URL prend la main sur l'écran d'accueil.
     invitationDepuisURL();
+    // Retour de la connexion Google (appli installée) : écran Compte.
+    const googleCredential = googleDepuisURL();
     // Appli DÉJÀ ouverte et lien touché (depuis un message, par exemple) :
     // seule l'ancre change, la page ne se recharge pas — sans cette écoute,
     // l'invitation passerait inaperçue.
@@ -4231,6 +4268,7 @@ function removeVerse(id) {
       }
     });
     render();
+    if (googleCredential) onGoogleCredential(googleCredential);
   } catch (e) {
     el.innerHTML = `<div class="card center" style="margin-top:40px;padding:30px 18px">
       <p style="margin:0 0 6px"><b>L'appli n'a pas pu démarrer.</b></p>
