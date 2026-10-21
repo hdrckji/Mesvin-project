@@ -2,7 +2,11 @@
 # (c'est Caddy avec PHP intégré : même stack que les autres projets Railway).
 # Railway détecte ce Dockerfile, construit l'image et fournit $PORT au runtime.
 
-FROM dunglas/frankenphp:1-php8.3
+# Version ÉPINGLÉE : 1.13.2 est la première image publiée après les correctifs
+# PHP du 21 octobre 2026 (CVE-2026-109618 / 109619, « PHP2Shell » : PHP
+# 8.3.36). Une étiquette flottante (1-php8.3) laisse Railway réutiliser une
+# ancienne image en cache ; un numéro précis force le bon téléchargement.
+FROM dunglas/frankenphp:1.13.2-php8.3
 
 # Extensions PDO : MySQL pour Railway, SQLite pour le repli local/dev.
 RUN install-php-extensions pdo_mysql pdo_sqlite
