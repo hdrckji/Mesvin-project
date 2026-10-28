@@ -72,7 +72,7 @@ jobs:
       - name: Vérifier l'outillage
         run: |
           php -v | head -1
-          ATTENDUE=$(grep -oE 'frankenphp:[0-9]+-php[0-9]+\.[0-9]+' Dockerfile | grep -oE '[0-9]+\.[0-9]+$')
+          ATTENDUE=$(grep -oE 'frankenphp:[0-9.]+-php[0-9]+\.[0-9]+' Dockerfile | grep -oE '[0-9]+\.[0-9]+$')
           OBTENUE=$(php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;')
           if [ "$ATTENDUE" != "$OBTENUE" ]; then
             echo "::error::PHP $OBTENUE ici, mais le Dockerfile déploie PHP $ATTENDUE."
