@@ -1739,11 +1739,12 @@ function mountGoogleButton() {
       callback: resp => onGoogleCredential(resp && resp.credential),
       ux_mode: 'popup'
     };
-    // Appli installée (Play Store, écran d'accueil) : la fenêtre « popup » de
-    // Google s'y ouvre à part, perd le lien avec l'appli et reste blanche
-    // après le choix du compte. On passe alors par une redirection : Google
-    // renvoie le jeton au serveur, qui le rend à l'appli (#google=…).
-    if (appInstallee()) {
+    // Appli installée (Play Store, écran d'accueil) et mobiles : la fenêtre
+    // « popup » de Google s'y ouvre à part (dans Chrome), perd le lien avec
+    // l'appli et reste blanche après le choix du compte. On passe alors par
+    // une redirection : Google renvoie le jeton au serveur, qui le rend à
+    // l'appli (#google=…). Seul l'ordinateur garde la popup.
+    if (googleEnRedirection()) {
       const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
       try { localStorage.setItem(GOOGLE_NONCE_KEY, nonce); } catch (e) { /* sans stockage : pas de redirection */ }
       Object.assign(options, { ux_mode: 'redirect', login_uri: location.origin + '/api/auth/google/redirect', nonce });
@@ -1756,9 +1757,16 @@ function mountGoogleButton() {
   }).catch(() => { /* hors-ligne : pas de bouton, le parcours e-mail reste là */ });
 }
 const GOOGLE_NONCE_KEY = 'graine.googleNonce';
-function appInstallee() {
+/* La détection « appli installée » seule ne suffit pas : dans l'appli du
+   Play Store, display-mode peut valoir « browser » (repli en onglet Chrome
+   quand la vérification du domaine échoue) et le referrer android-app://
+   disparaît au premier rechargement. Le téléphone, lui, se reconnaît
+   toujours — et la redirection y marche aussi bien sur le site. */
+function googleEnRedirection() {
   return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true
-    || document.referrer.startsWith('android-app://');
+    || document.referrer.startsWith('android-app://')
+    || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPad récent
 }
 /**
  * Retour de la redirection Google (appli installée) : le jeton arrive dans
