@@ -1745,8 +1745,16 @@ function mountGoogleButton() {
     // une redirection : Google renvoie le jeton au serveur, qui le rend à
     // l'appli (#google=…). Seul l'ordinateur garde la popup.
     if (googleEnRedirection()) {
-      const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
-      try { localStorage.setItem(GOOGLE_NONCE_KEY, nonce); } catch (e) { /* sans stockage : pas de redirection */ }
+      // Le nonce est GARDÉ tant qu'il n'a pas servi : l'écran se redessine
+      // souvent (et un onglet du site ouvert à côté partage ce stockage) —
+      // en tirer un neuf à chaque affichage écrasait celui que Google allait
+      // renvoyer, et le retour était refusé.
+      let nonce = null;
+      try { nonce = localStorage.getItem(GOOGLE_NONCE_KEY); } catch (e) {}
+      if (!nonce) {
+        nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+        try { localStorage.setItem(GOOGLE_NONCE_KEY, nonce); } catch (e) { /* sans stockage : pas de redirection */ }
+      }
       Object.assign(options, { ux_mode: 'redirect', login_uri: location.origin + '/api/auth/google/redirect', nonce });
     }
     google.accounts.id.initialize(options);
@@ -1785,7 +1793,9 @@ function googleDepuisURL() {
   let nonce = null;
   try { nonce = JSON.parse(atob(m[1].split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).nonce; } catch (e) {}
   if (m[1] && attendu && nonce === attendu) return m[1];
-  auth.error = 'La connexion Google n\'a pas abouti — réessaie.';
+  // Petit code en fin de message pour savoir QUI a refusé : S = le serveur,
+  // A = l'appli (nonce absent ou différent).
+  auth.error = 'La connexion Google n\'a pas abouti — réessaie. (' + (m[1] ? 'A' : 'S') + ')';
   return null;
 }
 async function onGoogleCredential(credential) {
