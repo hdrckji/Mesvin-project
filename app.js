@@ -736,6 +736,30 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+/* Connexion faite AILLEURS que dans cette page. Dans l'appli du Play Store,
+   la page de Google peut s'ouvrir dans un onglet Chrome à part : le retour
+   (#google=…) y est traité et la session s'y enregistre — dans le stockage
+   que l'appli partage avec Chrome — puis l'appli revient au premier plan
+   sans se recharger, en affichant encore « pas connecté ». On guette donc
+   l'apparition (ou la disparition) de la session : événement « storage »
+   quand l'autre page écrit, et vérification au retour au premier plan. */
+let connecteConnu = !!(window.GraineAPI && GraineAPI.isLoggedIn());
+function sessionChangeeAilleurs() {
+  const connecte = !!(window.GraineAPI && GraineAPI.isLoggedIn());
+  if (connecte === connecteConnu) return;
+  connecteConnu = connecte;
+  if (connecte) {
+    if (route.name === 'account' && auth && auth.step !== 'welcome') auth.step = 'welcome';
+    friendsCache = null; groupesCache = null;
+    syncNow();
+    ensureGroupes();
+  }
+  render();
+}
+window.addEventListener('storage', e => { if (e.key === null || e.key === 'graine.session') sessionChangeeAilleurs(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sessionChangeeAilleurs(); });
+window.addEventListener('pageshow', sessionChangeeAilleurs);
+
 /* Une nouvelle version vient de prendre la main pendant que l'appli tournait :
    on le DIT, au lieu d'espérer deux redémarrages complets — un geste recharge,
    sinon ce sera pour la prochaine ouverture. (Au premier passage du service
