@@ -225,6 +225,17 @@ popup Google reste blanche). Formulaire posté par Google
 son `nonce` est celui qu'elle a tiré avant de partir chez Google, puis
 l'envoie à `POST /api/auth/google` comme d'habitude. L'adresse doit figurer
 dans les « Authorized redirect URIs » du client OAuth.
+Si le jeton porte un `nonce` (mode redirection), il est aussi **gardé
+10 minutes** sous l'empreinte SHA-256 de ce nonce, pour `POST
+/api/auth/google/relais`.
+
+### POST /api/auth/google/relais
+Filet de l'appli du Play Store : la page Google s'y ouvre dans Chrome, et
+le retour `/#google=…` peut ne jamais atteindre l'appli. Celle-ci, seule à
+connaître son nonce, vient chercher le jeton en revenant au premier plan.
+`{ "nonce": "<32 hex>" }` → `{ "credential": "..." }` (lu **une fois**,
+puis effacé) · 404 tant que rien n'est arrivé · 400 nonce mal formé.
+Le jeton se soumet ensuite à `POST /api/auth/google` comme d'habitude.
 
 ### GET /api/config
 Configuration **publique** (aucune authentification) :
