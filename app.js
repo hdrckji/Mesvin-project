@@ -765,7 +765,12 @@ window.addEventListener('pageshow', sessionChangeeAilleurs);
    sinon ce sera pour la prochaine ouverture. (Au premier passage du service
    worker, controller est encore nul : aucune invitation ne s'affiche.) */
 if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+  const ouvertureA = Date.now();
   navigator.serviceWorker.addEventListener('controllerchange', () => {
+    // Demandée depuis « À propos », ou arrivée dans les toutes premières
+    // secondes après l'ouverture (rien n'est encore en cours) : on recharge
+    // tout de suite — la nouvelle version s'applique dès CE lancement.
+    if (majRechargeDemandee || Date.now() - ouvertureA < 8000) { location.reload(); return; }
     if (document.getElementById('maj-prete')) return;
     const b = document.createElement('button');
     b.id = 'maj-prete';
@@ -1424,8 +1429,43 @@ function viewAbout() {
       &nbsp;·&nbsp;
       <a href="presse/dossier-de-presse-bible-horizon.pdf" target="_blank" rel="noopener"
          style="color:var(--accent-ink)">Dossier de presse</a></p>
-    <p class="muted center" style="font-size:.8rem;margin-top:10px">Version 0.3 · projet en construction</p>`;
+    <p class="muted center" style="font-size:.8rem;margin-top:10px">Version 0.3${versionInstallee ? ' (' + esc(versionInstallee) + ')' : ''} · projet en construction</p>
+    ${'serviceWorker' in navigator ? `<p class="center" style="margin-top:8px"><button class="btn btn-ghost" data-majverif="1" ${majEtat === 'cherche' ? 'disabled' : ''} style="font-size:.85rem">${
+      majEtat === 'cherche' ? 'Recherche…' : majEtat === 'ajour' ? 'L\'appli est à jour ✓' : 'Rechercher une mise à jour'}</button></p>` : ''}`;
 }
+/* Numéro de version réellement installé : celui du cache de la coquille posé
+   par le service worker (graine-vNN). Lu une fois, puis à chaque mise à jour. */
+let versionInstallee = null;
+let majEtat = null; // null | 'cherche' | 'ajour'
+function lireVersionInstallee() {
+  if (!window.caches) return;
+  caches.keys().then(keys => {
+    const n = keys.map(k => (k.match(/^graine-v(\d+)$/) || [])[1]).filter(Boolean).map(Number);
+    if (n.length) { versionInstallee = 'v' + Math.max(...n); if (route.name === 'about') renderIfIdle(); }
+  }).catch(() => {});
+}
+lireVersionInstallee();
+/* « Rechercher une mise à jour » : demande au service worker de vérifier
+   tout de suite. Une nouvelle version → elle prend la main et l'appli se
+   recharge (controllerchange, plus bas) ; sinon « à jour ». */
+async function verifierMiseAJour() {
+  majEtat = 'cherche'; render();
+  let trouvee = false;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) {
+      await reg.update();
+      trouvee = !!(reg.installing || reg.waiting);
+    }
+  } catch (e) { /* hors-ligne : on dira « à jour », on réessaiera */ }
+  if (trouvee) {
+    majRechargeDemandee = true; // le rechargement suit…
+    setTimeout(() => { majEtat = null; renderIfIdle(); }, 30000); // …sauf installation ratée
+    return;
+  }
+  majEtat = 'ajour'; render();
+}
+let majRechargeDemandee = false;
 
 /* ============================================================================
    Compte, synchronisation & amis — serveur FACULTATIF (voir API-CONTRAT.md).
@@ -3978,6 +4018,7 @@ function wire() {
   });
   if (q('[data-syncnow]')) q('[data-syncnow]').addEventListener('click', () => { syncNow(); });
   if (q('[data-copycode]')) q('[data-copycode]').addEventListener('click', copyFriendCode);
+  if (q('[data-majverif]')) q('[data-majverif]').addEventListener('click', verifierMiseAJour);
   if (q('[data-invite]')) q('[data-invite]').addEventListener('click', () => partager(texteInvitation()));
   if (q('[data-editpseudo]')) q('[data-editpseudo]').addEventListener('click', () => {
     pseudoEdit = { value: (GraineAPI.user() || {}).pseudo || '', error: null, busy: false }; render();
