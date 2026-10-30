@@ -59,7 +59,7 @@ function db_driver(PDO $pdo): string {
 }
 
 /** Dernière étape de migration connue — à incrémenter avec chaque nouvelle étape. */
-const DB_MIGRATION_DERNIERE = 16;
+const DB_MIGRATION_DERNIERE = 17;
 
 /** Applique les étapes de migration manquantes (journal : schema_migrations). */
 function db_migrate(PDO $pdo): void {
@@ -1359,13 +1359,31 @@ function db_migrate(PDO $pdo): void {
         : ['ALTER TABLE signalements ADD COLUMN raison TEXT NULL',
            'ALTER TABLE signalements ADD COLUMN groupe_code TEXT NULL'];
 
+    /* Étape 17 — relais de la connexion Google (appli du Play Store). La page
+       de Google s'y ouvre dans Chrome, qui ne rend pas toujours le jeton à
+       l'appli : le serveur le garde ici quelques minutes, sous l'empreinte
+       (SHA-256) du nonce que seul l'appareil connaît, et l'appli vient le
+       chercher en revenant au premier plan. Lu une fois, puis effacé. */
+    $etape17 = db_driver($pdo) === 'mysql'
+        ? ['CREATE TABLE IF NOT EXISTS google_relais (
+                cle CHAR(64) NOT NULL PRIMARY KEY,
+                credential TEXT NOT NULL,
+                expires_at DATETIME NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci']
+        : ['CREATE TABLE IF NOT EXISTS google_relais (
+                cle TEXT NOT NULL PRIMARY KEY,
+                credential TEXT NOT NULL,
+                expires_at TEXT NOT NULL
+            )'];
+
     /* Chaque étape s'applique dans l'ordre puis se tamponne. Sur une base
        déjà déployée d'avant le journal, l'étape 1 traverse sans effet (tout
        est en IF NOT EXISTS) et prend simplement son tampon. */
     foreach ([1 => $ddl, 2 => $etape2, 3 => $etape3, 4 => $etape4, 5 => $etape5,
               6 => $etape6, 7 => $etape7, 8 => $etape8,
               9 => $etape9, 10 => $etape10, 11 => $etape11, 12 => $etape12,
-              13 => $etape13, 14 => $etape14, 15 => $etape15, 16 => $etape16] as $version => $liste) {
+              13 => $etape13, 14 => $etape14, 15 => $etape15, 16 => $etape16,
+              17 => $etape17] as $version => $liste) {
         if ($version <= $fait) {
             continue;
         }

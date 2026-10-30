@@ -14,6 +14,9 @@
    - POST /api/auth/google/redirect : retour Google en mode redirection
                                    (appli installée) → renvoie le jeton à
                                    l'appli dans l'ancre #google=….
+   - POST /api/auth/google/relais : l'appli récupère le jeton gardé par
+                                   /redirect (sous l'empreinte de son nonce)
+                                   quand Chrome ne le lui a pas rendu.
    - GET  /api/config            : configuration publique (client ID Google).
    - GET  /api/me                : utilisateur connecté.
    - POST /api/me/pseudo         : changer de pseudo.
@@ -201,7 +204,10 @@ function google_client_id(): ?string {
  * l'audience, l'émetteur et l'e-mail confirmé. Retourne le payload du jeton.
  */
 function google_verify_credential(string $credential): array {
-    $ch = curl_init('https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($credential));
+    // GOOGLE_TOKENINFO_URL : réservé aux tests locaux (faux Google) — jamais
+    // définie en production, où l'adresse officielle s'applique.
+    $tokeninfo = trim((string) getenv('GOOGLE_TOKENINFO_URL')) ?: 'https://oauth2.googleapis.com/tokeninfo';
+    $ch = curl_init($tokeninfo . '?id_token=' . urlencode($credential));
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 15,
@@ -303,7 +309,7 @@ function handle_auth_google(PDO $pdo): never {
  * Rien n'est ouvert ici : la vérification et la session restent au même
  * endroit, et l'appli contrôle le nonce avant d'accepter le jeton.
  */
-function handle_auth_google_redirect(): never {
+function handle_auth_google_redirect(PDO $pdo): never {
     $credential = (string) ($_POST['credential'] ?? '');
     $ok = google_client_id() !== null
         && $credential !== '' && strlen($credential) <= 4096
@@ -314,8 +320,70 @@ function handle_auth_google_redirect(): never {
     if ($cookie !== null && ($_POST['g_csrf_token'] ?? null) !== $cookie) {
         $ok = false;
     }
+    if ($ok) {
+        google_relais_garder($pdo, $credential);
+    }
     header('Location: /' . ($ok ? '#google=' . $credential : '#google-erreur'), true, 303);
     exit;
+}
+
+/** Nonce porté par un jeton Google (lu sans vérifier : la vérification se
+ *  fait ensuite à POST /api/auth/google). Null s'il manque ou détonne. */
+function google_nonce_du_jeton(string $credential): ?string {
+    $parts = explode('.', $credential);
+    if (count($parts) !== 3) {
+        return null;
+    }
+    $payload = json_decode((string) base64_decode(strtr($parts[1], '-_', '+/')), true);
+    $nonce = is_array($payload) ? ($payload['nonce'] ?? null) : null;
+    return is_string($nonce) && preg_match('/^[a-f0-9]{32}$/', $nonce) === 1 ? $nonce : null;
+}
+
+/**
+ * Garde le jeton 10 minutes sous l'empreinte de son nonce. Dans l'appli du
+ * Play Store, la page Google s'ouvre dans Chrome, et la suite (/#google=…)
+ * peut atterrir dans Chrome plutôt que dans l'appli, ou être perdue en
+ * route : l'appli, qui seule connaît le nonce, viendra le chercher.
+ */
+function google_relais_garder(PDO $pdo, string $credential): void {
+    $nonce = google_nonce_du_jeton($credential);
+    if ($nonce === null) {
+        return; // site web (popup) : aucun nonce, rien à relayer
+    }
+    try {
+        $pdo->prepare('DELETE FROM google_relais WHERE expires_at < ?')->execute([now_sql()]);
+        $cle = hash('sha256', $nonce);
+        $pdo->prepare('DELETE FROM google_relais WHERE cle = ?')->execute([$cle]);
+        $pdo->prepare('INSERT INTO google_relais (cle, credential, expires_at) VALUES (?, ?, ?)')
+            ->execute([$cle, $credential, now_sql_plus(600)]);
+    } catch (PDOException $e) {
+        // Le relais est un filet : s'il rate, le retour par l'ancre reste.
+    }
+}
+
+/* ---- POST /api/auth/google/relais ----------------------------------------- */
+
+/**
+ * { nonce } → { credential } si /redirect l'a reçu pour ce nonce (lu UNE
+ * fois, puis effacé), sinon 404. Le nonce (128 bits tirés par l'appareil)
+ * est le secret : sans lui, rien à récupérer. L'appli soumet ensuite le
+ * jeton à POST /api/auth/google, où il est vérifié comme d'habitude.
+ */
+function handle_auth_google_relais(PDO $pdo): never {
+    $body = read_json_body();
+    $nonce = (string) ($body['nonce'] ?? '');
+    if (preg_match('/^[a-f0-9]{32}$/', $nonce) !== 1) {
+        json_error('Nonce invalide.', 400);
+    }
+    $cle = hash('sha256', $nonce);
+    $st = $pdo->prepare('SELECT credential FROM google_relais WHERE cle = ? AND expires_at > ?');
+    $st->execute([$cle, now_sql()]);
+    $credential = $st->fetchColumn();
+    if ($credential === false) {
+        json_error('Rien pour ce nonce.', 404);
+    }
+    $pdo->prepare('DELETE FROM google_relais WHERE cle = ?')->execute([$cle]);
+    json_out(['credential' => (string) $credential]);
 }
 
 /* ---- GET /api/me ---------------------------------------------------------- */

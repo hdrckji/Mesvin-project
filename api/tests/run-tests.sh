@@ -453,6 +453,20 @@ check "GET /api/config → 200"           200  "$(api GET /api/config)"
 check "→ googleClientId null"           null "$(jval .googleClientId)"
 check "auth Google → 501 (pas de clé)"  501  "$(api POST /api/auth/google '' '{"credential":"x"}')"
 
+# Relais de l'appli du Play Store : le jeton gardé par /redirect sous
+# l'empreinte du nonce se lit UNE fois, et seulement avec le bon nonce.
+NONCE_RELAIS=0123456789abcdef0123456789abcdef
+check "relais : nonce mal formé → 400"  400  "$(api POST /api/auth/google/relais '' '{"nonce":"pas-un-nonce"}')"
+check "relais : rien pour ce nonce → 404" 404 "$(api POST /api/auth/google/relais '' "{\"nonce\":\"$NONCE_RELAIS\"}")"
+CLE_RELAIS=$(printf '%s' "$NONCE_RELAIS" | sha256sum | cut -d' ' -f1)
+sqlexec "INSERT INTO google_relais (cle, credential, expires_at) VALUES ('$CLE_RELAIS', 'a.b.c', '2999-01-01 00:00:00')"
+check "relais : autre nonce → 404"      404  "$(api POST /api/auth/google/relais '' '{"nonce":"ffffffffffffffffffffffffffffffff"}')"
+check "relais : bon nonce → 200"        200  "$(api POST /api/auth/google/relais '' "{\"nonce\":\"$NONCE_RELAIS\"}")"
+check "→ le jeton gardé"                a.b.c "$(jval .credential)"
+check "relais : lu une seule fois → 404" 404 "$(api POST /api/auth/google/relais '' "{\"nonce\":\"$NONCE_RELAIS\"}")"
+sqlexec "INSERT INTO google_relais (cle, credential, expires_at) VALUES ('$CLE_RELAIS', 'a.b.c', '2000-01-01 00:00:00')"
+check "relais : expiré → 404"           404  "$(api POST /api/auth/google/relais '' "{\"nonce\":\"$NONCE_RELAIS\"}")"
+
 # ---------------------------------------------------------------------------
 say "Veillée en direct — création (u1 anime)"
 check "créer sans compte → 401"         401 "$(api POST /api/veillees '' '{}')"
@@ -2271,6 +2285,18 @@ fi
 # session toute faite dans localStorage — le bon outil pour tester les duels,
 # pas la porte d'entrée. Ici on la passe au doigt : e-mail, code (faux puis
 # juste), pseudo, bienvenue, et la session qui survit au rechargement.
+say "Connexion Google de l'appli du Play Store dans un vrai navigateur (relais, ancre, contre-épreuve)"
+if node -e "import('playwright')" > /dev/null 2>&1 \
+   || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then
+  if node "$ROOT/api/tests/navigateur/connexion-google.mjs" "$ROOT" 8191 > "$TMP/google.log" 2>&1; then
+    ok "$(grep -oE '^[0-9]+ réussites' "$TMP/google.log") — retour perdu dans Chrome, retour tardif, ancre, autre appareil"
+  else
+    FAIL=$((FAIL + 1)); printf '   FAIL connexion Google au navigateur\n'; sed 's/^/        /' "$TMP/google.log"
+  fi
+else
+  printf '   --   Playwright absent : connexion Google au navigateur non jouée\n'
+fi
+
 say "Connexion par le vrai écran dans un vrai navigateur (e-mail, code, pseudo)"
 if node -e "import('playwright')" > /dev/null 2>&1 \
    || { [ -n "${BH_PLAYWRIGHT:-}" ] && [ -d "$BH_PLAYWRIGHT/playwright" ]; }; then

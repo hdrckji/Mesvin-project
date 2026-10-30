@@ -77,6 +77,9 @@
       setSession({ token: r.token, user: r.user });
       return r.user;
     },
+    // Jeton Google gardé par le serveur pour ce nonce (appli du Play Store) :
+    // { credential }, ou erreur 404 tant que Google n'a rien renvoyé.
+    async googleRelais(nonce) { return call('POST', '/api/auth/google/relais', { nonce }); },
     async verify(email, code, pseudo) {
       const r = await call('POST', '/api/auth/verify', pseudo ? { email, code, pseudo } : { email, code });
       setSession({ token: r.token, user: r.user });

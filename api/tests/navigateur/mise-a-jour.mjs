@@ -115,6 +115,11 @@ try {
   attendu(await page.evaluate(() => !!navigator.serviceWorker.controller),
     'visite suivante : la page est servie sous le contrôle du service worker');
 
+  // Plus de 8 s depuis l'ouverture : une version qui arrive maintenant ne
+  // recharge plus d'office (l'utilisateur est peut-être en pleine action) —
+  // elle s'annonce par le bouton.
+  await pause(8500);
+
   /* ---- On déploie la version N+1 dans la copie ----------------------------- */
   const V2 = V1 + '-test-maj';
   writeFileSync(CHEMIN_SW, readFileSync(CHEMIN_SW, 'utf8').replace(`const CACHE = '${V1}'`, `const CACHE = '${V2}'`));
@@ -153,6 +158,22 @@ try {
   await pause(2500);
   attendu(await page.locator('#maj-prete').count() === 0,
     'contre-épreuve : re-vérifier sans nouvelle version n\'invite PAS à recharger');
+
+  /* ---- Version N+2 arrivée juste à l'ouverture : rechargement d'office ---- */
+  // Dans les 8 premières secondes rien n'est encore en cours : la nouvelle
+  // version s'applique dès CE lancement, sans bouton à toucher.
+  await page.reload({ waitUntil: 'load' });
+  const V3 = V1 + '-test-maj3';
+  writeFileSync(CHEMIN_SW, readFileSync(CHEMIN_SW, 'utf8').replace(`const CACHE = '${V2}'`, `const CACHE = '${V3}'`));
+  appendFileSync(join(COPIE, 'app.js'), '\nwindow.BH_TEST_VERSION = 3;\n');
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'load', timeout: 15000 }).catch(() => null),
+    page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+  ]);
+  attendu(await page.evaluate(() => window.BH_TEST_VERSION) === 3,
+    'version arrivée à l\'ouverture : l\'appli se recharge d\'elle-même sur la nouvelle');
+  attendu(await page.locator('#maj-prete').count() === 0,
+    '… sans bouton à toucher');
 
   await ctx.close();
 } finally {

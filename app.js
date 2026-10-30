@@ -1850,6 +1850,8 @@ function googleDepuisURL() {
   const m = (location.hash || '').match(/^#google(?:=([A-Za-z0-9_\-.]+)|-erreur)$/);
   if (!m) return null;
   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* sans gravité */ }
+  // Déjà connecté (le relais ci-dessous est passé avant) : rien à refaire.
+  if (window.GraineAPI && GraineAPI.isLoggedIn()) return null;
   let attendu = null;
   try { attendu = localStorage.getItem(GOOGLE_NONCE_KEY); localStorage.removeItem(GOOGLE_NONCE_KEY); } catch (e) {}
   auth = { step: 'email', email: '', code: '', pseudo: '', devCode: null, google: null, error: null, notice: null, busy: false };
@@ -1862,6 +1864,55 @@ function googleDepuisURL() {
   auth.error = 'La connexion Google n\'a pas abouti — réessaie. (' + (m[1] ? 'A' : 'S') + ')';
   return null;
 }
+/**
+ * Relais du serveur — le chemin sûr dans l'appli du Play Store. La page de
+ * Google s'y ouvre dans Chrome ; ensuite, selon le téléphone, le retour
+ * (#google=…) atterrit dans Chrome, ou l'appli revient au premier plan sans
+ * rien recevoir. Le serveur, lui, a reçu le jeton et l'a gardé sous
+ * l'empreinte du nonce : l'appli, seule à connaître ce nonce, vient le
+ * chercher dès qu'elle revient à l'écran (plusieurs essais rapprochés :
+ * Chrome peut rendre la main une seconde avant que le serveur ait fini).
+ */
+let relaisEnCours = false;
+async function googleDepuisRelais() {
+  if (relaisEnCours || !window.GraineAPI || GraineAPI.isLoggedIn()) return;
+  let nonce = null, depart = 0;
+  try { nonce = localStorage.getItem(GOOGLE_NONCE_KEY); depart = Number(localStorage.getItem(GOOGLE_DEPART_KEY)) || 0; } catch (e) {}
+  // Seulement après un départ récent vers Google : pas une requête à chaque ouverture.
+  if (!nonce || Date.now() - depart > 15 * 60 * 1000) return;
+  relaisEnCours = true;
+  try {
+    for (const attente of [0, 1500, 3000, 5000, 8000]) {
+      if (attente) await new Promise(r => setTimeout(r, attente));
+      if (GraineAPI.isLoggedIn() || document.visibilityState !== 'visible') return;
+      let credential = null;
+      try { credential = (await GraineAPI.googleRelais(nonce)).credential; }
+      catch (e) { if (e && e.status === 404) continue; return; } // hors-ligne, etc. : prochain retour
+      let porte = null;
+      try { porte = JSON.parse(atob(credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).nonce; } catch (e) {}
+      if (porte !== nonce) return;
+      try { localStorage.removeItem(GOOGLE_NONCE_KEY); localStorage.removeItem(GOOGLE_DEPART_KEY); } catch (e) {}
+      if (!auth || route.name !== 'account') {
+        auth = { step: 'email', email: '', code: '', pseudo: '', devCode: null, google: null, error: null, notice: null, busy: false };
+        route = { name: 'account', param: null };
+      }
+      auth.error = null; auth.busy = false;
+      render();
+      onGoogleCredential(credential);
+      return;
+    }
+  } finally { relaisEnCours = false; }
+}
+// L'appli passe en arrière-plan depuis l'écran Compte avec un nonce prêt :
+// c'est (sans doute) le départ vers Google — on note l'heure.
+const GOOGLE_DEPART_KEY = 'graine.googleDepart';
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') { googleDepuisRelais(); return; }
+  if (route.name !== 'account' || !window.GraineAPI || GraineAPI.isLoggedIn()) return;
+  try { if (localStorage.getItem(GOOGLE_NONCE_KEY)) localStorage.setItem(GOOGLE_DEPART_KEY, String(Date.now())); } catch (e) {}
+});
+window.addEventListener('focus', () => googleDepuisRelais());
+window.addEventListener('pageshow', () => googleDepuisRelais());
 async function onGoogleCredential(credential) {
   if (!auth || auth.busy || !credential) return;
   auth.error = null; auth.busy = true; render();
