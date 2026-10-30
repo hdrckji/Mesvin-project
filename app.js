@@ -4344,6 +4344,16 @@ function removeVerse(id) {
     // seule l'ancre change, la page ne se recharge pas — sans cette écoute,
     // l'invitation passerait inaperçue.
     window.addEventListener('hashchange', () => {
+      // Retour de Google pendant que l'appli tournait : dans l'appli du Play
+      // Store, la page Google s'ouvre dans Chrome, qui rend ensuite la main à
+      // l'appli DÉJÀ ouverte avec /#google=… — même page, seule l'ancre
+      // change, donc pas de redémarrage : sans ceci, le jeton était ignoré.
+      if (/^#google/.test(location.hash || '')) {
+        const cred = googleDepuisURL();
+        render();
+        if (cred) onGoogleCredential(cred);
+        return;
+      }
       invitationDepuisURL();
       if (invitation && invitation.etat === 'accueil') {
         render();
